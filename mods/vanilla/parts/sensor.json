@@ -1,21 +1,20 @@
 {
   "id": "sensor",
-  "name": "Sensor",
-  "description": "On while something it is set to detect is in front of its face, up to the range you set (E).",
+  "name": "Sensor 1",
+  "description": "On while something it is set to detect is in front of its lens, up to the range you set (E). Its light is teal while it sees something. Upgrade it in place with Component Kits (U) to see further.",
   "category": "interactive",
-  "mass": 1,
+  "mass": 4.5,
   "durability": 3,
-  "friction": 0.5,
-  "buoyancy": 0.3,
+  "friction": 0.7,
+  "buoyancy": 0.5,
   "flammable": false,
   "stack_size": 20,
-  "sound_material": "plastic",
+  "sound_material": "metal",
   "size": [1, 1, 1],
-  "mesh": "meshes/sensor.glb",
+  "mesh": "meshes/parts/sensor_1.glb",
+  "icon": "textures/items/sensor_1_icon.png",
   "visual": {
-    "color": "#5aa0c9",
-    "roughness": 0.5,
-    "metallic": 0.2
+    "color": "#ffffff"
   },
   "sockets": [
     {
@@ -38,10 +37,10 @@
       "id": "range",
       "name": "Range (m)",
       "type": "number",
-      "min": 1,
-      "max": 20,
+      "min": 0.25,
+      "max": 1,
       "step": 0.25,
-      "default": 4
+      "default": 1.0
     },
     {
       "id": "players",
@@ -72,6 +71,217 @@
       "group": "Detects"
     }
   ],
+  "upgrades": [
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 1
+        }
+      ],
+      "set": {
+        "name": "Sensor 2",
+        "settings": [
+          {
+            "id": "range",
+            "name": "Range (m)",
+            "type": "number",
+            "min": 0.25,
+            "max": 2.0,
+            "step": 0.25,
+            "default": 2.0
+          },
+          {
+            "id": "players",
+            "name": "Players",
+            "type": "toggle",
+            "default": true,
+            "group": "Detects"
+          },
+          {
+            "id": "bots",
+            "name": "Bots",
+            "type": "toggle",
+            "default": true,
+            "group": "Detects"
+          },
+          {
+            "id": "blocks",
+            "name": "Blocks",
+            "type": "toggle",
+            "default": true,
+            "group": "Detects"
+          },
+          {
+            "id": "creations",
+            "name": "Creations",
+            "type": "toggle",
+            "default": true,
+            "group": "Detects"
+          }
+        ],
+        "mesh": "meshes/parts/sensor_2.glb",
+        "icon": "textures/items/sensor_2_icon.png"
+      }
+    },
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 1
+        }
+      ],
+      "set": {
+        "name": "Sensor 3",
+        "settings": [
+          {
+            "id": "range",
+            "name": "Range (m)",
+            "type": "number",
+            "min": 0.25,
+            "max": 3.0,
+            "step": 0.25,
+            "default": 3.0
+          },
+          {
+            "id": "players",
+            "name": "Players",
+            "type": "toggle",
+            "default": true,
+            "group": "Detects"
+          },
+          {
+            "id": "bots",
+            "name": "Bots",
+            "type": "toggle",
+            "default": true,
+            "group": "Detects"
+          },
+          {
+            "id": "blocks",
+            "name": "Blocks",
+            "type": "toggle",
+            "default": true,
+            "group": "Detects"
+          },
+          {
+            "id": "creations",
+            "name": "Creations",
+            "type": "toggle",
+            "default": true,
+            "group": "Detects"
+          }
+        ],
+        "mesh": "meshes/parts/sensor_3.glb",
+        "icon": "textures/items/sensor_3_icon.png"
+      }
+    },
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 1
+        }
+      ],
+      "set": {
+        "name": "Sensor 4",
+        "settings": [
+          {
+            "id": "range",
+            "name": "Range (m)",
+            "type": "number",
+            "min": 0.25,
+            "max": 4.0,
+            "step": 0.25,
+            "default": 4.0
+          },
+          {
+            "id": "players",
+            "name": "Players",
+            "type": "toggle",
+            "default": true,
+            "group": "Detects"
+          },
+          {
+            "id": "bots",
+            "name": "Bots",
+            "type": "toggle",
+            "default": true,
+            "group": "Detects"
+          },
+          {
+            "id": "blocks",
+            "name": "Blocks",
+            "type": "toggle",
+            "default": true,
+            "group": "Detects"
+          },
+          {
+            "id": "creations",
+            "name": "Creations",
+            "type": "toggle",
+            "default": true,
+            "group": "Detects"
+          }
+        ],
+        "mesh": "meshes/parts/sensor_4.glb",
+        "icon": "textures/items/sensor_4_icon.png"
+      }
+    },
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 3
+        }
+      ],
+      "set": {
+        "name": "Sensor 5",
+        "description": "On while something it is set to detect is in front of its lens, up to the range you set (E). Its light is teal while it sees something.",
+        "settings": [
+          {
+            "id": "range",
+            "name": "Range (m)",
+            "type": "number",
+            "min": 0.25,
+            "max": 5.0,
+            "step": 0.25,
+            "default": 5.0
+          },
+          {
+            "id": "players",
+            "name": "Players",
+            "type": "toggle",
+            "default": true,
+            "group": "Detects"
+          },
+          {
+            "id": "bots",
+            "name": "Bots",
+            "type": "toggle",
+            "default": true,
+            "group": "Detects"
+          },
+          {
+            "id": "blocks",
+            "name": "Blocks",
+            "type": "toggle",
+            "default": true,
+            "group": "Detects"
+          },
+          {
+            "id": "creations",
+            "name": "Creations",
+            "type": "toggle",
+            "default": true,
+            "group": "Detects"
+          }
+        ],
+        "mesh": "meshes/parts/sensor_5.glb",
+        "icon": "textures/items/sensor_5_icon.png"
+      }
+    }
+  ],
   "menu": {
     "signals": true,
     "preview": {
@@ -79,6 +289,11 @@
       "range": "range",
       "axis": [0, 1, 0],
       "angle": 8
+    }
+  },
+  "display": {
+    "clips": {
+      "readout": "pose"
     }
   },
   "properties": {

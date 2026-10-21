@@ -65,7 +65,7 @@ public sealed class AeroScriptTests : IDisposable
     public void AThrottleLeverMovesWithSpaceAndShiftAndStaysPut()
     {
         var creation = Board();
-        var seat = Place(creation, "vanilla:drivers_seat", new GridCell(-2, 1, 0));
+        var seat = Place(creation, "vanilla:drivers_seat", new GridCell(-4, 1, -1));
         var thruster = Place(creation, "vanilla:thruster", new GridCell(0, 1, 0));
         Link(creation, seat, thruster);
         Configure(creation, thruster, "control", "space_shift");
@@ -91,7 +91,7 @@ public sealed class AeroScriptTests : IDisposable
     public void AThrusterOnWAndSFiresOnlyForward()
     {
         var creation = Board();
-        var seat = Place(creation, "vanilla:drivers_seat", new GridCell(-2, 1, 0));
+        var seat = Place(creation, "vanilla:drivers_seat", new GridCell(-4, 1, -1));
         var thruster = Place(creation, "vanilla:thruster", new GridCell(0, 1, 0));
         Link(creation, seat, thruster);
         Configure(creation, thruster, "control", "w_s");
@@ -190,7 +190,7 @@ public sealed class AeroScriptTests : IDisposable
     public void AControlSurfaceFollowsItsPilot(float throttle, bool invert, float sign)
     {
         var creation = NewCreation();
-        var seat = Place(creation, "vanilla:drivers_seat", new GridCell(0, 1, 0));
+        var seat = Place(creation, "vanilla:drivers_seat", new GridCell(-2, 1, -1));
         var surface = Place(creation, "vanilla:control_surface", new GridCell(1, 0, 0));
         Link(creation, seat, surface);
         if (invert)
@@ -327,7 +327,7 @@ public sealed class AeroScriptTests : IDisposable
     public void ALinkedSeatsPilotIsReadable()
     {
         var creation = Board();
-        var seat = Place(creation, "vanilla:drivers_seat", new GridCell(-2, 1, 0));
+        var seat = Place(creation, "vanilla:drivers_seat", new GridCell(-4, 1, -1));
         var rotor = Place(creation, "vanilla:hover_jet", new GridCell(0, 1, 0));
         Link(creation, seat, rotor);
         Configure(creation, rotor, "control", "a_d");

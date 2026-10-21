@@ -2231,9 +2231,10 @@ public partial class CaptureScene : Node
         _camera.LookAt(centre);
     }
 
-    private static readonly string[] SeatParts = ["drivers_seat", "passenger_seat", "scrap_drivers_seat", "scrap_seat"];
+    private static readonly string[] SeatParts =
+        ["drivers_seat", "passenger_seat", "scrap_drivers_seat", "scrap_seat", "drivers_saddle", "saddle", "toilet", "bathtub"];
 
-    // Every vanilla seat side by side on one slab; the player sits in each in turn.
+    // Every vanilla seat side by side on one slab; the player sits in each in turn (tools/capture-seats.sh OUT [parts]).
     private void SeatsShots()
     {
         Engine.TimeScale = 1.0;
@@ -2251,8 +2252,8 @@ public partial class CaptureScene : Node
             int Put(string part, int x, int y, int z) =>
                 creation.TryPlacePart(part, new Core.Creations.GridCell(x, y, z), Core.Creations.GridRotation.Identity, out var placed, out var error)
                     ? placed.Id : throw new InvalidOperationException(error);
-            for (var x = -8; x <= 10; x++)
-                for (var z = -2; z <= 3; z++)
+            for (var x = -8; x <= 36; x++)
+                for (var z = -2; z <= 4; z++)
                     Put("vanilla:metal_block", x, 0, z);
             var cell = -8;
             foreach (var part in SeatParts)
@@ -2264,7 +2265,10 @@ public partial class CaptureScene : Node
             creation.SetAllBodyPoses(new Core.Creations.Pose(new System.Numerics.Vector3(at.X, at.Y + 0.2f, at.Z), System.Numerics.Quaternion.Identity));
             _main.Creations.Add(creation, _main.Assets);
         });
-        foreach (var part in SeatParts)
+        // An optional third argument (comma-separated part ids) shoots only those seats; the software renderer is slow.
+        var args = OS.GetCmdlineUserArgs();
+        var only = args.Length > 2 ? args[2].Split(',') : SeatParts;
+        foreach (var part in SeatParts.Where(only.Contains))
         {
             // Sitting down hands the view to the seat's interior camera: what the player sees from the seat.
             Shot($"seats_{part}_1_view", 90, () =>

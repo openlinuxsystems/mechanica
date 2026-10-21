@@ -13,8 +13,9 @@ ends with what a modder needs to make new logic parts.
   **input** is the sum of the outputs of every part linked to it.
 - A signal moves one link per physics step (1/60 s). A switch that feeds a timer that feeds a piston
   reaches the piston two steps after you flip it.
-- How many links a part takes and sends is in its data. A seat sends up to 10 (the Scrap Driver's Seat
-  only 4), an engine takes up to 4 and sends up to 10, a bearing or a piston takes up to 4.
+- How many links a part takes and sends is in its data, and upgrading a part (U) can add more. A Driver's
+  Seat sends 6 (20 at level 5), a Passenger Seat 2 (10 at level 5) for the passenger's hotbar, the Scrap
+  Driver's Seat 4; an engine takes up to 4 and sends up to 10, a bearing or a piston takes up to 4.
 - What a signal means is up to the part that receives it. An engine reads its input as a throttle, a
   piston pushes out while its input is not 0, and a logic gate counts every input that is not 0 as on.
 - Links are saved with the creation and copied with it. Taking a part off removes its links, and when
@@ -117,15 +118,15 @@ Settings are changed with E on the part; properties are fixed in the part's data
 
 | Part | Output | Settings | Properties |
 |------|--------|----------|------------|
-| Driver's Seat, Scrap Driver's Seat | The driver's throttle, -1 to 1 | | `steer_angle` (°), `steer_speed` (rad/s), `steer_torque` (N·m) |
-| Passenger Seat, Scrap Seat | (none) | | |
+| Driver's Seat, Driver's Saddle, Scrap Driver's Seat | The driver's throttle, -1 to 1 | | `steer_angle` (°), `steer_speed` (rad/s), `steer_torque` (N·m) |
+| Passenger Seat, Saddle, Scrap Seat, Toilet, Bathtub | (none); its links are the rider's hotbar | | |
 | Gas Engine, Scrap Gas Engine, Electric Engine | Its throttle while it runs | `gear` (Power, Speed on the Electric Engine) 1 to `gears` (3 on the Scrap Gas Engine, 5 to 13 on Gas Engine 1 to 5, 5 to 16 on Electric Engine 1 to 5), `on` (every engine needs it) | `speed` (rad/s at full throttle), `torque` and `brake` (N·m), `slider` (`power`: every step turns `speed` with its share of `torque`, as the gas engines; `speed`, the default: every step turns its share of `speed` with the full `torque`), `fuel` (item), `fuel_time` (s per item at full throttle and power), `loop_parameter`, and the `ignition` timings |
 | Logic Gate | 1 or 0 | `mode`: and, or, xor, nand, nor, xnor | |
 | Timer | Its input, `delay` seconds later; or on and off every `delay` while its input is on | `delay` (s), `mode` (once, repeat) | |
-| Sensor | 1 while something it detects is within `range` of its face | `range` (1 to 20 m), `players`, `bots`, `blocks`, `creations` | `interval` (steps between checks), `cone` (°) |
+| Sensor | 1 while something it detects is within `range` of its face; its lens ring lights teal | `range` (up to 1 m at level 1, 5 m at level 5), `players`, `bots`, `blocks`, `creations` | `interval` (steps between checks), `cone` (°) |
 | Switch | 1 while on; E toggles it. Its rocker tips over and its light shows red while off, teal while on | | |
 | Button | 1 while someone holds it down: E, or its key while seated | | |
-| Controller | 1 while it runs | `frames` (up to 10), `frame_time` (s), `loop` | `speed` (rad/s), `torque` (N·m), `force` (N) |
+| Controller | 1 while it runs; its step cells and lamp light teal | `frames` (up to 10; joint speed up to 2 at level 1, 9 at level 5), `frame_time` (s), `loop` | `speed` (rad/s), `torque` (N·m), `force` (N) |
 
 The **controller** steps the bearings and pistons it is linked to through its frames while its input is
 on: every `frame_time` seconds it moves to the next frame, and starts over when `loop` is on. In its

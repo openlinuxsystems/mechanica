@@ -159,10 +159,22 @@ public sealed class LogicScriptTests : IDisposable
         var sensor = Place(creation, "vanilla:sensor", new GridCell(0, 1, 0));
         Steps(3);
         Assert.Equal(0f, _runtime.Signals.Output(Car, sensor));
-        _physics.WallAt = 2f;
+        Assert.Equal("off", _runtime.Readouts.Text(Car, sensor, "pose"));
+        // Level 1 sees 1 m (4 blocks) past its face (y 0.375); its light comes on.
+        _physics.WallAt = 1f;
         Steps(3);
         Assert.Equal(1f, _runtime.Signals.Output(Car, sensor));
-        Assert.True(_physics.LastRay is { } ray && ray.To.Y - ray.From.Y is > 3.9f and < 4.1f, "it looks up to its default range along its +Y");
+        Assert.Equal("on", _runtime.Readouts.Text(Car, sensor, "pose"));
+        Assert.True(_physics.LastRay is { } ray && ray.To.Y - ray.From.Y is > 0.9f and < 1.1f, "it looks up to its default range along its +Y");
+        _physics.WallAt = 2f;
+        Steps(3);
+        Assert.Equal(0f, _runtime.Signals.Output(Car, sensor));
+        // Sensor 4 sees 4 m once its range is turned up.
+        Assert.True(creation.SetLevel(sensor, 3));
+        Configure(creation, sensor, "range", 4.0);
+        Steps(3);
+        Assert.Equal(1f, _runtime.Signals.Output(Car, sensor));
+        Assert.True(_physics.LastRay is { } far && far.To.Y - far.From.Y is > 3.9f and < 4.1f, "an upgraded sensor looks further");
         Configure(creation, sensor, "range", 1.0);
         Steps(3);
         Assert.Equal(0f, _runtime.Signals.Output(Car, sensor));
@@ -649,7 +661,7 @@ public sealed class LogicScriptTests : IDisposable
     public void AControllerLinkedFromASeatStartsOnWAndStopsOnS()
     {
         var creation = Board();
-        var seat = Place(creation, "vanilla:drivers_seat", new GridCell(-2, 1, 0));
+        var seat = Place(creation, "vanilla:drivers_seat", new GridCell(-4, 1, -1));
         var controller = Place(creation, "vanilla:controller", new GridCell(0, 1, 0));
         var arm = Bearing(creation, new GridCell(3, 0, 0), new GridCell(1, 0, 0));
         Place(creation, "vanilla:metal_block", new GridCell(4, 0, 0));
@@ -668,6 +680,7 @@ public sealed class LogicScriptTests : IDisposable
         _input = new PlayerInput(0, 0, 0, 0, false, false);
         Steps(40);
         Assert.Equal(1f, _runtime.Signals.Output(Car, controller));
+        Assert.Equal("on", _runtime.Readouts.Text(Car, controller, "pose"));
         Assert.Equal(MathF.PI / 2, LastMotor(arm).Target!.Value, 4);
 
         // S stops it, and it stays stopped after S is let go.
@@ -676,6 +689,7 @@ public sealed class LogicScriptTests : IDisposable
         _input = new PlayerInput(0, 0, 0, 0, false, false);
         Steps(40);
         Assert.Equal(0f, _runtime.Signals.Output(Car, controller));
+        Assert.Equal("off", _runtime.Readouts.Text(Car, controller, "pose"));
     }
 
     [Fact]
@@ -750,6 +764,33 @@ public sealed class LogicScriptTests : IDisposable
         Assert.StartsWith("exit#", _runtime.Readouts.Text(Car, seat, "clip"));
     }
 
+    [Theory]
+    // Parts map batch 4: a passenger's seat or saddle drives nothing, but its links go on the rider's hotbar, and its
+    // levels add links (the Passenger Seat 2 a level, the Saddle 3 then 4 to 10).
+    [InlineData("vanilla:passenger_seat", -4, 2, 4)]
+    [InlineData("vanilla:saddle", -3, 3, 4)]
+    public void APassengersSeatRidesAlongAndItsLevelsAddLinks(string id, int x, int links, int upgraded)
+    {
+        var creation = Board();
+        var seat = Place(creation, id, new GridCell(x, 1, -1));
+        for (var cell = 3; cell < 3 + upgraded; cell++)
+            Place(creation, "vanilla:metal_block", new GridCell(cell, 0, 0));
+        var switches = Enumerable.Range(0, upgraded).Select(i => Place(creation, "vanilla:switch", new GridCell(3 + i, 1, 0))).ToList();
+        foreach (var toggle in switches.Take(links))
+            Link(creation, seat, toggle);
+        Assert.False(creation.TryLink(seat, switches[links], out _));
+        Assert.True(creation.SetLevel(seat, 1));
+        foreach (var toggle in switches.Skip(links))
+            Link(creation, seat, toggle);
+
+        _runtime.Seats!.Sit(Peer, Car, seat);
+        _input = new PlayerInput(0, 1, 0, 0, false, false);
+        Steps(12);
+        Assert.Equal(1f, _runtime.Readouts.Number(Car, seat, "seated"));
+        Assert.StartsWith("enter#", _runtime.Readouts.Text(Car, seat, "clip"));
+        Assert.Equal(0f, _runtime.Signals.Output(Car, seat));
+    }
+
     [Fact]
     public void TheScrapPassengerSeatTakesTwoLinks()
     {
@@ -772,7 +813,7 @@ public sealed class LogicScriptTests : IDisposable
     {
         var creation = Board();
         var sensor = Place(creation, "vanilla:sensor", new GridCell(0, 1, 0));
-        _physics.WallAt = 2f;
+        _physics.WallAt = 1f;
         _physics.WallKind = kind;
         Steps(3);
         Assert.Equal(1f, _runtime.Signals.Output(Car, sensor));
@@ -885,6 +926,8 @@ public sealed class LogicScriptTests : IDisposable
         var creation = Board();
         var toggle = Place(creation, "vanilla:switch", new GridCell(-1, 1, 0));
         var controller = Place(creation, "vanilla:controller", new GridCell(0, 1, 0));
+        // Controller 2: two output links.
+        Assert.True(creation.SetLevel(controller, 1));
         var arm = Bearing(creation, new GridCell(3, 0, 0), new GridCell(1, 0, 0));
         Place(creation, "vanilla:metal_block", new GridCell(4, 0, 0));
         var piston = Place(creation, "vanilla:piston", new GridCell(2, 1, 0));
@@ -939,16 +982,17 @@ public sealed class LogicScriptTests : IDisposable
         Assert.Equal(motors, _world.Motors.Count);
     }
 
-    // A metal chassis along Z (z 0..4) with a driver's seat and a gas engine (upgraded `level` times) on top, both
-    // facing -Z. The front (-Z) wheels hang off an axle under a steering bearing at z 0; the rear ones off a post at z 4.
+    // A metal chassis along Z (z 0..4) with a driver's seat (4 x 4 x 4, over z 0..3) and a gas engine (upgraded `level` times, at
+    // z 4..5) on top, both facing -Z. The front (-Z) wheels hang off an axle under a steering bearing at z 0; the rear ones
+    // off a post at z 4.
     private (Creation Creation, int Seat, int Engine, List<(int Bearing, int Side)> Wheels, int Steering) BuildCar(
         string engineId = "vanilla:gas_engine", int linked = 4, int level = 0)
     {
         var creation = NewCreation();
         for (var z = 1; z <= 4; z++)
             Place(creation, "vanilla:metal_block", new GridCell(0, 0, z));
-        var seat = Place(creation, "vanilla:drivers_seat", new GridCell(0, 1, 1));
-        var engine = Place(creation, engineId, new GridCell(0, 1, 3));
+        var seat = Place(creation, "vanilla:drivers_seat", new GridCell(-2, 1, 0));
+        var engine = Place(creation, engineId, new GridCell(0, 1, 4));
         if (level > 0)
             Assert.True(creation.SetLevel(engine, level));
         Place(creation, "vanilla:metal_block", new GridCell(0, -1, 4));

@@ -101,6 +101,7 @@ public class PartValidationTests
     [InlineData("""{ "seat": { "cushion": [0, 0.3, 0] } }""", "$.seat.cushion", "outside the part's [1, 1, 1] footprint")]
     [InlineData("""{ "seat": { "offset": [0, 0, 0], "cushion": [0, -0.05, 0] } }""", "$.seat.cushion", "above the floor")]
     [InlineData("""{ "seat": { "bounce": 5 } }""", "$.seat.bounce", "from 0 to 4")]
+    [InlineData("""{ "seat": { "pose": "astride" } }""", "$.seat.pose", "could not be converted")]
     public void BadValuesGiveClearErrors(string overrides, string path, string messagePart)
     {
         var error = Single(TestMods.Block(overrides: overrides), path);

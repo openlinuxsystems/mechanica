@@ -30,13 +30,18 @@ public partial class VanillaLogicTest : StagedTest
     private const int CarId = 1, LiftId = 2, ScrapId = 3;
     private static readonly string[] Outputs =
     [
-        "drivers_seat", "scrap_drivers_seat", "passenger_seat", "scrap_seat", "gas_engine", "scrap_gas_engine", "electric_engine",
+        "drivers_seat", "scrap_drivers_seat", "passenger_seat", "scrap_seat", "drivers_saddle", "saddle", "toilet", "bathtub",
+        "gas_engine", "scrap_gas_engine", "electric_engine",
         "scrap_wheel", "wheel", "big_wheel", "logic_gate", "timer", "sensor", "switch", "button", "controller",
     ];
 
     // Parts whose model is a file made elsewhere (tools/bearing_engine, tools/gas_engine, tools/electric_engine,
-    // tools/scrap_seat, tools/wheels, tools/switch, tools/button).
-    private static readonly string[] Authored = ["electric_engine", "gas_engine", "scrap_drivers_seat", "scrap_seat", "scrap_gas_engine", "scrap_wheel", "wheel", "big_wheel", "switch", "button"];
+    // tools/scrap_seat, tools/wheels, tools/switch, tools/button, and the parts map's batch 4 under tools/part_kit).
+    private static readonly string[] Authored =
+    [
+        "electric_engine", "gas_engine", "scrap_drivers_seat", "scrap_seat", "scrap_gas_engine", "scrap_wheel", "wheel", "big_wheel", "switch", "button",
+        "drivers_seat", "passenger_seat", "drivers_saddle", "saddle", "toilet", "bathtub", "controller", "sensor",
+    ];
 
     // Parts made at both stations, with a second, scrap recipe (`<id>_scrap`) at the Portable Fabricator.
     private static readonly string[] BothStations = ["switch"];
@@ -379,17 +384,17 @@ public partial class VanillaLogicTest : StagedTest
         _host.Main.Creations.Add(rig, _host.Main.Assets);
     }
 
-    // The car of LogicScriptTests: a metal chassis along Z (z 0..4) with a driver's seat and an Electric Engine 2 (it
-    // drives four wheels) on top facing -Z, so the front is z 0: the front wheels hang off an
-    // axle under a steering bearing there, the rear wheels off a post at z 4.
+    // The car of LogicScriptTests: a metal chassis along Z (z 0..4) with a driver's seat (4 x 4 x 4, over z 0..3) and an
+    // Electric Engine 2 (it drives four wheels, at z 4..5) on top facing -Z, so the front is z 0: the front wheels hang
+    // off an axle under a steering bearing there, the rear wheels off a post at z 4.
     private void SpawnCar()
     {
         var car = new Creation(CarId, _mods);
         Place(car, "vanilla:metal_block", GridCell.Zero);
         for (var z = 1; z <= 4; z++)
             Place(car, "vanilla:metal_block", new GridCell(0, 0, z));
-        _seat = Place(car, "vanilla:drivers_seat", new GridCell(0, 1, 1));
-        _engine = Place(car, "vanilla:electric_engine", new GridCell(0, 1, 3));
+        _seat = Place(car, "vanilla:drivers_seat", new GridCell(-2, 1, 0));
+        _engine = Place(car, "vanilla:electric_engine", new GridCell(0, 1, 4));
         car.SetLevel(_engine, 1);
         Place(car, "vanilla:metal_block", new GridCell(0, -1, 4));
         Place(car, "vanilla:metal_block", new GridCell(0, -2, 4));

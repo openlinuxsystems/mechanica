@@ -3,6 +3,7 @@ using Godot;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Characters;
 using Mechanica.Core.Creations;
+using Mechanica.Core.Data;
 using Mechanica.Core.Logic;
 using Mechanica.Game.Building;
 using Mechanica.Game.Creations;
@@ -137,7 +138,11 @@ public partial class LogicSync : Node
 
     /// <summary>
     /// Where a player standing up from a seat lands: beside it (left, then right, front, back, then above), the first
-    /// spot with room for them (UI spec §10).
+    /// spot with room for them (UI spec §10) where they come down on something to stand on, not on an edge of the
+    /// Creation they would slide off. The spots clear the seat's own block footprint, so a big seat (the 4 x 4 x 4
+    /// Driver's Seat) does not stand its rider up inside itself. When none of them will do, each moves out a step at a
+    /// time. Standing up from a moving Creation, a spot must also be out of its way as it runs on (not in front of a
+    /// wheel), or it runs into its rider (a brake and a shove) and up onto them.
     /// </summary>
     public Vector3 BesideSeat(int creationId, int partId, PlayerController player)
     {
@@ -145,22 +150,56 @@ public partial class LogicSync : Node
             return player.GlobalPosition + Vector3.Up * 0.5f;
         var basis = seat.Feet.Basis;
         var feet = seat.Feet.Origin;
+        // How far the seat's footprint reaches from the feet, in the seat's own frame.
+        var definition = Creations.NodeOf(creationId)!.Creation.DefinitionOf(partId);
+        var half = (definition.Size ?? GridSize.One).Metres * 0.5f;
+        var anchor = SeatStyle.Anchor(definition);
         // The seat's own up may be tipped; stand upright in the world.
         Vector3 Flat(Vector3 v) => new Vector3(v.X, 0, v.Z) is var f && f.LengthSquared() > 1e-4f ? f.Normalized() : Vector3.Zero;
         var side = Flat(basis.X);
         var front = Flat(-basis.Z);
-        var reach = player.Settings.Radius + 0.45f;
-        Vector3[] spots = [feet - side * reach, feet + side * reach, feet + front * reach, feet - front * reach];
-        foreach (var spot in spots)
+        var clear = player.Settings.Radius + 0.2f;
+        (Vector3 From, Vector3 Out)[] spots =
+        [
+            (feet - side * (half.X + anchor.X + clear), -side), (feet + side * (half.X - anchor.X + clear), side),
+            (feet + front * (half.Z + anchor.Z + clear), front), (feet - front * (half.Z - anchor.Z + clear), -front),
+        ];
+        // Where the Creation goes from here, as the player sees it once on their feet: back past them.
+        var run = Flat(seat.Velocity) * -MathF.Min(seat.Velocity.Length() * StandPathSeconds, StandPathMax);
+        if (side != Vector3.Zero || front != Vector3.Zero)
         {
-            if (side == Vector3.Zero && front == Vector3.Zero)
-                break;
-            var at = spot + Vector3.Up * 0.05f;
-            if (player.RoomAt(at))
-                return at;
+            for (var step = 0; step <= StandSteps; step++)
+            {
+                foreach (var (from, outward) in spots)
+                {
+                    var at = from + outward * (step * Core.MechanicaInfo.GridSize) + Vector3.Up * 0.05f;
+                    if (player.RoomAt(at) && player.LandingFrom(at, StandDropDepth) is { } landing && OutOfTheWay(at, landing))
+                        return at;
+                }
+            }
         }
-        return feet + Vector3.Up * 0.75f;
+        return feet + Vector3.Up * MathF.Max(0.75f, half.Y - anchor.Y + 0.05f);
+
+        // Whether the Creation, running on along `run`, misses a player standing at `at` and where they come down.
+        bool OutOfTheWay(Vector3 at, Vector3 landing)
+        {
+            var samples = (int)MathF.Ceiling(run.Length() / Core.MechanicaInfo.GridSize);
+            for (var i = 1; i <= samples; i++)
+            {
+                var shift = run * (i / (float)samples);
+                if (player.Touches(at + shift, creationId) || player.Touches(landing + shift, creationId))
+                    return false;
+            }
+            return true;
+        }
     }
+
+    // Standing up: how far below a spot to look for what the player comes down on (m); how many grid steps a spot may
+    // move out; and how far ahead a moving Creation's way is kept clear, in seconds of its speed and at most (m).
+    private const float StandDropDepth = 3f;
+    private const int StandSteps = 4;
+    private const float StandPathSeconds = 1f;
+    private const float StandPathMax = 4f;
 
     // Gives each seated player its seat, and takes it away from players who stood up.
     private void Attach()
@@ -196,14 +235,16 @@ public partial class LogicSync : Node
         }
     }
 
-    // Host side: a player stood up with LeaveSeat; they land beside the seat.
+    // Host side: a player stood up with LeaveSeat; they land beside the seat, moving with it. Left at rest beside a
+    // moving vehicle, they were in its way a frame later: it ran into them (a shove sideways, a brake) or up onto them.
     private void Stood(SeatAssignment seat)
     {
         if (!Players.Players.TryGetValue(seat.Peer, out var player))
             return;
         var at = BesideSeat(seat.Creation, seat.Part, player);
+        var velocity = SeatPose(seat.Creation, seat.Part)?.Velocity ?? Vector3.Zero;
         player.Seat = null;
-        Players.HostTeleport(seat.Peer, at);
+        Players.HostTeleport(seat.Peer, at, velocity: velocity);
     }
 
     private void SendSeatsTo(int peer) =>

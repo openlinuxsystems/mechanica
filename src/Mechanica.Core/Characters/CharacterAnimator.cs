@@ -693,11 +693,20 @@ public sealed class CharacterAnimator
     }
 
     // The sitting clips for the seat: a chair (sit) blended with a low seat (sit_low) so the hips land on its cushion, with
-    // the hands on a wheel or (sit_ride, sit_ride_low) on the thighs. What the blend can't reach the model's lift makes up.
+    // the hands on a wheel or (sit_ride, sit_ride_low) on the thighs. A saddle is ridden astride (sit_saddle, hands on the
+    // bars, or sit_saddle_ride, hands on the thighs). What the blend can't reach the model's lift makes up.
     private void AddSit(SeatStyle seat, float weight)
     {
-        var (high, low) = seat.HandsFree && _lengths.ContainsKey("sit_ride") ? ("sit_ride", "sit_ride_low") : ("sit", "sit_low");
         var hips = _settings.Seat.ClipHips;
+        if (seat.Saddle && _lengths.ContainsKey("sit_saddle"))
+        {
+            var clip = seat.HandsFree && _lengths.ContainsKey("sit_saddle_ride") ? "sit_saddle_ride" : "sit_saddle";
+            var saddleHips = hips.GetValueOrDefault("sit_saddle", SeatRideSettings.SaddleHips);
+            _seatFit = float.IsFinite(seat.Cushion) ? seat.Cushion + _settings.Seat.HipsAboveCushion - saddleHips : 0f;
+            Add(clip, _clock, weight);
+            return;
+        }
+        var (high, low) = seat.HandsFree && _lengths.ContainsKey("sit_ride") ? ("sit_ride", "sit_ride_low") : ("sit", "sit_low");
         var highHips = hips.GetValueOrDefault("sit", 0.53f);
         var lowHips = hips.GetValueOrDefault("sit_low", highHips);
         var want = float.IsFinite(seat.Cushion) ? seat.Cushion + _settings.Seat.HipsAboveCushion : highHips;

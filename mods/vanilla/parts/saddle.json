@@ -1,0 +1,114 @@
+{
+  "id": "saddle",
+  "name": "Saddle 1",
+  "description": "A saddle for a passenger, 3 blocks wide so it sits in the middle of an odd-width build. Ride it astride. Sit in it with E to ride along; it drives and steers nothing. Switches and buttons it is linked to go on your hotbar while you sit: 1 to 9 and 0 use them, Left and Right click the first two. Upgrade it in place with Component Kits (U) for more links.",
+  "category": "interactive",
+  "mass": 4.5,
+  "durability": 4,
+  "friction": 0.7,
+  "buoyancy": 0.5,
+  "flammable": false,
+  "stack_size": 10,
+  "sound_material": "metal",
+  "size": [3, 3, 3],
+  "mesh": "meshes/parts/saddle_1.glb",
+  "icon": "textures/items/saddle_1_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.375, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/seat.lua",
+  "sounds": {
+    "enter": "seat_enter",
+    "exit": "seat_exit"
+  },
+  "logic": {
+    "outputs": 3
+  },
+  "seat": {
+    "offset": [0, -0.345, 0.03],
+    "cushion": [0, 0.183, 0.03],
+    "hands": "free",
+    "bounce": 1.3,
+    "pose": "saddle"
+  },
+  "upgrades": [
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 1
+        }
+      ],
+      "set": {
+        "name": "Saddle 2",
+        "logic": {
+          "outputs": 4
+        },
+        "mesh": "meshes/parts/saddle_2.glb",
+        "icon": "textures/items/saddle_2_icon.png"
+      }
+    },
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 1
+        }
+      ],
+      "set": {
+        "name": "Saddle 3",
+        "logic": {
+          "outputs": 6
+        },
+        "mesh": "meshes/parts/saddle_3.glb",
+        "icon": "textures/items/saddle_3_icon.png"
+      }
+    },
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 1
+        }
+      ],
+      "set": {
+        "name": "Saddle 4",
+        "logic": {
+          "outputs": 8
+        },
+        "mesh": "meshes/parts/saddle_4.glb",
+        "icon": "textures/items/saddle_4_icon.png"
+      }
+    },
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 1
+        }
+      ],
+      "set": {
+        "name": "Saddle 5",
+        "description": "A sport saddle for a passenger, 3 blocks wide so it sits in the middle of an odd-width build. Ride it astride. Sit in it with E to ride along; it drives and steers nothing. Switches and buttons it is linked to go on your hotbar while you sit: 1 to 9 and 0 use them, Left and Right click the first two.",
+        "logic": {
+          "outputs": 10
+        },
+        "mesh": "meshes/parts/saddle_5.glb",
+        "icon": "textures/items/saddle_5_icon.png"
+      }
+    }
+  ],
+  "display": {
+    "clips": {
+      "readout": "clip"
+    }
+  }
+}

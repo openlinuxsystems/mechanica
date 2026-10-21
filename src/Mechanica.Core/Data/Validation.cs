@@ -799,6 +799,8 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
                 sink.Error(Code, "$.seat.cushion", "the cushion must be above the floor the feet rest on (the offset's height, or the part's bottom).");
             if (seat.Hands is { } hands && !Enum.IsDefined(hands))
                 sink.Error(Code, "$.seat.hands", "hands must be wheel or free.");
+            if (seat.Pose is { } pose && !Enum.IsDefined(pose))
+                sink.Error(Code, "$.seat.pose", "pose must be chair or saddle.");
             if (seat.Bounce is { } bounce && (!float.IsFinite(bounce) || bounce < 0f || bounce > SeatDefinition.MaxBounce))
                 sink.Error(Code, "$.seat.bounce", $"bounce must be from 0 to {SeatDefinition.MaxBounce} (got {bounce}).");
             KnownKeys.WarnUnknown(seat.Extra, "$.seat", sink, typeof(SeatDefinition));

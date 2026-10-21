@@ -69,8 +69,8 @@
   // hips bob and the upper body sways on springs that each change in the seat's velocity pushes (times the seat's bounce):
   // a bump throws the hips, braking tips the body forward, a turn leans it out. Sitting down sinks in at settle_speed.
   "seat": {
-    // From tools/characters/build_characters.py (SIT_HIPS, SIT_LOW_HIPS measured on the rig).
-    "clip_hips": { "sit": 0.53, "sit_low": 0.308 },
+    // From tools/characters/build_characters.py (SIT_HIPS, SIT_LOW_HIPS and SADDLE_HIPS measured on the rig).
+    "clip_hips": { "sit": 0.53, "sit_low": 0.308, "sit_saddle": 0.668 },
     "hips_above_cushion": 0.14,
     "bob_stiffness": 160,
     "bob_damping": 11,

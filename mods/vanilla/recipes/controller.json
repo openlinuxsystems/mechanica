@@ -5,12 +5,20 @@
   ],
   "inputs": [
     {
+      "item": "metal_block",
+      "count": 5
+    },
+    {
       "item": "component_kit",
-      "count": 2
+      "count": 1
     },
     {
       "item": "circuit_board",
-      "count": 2
+      "count": 5
+    },
+    {
+      "item": "glue",
+      "count": 1
     }
   ],
   "outputs": [
@@ -19,6 +27,6 @@
       "count": 1
     }
   ],
-  "time": 6,
+  "time": 10,
   "order": 550
 }

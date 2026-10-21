@@ -525,8 +525,14 @@ public sealed record EatSettings
 /// </summary>
 public sealed record SeatRideSettings
 {
-    /// <summary>The hips' height above the floor the feet rest on in each sitting clip, in m (the clips are made by tools/characters/build_characters.py).</summary>
-    public Dictionary<string, float> ClipHips { get; init; } = new() { ["sit"] = 0.53f, ["sit_low"] = 0.308f };
+    /// <summary>The saddle clip's hips above the floor (pegs) the feet rest on, in m, when <see cref="ClipHips"/> leaves it out.</summary>
+    public const float SaddleHips = 0.668f;
+
+    /// <summary>
+    /// The hips' height above the floor the feet rest on in each sitting clip, in m (the clips are made by
+    /// tools/characters/build_characters.py): <c>sit</c> and <c>sit_low</c>, and <c>sit_saddle</c> for a saddle.
+    /// </summary>
+    public Dictionary<string, float> ClipHips { get; init; } = new() { ["sit"] = 0.53f, ["sit_low"] = 0.308f, ["sit_saddle"] = SaddleHips };
 
     /// <summary>How far the hips are above the cushion the sitter's bottom rests on, in m.</summary>
     public float HipsAboveCushion { get; init; } = 0.14f;
@@ -567,6 +573,8 @@ public sealed record SeatRideSettings
         if (!ClipHips.TryGetValue("sit", out var high) || !ClipHips.TryGetValue("sit_low", out var low) || !float.IsFinite(high) || !float.IsFinite(low)
             || low <= 0f || high <= low || high > 1.5f)
             throw new FormatException("seat.clip_hips needs sit and sit_low, with 0 < sit_low < sit <= 1.5 m.");
+        if (ClipHips.TryGetValue("sit_saddle", out var saddle) && (!float.IsFinite(saddle) || saddle is <= 0f or > 1.5f))
+            throw new FormatException($"seat.clip_hips.sit_saddle must be more than 0 and at most 1.5 m (got {saddle}).");
         if (!float.IsFinite(HipsAboveCushion) || HipsAboveCushion is < 0f or > 0.5f)
             throw new FormatException($"seat.hips_above_cushion must be from 0 to 0.5 m (got {HipsAboveCushion}).");
         CharacterSettings.Positive(BobStiffness, "seat.bob_stiffness");

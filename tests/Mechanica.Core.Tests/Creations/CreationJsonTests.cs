@@ -79,6 +79,30 @@ public class CreationJsonTests
         Assert.Equal(GridRotation.Identity, creation.FindPart(5)!.Rotation);
     }
 
+    [Fact]
+    public void AnUpgradedPartsSettingsAreCheckedAgainstItsLevel()
+    {
+        // A Sensor 5 reaches 5 m, a Sensor 1 only 1 m: a saved range of 4.5 m is checked against the saved level.
+        var vanilla = ModLoader.LoadAll(Path.Combine(TestMods.RepoRoot, "mods"));
+        var creation = new Creation(4, vanilla);
+        creation.Place("vanilla:metal_block", GridCell.Zero);
+        var sensor = creation.Place("vanilla:sensor", new GridCell(0, 1, 0)).Id;
+        Assert.True(creation.SetLevel(sensor, 4));
+        var changes = new Dictionary<string, System.Text.Json.JsonElement?> { ["range"] = System.Text.Json.JsonSerializer.SerializeToElement(4.5) };
+        creation.SetPartSettings(sensor, Core.Logic.PartSettings.Apply(creation.DefinitionOf(sensor), creation.FindPart(sensor)!.Settings, changes));
+        var json = CreationJson.Write(creation);
+
+        var diagnostics = new List<DataDiagnostic>();
+        var loaded = CreationJson.Read(json, vanilla, "sensor.json", diagnostics);
+        Assert.Empty(diagnostics);
+        Assert.Equal(4.5, loaded!.FindPart(sensor)!.Settings!["range"].GetDouble());
+
+        var level1 = JsonNode.Parse(json)!;
+        level1["parts"]![1]!.AsObject().Remove("level");
+        Assert.Null(CreationJson.Read(level1.ToJsonString(), vanilla, "sensor.json", diagnostics));
+        Assert.Contains(diagnostics, d => d.JsonPath == "$.parts[1].settings");
+    }
+
     public static TheoryData<string, string, string> BadSaves() => new()
     {
         { """{ "id": 1, "parts": [ { "id": 1, "part": "test:block", "cell": [0, 0, 0] } ] }""", DiagnosticCodes.CreationInvalid, "format_version is required" },

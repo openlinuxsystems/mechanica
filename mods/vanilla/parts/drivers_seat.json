@@ -1,27 +1,26 @@
 {
   "id": "drivers_seat",
-  "name": "Driver's Seat",
-  "description": "Sit in it with E and drive: W and S are its output (link it to engines), A and D steer the upright bearings it is linked to. Switches and buttons it is linked to go on your hotbar while you sit.",
+  "name": "Driver's Seat 1",
+  "description": "A padded bucket seat with a steering wheel. Sit in it with E and drive: W and S are its output (link it to engines; a controller starts on W and stops on S, a thruster burns while you hold W), A and D steer the upright bearings it is linked to. Switches and buttons it is linked to go on your hotbar while you sit: 1 to 9 and 0 use them, Left and Right click the first two. Upgrade it in place with Component Kits (U) for more links.",
   "category": "interactive",
-  "mass": 6,
-  "durability": 5,
+  "mass": 7.5,
+  "durability": 3,
   "friction": 0.5,
-  "buoyancy": 0.3,
-  "flammable": false,
+  "buoyancy": 0.2,
+  "flammable": true,
   "stack_size": 10,
   "sound_material": "metal",
-  "size": [2, 2, 2],
-  "mesh": "meshes/drivers_seat.glb",
+  "size": [4, 4, 4],
+  "mesh": "meshes/parts/drivers_seat_1.glb",
+  "icon": "textures/items/drivers_seat_1_icon.png",
   "visual": {
-    "color": "#3d4f66",
-    "roughness": 0.6,
-    "metallic": 0.3
+    "color": "#ffffff"
   },
   "sockets": [
     {
       "id": "base",
       "type": "structural",
-      "position": [0, -0.25, 0],
+      "position": [0, -0.5, 0],
       "normal": [0, -1, 0]
     }
   ],
@@ -31,12 +30,89 @@
     "exit": "seat_exit"
   },
   "logic": {
-    "outputs": 10
+    "outputs": 6
   },
   "seat": {
-    "offset": [0, -0.25, 0],
-    "cushion": [0, -0.03, 0.03],
-    "hands": "wheel"
+    "offset": [0, -0.44, 0.14],
+    "cushion": [0, -0.12, 0.14],
+    "hands": "wheel",
+    "bounce": 1
+  },
+  "upgrades": [
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 1
+        }
+      ],
+      "set": {
+        "name": "Driver's Seat 2",
+        "durability": 4,
+        "logic": {
+          "outputs": 8
+        },
+        "mesh": "meshes/parts/drivers_seat_2.glb",
+        "icon": "textures/items/drivers_seat_2_icon.png"
+      }
+    },
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 2
+        }
+      ],
+      "set": {
+        "name": "Driver's Seat 3",
+        "durability": 5,
+        "logic": {
+          "outputs": 12
+        },
+        "mesh": "meshes/parts/drivers_seat_3.glb",
+        "icon": "textures/items/drivers_seat_3_icon.png"
+      }
+    },
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 3
+        }
+      ],
+      "set": {
+        "name": "Driver's Seat 4",
+        "durability": 6,
+        "logic": {
+          "outputs": 16
+        },
+        "mesh": "meshes/parts/drivers_seat_4.glb",
+        "icon": "textures/items/drivers_seat_4_icon.png"
+      }
+    },
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 5
+        }
+      ],
+      "set": {
+        "name": "Driver's Seat 5",
+        "description": "A racing bucket seat with a steering wheel. Sit in it with E and drive: W and S are its output (link it to engines; a controller starts on W and stops on S, a thruster burns while you hold W), A and D steer the upright bearings it is linked to. Switches and buttons it is linked to go on your hotbar while you sit: 1 to 9 and 0 use them, Left and Right click the first two.",
+        "durability": 7,
+        "logic": {
+          "outputs": 20
+        },
+        "mesh": "meshes/parts/drivers_seat_5.glb",
+        "icon": "textures/items/drivers_seat_5_icon.png"
+      }
+    }
+  ],
+  "display": {
+    "clips": {
+      "readout": "clip"
+    }
   },
   "properties": {
     "steer_angle": 27,

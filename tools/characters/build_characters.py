@@ -3480,6 +3480,52 @@ def ride_hands(s):
     return s
 
 
+# The saddle (a bike or quad seat, ridden astride): the hips SADDLE_HIPS above the floor or pegs the feet rest on
+# (character.json clip_hips.sit_saddle must match), and the handlebar grips at SADDLE_GRIP (m: right, back, up from the
+# floor under the hips; y is negative forward). The saddle part models put their bars there (tools/saddle).
+SADDLE_HIPS = 0.66
+SADDLE_GRIP = (0.26, -0.42, 0.92)
+
+
+def saddle_base(t, lean):
+    """Astride a saddle: a leg either side with the knees out and the feet on pegs a little forward, the body leaning
+    forward by `lean` degrees from the hips up (the head stays level)."""
+    T = 2.0
+    ph = 2 * math.pi * t / T
+    br = math.sin(ph)
+    s = relaxed_upper(60)
+    s["hips_z"] = SADDLE_HIPS - REST_HIPS
+    s["hips"] = (lean * 0.45, 0, 0)
+    s["spine"] = (lean * 0.35 + 0.6 * br, 0, 0)
+    s["chest"] = (lean * 0.2 - 0.8 * br, 0, 0)
+    s["neck"] = (-lean * 0.5, 0, 0)
+    s["head"] = (-lean * 0.45 + 0.4 * br, 0, 1.5 * math.sin(ph))
+    for side in ("l", "r"):
+        sg = side_sign(side)
+        s[f"leg_{side}"] = {"ankle": (sg * 0.21, -0.14, 0.085), "pitch": 0.0, "yaw": 6.0, "pole": (sg * 0.45, -0.9, 0.2),
+                            "toe": 0.0}
+    return s
+
+
+def clip_sit_saddle(t):
+    """A driver astride a saddle, leaning forward a little to the handlebar grips (SADDLE_GRIP)."""
+    s = saddle_base(t, 16.0)
+    br = math.sin(2 * math.pi * t / 2.0)
+    gx, gy, gz = SADDLE_GRIP
+    for side in ("l", "r"):
+        sg = side_sign(side)
+        grip = np.array([sg * gx, gy, gz + 0.002 * br])
+        s[f"arm_{side}"] = arm_ik_from_grip(side, grip, (0.0, -0.55, -0.85), (-sg * 1.0, 0.0, 0.25),
+                                            pole=(sg * 0.55, 0.5, -0.9), space="world")
+        s[f"thumb_{side}"] = 35.0
+    return s
+
+
+def clip_sit_saddle_ride(t):
+    """A passenger astride a saddle, sitting up, the hands on the thighs."""
+    return ride_hands(saddle_base(t, 5.0))
+
+
 def clip_sit_ride(t):
     return ride_hands(clip_sit(t))
 
@@ -5602,6 +5648,8 @@ CLIPS = {
     "sit_low": (clip_sit_low, 2.0, True, False),
     "sit_ride": (clip_sit_ride, 2.0, True, False),
     "sit_ride_low": (clip_sit_ride_low, 2.0, True, False),
+    "sit_saddle": (clip_sit_saddle, 2.0, True, False),
+    "sit_saddle_ride": (clip_sit_saddle_ride, 2.0, True, False),
     "hold_tool": (clip_hold_tool, 2.0, True, True),
     "hold_heavy": (clip_hold_heavy, 2.0, True, True),
     "hold_heavy_block": (clip_hold_heavy_block, 2.0, True, True),

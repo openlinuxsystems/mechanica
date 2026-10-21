@@ -2,12 +2,18 @@
 -- while something it is set to detect is there: the "players", "bots", "blocks" (the ground and the world's
 -- objects) and "creations" toggles. It casts a ray straight out and a ring of RING rays properties.cone
 -- degrees off it, so it sees a narrow cone; each ray stops at the first thing it hits. It checks every
--- properties.interval steps, and plays its "detect" and "lose" sounds when that changes.
+-- properties.interval steps, and plays its "detect" and "lose" sounds when that changes. Its "pose" display is
+-- "on" while it sees something and "off" otherwise (the model's light; part data display.clips).
 
 local RING = 6
 
 function on_create()
   state.seen = state.seen or false
+  part.display("pose", state.seen and "on" or "off")
+end
+
+function on_reload()
+  part.display("pose", state.seen and "on" or "off")
 end
 
 local function wanted(hit)
@@ -47,6 +53,7 @@ function on_update(dt)
   if seen ~= state.seen then
     local key = seen and part.sound("detect") or part.sound("lose")
     if key then sound.play(key) end
+    part.display("pose", seen and "on" or "off")
   end
   state.seen = seen
 end

@@ -1094,9 +1094,25 @@ public sealed record SeatDefinition
     /// </summary>
     public float? Bounce { get; init; }
 
+    /// <summary>
+    /// How the sitter sits: in a chair (the legs fit the cushion's height) or astride a saddle (legs either side, feet
+    /// on the floor or pegs below). Omitted means <see cref="SeatPose.Chair"/>.
+    /// </summary>
+    public SeatPose? Pose { get; init; }
+
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>How a seated player sits (<see cref="SeatDefinition.Pose"/>).</summary>
+public enum SeatPose
+{
+    /// <summary>Sitting in a chair or a low seat, the legs in front.</summary>
+    Chair,
+
+    /// <summary>Astride a saddle, a leg either side, leaning a little forward.</summary>
+    Saddle,
 }
 
 /// <summary>What a seated player's hands do (<see cref="SeatDefinition.Hands"/>).</summary>

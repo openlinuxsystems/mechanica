@@ -1058,6 +1058,7 @@ public partial class PartEditorScreen : Control
             _partGrid.AddNumber("Cushion back", seat.Cushion?.Z, -2, 2, 0.01,
                 v => Set("Set cushion back", x => x with { Seat = x.Seat! with { Cushion = new Vec3(0, x.Seat.Cushion?.Y ?? 0, (float?)v ?? 0) } }), optional: true, suffix: "m");
             _partGrid.AddEnum("Seat hands", seat.Hands, v => Set("Set seat hands", x => x with { Seat = x.Seat! with { Hands = v } }), optional: true);
+            _partGrid.AddEnum("Seat pose", seat.Pose, v => Set("Set seat pose", x => x with { Seat = x.Seat! with { Pose = v } }), optional: true);
             _partGrid.AddNumber("Seat bounce", seat.Bounce, 0, SeatDefinition.MaxBounce, 0.1,
                 v => Set("Set seat bounce", x => x with { Seat = x.Seat! with { Bounce = (float?)v } }), optional: true, fallback: 1);
         }
