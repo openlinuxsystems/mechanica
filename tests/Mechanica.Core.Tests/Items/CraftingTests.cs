@@ -508,7 +508,9 @@ public class CraftingTests
     {
         var (creation, forge) = (Add(Forge), 1);
         var built = _world.Creations[creation];
+        Assert.Equal(5f, built.Bodies[0].Mass);
         Assert.True(built.SetLevel(forge, 2));
+        Assert.Equal(3f, built.Bodies[0].Mass);
 
         var loaded = CreationJson.Read(CreationJson.Write(built), _catalog, "save.json", []);
 
@@ -531,7 +533,7 @@ public class CraftingTests
         Assert.Same(PartUpgrades.At(forge, 2), PartUpgrades.At(forge, 9));
         var bad = forge with { Upgrades = [new UpgradeDefinition { Set = (System.Text.Json.Nodes.JsonObject)System.Text.Json.Nodes.JsonNode.Parse("""{ "size": [2, 2, 2] }""")! }] };
         Assert.Null(PartUpgrades.Apply(bad, 1, out var error));
-        Assert.Equal("an upgrade can change only name, description, durability, mesh, icon, sockets, settings, display, crafting, inventory, logic, properties, not 'size'.", error);
+        Assert.Equal("an upgrade can change only name, description, mass, durability, mesh, icon, sockets, settings, display, crafting, inventory, logic, properties, not 'size'.", error);
     }
 
     [Fact]
@@ -584,7 +586,7 @@ public class CraftingTests
         var stronger = powered with { Properties = new System.Text.Json.Nodes.JsonObject { ["max_power"] = 150, ["fuel_use"] = 0.5 } };
 
         Assert.Equal([new UpgradeChange("Speed", "1×", "4×"), new UpgradeChange("Slots", "2", "3")], PartUpgrades.Changes(forge, PartUpgrades.At(forge, 1)));
-        Assert.Equal([new UpgradeChange("Queue", "2", "3")], PartUpgrades.Changes(PartUpgrades.At(forge, 1), PartUpgrades.At(forge, 2)));
+        Assert.Equal([new UpgradeChange("Queue", "2", "3"), new UpgradeChange("Mass", "5 kg", "3 kg")], PartUpgrades.Changes(PartUpgrades.At(forge, 1), PartUpgrades.At(forge, 2)));
         Assert.Equal([new UpgradeChange("max power", "100", "150"), new UpgradeChange("fuel use", "-", "0.5")], PartUpgrades.Changes(powered, stronger));
     }
 

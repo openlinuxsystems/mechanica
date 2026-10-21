@@ -1,21 +1,20 @@
 {
   "id": "potato_blaster_mounted",
   "name": "Mounted Potato Blaster",
-  "description": "A Potato Blaster built into a creation. It fires out of its front when its input turns on or when you use it, using potatoes from the creation's chests.",
+  "description": "A Potato Blaster built into a creation. It fires out of its front while its input is on, up to ten potatoes a second, and once each time you use it. Link Potato Ammo Containers to it with the Connect Tool to feed it.",
   "category": "interactive",
-  "mass": 8,
-  "durability": 6,
-  "friction": 0.5,
+  "mass": 10.5,
+  "durability": 5,
+  "friction": 0.4,
   "buoyancy": 0.2,
   "flammable": false,
   "stack_size": 5,
   "sound_material": "metal",
   "size": [2, 2, 3],
-  "mesh": "meshes/potato_blaster_mounted.glb",
+  "mesh": "meshes/parts/potato_blaster_mounted.glb",
+  "icon": "textures/items/potato_blaster_mounted_icon.png",
   "visual": {
-    "color": "#5a6a3a",
-    "roughness": 0.6,
-    "metallic": 0.5
+    "color": "#ffffff"
   },
   "sockets": [
     {
@@ -27,18 +26,24 @@
   ],
   "script": "scripts/mounted_gun.lua",
   "sounds": {
-    "fire": "blaster_fire"
+    "fire": "blaster_fire",
+    "dry": "logic_click"
   },
   "logic": {
-    "inputs": 1,
+    "inputs": 5,
     "use": "fire"
+  },
+  "display": {
+    "clips": {
+      "readout": "clip"
+    }
   },
   "properties": {
     "ammo": "potato",
-    "damage": 40,
-    "interval": 0.4,
+    "damage": 28,
+    "interval": 0.1,
     "range": 80,
     "impulse": 30,
-    "muzzle": -0.4
+    "muzzle": -0.45
   }
 }

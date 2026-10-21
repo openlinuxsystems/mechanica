@@ -250,6 +250,7 @@ public sealed partial class ScriptRuntime
         AddItemLibraries(context);
         AddSoilLibraries(script, world);
         AddFireLibrary(context);
+        AddDamageLibrary(part, world);
         AddModLibraries(context);
         AddTimerLibrary(context.Script);
 

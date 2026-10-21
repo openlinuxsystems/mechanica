@@ -30,6 +30,9 @@ public partial class VanillaAeroTest : StagedTest
     private const int PlaneId = 1, HeliId = 2;
     private static readonly string[] Outputs = ["thruster", "wing", "control_surface", "rotor", "hover_jet"];
 
+    // Parts whose model is a file made elsewhere (the Thruster's five levels: tools/thruster, parts map batch 6).
+    private static readonly string[] Authored = ["thruster"];
+
     // The plane takes off along the diagonal of one 64 m ground chunk, toward its corner at the origin.
     private static readonly Vector3 PlaneAt = new(58, 1.2f, 58);
     private static readonly Quaternion PlaneHeading = new(Vector3.Up, Mathf.Pi / 4);
@@ -90,7 +93,8 @@ public partial class VanillaAeroTest : StagedTest
                 .Select(f => Path.GetRelativePath(_scratchMod, f).Replace('\\', '/'))
                 .Where(IsBatchOutput)
                 .Order(StringComparer.Ordinal).ToList();
-            Check(made.Count == 4 * Outputs.Length, $"it writes a part, an editor source, a mesh and a recipe for each ({made.Count} files)");
+            Check(made.Count == 4 * Outputs.Length - Authored.Length,
+                $"it writes a part, an editor source, a mesh (unless authored) and a recipe for each ({made.Count} files)");
             var differing = made.Where(f => !File.Exists(Path.Combine(VanillaDir, f))
                 || !File.ReadAllBytes(Path.Combine(VanillaDir, f)).AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(_scratchMod, f)))).ToList();
             Check(differing.Count == 0, $"every file matches mods/vanilla (differing: {string.Join(", ", differing)}); re-run tools/author-vanilla.sh");
@@ -168,12 +172,14 @@ public partial class VanillaAeroTest : StagedTest
                 {
                     Request(LogicActions.ConnectParts, new LinkPartsArgs(PlaneId, _planeSeat, thruster));
                     Configure(PlaneId, thruster, "control", "space_shift");
+                    // Thruster 1 on its top power step (3: 450 N each).
+                    Configure(PlaneId, thruster, "power", 3);
                 }
                 foreach (var elevator in _elevators)
                     Request(LogicActions.ConnectParts, new LinkPartsArgs(PlaneId, _planeSeat, elevator));
             }
             var links = _thrusters.Count + _elevators.Count;
-            if (_results.Count < links + _thrusters.Count || _client.Main.Creations.Find(PlaneId)?.Links.Count != links)
+            if (_results.Count < links + 2 * _thrusters.Count || _client.Main.Creations.Find(PlaneId)?.Links.Count != links)
                 return false;
             Check(_results.All(r => r.Ok), $"linking and the settings succeed ({string.Join("; ", _results)})");
             _results.Clear();
@@ -328,7 +334,7 @@ public partial class VanillaAeroTest : StagedTest
 
     // A cardboard plane flying toward -Z: a fuselage along Z with the seat on top (its 4 x 4 x 4 blocks and the pilot lift
     // the centre of mass, which the four 6 kg bearings low on the landing gear pull down and forward, back onto the
-    // thrusters' line), two wings a side behind the centre of mass, elevators and a fin at the tail, four
+    // thrusters' line), two wings a side behind the centre of mass, elevators and a fin at the tail, two
     // thrusters pushing from the tail and four free wheels.
     private void SpawnPlane()
     {
@@ -349,11 +355,13 @@ public partial class VanillaAeroTest : StagedTest
         _elevators.Add(Place(plane, "vanilla:control_surface", new GridCell(-1, 0, 8), flipped));
         // The fin stands on the tail by its hinge edge, its long side along Z.
         Place(plane, "vanilla:control_surface", new GridCell(0, 1, 4), GridRotation.FromAxes(new GridCell(0, 0, 1), new GridCell(1, 0, 0)));
-        // The thrusters stack from y -2 to 1, so they push along a line through the centre of mass.
+        // The tail frame reaches from y -2 to 1 and the thrusters sit at -1 and 0, so they push along a line through the
+        // centre of mass.
         Place(plane, Frame, new GridCell(0, 1, 8));
         Place(plane, Frame, new GridCell(0, -1, 8));
         Place(plane, Frame, new GridCell(0, -2, 8));
-        foreach (var y in new[] { -2, -1, 0, 1 })
+        // Two 12 kg Thrusters on power step 3 (450 N each) push as four 4 kg ones once did, without the tail's extra weight.
+        foreach (var y in new[] { -1, 0 })
             _thrusters.Add(Place(plane, "vanilla:thruster", new GridCell(0, y, 9), Facing(new GridCell(0, 0, 1))));
         foreach (var z in new[] { 1, 5 })
         {
@@ -444,7 +452,7 @@ public partial class VanillaAeroTest : StagedTest
 
     private void Request<T>(string action, T args) => _client.Main.Actions.Request(action, args, _results.Add);
 
-    private void Configure(int creation, int part, string id, string value) =>
+    private void Configure(int creation, int part, string id, object value) =>
         Request(LogicActions.ConfigurePart, new ConfigurePartArgs(creation, part,
             new Dictionary<string, JsonElement?> { [id] = JsonSerializer.SerializeToElement(value) }));
 
@@ -455,6 +463,6 @@ public partial class VanillaAeroTest : StagedTest
         || relative.StartsWith("editor/parts/", StringComparison.Ordinal);
 
     private static bool IsBatchOutput(string relative) =>
-        Outputs.Any(id => relative == $"parts/{id}.json" || relative == $"meshes/{id}.glb" || relative == $"editor/parts/{id}.json"
+        Outputs.Any(id => relative == $"parts/{id}.json" || (relative == $"meshes/{id}.glb" && !Authored.Contains(id)) || relative == $"editor/parts/{id}.json"
             || relative == $"recipes/{id}.json");
 }

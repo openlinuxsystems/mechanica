@@ -1,0 +1,51 @@
+{
+  "id": "explosive_canister_large",
+  "name": "Large Explosive Canister",
+  "description": "A big drum of volatile fuel. Hit it and its fuse hisses for a few seconds; break it, drop it hard or catch it in a blast and it goes off at once, wrecking everything within fifteen blocks and setting what burns alight.",
+  "category": "interactive",
+  "mass": 6,
+  "durability": 10,
+  "friction": 0.3,
+  "buoyancy": 0.7,
+  "flammable": true,
+  "stack_size": 5,
+  "sound_material": "metal",
+  "size": [2, 3, 2],
+  "mesh": "meshes/parts/explosive_canister_large.glb",
+  "icon": "textures/items/explosive_canister_large_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "collision": {
+    "shape": "cylinder",
+    "radius": 0.23,
+    "height": 0.75
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.375, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/explosive_canister.lua",
+  "sounds": {
+    "fuse": "canister_fuse",
+    "explode": "canister_explode"
+  },
+  "display": {
+    "clips": {
+      "readout": "pose"
+    }
+  },
+  "properties": {
+    "radius": 3.75,
+    "damage": 200,
+    "impulse": 1500,
+    "fuse": 3,
+    "impact_speed": 8,
+    "burn_radius": 2.0,
+    "burn": 0.6
+  }
+}

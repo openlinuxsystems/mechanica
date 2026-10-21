@@ -222,7 +222,7 @@ public sealed class FireActions(FireSettings settings, SurvivalActions survival,
             }
             Scorch(centre, strength, dt);
             if (settings.PartDamage > 0)
-                survival.World.DamagePart(creation, part, settings.PartDamage * strength * dt);
+                survival.World.DamagePart(creation, part, settings.PartDamage * strength * dt, World.DamageKinds.Fire);
         }
     }
 

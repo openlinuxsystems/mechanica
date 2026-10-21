@@ -21,13 +21,15 @@ public class VanillaCatalogTests
         "bearing", "gas_engine", "scrap_gas_engine", "electric_engine", "piston", "sport_suspension", "offroad_suspension",
         "drivers_seat", "scrap_drivers_seat", "passenger_seat", "scrap_seat", "controller", "logic_gate", "timer", "sensor",
         "switch", "button", "horn", "thruster", "wing", "rotor", "control_surface", "hover_jet", "saw_blade", "drill",
-        "water_cannon", "potato_blaster_mounted", "scrap_wheel", "wheel", "big_wheel",
+        "water_cannon", "potato_blaster_mounted", "scrap_wheel", "wheel", "big_wheel", "sticky_wheel", "plasma_drill",
+        "explosive_canister_small", "explosive_canister_large",
         // Containers, stations, lights, utility
         "chest", "small_chest", "large_chest", "cargo_chest", "water_container", "potato_ammo_container", "broken_microwave", "ruin_chest",
         "gas_container", "battery", "chemical_container", "fridge", "locker", "file_cabinet", "tool_cabinet",
         "wooden_crate", "metal_crate", "barrel", "fabricator", "portable_fabricator", "refiner", "dispenser", "respawn_bed",
         "radio", "beacon", "headlight", "spotlight", "warehouse_spotlight", "construction_light", "interior_light",
         "warning_light", "shack_light", "fluorescent_light", "packing_lamp", "frame_beam_light", "neon_sign", "protector_sign",
+        "alarm_clock", "cash_register",
         // Resources, consumables, handheld weapons (produce_crate is left out for now)
         "component_kit", "circuit_board", "glue", "gasoline", "crude_oil", "battery_pack",
         "master_battery", "warehouse_key", "explosive_remnant", "scuttler_head", "carrot_seed", "potato_seed", "tomato_seed",
@@ -76,9 +78,11 @@ public class VanillaCatalogTests
     [MemberData(nameof(Ids))]
     public void LightsAndPartsPlayersUseHaveAScript(string id)
     {
-        // Bearings, suspensions and wheels are driven by other parts' scripts and need none of their own.
+        // Bearings, suspensions and wheels are driven by other parts' scripts and need none of their own, and a
+        // container's outputs only link its storage to the parts that draw on it (a Water Container to Water Cannons).
         var part = Part(id);
-        if (part.Category == PartCategory.Light || part.Logic?.Use is not null || part.Logic?.Outputs > 0)
+        var storageLinks = part.Category == PartCategory.Container && part.Logic?.Use is null;
+        if (part.Category == PartCategory.Light || part.Logic?.Use is not null || (part.Logic?.Outputs > 0 && !storageLinks))
             Assert.True(part.Script is not null && File.Exists(Path.Combine(TestMods.RepoRoot, "mods", "vanilla", part.Script)), $"{id} has a script");
     }
 
@@ -499,6 +503,102 @@ public class VanillaCatalogTests
     public void LightsTakeTheWikiRecipes(string id, float time, params string[] inputs) =>
         VehiclePartsTakeTheWikiRecipes(id, time, inputs);
 
+    [Theory]
+    // Parts map batch 6 (working parts): the wiki's bars. The Plasma Drill, Sticky Wheel, Explosive Canisters, Alarm
+    // Clock and Cash Register are new, and the Scuttler Head is now a part (it plays notes).
+    [InlineData("thruster", 12, 5, 0.5, 0.2, false, 10)]
+    [InlineData("water_cannon", 7.5, 5, 0.4, 0.2, false, 10)]
+    [InlineData("potato_blaster_mounted", 10.5, 5, 0.4, 0.2, false, 5)]
+    [InlineData("plasma_drill", 4.5, 8, 0.2, 0.3, false, 5)]
+    [InlineData("sticky_wheel", 6, 7, 1.1, 0.2, false, 20)]
+    [InlineData("explosive_canister_small", 6, 10, 0.3, 0.7, true, 10)]
+    [InlineData("explosive_canister_large", 6, 10, 0.3, 0.7, true, 5)]
+    [InlineData("alarm_clock", 4.5, 3, 0.4, 0.6, true, 10)]
+    [InlineData("cash_register", 7.5, 4, 0.6, 0.2, true, 1)]
+    [InlineData("scuttler_head", 6, 4, 0.4, 0.6, false, 5)]
+    public void WorkingPartsTakeTheWikiStats(string id, double mass, int durability, double friction, double buoyancy,
+        bool flammable, int stack) => VehiclePartsTakeTheWikiStats(id, mass, durability, friction, buoyancy, flammable, stack);
+
+    [Theory]
+    // Parts map batch 6: the wiki's Craftbot recipes with our materials (Glow is explosive_remnant, Chili gasoline,
+    // Bee Wax beeswax, Glue Clam chemical). The Scuttler Head only drops from Scuttlers.
+    [InlineData("thruster", 30, "metal_block_3:50", "component_kit:5", "gas_engine:1", "controller:1")]
+    [InlineData("water_cannon", 30, "metal_block:10", "circuit_board:1", "glue:2")]
+    [InlineData("potato_blaster_mounted", 15, "metal_block_2:20", "component_kit:1", "circuit_board:4")]
+    [InlineData("plasma_drill", 60, "metal_block_2:100", "component_kit:10", "circuit_board:10")]
+    [InlineData("sticky_wheel", 30, "metal_block_2:20", "beeswax:10", "chemical:5")]
+    [InlineData("explosive_canister_small", 10, "metal_block:5", "explosive_remnant:2", "gasoline:2")]
+    [InlineData("explosive_canister_large", 15, "metal_block:10", "explosive_remnant:4", "gasoline:3")]
+    [InlineData("alarm_clock", 10, "metal_block:5", "glass_block:10", "circuit_board:2")]
+    [InlineData("cash_register", 5, "metal_block:5", "circuit_board:1")]
+    public void WorkingPartsTakeTheWikiRecipes(string id, float time, params string[] inputs) =>
+        VehiclePartsTakeTheWikiRecipes(id, time, inputs);
+
+    [Fact]
+    public void TheThrusterIsCraftedAtLevel1AndUpgradedForPowerStepsAndMileage()
+    {
+        // Parts map batch 6: five levels for 10 Component Kits each, lighter and tougher each level, one more power step
+        // (3 to 7) and better mileage (gasoline lasts 112 s at level 1, 224 s at level 5), each level its own model.
+        var written = Part("thruster");
+        var vanilla = Path.Combine(TestMods.RepoRoot, "mods", "vanilla");
+
+        Assert.Equal(4, PartUpgrades.MaxLevel(written));
+        Assert.Equal([10, 10, 10, 10], written.Upgrades!.Select(u => u.Cost!.Single(c => c.Item == "component_kit").Count!.Value));
+        for (var level = 0; level <= 4; level++)
+        {
+            var part = PartUpgrades.At(written, level);
+            Assert.Equal($"Thruster {level + 1}", part.Name);
+            Assert.Equal($"meshes/parts/thruster_{level + 1}.glb", part.Mesh);
+            Assert.Equal($"textures/items/thruster_{level + 1}_icon.png", part.Icon);
+            Assert.True(File.Exists(Path.Combine(vanilla, part.Mesh!)), $"level {level + 1}'s model {part.Mesh}");
+            Assert.True(File.Exists(Path.Combine(vanilla, part.Icon!)), $"level {level + 1}'s icon {part.Icon}");
+            Assert.Equal(new[] { 12, 9, 7.5, 6, 4.5 }[level], (double)part.Mass!.Value, 3);
+            Assert.Equal(5 + level, (int)part.Durability!.Value);
+            Assert.Equal(3 + level, (double)part.Settings!.Single(s => s.Id == "power").Max!.Value);
+            Assert.Equal(112 + 28 * level, part.Properties!["fuel_time"]!.GetValue<double>());
+            Assert.Equal(level < 4, part.Description!.Contains("Upgrade it in place", StringComparison.Ordinal));
+        }
+    }
+
+    [Theory]
+    // Parts map batch 6: a real model per part (tools/<model>/build_<model>.py), its icon, and the clips its script
+    // plays on the readout the part's display names.
+    [InlineData("water_cannon", "water_cannon", "fire")]
+    [InlineData("potato_blaster_mounted", "potato_blaster_mounted", "fire")]
+    [InlineData("plasma_drill", "plasma_drill", "off", "on")]
+    [InlineData("sticky_wheel", "sticky_wheel", "off", "on")]
+    [InlineData("explosive_canister_small", "explosive_canister", "fuse_loop")]
+    [InlineData("explosive_canister_large", "explosive_canister", "fuse_loop")]
+    [InlineData("alarm_clock", "alarm_clock", "armed", "off", "ring_loop")]
+    [InlineData("cash_register", "cash_register", "close", "open")]
+    [InlineData("scuttler_head", "scuttler_head", "note")]
+    [InlineData("thruster", "thruster", "off", "on")]
+    public void EachWorkingPartHasItsOwnModelIconAndClips(string id, string tool, params string[] clips)
+    {
+        var part = Part(id);
+        var mod = Path.Combine(TestMods.RepoRoot, "mods", "vanilla");
+
+        Assert.StartsWith($"meshes/parts/{id}", part.Mesh, StringComparison.Ordinal);
+        Assert.StartsWith($"textures/items/{id}", part.Icon, StringComparison.Ordinal);
+        Assert.True(File.Exists(Path.Combine(mod, part.Mesh!)), $"{id} has a model");
+        Assert.True(File.Exists(Path.Combine(mod, part.Icon!)), $"{id} has an icon");
+        Assert.True(File.Exists(Path.Combine(TestMods.RepoRoot, "tools", tool, $"build_{tool}.py")), $"{id} has its build script");
+        Assert.Equal(clips, GlbAnimations(Path.Combine(mod, part.Mesh!)).Order(StringComparer.Ordinal));
+        var readout = part.Display?.Clips?.Readout;
+        Assert.NotNull(readout);
+        Assert.Contains($"part.display(\"{readout}\"", File.ReadAllText(Path.Combine(mod, part.Script!)), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheScuttlerHeadIsTheScuttlersDropAndCannotBeCrafted()
+    {
+        var book = RecipeBook.Load(Vanilla.Value);
+
+        Assert.DoesNotContain(book.All, r => r.Outputs.Any(o => o.Item == "vanilla:scuttler_head"));
+        Assert.Contains("scuttler_head", DroppedItems());
+        Assert.True(Part("scuttler_head").IsPlaceable);
+    }
+
     [Fact]
     public void TheShackLightIsMadeFromScrapAtEitherFabricator()
     {
@@ -584,11 +684,14 @@ public class VanillaCatalogTests
     }
 
     [Theory]
-    [InlineData("fabricator", "vanilla:wheel", "vanilla:big_wheel")]
+    [InlineData("fabricator", "vanilla:wheel", "vanilla:big_wheel", "vanilla:sticky_wheel")]
     [InlineData("fabricator", "vanilla:gas_engine", "vanilla:electric_engine")]
     [InlineData("fabricator", "vanilla:switch", "vanilla:button")]
     [InlineData("fabricator", "vanilla:passenger_seat", "vanilla:saddle", "vanilla:drivers_seat", "vanilla:drivers_saddle", "vanilla:controller")]
     [InlineData("fabricator", "vanilla:toilet", "vanilla:bathtub")]
+    [InlineData("fabricator", "vanilla:timer", "vanilla:sensor", "vanilla:alarm_clock")]
+    [InlineData("fabricator", "vanilla:drill", "vanilla:plasma_drill", "vanilla:saw_blade", "vanilla:water_cannon",
+        "vanilla:potato_blaster_mounted", "vanilla:explosive_canister_small", "vanilla:explosive_canister_large")]
     [InlineData("fabricator", "vanilla:shack_light", "vanilla:glowstick", "vanilla:fluorescent_light", "vanilla:packing_lamp",
         "vanilla:interior_light", "vanilla:headlight", "vanilla:spotlight", "vanilla:construction_light", "vanilla:warning_light",
         "vanilla:beacon", "vanilla:warehouse_spotlight", "vanilla:frame_beam_light", "vanilla:neon_sign", "vanilla:protector_sign")]

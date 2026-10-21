@@ -456,6 +456,36 @@ public partial class WorldStreamer : Node3D
             Effects.Bite(at, material);
     }
 
+    /// <summary>Explosions this peer has shown (<see cref="Blast"/>), for tests.</summary>
+    public int BlastsShown { get; private set; }
+
+    /// <summary>
+    /// Shows an explosion <paramref name="radius"/> m across at <paramref name="at"/> on every peer (host only): the
+    /// fireball, flash and smoke of a bot's blast. Its damage is the host's splash.
+    /// </summary>
+    public void Blast(Vector3 at, float radius)
+    {
+        if (!Session.IsHost)
+            return;
+        ShowBlast(at, radius);
+        if (Session.State == NetSession.SessionState.Hosting)
+            Rpc(MethodName.BlastHeard, at, radius);
+    }
+
+    /// <summary>Host → clients: something exploded (cosmetic; reliable, so no client misses a blast).</summary>
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void BlastHeard(Vector3 at, float radius)
+    {
+        if (!Session.IsHost)
+            ShowBlast(at, radius);
+    }
+
+    private void ShowBlast(Vector3 at, float radius)
+    {
+        BlastsShown++;
+        Mechanica.Game.Bots.BotEffect.Show(this, Mechanica.Core.Bots.BotEffects.Explosion, at, radius);
+    }
+
     /// <summary>The loaded or scenery chunk that generated <paramref name="id"/>, or null.</summary>
     public TerrainChunk? ChunkHolding(WorldObjectId id) =>
         _chunks.Values.Concat(_scenery.Values).FirstOrDefault(c => c.Holds(id));

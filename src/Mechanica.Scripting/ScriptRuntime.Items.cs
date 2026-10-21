@@ -76,6 +76,7 @@ public sealed partial class ScriptRuntime
         _dispatcher.Register<ReloadItemArgs>(ReloadItem, ValidateReload, ApplyReload);
         _dispatcher.Register<AimItemArgs>(AimItem, ValidateAim, ApplyAim);
         survival.ProjectileLanded += OnProjectileLanded;
+        survival.PartDamaged += OnPartDamaged;
         survival.VitalsChanged += peer =>
         {
             if (survival.IsDead(peer))
@@ -593,6 +594,23 @@ public sealed partial class ScriptRuntime
             var list = new Table(script);
             var index = 1;
             foreach (var view in _survival!.Splash(caller, at, radius, damage, impulse))
+                list.Set(index++, ViewTable(context, view));
+            return DynValue.NewTable(list);
+        });
+        Fn(combat, "explode", args =>
+        {
+            // A blast: splash damage and push (as combat.splash) and the explosion every peer sees and hears.
+            var (_, caller, _) = Combatant("combat.explode", acting: true);
+            var at = LuaValues.ToVector(args[0], "combat.explode", 1);
+            var radius = LuaValues.Number(args[1], "combat.explode", 2);
+            if (radius <= 0f || radius > _settings.MaxOverlapRadius)
+                throw new ScriptRuntimeException($"combat.explode: radius must be more than 0 and at most {_settings.MaxOverlapRadius:0.#} m");
+            var damage = LuaValues.Number(args[2], "combat.explode", 3);
+            var impulse = LuaValues.OptionalNumber(args[3], "combat.explode", 4) ?? 0f;
+            _survival!.World.Blast(at, radius);
+            var list = new Table(script);
+            var index = 1;
+            foreach (var view in _survival.Splash(caller, at, radius, damage, impulse))
                 list.Set(index++, ViewTable(context, view));
             return DynValue.NewTable(list);
         });

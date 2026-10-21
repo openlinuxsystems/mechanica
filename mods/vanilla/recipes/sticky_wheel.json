@@ -1,0 +1,28 @@
+{
+  "id": "sticky_wheel",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block_2",
+      "count": 20
+    },
+    {
+      "item": "beeswax",
+      "count": 10
+    },
+    {
+      "item": "chemical",
+      "count": 5
+    }
+  ],
+  "outputs": [
+    {
+      "item": "sticky_wheel",
+      "count": 1
+    }
+  ],
+  "time": 30,
+  "order": 640
+}

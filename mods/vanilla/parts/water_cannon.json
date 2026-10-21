@@ -1,21 +1,20 @@
 {
   "id": "water_cannon",
   "name": "Water Cannon",
-  "description": "Fires a jet of water out of its front when its input turns on or when you use it. It puts out fires along the jet, waters soil it hits and shoves anything else.",
+  "description": "Fires a jet of water out of its front when its input turns on or when you use it. Link Water Containers to it with the Connect Tool: each full water bucket in them gives it ten jets. It puts out fires along the jet, waters soil it hits and shoves anything else.",
   "category": "interactive",
-  "mass": 5,
-  "durability": 4,
-  "friction": 0.5,
+  "mass": 7.5,
+  "durability": 5,
+  "friction": 0.4,
   "buoyancy": 0.2,
   "flammable": false,
   "stack_size": 10,
   "sound_material": "metal",
   "size": [2, 2, 3],
-  "mesh": "meshes/water_cannon.glb",
+  "mesh": "meshes/parts/water_cannon.glb",
+  "icon": "textures/items/water_cannon_icon.png",
   "visual": {
-    "color": "#3a7ab0",
-    "roughness": 0.5,
-    "metallic": 0.5
+    "color": "#ffffff"
   },
   "sockets": [
     {
@@ -27,11 +26,17 @@
   ],
   "script": "scripts/water_cannon.lua",
   "sounds": {
-    "fire": "water_cannon_fire"
+    "fire": "water_cannon_fire",
+    "dry": "logic_click"
   },
   "logic": {
-    "inputs": 1,
+    "inputs": 5,
     "use": "fire"
+  },
+  "display": {
+    "clips": {
+      "readout": "clip"
+    }
   },
   "properties": {
     "interval": 0.5,
@@ -40,6 +45,8 @@
     "impulse": 60,
     "muzzle": -0.4,
     "douse": 0.35,
-    "splash": 1
+    "splash": 1,
+    "water_item": "water_bucket_full",
+    "jets": 10
   }
 }

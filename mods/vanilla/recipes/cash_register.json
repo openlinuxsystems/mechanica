@@ -1,0 +1,24 @@
+{
+  "id": "cash_register",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 5
+    },
+    {
+      "item": "circuit_board",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "cash_register",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 2029
+}
