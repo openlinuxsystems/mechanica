@@ -1,0 +1,19 @@
+{
+  "id": "support_pillar_stand",
+  "name": "Pillar Stand",
+  "description": "A low steel foundation for a Lattice Pillar or a Support Pillar.",
+  "category": "decor",
+  "mass": 10.5,
+  "durability": 6,
+  "friction": 0.7,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 5,
+  "sound_material": "metal",
+  "size": [7, 1, 7],
+  "mesh": "meshes/parts/support_pillar_stand.glb",
+  "icon": "textures/items/support_pillar_stand_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

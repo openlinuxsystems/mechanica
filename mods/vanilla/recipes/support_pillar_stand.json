@@ -1,0 +1,20 @@
+{
+  "id": "support_pillar_stand",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 4
+    }
+  ],
+  "outputs": [
+    {
+      "item": "support_pillar_stand",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 337
+}

@@ -1,0 +1,19 @@
+{
+  "id": "support_truss",
+  "name": "Truss",
+  "description": "An 8 by 4 block lattice frame of square steel tube.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 6,
+  "friction": 0.4,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [8, 4, 1],
+  "mesh": "meshes/parts/support_truss.glb",
+  "icon": "textures/items/support_truss_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

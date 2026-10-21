@@ -689,39 +689,6 @@
       ]
     },
     {
-      "file": "parts/decor/metal_table.json",
-      "template": "decor",
-      "set": {
-        "name": "Metal Table",
-        "description": "A steel workbench.",
-        "mass": 30,
-        "durability": 6,
-        "flammable": false,
-        "sound_material": "metal",
-        "stack_size": 20,
-        "size": [6, 3, 4],
-        "visual": { "color": "#6a7078", "roughness": 0.4, "metallic": 0.7 }
-      },
-      "model": [
-        { "kind": "box", "size": [1.5, 0.05, 1], "position": [0, 0.35, 0] },
-        { "kind": "box", "size": [1.4, 0.03, 0.9], "position": [0, -0.2, 0] },
-        { "kind": "box", "size": [0.05, 0.7, 0.05], "position": [0.7, 0, 0.45] },
-        { "kind": "box", "size": [0.05, 0.7, 0.05], "position": [0.7, 0, -0.45] },
-        { "kind": "box", "size": [0.05, 0.7, 0.05], "position": [-0.7, 0, 0.45] },
-        { "kind": "box", "size": [0.05, 0.7, 0.05], "position": [-0.7, 0, -0.45] }
-      ],
-      "recipes": [
-        {
-          "id": "metal_table",
-          "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 20 }],
-          "outputs": [{ "item": "metal_table", "count": 1 }],
-          "time": 2,
-          "order": 2040
-        }
-      ]
-    },
-    {
       "file": "parts/decor/chair.json",
       "template": "decor",
       "set": {
@@ -782,41 +749,6 @@
           "outputs": [{ "item": "stool", "count": 1 }],
           "time": 2,
           "order": 2010
-        }
-      ]
-    },
-    {
-      "file": "parts/decor/shelf_unit.json",
-      "template": "decor",
-      "set": {
-        "name": "Shelf Unit",
-        "description": "A steel rack with four shelves.",
-        "mass": 25,
-        "durability": 6,
-        "flammable": false,
-        "sound_material": "metal",
-        "stack_size": 20,
-        "size": [4, 8, 2],
-        "visual": { "color": "#5a6a7a", "roughness": 0.5, "metallic": 0.7 }
-      },
-      "model": [
-        { "kind": "box", "size": [1, 0.03, 0.5], "position": [0, -0.9, 0] },
-        { "kind": "box", "size": [1, 0.03, 0.5], "position": [0, -0.3, 0] },
-        { "kind": "box", "size": [1, 0.03, 0.5], "position": [0, 0.3, 0] },
-        { "kind": "box", "size": [1, 0.03, 0.5], "position": [0, 0.9, 0] },
-        { "kind": "box", "size": [0.04, 2, 0.04], "position": [0.48, 0, 0.23] },
-        { "kind": "box", "size": [0.04, 2, 0.04], "position": [0.48, 0, -0.23] },
-        { "kind": "box", "size": [0.04, 2, 0.04], "position": [-0.48, 0, 0.23] },
-        { "kind": "box", "size": [0.04, 2, 0.04], "position": [-0.48, 0, -0.23] }
-      ],
-      "recipes": [
-        {
-          "id": "shelf_unit",
-          "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 16 }],
-          "outputs": [{ "item": "shelf_unit", "count": 1 }],
-          "time": 2,
-          "order": 2050
         }
       ]
     },

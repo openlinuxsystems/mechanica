@@ -1,0 +1,20 @@
+{
+  "id": "office_chair_base",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 3
+    }
+  ],
+  "outputs": [
+    {
+      "item": "office_chair_base",
+      "count": 1
+    }
+  ],
+  "time": 10,
+  "order": 2046
+}

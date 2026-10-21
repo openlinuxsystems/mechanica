@@ -1,0 +1,24 @@
+{
+  "id": "cubicle_wall",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 4
+    },
+    {
+      "item": "cotton",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "cubicle_wall",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 2048
+}

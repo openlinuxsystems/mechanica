@@ -1,0 +1,19 @@
+{
+  "id": "u_beam",
+  "name": "U-Beam",
+  "description": "A tall steel channel, 6 blocks high, bolted down its back.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 6,
+  "friction": 0.5,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 6, 2],
+  "mesh": "meshes/parts/u_beam.glb",
+  "icon": "textures/items/u_beam_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

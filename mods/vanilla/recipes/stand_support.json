@@ -1,0 +1,20 @@
+{
+  "id": "stand_support",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "stand_support",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 330
+}
