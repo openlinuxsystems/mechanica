@@ -236,6 +236,238 @@
           "order": 2046
         }
       ]
+    },
+    {
+      "file": "parts/decor/office_table.json",
+      "template": "decor",
+      "set": {
+        "name": "Office Table",
+        "description": "A long colony office table top with mounting plates underneath. Stand it on Table Supports.",
+        "icon": "textures/items/office_table_icon.png",
+        "mass": 6,
+        "durability": 5,
+        "friction": 0.4,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [8, 1, 4],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/office_table.glb" }],
+      "recipes": [
+        {
+          "id": "office_table",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 4 }],
+          "outputs": [{ "item": "office_table", "count": 1 }],
+          "time": 5,
+          "order": 2042
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/pillow.json",
+      "template": "decor",
+      "set": {
+        "name": "Pillow",
+        "description": "A plump cotton pillow in a striped case.",
+        "icon": "textures/items/pillow_icon.png",
+        "mass": 3,
+        "durability": 1,
+        "friction": 0.4,
+        "buoyancy": 0.2,
+        "flammable": true,
+        "sound_material": "fabric",
+        "stack_size": 20,
+        "size": [3, 1, 2],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/pillow.glb" }],
+      "recipes": [
+        {
+          "id": "pillow",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "cotton", "count": 2 }],
+          "outputs": [{ "item": "pillow", "count": 1 }],
+          "time": 2,
+          "order": 2072
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/shelf_pillar.json",
+      "template": "decor",
+      "set": {
+        "name": "Shelf Pillar",
+        "description": "A tall perforated shelf upright on bolted end plates.",
+        "icon": "textures/items/shelf_pillar_icon.png",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.4,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [1, 3, 1],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/shelf_pillar.glb" }],
+      "recipes": [
+        {
+          "id": "shelf_pillar",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 1 }],
+          "outputs": [{ "item": "shelf_pillar", "count": 1 }],
+          "time": 2,
+          "order": 2052
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/shelf_support.json",
+      "template": "decor",
+      "set": {
+        "name": "Shelf Support",
+        "description": "A one-block shelf frame: four posts between two plates.",
+        "icon": "textures/items/shelf_support_icon.png",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.4,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [1, 1, 1],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/shelf_support.glb" }],
+      "recipes": [
+        {
+          "id": "shelf_support",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 1 }],
+          "outputs": [{ "item": "shelf_support", "count": 1 }],
+          "time": 2,
+          "order": 2054
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/sink.json",
+      "template": "decor",
+      "set": {
+        "name": "Sink",
+        "description": "A wall-hung washbasin with a tap and a bar of soap. No water comes out.",
+        "icon": "textures/items/sink_icon.png",
+        "mass": 6,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "tile",
+        "stack_size": 20,
+        "size": [3, 3, 2],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/sink.glb" }],
+      "recipes": [
+        {
+          "id": "sink",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 5 }],
+          "outputs": [{ "item": "sink", "count": 1 }],
+          "time": 5,
+          "order": 2066
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/table_support.json",
+      "template": "decor",
+      "set": {
+        "name": "Table Support",
+        "description": "A table pedestal: a column on a flared foot with a plate on top.",
+        "icon": "textures/items/table_support_icon.png",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.3,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [1, 3, 1],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/table_support.glb" }],
+      "recipes": [
+        {
+          "id": "table_support",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 1 }],
+          "outputs": [{ "item": "table_support", "count": 1 }],
+          "time": 2,
+          "order": 2044
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/shelf_support_tall.json",
+      "template": "decor",
+      "set": {
+        "name": "Tall Shelf Support",
+        "description": "A shelf frame a metre tall, braced in the middle.",
+        "icon": "textures/items/shelf_support_tall_icon.png",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.4,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [1, 4, 1],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/shelf_support_tall.glb" }],
+      "recipes": [
+        {
+          "id": "shelf_support_tall",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 1 }],
+          "outputs": [{ "item": "shelf_support_tall", "count": 1 }],
+          "time": 2,
+          "order": 2056
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/toilet_paper.json",
+      "template": "decor",
+      "set": {
+        "name": "Toilet Paper",
+        "description": "A roll of toilet paper. Stack two for a roll of paper towels.",
+        "icon": "textures/items/toilet_paper_icon.png",
+        "mass": 1.5,
+        "durability": 1,
+        "friction": 0.3,
+        "buoyancy": 0.2,
+        "flammable": true,
+        "sound_material": "cardboard",
+        "stack_size": 1,
+        "size": [1, 1, 1],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/toilet_paper.glb" }],
+      "recipes": [
+        {
+          "id": "toilet_paper",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_wood_block", "count": 1 }],
+          "outputs": [{ "item": "toilet_paper", "count": 1 }],
+          "time": 2,
+          "order": 2084
+        }
+      ]
     }
   ]
 }

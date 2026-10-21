@@ -1,0 +1,19 @@
+{
+  "id": "table_support",
+  "name": "Table Support",
+  "description": "A table pedestal: a column on a flared foot with a plate on top.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 3,
+  "friction": 0.3,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 3, 1],
+  "mesh": "meshes/parts/table_support.glb",
+  "icon": "textures/items/table_support_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

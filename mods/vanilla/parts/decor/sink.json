@@ -1,0 +1,19 @@
+{
+  "id": "sink",
+  "name": "Sink",
+  "description": "A wall-hung washbasin with a tap and a bar of soap. No water comes out.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 3,
+  "friction": 0.4,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "tile",
+  "size": [3, 3, 2],
+  "mesh": "meshes/parts/sink.glb",
+  "icon": "textures/items/sink_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}
