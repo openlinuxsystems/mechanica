@@ -43,6 +43,7 @@ public partial class MenuMusic : Node
         if (!IsInsideTree() || Voice is not null)
             return;
         _player.Registry = registry;
-        Voice = _player.Play(SoundId, Identifiers.VanillaModId, Vector3.Zero);
+        if (registry.Find(SoundId, Identifiers.VanillaModId) is { } music)
+            Voice = _player.Play(music, Vector3.Zero);
     }
 }

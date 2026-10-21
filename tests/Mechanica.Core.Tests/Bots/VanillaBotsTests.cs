@@ -55,6 +55,32 @@ public class VanillaBotsTests
         Assert.Equal(["grazer", "rakehand", "scuttler", "spooler", "thresher"], Book.Value.All.Select(b => b.Family).Distinct().Order());
     }
 
+    // Bots fire their sounds and forget them (cries, attacks, idles, deaths): a loop among them would play on where
+    // the bot was, after it died or left.
+    [Fact]
+    public void EverySoundABotPlaysIsAOneShot()
+    {
+        var sounds = SoundRegistry.Load(Vanilla.Value);
+        foreach (var bot in Book.Value.All)
+        {
+            var ids = new[] { "idle", "alert", "attack", "death" }.Select(bot.Sound)
+                .Concat(bot.Attacks.Select(a => a.Sound))
+                .Concat(bot.Model?.Idles.Select(i => i.Sound).OfType<string>() ?? []);
+            if (bot.Script is { } script)
+            {
+                var path = Path.Combine(ModsRoot, script.Split(':')[0], script.Split(':')[1]);
+                ids = ids.Concat(System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(path), @"bot\.sound\(""([^""]+)""\)").Select(m => m.Groups[1].Value));
+            }
+            foreach (var id in ids.Distinct())
+            {
+                var e = sounds.Find(id, bot.ModId);
+                Assert.True(e is not null, $"{bot.QualifiedId}: sound {id}");
+                Assert.False(e!.Loop, $"{bot.QualifiedId}: sound {id} is a loop");
+            }
+        }
+        Assert.Contains("rakehand_chase", File.ReadAllText(Path.Combine(ModsRoot, "vanilla", "scripts", "bots", "rakehand.lua")));
+    }
+
     [Fact]
     public void TheBlueScuttlerSwimsAndTheYellowAndRedOnesShowTheirBlasts()
     {

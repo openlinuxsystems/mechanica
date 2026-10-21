@@ -816,7 +816,10 @@ for fam, base in FAMILIES.items():
 ev("bots", "scuttler_charge", lambda rng: voice(520, 0.6, (0.6, 1.8), rng, 0.6, 0.7), max_distance=50.0)
 ev("bots", "scuttler_stomp", lambda rng: edges(peak(thud(rng, 0.3, 40, 800, 0.05, 1.0), 0.8)), variants=2, pitch_variation=0.08, max_distance=40.0)
 ev("bots", "scuttler_explode", lambda rng: boom(rng, 1.4), max_distance=120.0, rolloff="linear")
-ev("bots", "rakehand_chase", engine_loop(55, 0.35), loop=1.5, max_distance=50.0)
+# The Rakehand's battle cry (a one-shot from its leaf script): its motor snarls up under a rising shriek.
+ev("bots", "rakehand_chase", lambda rng: edges(peak(mix(1.2, (engine_loop(55, 0.35)(rng, 1.2) * np.sin(np.pi * np.linspace(0, 1, n_of(1.2))) ** 0.5, 0),
+                                                       (voice(300, 0.5, (0.9, 2.2), rng, 0.5, 0.6), 0.1)), 0.8)),
+   pitch_variation=0.05, max_distance=50.0)
 ev("bots", "spooler_fire", lambda rng: edges(peak(mix(0.4, (glide(1400, 500, 0.15) * decay(0.15, 0.06), 0), (click(rng, 2000, 0.1), 0)), 0.75)), pitch_variation=0.06, max_distance=50.0)
 
 # Player

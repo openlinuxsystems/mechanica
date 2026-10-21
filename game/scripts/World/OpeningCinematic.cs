@@ -296,7 +296,7 @@ public partial class OpeningCinematic : Node3D
             "camera" => () => HandedOff ? null : _camera.GlobalPosition,
             _ => () => HandedOff ? null : _scene.Ship(_t).Position.ToGodot(),
         };
-        if (Sounds.Player.Play(e, track() ?? Vector3.Zero, track) is { Event.Loop: true } loop)
+        if (Sounds.Player.Play(e, track() ?? Vector3.Zero, track) is { Loops: true } loop)
             _loops.Add(loop);
     }
 
