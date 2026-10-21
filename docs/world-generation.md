@@ -514,6 +514,26 @@ round them; crossing one is the player's problem.
 | `mesa` | desert, burned forest; 700 to 1100 m apart | A flat top 16 m up with cliff sides (a `raise` with a short blend); the perched Bloom Pods like its top |
 | `butte` | desert, meadow, field; 900 to 1500 m apart | A lone rock tower 24 m tall that shows from far off |
 
+### Landmarks
+
+Eight set pieces stand alone in open country, for steering by from the ground and the air, and for climbing, driving
+under and flying through. Each is a spaced POI (priority 35, 200 m clear of other POIs and the roads, each kind
+roughly 3 to 5 km from the next of its kind) with one model (`meshes/structures/<id>.glb`, built by
+`tools/structures/landmarks.py`) on a flattened pad; about 27 stand on the vanilla island, at least two of each. They
+are built, not `wild`, and hold no loot and have no road. Their colliders keep every way up the design promises
+walkable (flights of steps up to 40° collide as ramps); `game/tests/landmarks` walks each one.
+
+| POI | Where | What |
+|-----|-------|------|
+| `landmark_relay_spire` | field, meadow, desert | Colony Works: a 110 m relay mast buckled at 40 m, its upper section a long diagonal to the crown, still blinking. Walk up the bank the crown ploughed up, along the drum and up the catwalk to the break |
+| `landmark_cooling_towers` | field, meadow, desert | Colony Works: two cooling towers, one cracked open; a service stair climbs the whole one to its rim |
+| `landmark_aqueduct` | field, meadow, desert | Colony Works: an unfinished aqueduct on 26 m piers that stops in mid-air under its launching gantry; climb the intake tower's stair and walk or drive the deck |
+| `landmark_kneeling_giant` | forest, autumn forest, meadow | Old Stone: a hooded figure kneeling on its plinth over a planted sword, crystals at the pommel; steps up the plinth |
+| `landmark_sky_arch` | forest, autumn forest, meadow | Old Stone: a 115 m rock arch to fly through, a stair cut up its back to a gateway at the crest |
+| `landmark_ziggurat` | forest, autumn forest, meadow | Old Stone: five overgrown tiers, a grand stair to a broken sanctuary, and a rubble ramp to drive up at the slumped corner |
+| `landmark_windmill_tower` | field, meadow | Settler Patchwork: a colony water tower crowned with a windmill, shacks round its gallery; a switchback stair up to the gallery |
+| `landmark_freighter_wreck` | desert, burned forest, field, meadow | Salvager Tech: the CF-9 freighter broken over a ridge, beacon still lit; walk into either torn end, or over the nose and along the roof to the bridge |
+
 ## Roads
 
 ```json
@@ -582,7 +602,8 @@ Another mod's POI is changed or removed through `overrides/<mod>/pois/`, a `.pat
 | `placement.shore` | For a spaced POI on a shore: open water (a lake or the sea) must lie within this many metres of its footprint. |
 | `size` | The footprint as built, `[width, height, depth]` in metres, for the placement manifest and design work. |
 | `road` | What joins it to the roads: `road` (only where a site places it), `track` (a dirt track) or `none` (the default). |
-| `bot_free_radius` | Metres from the POI centre inside which no bot appears: no wild bots (on land or in water), no guards at `bot` markers and no raiders (a raid on a farm inside comes in from just past the edge). Bots may still walk in, and one spawned by hand in Creative may stand there. Omitted: bots appear right up to the POI. The crash site keeps 250 m clear so a new player starts in peace. |
+| `bot_free_radius` | Metres from the POI centre inside which no bot appears: no wild bots (on land or in water), no guards at `bot` markers and no raiders (a raid on a farm inside comes in from just past the edge). Bots may still walk in, and one spawned by hand in Creative may stand there. Omitted: bots appear right up to the POI. The crash site keeps 250 m clear so a new player starts in peace, and a Workshop its own footprint (46 m). |
+| `hostile_free_radius` | The same for hostile bots only: passive ones (a Grazer) may still appear. A Workshop keeps hostile bots 100 m away. |
 | `terrain[]` | `flatten` levels a disc to the pad height; `basin` sinks it `depth` metres below the pad (below `sea_level` it fills with water, and above it a `water` pool can fill it); `raise` lifts it `height` metres above the pad (a mesa; a short `blend` makes its sides cliffs). With `to` (`[x, z]`) an op shapes a strip from `at` to `to`, `radius` to each side, instead of a disc: a ravine is a strip `basin`, and its `wobble` makes each wall wander along its length. A basin's `blend` must be at least 1.5 × `depth`, so its bank is no steeper than the 45° a player can walk up and a pond is never a trap. Full strength inside `radius`, fading over `blend`, centred at `at` (`[x, z]`). `wobble` (0 to 0.5, default 0) makes the edge wander in and out by that fraction of the radius, in lobes of the POI's own, for a natural pond; it narrows the blend where the edge pulls in, so the basin rule then needs `blend` × (1 − `wobble`) ≥ 1.5 × `depth`. Must stay inside the POI radius, `wobble` included. |
 | `pieces[]` | Static structure, as shapes. Positions are relative to the POI centre on its pad. |
 | `models[]` | Structures as models: `file` (a `.glb` or `.gltf`, relative to the POI's mod or `other_mod:path`, usually under `meshes/structures/`), `at` (`[x, y, z]` of the model's origin, relative to the POI centre on its pad) and `yaw` (degrees, counter-clockwise from above, added to the POI's turn). A mesh named `collider` is its collision shape and is not drawn; without one the drawn meshes collide, both faces of every triangle, so walls hold from inside too. `"solid": false` makes it scenery only. Point lights in the file become room lamps. A model is placed by the terrain chunk that holds its origin and stays loaded with that chunk, so it is never cut at a chunk border. How to make one is in the [Art Direction](art-direction.md#models-in-the-game) guide. |

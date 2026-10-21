@@ -166,6 +166,9 @@ public sealed record BotWildDefinition
     /// <summary>World objects (or scenes) it is often found near.</summary>
     public BotWildNearDefinition? Near { get; init; }
 
+    /// <summary>Chance (more than 0, at most 1) that a try to spawn more finds any. Omitted means 1; under 1 makes it rare.</summary>
+    public float? Chance { get; init; }
+
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }

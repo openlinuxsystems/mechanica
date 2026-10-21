@@ -54,6 +54,8 @@ namespace Mechanica.Game.Tools;
 /// height and from 60 m up, to judge how full the land between places looks (<c>tools/capture-survey.sh</c>).
 /// Given <c>workshop</c> it shows the Workshop nearest the crash site (the story's first) outside, inside and at its
 /// Fabricator (<c>tools/capture-workshop.sh</c>).
+/// Given <c>landmarks</c> it shows the nearest of each landmark wide, from about 1.3 times its size, and low at its foot
+/// where it meets the ground (<c>tools/capture-landmarks.sh</c>).
 /// Given <c>opening</c> it plays the opening cinematic from the spawn and saves stills through it
 /// (<c>tools/capture-opening.sh</c>, which can also record the whole of it).
 /// </summary>
@@ -101,13 +103,14 @@ public partial class CaptureScene : Node
         var moves = args.Length > 1 && args[1] == "animations";
         var crash = args.Length > 1 && args[1] == "crash_site";
         var workshop = args.Length > 1 && args[1] == "workshop";
+        var landmarks = args.Length > 1 && args[1] == "landmarks";
         var engineMenu = args.Length > 1 && args[1] == "engine_menu";
         var flashes = args.Length > 1 && args[1] == "flashes";
         var opening = args.Length > 1 && args[1] == "opening";
         var connectLines = args.Length > 1 && args[1] == "connect_lines";
         var husbandry = args.Length > 1 && args[1] == "husbandry";
         var fields = args.Length > 1 && args[1] == "fields";
-        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !connectLines && !husbandry && !fields && args[1] != "survey" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !connectLines && !husbandry && !fields && args[1] != "survey" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
@@ -257,6 +260,11 @@ public partial class CaptureScene : Node
         if (workshop)
         {
             WorkshopShots();
+            return;
+        }
+        if (landmarks)
+        {
+            LandmarkShots();
             return;
         }
         if (crash)
@@ -1007,6 +1015,40 @@ public partial class CaptureScene : Node
         {
             Shot($"opening_{still:00.0}", Mathf.RoundToInt((still - at) * 60f), () => { });
             at = still;
+        }
+    }
+
+    // The nearest of each landmark (docs/world-generation.md, Landmarks): wide from about 1.3 times its size, a little
+    // above it, and low at the edge of its pad, to show it sits on the ground and the terrain meets it.
+    private void LandmarkShots()
+    {
+        Engine.TimeScale = 1.0;
+        var gen = _main.Streamer.Generator;
+        Shot("landmarks_00_wait", 60, () => { });
+        var nearest = gen.Pois.Where(p => p.Poi.Prefab.Id?.StartsWith("landmark_", StringComparison.Ordinal) == true)
+            .GroupBy(p => p.Poi.Prefab.Id!).Select(g => g.MinBy(p => p.Centre.Length())!).OrderBy(p => p.Poi.Prefab.Id, StringComparer.Ordinal);
+        foreach (var poi in nearest)
+        {
+            var id = poi.Poi.Prefab.Id!;
+            var size = poi.Poi.Prefab.Size is { } s ? MathF.Max(s.X, s.Z) : 2f * poi.Radius;
+            var tall = poi.Poi.Prefab.Size?.Y ?? size / 2f;
+            var centre = new Vector3(poi.Centre.X, poi.PadHeight, poi.Centre.Y);
+            // From the POI's front (−z) and a little to the side.
+            var front = poi.ToWorld(new System.Numerics.Vector2(0f, -1f)) - poi.Centre;
+            var away = new Vector3(front.X, 0f, front.Y).Normalized();
+            Shot($"landmarks_00_{id}_go", 300, () =>
+            {
+                GD.Print($"[capture] {id} at {centre}, turned {poi.QuarterTurns * 90}");
+                _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, Ground(centre + away.Rotated(Vector3.Up, 0.6f) * (size * 0.6f)) + Vector3.Up * 2f, 0f);
+            });
+            Shot($"landmarks_{id}_wide", 60, () =>
+            {
+                _main.Flora.BuildAll();
+                // Far enough that the whole landmark, tall ones included, fills about three quarters of the frame.
+                var far = MathF.Max(size, tall * 1.4f) * 1.3f;
+                ViewAt(centre, away.Rotated(Vector3.Up, 0.6f) * far + Vector3.Up * far * 0.25f, tall * 0.4f);
+            });
+            Shot($"landmarks_{id}_foot", 30, () => ViewAt(centre, away.Rotated(Vector3.Up, -0.5f) * (poi.Radius + 6f) + Vector3.Up * 1.7f, tall * 0.15f));
         }
     }
 

@@ -227,11 +227,12 @@ public class VanillaBlocksTests
 
     [Theory]
     [InlineData("structural_blocks.json", 86)]
-    [InlineData("survival.json", 31)]
+    [InlineData("survival.json", 30)]
     [InlineData("joints.json", 4)]
     [InlineData("lights_utility.json", 15)]
     [InlineData("decor.json", 56)]
-    [InlineData("containers_stations.json", 11)]
+    [InlineData("containers_stations.json", 3)]
+    [InlineData("containers.json", 19)]
     public void PartFilesAreThePartEditorBatchOutput(string file, int parts)
     {
         var mod = Path.Combine(TestMods.RepoRoot, "mods", "vanilla");

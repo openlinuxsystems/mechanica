@@ -1,14 +1,16 @@
 {
   "id": "chest",
-  "name": "Chest",
+  "name": "Scrap Chest",
+  "description": "A chest knocked together from scrap wood and metal. Holds ten stacks of anything.",
   "category": "container",
-  "mass": 8,
-  "durability": 6,
+  "mass": 9,
+  "durability": 3,
   "friction": 0.5,
-  "buoyancy": 0.6,
-  "flammable": true,
+  "buoyancy": 0.8,
+  "flammable": false,
+  "stack_size": 5,
   "sound_material": "wood",
-  "size": [4, 3, 3],
+  "size": [3, 2, 3],
   "mesh": "meshes/chest.glb",
   "visual": {
     "color": "#8a5a30",
@@ -18,7 +20,7 @@
     {
       "id": "base",
       "type": "structural",
-      "position": [0, -0.375, 0],
+      "position": [0, -0.25, 0],
       "normal": [0, -1, 0]
     }
   ],
@@ -28,6 +30,6 @@
     "place": "chest_place"
   },
   "inventory": {
-    "slots": 20
+    "slots": 10
   }
 }

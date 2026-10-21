@@ -1,0 +1,20 @@
+{
+  "id": "broken_microwave",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal_block",
+      "count": 6
+    }
+  ],
+  "outputs": [
+    {
+      "item": "broken_microwave",
+      "count": 1
+    }
+  ],
+  "time": 3,
+  "order": 1790
+}

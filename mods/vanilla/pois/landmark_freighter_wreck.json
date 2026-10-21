@@ -1,0 +1,17 @@
+{
+  // A landmark (docs/world-generation.md, Landmarks): a deep-space freighter broken in two over a ridge, its beacon
+  // still burning. Walk into either torn end, or up the bank the nose ploughed up, over the nose and along the roof to
+  // the bridge. Its model (tools/structures/landmarks.py) is moved so its footprint is centred on the POI; landmarks
+  // hold no loot and need no road.
+  "id": "landmark_freighter_wreck",
+  "name": "Long Hauler CF-9",
+  "radius": 91.0,
+  "size": [135.0, 44.6, 55.0],
+  "placement": { "spacing": [2700.0, 4300.0], "biomes": ["desert", "burned_forest", "field", "meadow"], "priority": 35, "clearance": 200.0 },
+  "terrain": [
+    { "op": "flatten", "at": [-38.0, 0.0], "to": [41.0, 0.0], "radius": 30.0, "blend": 20.0 }
+  ],
+  "models": [
+    { "file": "meshes/structures/landmark_freighter_wreck.glb", "at": [-11.7, -0.1, 1.8] }
+  ]
+}

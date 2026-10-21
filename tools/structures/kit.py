@@ -680,18 +680,33 @@ def _realise(ob, root_inv, dg):
     return me
 
 
+def collide_only(ob):
+    """Marks ob as collision only: it goes in the collider and is not drawn (a smooth ramp under a flight of steps)."""
+    ob["collide"] = "only"
+    return ob
+
+
+def no_collide(*obs):
+    """Marks parts as drawn only: the player passes through them (thin cables, leaves, rubble on a ramp)."""
+    for ob in obs:
+        ob["collide"] = "never"
+    return obs[0] if len(obs) == 1 else obs
+
+
 def export(root, path, collide_min=0.6, lights=True, frame=None):
     """Writes the structure under root to a .glb with its origin at frame's (default root's): one mesh of every
     visible part (named after the file), a 'collider' mesh of the parts at least collide_min metres across (the game
     collides with it and does not draw it), and the point lights. Detail too small to bump into (screws, labels,
-    leaves) only shows."""
+    leaves) only shows. A part marked with no_collide never collides, and one marked with collide_only always does
+    and is not drawn."""
     bpy.context.view_layer.update()
     dg = bpy.context.evaluated_depsgraph_get()
     root_inv = (frame or root).matrix_world.inverted()
     obs = [ob for ob in root.children_recursive if not ob.hide_render and ob.type in ("MESH", "FONT")]
-    parts = [me for me in (_realise(ob, root_inv, dg) for ob in obs) if len(me.polygons) > 0]
+    parts = [me for me in (_realise(ob, root_inv, dg) for ob in obs if ob.get("collide") != "only") if len(me.polygons) > 0]
     # the collider is the larger parts without their bevels (openings cut by booleans stay)
-    big = [ob for ob in obs if ob.type == "MESH" and max(ob.dimensions) >= collide_min]
+    big = [ob for ob in obs if ob.type == "MESH" and ob.get("collide") != "never"
+           and (ob.get("collide") == "only" or max(ob.dimensions) >= collide_min)]
     for ob in big:
         for mod in ob.modifiers:
             if mod.type == "BEVEL":

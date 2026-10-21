@@ -1,0 +1,34 @@
+{
+  "id": "broken_microwave",
+  "name": "Broken Microwave",
+  "description": "A dead microwave from the SV-04's galley. Its one slot still makes a cupboard.",
+  "category": "container",
+  "mass": 7.5,
+  "durability": 3,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": true,
+  "stack_size": 1,
+  "sound_material": "metal",
+  "size": [2, 2, 2],
+  "mesh": "meshes/broken_microwave.glb",
+  "visual": {
+    "color": "#d8d4c8",
+    "paintable": true
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.25, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "sounds": {
+    "open": "container_open",
+    "place": "place_metal"
+  },
+  "inventory": {
+    "slots": 1
+  }
+}

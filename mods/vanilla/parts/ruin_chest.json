@@ -1,0 +1,33 @@
+{
+  "id": "ruin_chest",
+  "name": "Ruin Chest",
+  "description": "An old stone chest from the ruins. It holds six stacks.",
+  "category": "container",
+  "mass": 7.5,
+  "durability": 6,
+  "friction": 0.4,
+  "buoyancy": 0.6,
+  "flammable": false,
+  "sound_material": "concrete",
+  "size": [4, 3, 3],
+  "mesh": "meshes/ruin_chest.glb",
+  "visual": {
+    "color": "#8a867c",
+    "paintable": true
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.375, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "sounds": {
+    "open": "container_open",
+    "place": "place_concrete"
+  },
+  "inventory": {
+    "slots": 6
+  }
+}

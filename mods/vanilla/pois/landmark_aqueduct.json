@@ -1,0 +1,17 @@
+{
+  // A landmark (docs/world-generation.md, Landmarks): An unfinished Colony aqueduct: a trough deck on 26 m piers that
+  // stops in mid-air under its launching gantry. Climb the intake tower's stair, walk or drive the deck and jump off
+  // its end. Its model (tools/structures/landmarks.py) is moved so its footprint is centred on the POI; landmarks hold
+  // no loot and need no road.
+  "id": "landmark_aqueduct",
+  "name": "Aqueduct AQ-1",
+  "radius": 87.0,
+  "size": [128.0, 40.0, 34.0],
+  "placement": { "spacing": [3500.0, 5100.0], "biomes": ["field", "meadow", "desert"], "priority": 35, "clearance": 200.0 },
+  "terrain": [
+    { "op": "flatten", "at": [-42.0, 0.0], "to": [42.0, 0.0], "radius": 27.0, "blend": 18.0 }
+  ],
+  "models": [
+    { "file": "meshes/structures/landmark_aqueduct.glb", "at": [4.0, -0.1, -0.6] }
+  ]
+}

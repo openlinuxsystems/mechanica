@@ -5,12 +5,20 @@
   ],
   "inputs": [
     {
-      "item": "scrap_metal_block",
-      "count": 8
+      "item": "metal_block_2",
+      "count": 10
     },
     {
-      "item": "component_kit",
-      "count": 1
+      "item": "glass_block",
+      "count": 20
+    },
+    {
+      "item": "circuit_board",
+      "count": 5
+    },
+    {
+      "item": "glue",
+      "count": 2
     }
   ],
   "outputs": [
@@ -19,6 +27,6 @@
       "count": 1
     }
   ],
-  "time": 4,
+  "time": 60,
   "order": 1770
 }

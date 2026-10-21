@@ -902,6 +902,41 @@ public class WorldGenTests
     }
 
     [Fact]
+    public void LandmarksStandAloneAcrossTheIsland()
+    {
+        var gen = Vanilla.Value;
+        var ids = new[]
+        {
+            "landmark_relay_spire", "landmark_cooling_towers", "landmark_aqueduct", "landmark_kneeling_giant",
+            "landmark_sky_arch", "landmark_ziggurat", "landmark_windmill_tower", "landmark_freighter_wreck",
+        };
+        var landmarks = gen.Pois.Where(p => ids.Contains(p.Poi.Prefab.Id)).ToList();
+        // Something to steer by in every region: each one a few times, a couple of dozen in all.
+        foreach (var id in ids)
+            Assert.True(landmarks.Count(p => p.Poi.Prefab.Id == id) >= 2, $"{id}: {landmarks.Count(p => p.Poi.Prefab.Id == id)}");
+        Assert.InRange(landmarks.Count, 20, 30);
+        foreach (var a in landmarks)
+        {
+            var prefab = a.Poi.Prefab;
+            // Built, not wild, with no loot and no road, on a level pad; its model is a file of the mod.
+            Assert.False(prefab.Wild);
+            Assert.Null(prefab.Markers);
+            Assert.Null(prefab.Road);
+            Assert.Equal(a.PadHeight, gen.HeightAt(a.Centre.X, a.Centre.Y), 0.05f);
+            var model = Assert.Single(prefab.Models!);
+            Assert.True(File.Exists(VanillaData.Value.ModelFileOf(a.Poi, model)), model.File);
+            foreach (var b in landmarks.Where(b => b != a))
+            {
+                // They keep far apart: one kind at least its spacing, and any two clear of each other's footprint.
+                var apart = Vector2.Distance(a.Centre, b.Centre);
+                if (b.Poi.Prefab.Id == prefab.Id)
+                    Assert.True(apart >= prefab.Placement!.Spacing![0], $"{prefab.Id} at {a.Centre} and {b.Centre}");
+                Assert.True(apart >= a.Radius + b.Radius, $"{prefab.Id} at {a.Centre} and {b.Poi.Prefab.Id} at {b.Centre}");
+            }
+        }
+    }
+
+    [Fact]
     public void PoolShoresWanderWithTheirBasin()
     {
         var gen = Vanilla.Value;

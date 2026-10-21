@@ -14,12 +14,12 @@
   "color": "#3e7fd0",
   "wild": {
     "habitat": "land",
-    "count": 2,
+    "count": 1,
     "min_distance": 30,
     "max_distance": 70,
     "despawn_distance": 110,
     "clear_radius": 10,
-    "interval": 12,
+    "interval": 60,
     "biomes": [
       "meadow",
       "field",
@@ -28,7 +28,7 @@
     ],
     "herd": [
       1,
-      2
+      1
     ],
     "near": {
       "objects": [
@@ -44,7 +44,8 @@
       ],
       "radius": 30,
       "share": 0.6
-    }
+    },
+    "chance": 0.1
   },
   "model": {
     "mesh": "meshes/bots/spooler_blue.glb",
