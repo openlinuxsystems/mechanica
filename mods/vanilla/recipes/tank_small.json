@@ -1,0 +1,20 @@
+{
+  "id": "tank_small",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 4
+    }
+  ],
+  "outputs": [
+    {
+      "item": "tank_small",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 3110
+}

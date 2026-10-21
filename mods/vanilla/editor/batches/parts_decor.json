@@ -1218,6 +1218,296 @@
           "order": 3114
         }
       ]
+    },
+    {
+      "file": "parts/decor/hull_door.json",
+      "template": "decor",
+      "set": {
+        "name": "Hull Door",
+        "description": "A maintenance hatch from the SV-04, its status light still on. It is a panel: it does not open.",
+        "icon": "textures/items/hull_door_icon.png",
+        "mass": 10.5,
+        "durability": 5,
+        "friction": 0.6,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [5, 10, 1],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/hull_door.glb" }],
+      "recipes": [
+        {
+          "id": "hull_door",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block_2", "count": 10 }],
+          "outputs": [{ "item": "hull_door", "count": 1 }],
+          "time": 10,
+          "order": 3150
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/tank_medium.json",
+      "template": "decor",
+      "set": {
+        "name": "Medium Tank",
+        "description": "A colony storage tank. It is empty, so it floats.",
+        "icon": "textures/items/tank_medium_icon.png",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.5,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [5, 4, 5],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/tank_medium.glb" }],
+      "recipes": [
+        {
+          "id": "tank_medium",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 8 }],
+          "outputs": [{ "item": "tank_medium", "count": 1 }],
+          "time": 5,
+          "order": 3112
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/nut.json",
+      "template": "decor",
+      "set": {
+        "name": "Nut",
+        "description": "A giant hex nut on a threaded bolt end, from the SV-04's frame.",
+        "icon": "textures/items/nut_icon.png",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.6,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [3, 3, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/nut.glb" }],
+      "recipes": [
+        {
+          "id": "nut",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_metal_block", "count": 1 }],
+          "outputs": [{ "item": "nut", "count": 1 }],
+          "time": 2,
+          "order": 3160
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/reflector_antenna.json",
+      "template": "decor",
+      "set": {
+        "name": "Reflector Antenna",
+        "description": "A settler-built antenna mast with a wire-mesh reflector.",
+        "icon": "textures/items/reflector_antenna_icon.png",
+        "mass": 3,
+        "durability": 2,
+        "friction": 0.3,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [3, 6, 2],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/reflector_antenna.glb" }],
+      "recipes": [
+        {
+          "id": "reflector_antenna",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 2 }],
+          "outputs": [{ "item": "reflector_antenna", "count": 1 }],
+          "time": 5,
+          "order": 3184
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/dish_antenna.json",
+      "template": "decor",
+      "set": {
+        "name": "Satellite Dish",
+        "description": "A colony satellite dish on a wall bracket. Its link light is still on.",
+        "icon": "textures/items/dish_antenna_icon.png",
+        "mass": 3,
+        "durability": 4,
+        "friction": 0.4,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [4, 4, 2],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/dish_antenna.glb" }],
+      "recipes": [
+        {
+          "id": "dish_antenna",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 4 }, { "item": "circuit_board", "count": 1 }],
+          "outputs": [{ "item": "dish_antenna", "count": 1 }],
+          "time": 5,
+          "order": 3180
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/reflector_dish.json",
+      "template": "decor",
+      "set": {
+        "name": "Reflector Dish",
+        "description": "A colony dish on a pedestal, fed from a boom under its rim.",
+        "icon": "textures/items/reflector_dish_icon.png",
+        "mass": 3,
+        "durability": 4,
+        "friction": 0.4,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [4, 4, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/reflector_dish.glb" }],
+      "recipes": [
+        {
+          "id": "reflector_dish",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 4 }],
+          "outputs": [{ "item": "reflector_dish", "count": 1 }],
+          "time": 5,
+          "order": 3182
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/screw.json",
+      "template": "decor",
+      "set": {
+        "name": "Screw",
+        "description": "A giant slotted screw from the SV-04's frame.",
+        "icon": "textures/items/screw_icon.png",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.6,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [3, 3, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/screw.glb" }],
+      "recipes": [
+        {
+          "id": "screw",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_metal_block", "count": 1 }],
+          "outputs": [{ "item": "screw", "count": 1 }],
+          "time": 2,
+          "order": 3162
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/tank_small.json",
+      "template": "decor",
+      "set": {
+        "name": "Small Tank",
+        "description": "A small colony storage tank. It is empty and floats very well: a good float for a boat.",
+        "icon": "textures/items/tank_small_icon.png",
+        "mass": 3,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.6,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [3, 4, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/tank_small.glb" }],
+      "recipes": [
+        {
+          "id": "tank_small",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 4 }],
+          "outputs": [{ "item": "tank_small", "count": 1 }],
+          "time": 5,
+          "order": 3110
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/steel_pallet.json",
+      "template": "decor",
+      "set": {
+        "name": "Steel Pallet",
+        "description": "A colony steel pallet with fork pockets.",
+        "icon": "textures/items/steel_pallet_icon.png",
+        "mass": 6,
+        "durability": 5,
+        "friction": 0.6,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [5, 1, 5],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/steel_pallet.glb" }],
+      "recipes": [
+        {
+          "id": "steel_pallet",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 4 }],
+          "outputs": [{ "item": "steel_pallet", "count": 1 }],
+          "time": 5,
+          "order": 3170
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/vent_grid.json",
+      "template": "decor",
+      "set": {
+        "name": "Ventilation Grid",
+        "description": "A colony ventilation grille with angled louvres.",
+        "icon": "textures/items/vent_grid_icon.png",
+        "mass": 10.5,
+        "durability": 2,
+        "friction": 0.6,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [5, 3, 1],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/vent_grid.glb" }],
+      "recipes": [
+        {
+          "id": "vent_grid",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 3 }],
+          "outputs": [{ "item": "vent_grid", "count": 1 }],
+          "time": 5,
+          "order": 3128
+        }
+      ]
     }
   ]
 }

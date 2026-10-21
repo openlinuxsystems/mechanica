@@ -1,0 +1,19 @@
+{
+  "id": "nut",
+  "name": "Nut",
+  "description": "A giant hex nut on a threaded bolt end, from the SV-04's frame.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 3,
+  "friction": 0.6,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [3, 3, 3],
+  "mesh": "meshes/parts/nut.glb",
+  "icon": "textures/items/nut_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}
