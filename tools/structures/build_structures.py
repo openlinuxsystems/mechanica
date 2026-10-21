@@ -28,10 +28,14 @@ structure's centre (glTF +Y up, front towards +Z):
   and orchards, Settler Patchwork) and props_roadside.py (cable poles, guard rails, road signs and roadside litter).
 * ``meshes/world/formations/*.glb`` - natural rock formations (rock_formations.py): arches, a window, hoodoos (POI
   models, with a collider so their openings stay open), a sea stack and a balanced rock (world objects).
+  factions_bots_a.py (Scuttlers and Rakehands) and factions_bots_b.py (Spoolers and Threshers) are the bot factions'
+  marks: their lairs and the smaller pieces of their faction sites.
 
 A structure model is one mesh of every part with a few shared detail textures (textures.py), a ``collider`` mesh of
 its larger parts (the game collides with that and does not draw it), and its point lights. World object models have
-no collider (the object's own collider is used).
+no collider (the object's own collider is used), except the pieces you walk into or onto (a faction's lair, a bunker, a
+fort): their kit.collider_box shapes make a ``collider`` mesh, which the object uses when its data says
+``"mesh": { "collide": true }``.
 
 How to run (Blender as a Python module, no Blender UI needed):
 
@@ -82,6 +86,8 @@ import props_coast  # noqa: E402
 import props_fields  # noqa: E402
 import props_roadside  # noqa: E402
 import rock_formations  # noqa: E402
+import factions_bots_a  # noqa: E402
+import factions_bots_b  # noqa: E402
 import ship as S  # noqa: E402
 import workshop as W  # noqa: E402
 import landmarks as LM  # noqa: E402
@@ -143,7 +149,7 @@ def props(only=()):
     for module in (PR, props_settler_a, props_settler_b, props_colony_a, props_colony_b, props_stone,
                    props_farm, props_camp, props_salvage, props_street, props_industry, props_utility,
                    props_vehicles, props_ruins_a, props_ruins_b, props_salvager, props_nature, props_coast,
-                   props_fields, props_roadside):
+                   props_fields, props_roadside, factions_bots_a, factions_bots_b):
         if only and module.__name__ not in only:
             continue
         for name, build in module.PROPS.items():

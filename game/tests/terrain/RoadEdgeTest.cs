@@ -48,11 +48,10 @@ public partial class RoadEdgeTest : StagedTest
         // A straight, gentle stretch on open land with level ground beside it, far from junctions and bridges.
         var (point, tangent) = Stretch(roads);
         var right = new Vec2(-tangent.Y, tangent.X);
-        // A crossroads or T, and the corner between two of its arms.
+        // A crossroads or T, and the corner between two of its arms, with nothing scattered in the corner car's way.
         var junction = roads.Nodes.Where(n => n.Kind == RoadNodeKind.Junction)
-            .OrderBy(n => Level(n.At, n.Height + 0.6f, n.Radius + 8f)).First();
-        var arm = junction.Arm(0);
-        var corner = Vec2.Normalize(arm + new Vec2(-arm.Y, arm.X));
+            .OrderBy(n => Level(n.At, n.Height + 0.6f, n.Radius + 8f) + (CornerBlocked(roads, n) ? 100f : 0f)).First();
+        var corner = Corner(junction);
 
         var world = new Node3D { Name = "World" };
         AddChild(world);
@@ -98,6 +97,30 @@ public partial class RoadEdgeTest : StagedTest
                 Check(car.Kick < MaxKick, $"{car.Name}: worst upward speed at the edge {car.Kick:F2} m/s (< {MaxKick})");
             }
             return true;
+        });
+    }
+
+    // The direction from a junction's middle to the corner between its first two arms.
+    private static Vec2 Corner(RoadNode junction)
+    {
+        var arm = junction.Arm(0);
+        return Vec2.Normalize(arm + new Vec2(-arm.Y, arm.X));
+    }
+
+    // Whether a solid scattered object (a rock, a tree) stands within 4 m of the corner car's path onto the plate.
+    private bool CornerBlocked(RoadNetwork roads, RoadNode junction)
+    {
+        var corner = Corner(junction);
+        var rim = 40f - roads.OffPlate(junction, junction.At + corner * 40f);
+        var (from, to) = (junction.At + corner * (rim + 4f), junction.At + corner * (rim - 4f));
+        var box = (Min: Vec2.Min(from, to) - new Vec2(20f), Max: Vec2.Max(from, to) + new Vec2(20f));
+        return _gen.ObjectsIn(box.Min.X, box.Min.Y, box.Max.X, box.Max.Y).Any(o =>
+        {
+            if (!o.Definition.Solid)
+                return false;
+            var p = new Vec2(o.Position.X, o.Position.Z);
+            var t = Math.Clamp(Vec2.Dot(p - from, to - from) / Vec2.DistanceSquared(from, to), 0f, 1f);
+            return Vec2.Distance(p, from + (to - from) * t) < 4f + o.Definition.Footprint * o.Scale;
         });
     }
 

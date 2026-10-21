@@ -6,8 +6,8 @@ using Mechanica.Game.Mods;
 namespace Mechanica.Game.World;
 
 /// <summary>
-/// A model a POI is built from (<see cref="PoiModel"/>, the crash site's wreck), read once per file and shared by every
-/// chunk that places it: the meshes it is drawn with, the triangles it collides with and its lights. A mesh named
+/// A model a POI is built from (<see cref="PoiModel"/>, the crash site's wreck), or the collider of a world object that collides by
+/// its model (<see cref="MeshDefinition.Collide"/>), read once per file and shared by every chunk that places it: the meshes it is drawn with, the triangles it collides with and its lights. A mesh named
 /// <c>collider</c> is its collision shape and is not drawn; without one the drawn meshes collide.
 /// </summary>
 public sealed class StructureModel
@@ -20,12 +20,16 @@ public sealed class StructureModel
     private static readonly Dictionary<string, StructureModel?> Models = [];
 
     private StructureModel(IReadOnlyList<PartMesh> meshes, IReadOnlyList<(Shape3D Shape, Transform3D Transform)> colliders,
-        IReadOnlyList<(OmniLight3D Light, Transform3D Transform)> lights)
+        IReadOnlyList<(OmniLight3D Light, Transform3D Transform)> lights, bool hasColliderMesh)
     {
         Meshes = meshes;
         Colliders = colliders;
         Lights = lights;
+        HasColliderMesh = hasColliderMesh;
     }
+
+    /// <summary>Whether the file has a <c>collider</c> mesh (otherwise <see cref="Colliders"/> are its drawn meshes).</summary>
+    public bool HasColliderMesh { get; }
 
     /// <summary>The meshes it is drawn with, relative to its origin.</summary>
     public IReadOnlyList<PartMesh> Meshes { get; }
@@ -80,9 +84,10 @@ public sealed class StructureModel
         var lights = new List<(OmniLight3D, Transform3D)>();
         Collect(scene, Transform3D.Identity, meshes, colliders, lights);
         scene.Free();
-        if (colliders.Count == 0)
+        var hasColliderMesh = colliders.Count > 0;
+        if (!hasColliderMesh)
             colliders.AddRange(meshes.Select(m => ((Shape3D)Trimesh(m.Mesh), m.Transform)));
-        return new StructureModel(meshes, colliders, lights);
+        return new StructureModel(meshes, colliders, lights, hasColliderMesh);
     }
 
     private static void Collect(Node node, Transform3D parent, List<PartMesh> meshes, List<(Shape3D, Transform3D)> colliders,

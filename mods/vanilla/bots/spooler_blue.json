@@ -40,7 +40,8 @@
         "scene_substation",
         "scene_data_wreck",
         "scene_fuel_depot",
-        "scene_roadworks"
+        "scene_roadworks",
+        "scene_spooler_tower"
       ],
       "radius": 30,
       "share": 0.6

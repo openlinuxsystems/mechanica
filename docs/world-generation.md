@@ -180,7 +180,8 @@ change (usually `vanilla`). Every patch applies in load order on top of the last
 | `biomes[].scatter[].cluster` | Gathers the rule's objects into patches with open ground between, as in groves, rock fields and forest clearings: `scale` (patch size in metres, default 80), `cover` (share of the ground the patches cover, default 0.3) and `outside` (share of the rule's `chance` its spots keep outside the patches, default 0). Rules that name the same `layer` share their patches, so a meadow grove's birches, leafy trees and bushes stand together; give them the same `scale` and `cover`. Since only patch spots are kept, raise `chance` or lower `spacing` to keep the count: on average a rule places about `chance × (cover + (1 − cover) × outside)` per cell. Omitted: spread evenly. |
 | `biomes[].scatter[].water` | Keeps the rule to water, the sea's or a pond's: `surface` floats each object on water 0.5 to 3 m deep, at the water's level less its `sink` (lily pads), and `shallows` stands it where the ground is from 0.6 m under the water's level to 0.3 m above it (reeds and cattails along shores and river banks). A water rule places single objects: no scene, rock outcrop, `perch` or `roadside`. Omitted: dry land only. |
 | `biomes[].scatter[].roadside` | Stands the rule's objects beside the roads: each cell a road crosses takes the centre-line point nearest its spot and puts the object `gap` metres (default 3; more than the object's `footprint` plus 1) out from the edge of the bed, turned so its front (+z) faces the road and its x axis runs along it. `road` keeps it to `road`s or `track`s (omitted: either). `side` is `left` or `right` of the road's direction, to keep a line of poles on one side, `outside`, the outside of the road's bend there (guard rails, chevron signs), or `either` (the default), the side the cell's spot falls on. `even: true` takes each cell's middle instead of a random spot, so the objects stand about a `spacing` apart, as a pole line does. `junction` (metres) keeps the rule within that distance along the road of a junction (direction signs), and `bend` (degrees) to where the road turns at least that much over the 40 m round the spot (curve signs, guard rails). Never on a bridge, nor where the ground is more than 2.5 m above or below the road. A scene's pieces turn with it, so a scene can line a road too: its `gap` need only be more than 1, since each piece keeps its own footprint plus 1 m off the road. The road is looked for within 48 m of a cell's spot, so keep `spacing` under about 90 and make rare things rare with `chance`. |
-| `biomes[].scatter[].near` | Keeps the rule close to other scattered things, as fields round the farms: a spot is used only when a spot of a rule that scatters one of `objects` (ids of objects or scenes, none of them scattered with a `near` of its own) lies within `within` metres (default 150, at most 400) on ground that suits it. Omitted: anywhere. |
+| `biomes[].scatter[].near` | Keeps the rule close to other scattered things, as fields round the farms: a spot is used only when a spot of a rule that scatters one of `objects` (ids of objects or scenes, none of them scattered with a `near` of its own) lies within `within` metres (default 150, at most 400) on ground that suits it. `pois` (POI ids, `other_mod:id` for another mod's) does the same for POIs: the spot must lie within `within` metres of the edge of one of them. A rule needs `objects`, `pois` or both. Omitted: anywhere. |
+| `biomes[].scatter[].away` | Keeps the rule clear of POIs: no object (its `footprint` included) stands within `distance` metres (default 100, at most 1000) of the edge of one of `pois` (POI ids, `other_mod:id` for another mod's). The bot factions' sites keep 100 m from the Workshops this way. Omitted: anywhere. |
 | `loot_tables` | Weighted item lists by id that objects' `loot` picks from: each has `items[]` of `item`, `count` (default 1), `count_max` (at least `count`) and `weight` (relative odds, default 1). Vanilla has `common`, `epic` and `legendary`, for the green, purple and gold Bloom Pods. |
 | `objects[]` | Destructible world objects. Use catalog ids (`birch_tree`, `rock_node`, `boulder`, ...). `footprint` is the radius other scattered objects keep clear of; `sink` lowers the object into the ground. |
 | `objects[].health` | Damage the object takes before it breaks (Sledgehammer, weapons, splash). Omitted means it cannot be broken. Damage is not saved: a part-felled tree is whole again after a restart. |
@@ -200,6 +201,7 @@ change (usually `vanilla`). Every patch applies in load order on top of the last
 | `objects[].sounds` | Sound events the object plays: `hit` for a blow that does not break it, `break` when it breaks (for a tree, its fall). Omitted: the tool's own sounds. |
 | `objects[].debris` | What flies off when it is hit (cosmetic, drawn by every peer): `chips` (`#rrggbb` colours) from the point hit, and `leaves` from a sphere of `canopy_radius` metres round `canopy`, a few per hit and a shower when it falls. A tree drawn close up also shakes when it is hit. |
 | `objects[].mesh` | A `.glb` or `.gltf` model (`file`, centred at `at`) drawn instead of `pieces`, scaled with the object. `variants` lists other models of the same size that rock deposit blocks pick from, so neighbours differ. `lod` is a simpler model drawn instead beyond `lod_distance` metres (default 60) and in the distant scenery. |
+| `objects[].mesh.collide` | `true` makes the object collide with its model's own collider mesh (a mesh named `collider`, not drawn, as in a POI's `models[]`) instead of its primitive `collider`, so players walk into a burrow or up onto a plinth. The primitive `collider` still sizes the Sledgehammer's and weapons' hits for breaking it. Only for a still model of a plain object (no `clips`, scene or outcrop). Default `false`. |
 | `objects[].mesh.clips` | Makes the model animated: each object is drawn as its own copy of it (not batched with its neighbours, so keep it for rare objects) playing its glTF clips by name. `appear` plays once when its chunk comes in (a Bloom Pod settling shut), then `idle` loops; `hit` plays when damage reaches it and it holds; when it breaks, a copy left in its place plays `break`, stays `break_seconds` (default 4) and shrinks away over the last `fade_seconds` (default 0.6). Any clip may be left out. `variants` and `lod` are not used. |
 | `objects[].max_slope` | Steepest ground it is scattered on (rise over run), if flatter than the world's own limit. |
 | `objects[].outcrop` | Makes the object a rock deposit: a cluster of mounds heaped from blocks, as in Scrap Mechanic's square rocks. `deposits[]` are the sizes (`weight`; `mounds`, `[min, max]`, at most 12; `spread`, metres from the middle the other mounds may stand; `sizes[]`, the weighted `mound` names to pick from). `mounds` maps each name to `blocks` (`[min, max]`, at most 64) and `kinds[]`, the weighted world `object`s it is heaped from; each needs a box `collider`, whose size is the block's (the deposit's own object may be one). Blocks are heaped largest first, each on the ground or with at least 45% of its underside on blocks below, turned up to 0.25 rad, and no two share space; mounds stand apart. A mound other than the first turns metal-rich with chance `rich_chance` (0 to 1): each block becomes `rich[its object]`. Each block is an object of its own (`rule.cell_x.cell_z.block`, the first `rule.cell_x.cell_z`) with its own object's look, health and `breaks_into`, so breaking one leaves the rest. Each mound sits on the lowest ground under its bottom blocks, less each block's `sink`. `footprint` is the deposit's radius: no block stands further out, and a mound that does not fit is left out. `scale` is shared by the whole deposit. |
@@ -325,6 +327,11 @@ Metal Blocks, while the old colony's pipes, barriers and wrecks are too big to b
 | `scene_guard_rail` | every land biome, roadside | a run of guard rail on the outside of a bend, sometimes bent, with reflector posts |
 | `scene_settler_bus_stop` | meadow, field, roadside | a Settler bench shelter with a hitchhiker's sign and a reflector post |
 | `scene_roadside_wreck` | meadow, field, desert, burned forest, coastal, roadside | a broken-down scooter, a spilled cargo load with skid marks, or a shopping cart by tyres |
+| `scene_scuttler_nest` | meadow, field, forest, burned forest | a Scuttler burrow mound with its cradle, totem, bore, stomp rings, blast pits and seed caches (see [Faction sites](#faction-sites)) |
+| `scene_rakehand_shrine` | meadow, field | a Rakehand straw shrine with a palisade, bale fort, perch, rake ring, tool hoard and trampled crop |
+| `scene_spooler_tower` | meadow, field, desert (by warehouses and industry) | a Spooler reel tower with a crate bunker, tape web, sniper gantry, sentinels, cocoons and reel barricades |
+| `scene_thresher_den` | field (by harvester wrecks and Farmbot Scrapyards) | a Thresher den of headers and a hulk, with warning stakes, a spray mast, a pesticide shrine, a tractor graveyard, tyre cairns and a tilled scar |
+| `scene_scuttler_marks`, `scene_rakehand_marks`, `scene_spooler_marks`, `scene_thresher_marks` | as their faction's site | one or two of the faction's smaller pieces on their own |
 
 #### Farmland
 
@@ -354,6 +361,28 @@ ferns, brambles, cacti, tumbleweed, driftwood, reeds) are also scattered one at 
 
 In the vanilla world about one stands every 6,000 m² of open land (about one per 64 m chunk), some 15,000 across
 the island, so there is nearly always one in sight.
+
+#### Faction sites
+
+The bot factions mark their ground (`factions_bots_a.py` and `factions_bots_b.py`, models in `meshes/world/props/`). Each
+faction has a site scene round its lair, with two or three layouts of its smaller pieces, and a `_marks` scene of one or
+two loose pieces. The rules come last in each biome's list, after the roadside ones, so every earlier object keeps its
+place and the sites take only the gaps left between the bushes, rocks and trees: the sites are laid out tight (16 to
+21 m `footprint`) and `level` (3 m) for that. Every rule stands `near` the faction's ground and `away` from the
+Workshops (`outpost`, `poi_02`, `poi_13`) by 100 m, the radius with no hostile bots.
+
+| Faction | Site | Near | Vanilla world |
+|---------|------|------|---------------|
+| Scuttlers | `scene_scuttler_nest` | scrap and wrecks: junk piles, scrap outposts, crashes, rover and harvester wrecks, breakdowns | about 28 (meadow, field, forest, burned forest) |
+| Rakehands | `scene_rakehand_shrine` | farms: farmsteads, farmyards, hay fields, field edges, kitchen gardens, farm wrecks | about 24 (meadow, field) |
+| Spoolers | `scene_spooler_tower` | warehouse POIs and industry (plants, container yards, workyards, crane sites) | about 9: Spoolers are rare on the surface |
+| Threshers | `scene_thresher_den` | harvester and farm wrecks and the Farmbot Scrapyards | about 26 (field) |
+
+The marks scenes add some 40 loose pieces each for the Scuttlers and Rakehands, 20 for the Threshers and 14 for the
+Spoolers. The lairs, the Scuttler cradle, the bale fort and the crate bunker use `mesh.collide`: a player walks into the
+Scuttler burrow, up onto the shrine's plinth, and into the gaps of the bunker and den instead of hitting a box round them. The
+bots' wild `near` lists (`editor/batches/bots.json`) name the sites, so Scuttlers, Rakehands and Blue Spoolers are met
+round them. `WorldGenTests.FactionSitesStandOnTheirFactionsGround` keeps the counts and the Workshop clearance.
 
 ### Wild cotton, beehives and embers
 

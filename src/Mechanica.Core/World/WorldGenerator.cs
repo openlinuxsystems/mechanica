@@ -734,6 +734,9 @@ public sealed partial class WorldGenerator
             return false;
         if (rule.Near is { } near && !Near(rule, near, spot))
             return false;
+        if (rule.AwayPois is { } away && _pois.Any(p => away.Contains(p.Poi.QualifiedId)
+                && Vector2.Distance(p.Centre, spot) < p.Radius + rule.Away!.Distance + rule.Object.Footprint))
+            return false;
         // A rock outcrop spreads its cubes over its footprint, so the whole of it must suit, not just its middle.
         if (rule.Object.Outcrop is not null)
         {
@@ -753,6 +756,8 @@ public sealed partial class WorldGenerator
     // ground counts, not what crowds it, so the answer never depends on rules placed after the near one.
     private bool Near(Scatter rule, NearDefinition near, Vector2 spot)
     {
+        if (rule.NearPois is { } pois && _pois.Any(p => pois.Contains(p.Poi.QualifiedId) && Vector2.Distance(p.Centre, spot) <= p.Radius + near.Within))
+            return true;
         foreach (var other in Data.ScatterRules)
         {
             if (other == rule || near.Objects?.Contains(other.Object.Id!) != true)

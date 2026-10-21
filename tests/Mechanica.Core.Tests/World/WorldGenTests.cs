@@ -1180,4 +1180,85 @@ public class WorldGenTests
         Assert.Equal("islands:hut", hut.Poi.QualifiedId);
         Assert.Equal(3f, hut.PadHeight, 4);
     }
+
+    [Fact]
+    public void FactionSitesStandOnTheirFactionsGround()
+    {
+        // Each bot faction's site (its lair with its smaller pieces) stands where its bots live, in good numbers on the vanilla
+        // world but never crowding it: Scuttlers by scrap and wrecks, Rakehands by farms, Spoolers (rare on the surface) by
+        // warehouses and industry, Threshers by the Farmbot Scrapyards and harvester wrecks. None within 100 m of a Workshop.
+        var gen = Vanilla.Value;
+        var lairs = new Dictionary<string, string>
+        {
+            ["scene_scuttler_nest"] = "scuttler_nest", ["scene_rakehand_shrine"] = "rakehand_shrine",
+            ["scene_spooler_tower"] = "spooler_reel_tower", ["scene_thresher_den"] = "thresher_den",
+        };
+        var sites = new Dictionary<string, List<(string Biome, Vector2 At, bool Lair)>>();
+        var marks = new Dictionary<string, int>();
+        foreach (var rule in gen.Data.ScatterRules.Where(r => r.Object.Id!.StartsWith("scene_") && (lairs.ContainsKey(r.Object.Id) || r.Object.Id.EndsWith("_marks"))))
+        {
+            var s = rule.Spacing;
+            var pieces = rule.Object.Scene!.Layouts!.Max(l => l.Pieces!.Count);
+            for (var iz = (int)MathF.Floor(-VanillaDepth / 2 / s); iz <= (int)MathF.Floor(VanillaDepth / 2 / s); iz++)
+            {
+                for (var ix = (int)MathF.Floor(-VanillaSize / 2 / s); ix <= (int)MathF.Floor(VanillaSize / 2 / s); ix++)
+                {
+                    var placed = Enumerable.Range(0, pieces).Select(k => gen.Find(new WorldObjectId(rule.Index, ix, iz, k))).OfType<WorldObjectPlacement>().ToList();
+                    if (placed.Count == 0)
+                        continue;
+                    var id = rule.Object.Id!;
+                    if (!lairs.TryGetValue(id, out var lair))
+                    {
+                        marks[id] = marks.GetValueOrDefault(id) + 1;
+                        continue;
+                    }
+                    var at = new Vector2(placed[0].Position.X, placed[0].Position.Z);
+                    (sites.TryGetValue(id, out var list) ? list : sites[id] = []).Add((gen.Data.Biomes[rule.Biome].Id, at, placed.Any(p => p.Definition.Id == lair)));
+                    foreach (var workshop in gen.Pois.Where(p => p.Poi.QualifiedId is "vanilla:outpost" or "vanilla:poi_02" or "vanilla:poi_13"))
+                        Assert.True(Vector2.Distance(workshop.Centre, at) >= workshop.Radius + 100f, $"{id} at {at} is within 100 m of {workshop.Poi.QualifiedId}");
+                }
+            }
+        }
+        string Report() => string.Join("; ", sites.Select(kv => $"{kv.Key}: {kv.Value.Count} ("
+            + string.Join(", ", kv.Value.GroupBy(v => v.Biome).Select(g => $"{g.Key} {g.Count()}")) + $", {kv.Value.Count(v => v.Lair)} with lair)"))
+            + " | " + string.Join(", ", marks.Select(kv => $"{kv.Key} {kv.Value}"));
+        // About 15 to 30 sites a faction on the 12 x 9 km world; Spoolers fewer. Every site has its lair.
+        foreach (var (id, (low, high)) in new Dictionary<string, (int, int)>
+        {
+            ["scene_scuttler_nest"] = (15, 35), ["scene_rakehand_shrine"] = (15, 35), ["scene_spooler_tower"] = (4, 15), ["scene_thresher_den"] = (15, 35),
+        })
+        {
+            Assert.True(sites.TryGetValue(id, out var list) && list.Count >= low && list.Count <= high, Report());
+            Assert.True(list!.All(v => v.Lair), Report());
+        }
+        Assert.True(sites["scene_spooler_tower"].Count < sites.Where(kv => kv.Key != "scene_spooler_tower").Min(kv => kv.Value.Count), Report());
+        // Scuttlers spread over the scrap of the meadows, fields and forests; Rakehands and Threshers keep to the farmland.
+        Assert.True(sites["scene_scuttler_nest"].Select(v => v.Biome).Distinct().Count() >= 3, Report());
+        Assert.Contains(sites["scene_rakehand_shrine"], v => v.Biome == "field");
+        Assert.Contains(sites["scene_thresher_den"], v => v.Biome == "field");
+        // A few loose marks round them, never more than the sites themselves by far.
+        foreach (var faction in new[] { "scuttler", "rakehand", "spooler", "thresher" })
+        {
+            var count = marks.GetValueOrDefault($"scene_{faction}_marks");
+            Assert.True(count > 0 && count <= 2 * sites.Single(kv => kv.Key.Contains(faction)).Value.Count, Report());
+        }
+    }
+
+    [Fact]
+    public void ModelsThatCollideCarryTheirColliderMesh()
+    {
+        // An object whose mesh collides is walked into and onto by its own collider mesh, so its model must have one.
+        var gen = Vanilla.Value;
+        var colliding = gen.Data.Objects.Values.Where(o => o.Mesh is { Collide: true }).ToList();
+        Assert.NotEmpty(colliding);
+        foreach (var o in colliding)
+        {
+            var bytes = File.ReadAllBytes(Path.Combine(TestMods.RepoRoot, "mods", "vanilla", o.Mesh!.File!));
+            Assert.Equal("glTF", System.Text.Encoding.ASCII.GetString(bytes, 0, 4));
+            var length = BitConverter.ToInt32(bytes, 12);
+            using var json = System.Text.Json.JsonDocument.Parse(bytes.AsMemory(20, length));
+            Assert.Contains(json.RootElement.GetProperty("meshes").EnumerateArray(),
+                m => m.TryGetProperty("name", out var name) && name.GetString()!.StartsWith("collider", StringComparison.Ordinal));
+        }
+    }
 }
