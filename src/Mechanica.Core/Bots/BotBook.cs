@@ -57,6 +57,9 @@ public sealed record BotWild(bool Water, int Count, float MinDistance, float Max
 
     /// <summary>World objects it is often found near, or null.</summary>
     public BotWildNear? Near { get; init; }
+
+    /// <summary>Chance (0 to 1) that a try to spawn more finds any: under 1 makes it rare.</summary>
+    public float Chance { get; init; } = 1f;
 }
 
 /// <summary>World objects a wild bot is often found near, checked (<see cref="BotWildNearDefinition"/>).</summary>
@@ -657,6 +660,8 @@ public sealed class BotBook : IBotCatalog
             if (string.IsNullOrWhiteSpace(w.Biomes![i]))
                 sink.Error(code, $"$.wild.biomes[{i}]", "a biome id is required.");
         }
+        if (w.Chance is { } chance && !(chance > 0 && chance <= 1))
+            sink.Error(code, "$.wild.chance", "chance must be more than 0 and at most 1.");
         if (w.Herd is { } herd && (herd.Count != 2 || herd[0] < 1 || herd[1] < herd[0]))
             sink.Error(code, "$.wild.herd", "herd must be [min, max], 1 <= min <= max.");
         BotWildNear? near = null;
@@ -680,6 +685,7 @@ public sealed class BotBook : IBotCatalog
             HerdMin = w.Herd?[0] ?? 1,
             HerdMax = w.Herd?[1] ?? 1,
             Near = near,
+            Chance = w.Chance ?? 1f,
         };
     }
 

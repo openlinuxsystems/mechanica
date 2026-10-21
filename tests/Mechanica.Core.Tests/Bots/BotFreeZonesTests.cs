@@ -107,14 +107,88 @@ public sealed class BotFreeZonesTests
     }
 
     [Fact]
-    public void The_vanilla_crash_site_keeps_bots_250_m_away()
+    public void The_vanilla_crash_site_keeps_bots_250_m_away_and_Workshops_hostile_ones_100_m()
     {
         var world = VanillaWorld.Value;
+        var zones = BotFreeZones.Of(world).Zones;
         var site = world.Pois.Single(p => p.Poi.QualifiedId == "vanilla:crash_site");
 
-        var zone = Assert.Single(BotFreeZones.Of(world).Zones);
+        Assert.Contains(new BotFreeZone(site.Centre, 250f), zones);
+        var workshops = world.Pois.Where(p => p.Poi.Prefab.Name == "Workshop").ToList();
+        Assert.NotEmpty(workshops);
+        Assert.All(workshops, w => Assert.Contains(new BotFreeZone(w.Centre, 100f, HostileOnly: true), zones));
+        Assert.All(workshops, w => Assert.Contains(new BotFreeZone(w.Centre, w.Radius), zones));
+    }
 
-        Assert.Equal(site.Centre, zone.Centre);
-        Assert.Equal(250f, zone.Radius);
+    [Fact]
+    public void Vanilla_Spoolers_are_rare_in_the_wild()
+    {
+        var book = BotBook.Load(Vanilla.Value);
+        var spoolers = book.All.Where(b => b.QualifiedId.StartsWith("vanilla:spooler_", StringComparison.Ordinal) && b.Wild is not null).ToList();
+
+        Assert.NotEmpty(spoolers);
+        Assert.All(spoolers, s => Assert.True(s.Wild!.Chance <= 0.1f && s.Wild.Count == 1, $"{s.QualifiedId} is rare"));
+    }
+
+    // A wild land bot with the given wild keys round both players at (-100, 0), passive or not.
+    private static (BotFixture F, WildSpawns Wild) Wild(string wild, bool passive)
+    {
+        var f = new BotFixture();
+        MoveBoth(f, new Vector3(-100, 1, 0));
+        var type = BotBook.From(f.Survival.Catalog, ("test", new BotDefinition
+        {
+            Id = "roamer", Name = "Roamer", Health = 30, Speed = 2, Passive = passive,
+            Wild = System.Text.Json.JsonSerializer.Deserialize<BotWildDefinition>(wild,
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.SnakeCaseLower }),
+        })).All;
+        return (f, new WildSpawns(type, f.Bots, f.Survival.Survival, 0f, (x, z) => 1, seed: 7));
+    }
+
+    [Theory]
+    [InlineData(true, 4)]
+    [InlineData(false, 0)]
+    public void A_hostile_free_zone_keeps_out_only_hostile_bots(bool passive, int expected)
+    {
+        var (f, wild) = Wild("""{ "habitat": "land", "count": 4, "clear_radius": 2 }""", passive);
+        f.Bots.BotFree = new BotFreeZones([new BotFreeZone(new Vector2(-100, 0), 250, HostileOnly: true)]);
+
+        wild.Tick();
+
+        Assert.Equal(expected, f.Bots.Bots.Count);
+    }
+
+    [Fact]
+    public void A_rare_wild_bot_comes_on_only_some_tries()
+    {
+        var (f, wild) = Wild("""{ "habitat": "land", "count": 1, "clear_radius": 2, "interval": 10, "despawn_distance": 71, "chance": 0.2 }""", passive: false);
+        var tries = 0;
+        var spawned = 0;
+        for (var i = 0; i < 200; i++)
+        {
+            wild.Tick();
+            tries++;
+            if (f.Bots.Bots.Count > 0)
+            {
+                spawned++;
+                foreach (var id in f.Bots.Bots.Keys.ToList())
+                    f.Bots.Remove(id);
+            }
+            f.Advance(10);
+        }
+
+        // Both players stand together and each gets a try: 1 - 0.8² = 36% of the rounds.
+        Assert.InRange(spawned, tries / 4, tries / 2);
+    }
+
+    [Fact]
+    public void A_wild_chance_outside_0_to_1_is_refused()
+    {
+        var diagnostics = BotBook.Validate(new BotDefinition
+        {
+            Id = "roamer", Name = "Roamer", Health = 30, Speed = 2,
+            Wild = new BotWildDefinition { Habitat = "land", Count = 1, Chance = 0 },
+        }, "test", null, new BotFixture().Survival.Catalog, "test:roamer");
+
+        Assert.Contains(diagnostics, d => d.JsonPath == "$.wild.chance");
     }
 }

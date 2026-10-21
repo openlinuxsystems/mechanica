@@ -3,14 +3,18 @@ using Mechanica.Core.World;
 
 namespace Mechanica.Core.Bots;
 
-/// <summary>A disc of the world where no bot appears: round a POI with <see cref="PoiPrefab.BotFreeRadius"/>.</summary>
+/// <summary>
+/// A disc of the world where no bot appears (round a POI with <see cref="PoiPrefab.BotFreeRadius"/>), or no hostile one
+/// (<see cref="PoiPrefab.HostileFreeRadius"/>).
+/// </summary>
 /// <param name="Centre">World <c>[x, z]</c> of its centre.</param>
 /// <param name="Radius">Its radius, in m.</param>
-public sealed record BotFreeZone(Vector2 Centre, float Radius);
+/// <param name="HostileOnly">Only hostile bots keep out; passive ones (<see cref="Bot.Passive"/>, a Grazer) may appear.</param>
+public sealed record BotFreeZone(Vector2 Centre, float Radius, bool HostileOnly = false);
 
 /// <summary>
-/// The places where bots never appear (the crash site, so a new player starts in peace). Wild spawns, POI guards and
-/// raiders all keep out of them; a bot spawned by hand (<c>SpawnBot</c>) may still go there, and bots may walk in.
+/// The places where bots never appear (the crash site, so a new player starts in peace), or no hostile ones (round a
+/// Workshop). Wild spawns, POI guards and raiders all keep out of them; a bot spawned by hand (<c>SpawnBot</c>) may still go there, and bots may walk in.
 /// Distances are horizontal.
 /// </summary>
 public sealed class BotFreeZones(IEnumerable<BotFreeZone> zones)
@@ -26,15 +30,20 @@ public sealed class BotFreeZones(IEnumerable<BotFreeZone> zones)
     /// <summary>The zones.</summary>
     public IReadOnlyList<BotFreeZone> Zones => _zones;
 
-    /// <summary>The zone round every POI <paramref name="world"/> placed whose prefab gives a bot-free radius.</summary>
+    /// <summary>The zones round every POI <paramref name="world"/> placed whose prefab gives a bot-free or hostile-free radius.</summary>
     public static BotFreeZones Of(WorldGenerator world) =>
-        new(world.Pois.Where(p => p.Poi.Prefab.BotFreeRadius is > 0f).Select(p => new BotFreeZone(p.Centre, p.Poi.Prefab.BotFreeRadius!.Value)));
+        new(world.Pois.SelectMany(p => (IEnumerable<BotFreeZone>)
+        [
+            .. p.Poi.Prefab.BotFreeRadius is > 0f and var all ? [new BotFreeZone(p.Centre, all)] : Array.Empty<BotFreeZone>(),
+            .. p.Poi.Prefab.HostileFreeRadius is > 0f and var hostile ? [new BotFreeZone(p.Centre, hostile, HostileOnly: true)] : Array.Empty<BotFreeZone>(),
+        ]));
 
-    /// <summary>Whether x/z lies in a zone.</summary>
-    public bool Contains(float x, float z) => _zones.Any(zone => Vector2.DistanceSquared(new Vector2(x, z), zone.Centre) < zone.Radius * zone.Radius);
+    /// <summary>Whether x/z lies in a zone that keeps out a bot that is <paramref name="hostile"/> (or not).</summary>
+    public bool Contains(float x, float z, bool hostile = true) =>
+        _zones.Any(zone => (hostile || !zone.HostileOnly) && Vector2.DistanceSquared(new Vector2(x, z), zone.Centre) < zone.Radius * zone.Radius);
 
     /// <summary>
-    /// <paramref name="at"/> when it is outside every zone; otherwise the point pushed straight out from the centre of the
+    /// For a raider (hostile): <paramref name="at"/> when it is outside every zone; otherwise the point pushed straight out from the centre of the
     /// zone holding it to just past its edge (away from <paramref name="towards"/>'s side when it is at the very centre),
     /// again until it is in none.
     /// </summary>

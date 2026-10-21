@@ -548,6 +548,8 @@ internal static class WorldGenValidator
             sink.Error(code, "$.radius", $"radius must be greater than 0 (got {prefab.Radius}).");
         if (prefab.BotFreeRadius is { } botFree && !(botFree > 0f && float.IsFinite(botFree)))
             sink.Error(code, "$.bot_free_radius", $"bot_free_radius must be greater than 0 (got {botFree}).");
+        if (prefab.HostileFreeRadius is { } hostileFree && !(hostileFree > 0f && float.IsFinite(hostileFree)))
+            sink.Error(code, "$.hostile_free_radius", $"hostile_free_radius must be greater than 0 (got {hostileFree}).");
 
         if (prefab.Placement is not { } placement)
             sink.Error(code, "$.placement", "a POI needs placement rules.");

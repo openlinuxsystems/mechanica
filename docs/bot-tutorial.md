@@ -186,6 +186,7 @@ lakes and the sea:
 | `interval` | number, s | 8 | Seconds between tries to spawn more of it. |
 | `biomes` | list of biome ids | any | The biomes (`world/worldgen.json`) it appears in, such as `meadow` or `field`. |
 | `herd` | `[min, max]` | `[1, 1]` | How many appear together, a few metres apart. A herd never takes the count past `count`, and none smaller than `min` is made to fill it up. |
+| `chance` | number | 1 | Chance (more than 0, at most 1) that a try to spawn more finds any. Under 1 makes it rare: with `interval` 60 and `chance` 0.1 one turns up about every ten minutes. |
 | `near` | object | none | World objects it is often found near: `objects` (world object or scene ids), `radius` (m from one) and `share` (0 to 1, default 0.5: the share of spawns that try round one in reach first, else anywhere it fits). |
 
 The Grazer roams meadows and fields in small herds, often round farms:
@@ -198,8 +199,10 @@ The Grazer roams meadows and fields in small herds, often round farms:
 In vanilla the hostile bots keep to the places the world's scenes ([world-generation.md](world-generation.md#scenes))
 suggest: Green Scuttlers in meadows and woods round Salvager wreckage and scrap camps (Yellow ones in the desert and
 burned forest), Rakehands in fields round farms with a Scarecrow Rakehand waiting at a field's edge, Blue Spoolers
-round the old Colony works and Yellow Spoolers by quarries and oil fields in the mountains and desert. The other
-variants and the Threshers come only in raids and as guards.
+round the old Colony works and Yellow Spoolers by quarries and oil fields in the mountains and desert. Spoolers are rare
+on the surface (`chance`): they are mostly met in raids and guarding Warehouses. The other variants and the Threshers come
+only in raids and as guards. No bot appears within 250 m of the crash site, and no hostile one within 100 m of a Workshop
+(the POIs' `bot_free_radius` and `hostile_free_radius`, [world-generation.md](world-generation.md)).
 
 A wild bot has no raid, so its tree's `in_raid` branches fail: give it a `wander` to fall back on, and it chases the
 players its `find_player` finds (out of the water too) before wandering home. Wild bots count towards `max_bots`
