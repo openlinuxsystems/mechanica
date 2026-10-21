@@ -191,6 +191,62 @@ public class VanillaCatalogTests
         Assert.Empty(book.All.Where(r => r.Definition.Order % 100 == 0).Select(r => r.QualifiedId));
     }
 
+    [Fact]
+    public void GlueIsMadeFromScrapWoodAndBeeswaxAtTheFabricator()
+    {
+        // Parts map batch 1: the wiki's recipe, 20 Scrap Wood Block + 2 Beeswax = 1 Glue in 5 s at the Craftbot.
+        var glue = RecipeBook.Load(Vanilla.Value).All.Single(r => r.Outputs.Any(o => o.Item == "vanilla:glue"));
+
+        Assert.Equal(["vanilla:fabricator"], glue.Stations);
+        Assert.Equal([("vanilla:scrap_wood_block", 20), ("vanilla:beeswax", 2)], glue.Inputs.Select(i => (i.Item, i.Count)));
+        Assert.Equal(1, glue.Outputs.Single().Count);
+        Assert.Equal(5f, glue.Time);
+    }
+
+    [Theory]
+    // Parts map batch 1: the crafting materials take the wiki's bars (mass = bars x 1.5 kg, friction and buoyancy =
+    // bars / 10); Crude Oil keeps its barrel's 40 kg.
+    [InlineData("glue", 6, 2, 0.4, 0.3, true, 10)]
+    [InlineData("circuit_board", 6, 2, 0.6, 0.3, false, 20)]
+    [InlineData("beeswax", 6, 2, 0.6, 0.3, true, 10)]
+    [InlineData("ember", 6, 2, 0.5, 0.3, false, 20)]
+    [InlineData("crude_oil", 40, 2, 0.4, 0.3, true, 20)]
+    [InlineData("soil_bag", 3, 2, 0.4, 0.7, false, 10)]
+    [InlineData("master_battery", 12, 10, 0.2, 0.7, false, 1)]
+    [InlineData("warehouse_key", 4.5, 9, 0.3, 0.3, false, 1)]
+    public void CraftingMaterialsTakeTheWikiStats(string id, double mass, int durability, double friction, double buoyancy,
+        bool flammable, int stack)
+    {
+        var part = Part(id);
+
+        Assert.Equal((mass, durability, friction, buoyancy, flammable, stack),
+            (Math.Round((double)part.Mass!.Value, 3), (int)part.Durability!.Value, Math.Round((double)part.Friction!.Value, 3),
+                Math.Round((double)part.Buoyancy!.Value, 3), part.Flammable!.Value, part.StackSize!.Value));
+    }
+
+    [Theory]
+    [InlineData("glue")]
+    [InlineData("circuit_board")]
+    [InlineData("beeswax")]
+    [InlineData("ember")]
+    [InlineData("crude_oil")]
+    [InlineData("soil_bag")]
+    [InlineData("water_bucket")]
+    [InlineData("water_bucket_full")]
+    [InlineData("master_battery")]
+    [InlineData("warehouse_key")]
+    [InlineData("paint_ammo")]
+    [InlineData("explosive_remnant")]
+    [InlineData("chemical")]
+    public void EachCraftingMaterialHasItsOwnModelAndIcon(string id)
+    {
+        var part = Part(id);
+        var mod = Path.Combine(TestMods.RepoRoot, "mods", "vanilla");
+
+        Assert.True(part.Mesh is not null && File.Exists(Path.Combine(mod, part.Mesh)), $"{id} has a model");
+        Assert.True(part.Icon is not null && File.Exists(Path.Combine(mod, part.Icon)), $"{id} has an icon");
+    }
+
     [Theory]
     [InlineData("fabricator", "vanilla:scrap_wheel", "vanilla:wheel", "vanilla:big_wheel")]
     [InlineData("fabricator", "vanilla:scrap_gas_engine", "vanilla:gas_engine", "vanilla:electric_engine")]

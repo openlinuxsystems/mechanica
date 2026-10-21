@@ -1,12 +1,26 @@
 {
   "id": "warehouse_key",
   "name": "Warehouse Key",
-  "description": "Opens a warehouse's locked door.",
+  "description": "A Colony keycard on a split ring. It opens a warehouse's locked door.",
   "category": "resource",
-  "mass": 0.1,
+  "mass": 4.5,
+  "durability": 9,
+  "friction": 0.3,
+  "buoyancy": 0.3,
+  "flammable": false,
   "stack_size": 1,
+  "sound_material": "plastic",
+  "size": [1, 1, 1],
+  "mesh": "meshes/items/warehouse_key.glb",
+  "icon": "textures/items/warehouse_key_icon.png",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.5,
+    "metallic": 0
+  },
   "sounds": {
     "pickup": "pickup_metal",
     "drop": "drop_metal"
-  }
+  },
+  "loose": true
 }

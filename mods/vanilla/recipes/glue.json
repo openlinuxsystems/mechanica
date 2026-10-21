@@ -1,0 +1,24 @@
+{
+  "id": "glue",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_wood_block",
+      "count": 20
+    },
+    {
+      "item": "beeswax",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "glue",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 2710
+}

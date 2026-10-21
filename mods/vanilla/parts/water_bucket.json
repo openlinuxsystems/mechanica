@@ -3,9 +3,13 @@
   "name": "Water Bucket",
   "description": "Fill it at water, then throw the water on soil or a fire.",
   "category": "consumable",
-  "mass": 1.2,
+  "mass": 6,
+  "durability": 3,
+  "friction": 0.6,
+  "buoyancy": 0.5,
   "stack_size": 1,
   "mesh": "meshes/items/water_bucket.glb",
+  "icon": "textures/items/water_bucket_icon.png",
   "script": "scripts/bucket.lua",
   "sounds": {
     "fill": "bucket_fill"

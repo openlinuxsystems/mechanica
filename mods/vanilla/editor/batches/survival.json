@@ -136,6 +136,41 @@
       "model": [{ "kind": "mesh", "mesh": "meshes/items/beeswax.glb" }]
     },
     {
+      "file": "parts/glue.json",
+      "template": "item",
+      "set": {
+        "name": "Glue",
+        "description": "A squeeze bottle of wood glue, boiled down from scrap wood and beeswax at the Fabricator. Chests, containers, logic parts and lights are glued with it. Flammable.",
+        "category": "resource",
+        "loose": true,
+        "mass": 6,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.3,
+        "flammable": true,
+        "stack_size": 10,
+        "sound_material": "plastic",
+        "size": [1, 1, 1],
+        "icon": "textures/items/glue_icon.png",
+        "visual": { "color": "#ffffff", "roughness": 0.5, "metallic": 0 },
+        "sounds": { "pickup": "pickup_component", "drop": "drop_component" }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/glue.glb" }],
+      "recipes": [
+        {
+          "id": "glue",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "scrap_wood_block", "count": 20 },
+            { "item": "beeswax", "count": 2 }
+          ],
+          "outputs": [{ "item": "glue", "count": 1 }],
+          "time": 5,
+          "order": 2710
+        }
+      ]
+    },
+    {
       "file": "parts/component_kit.json",
       "template": "item",
       "set": {
@@ -165,10 +200,10 @@
         "description": "A salvaged board of chips, a capacitor and a connector, taken from wrecks and bots. Fabricators use it to craft logic parts, sensors, seats, engines and lights.",
         "category": "resource",
         "loose": true,
-        "mass": 0.1,
-        "durability": 1,
-        "friction": 0.5,
-        "buoyancy": 0.8,
+        "mass": 6,
+        "durability": 2,
+        "friction": 0.6,
+        "buoyancy": 0.3,
         "flammable": false,
         "stack_size": 20,
         "sound_material": "plastic",
@@ -397,8 +432,12 @@
         "name": "Water Bucket",
         "description": "Fill it at water, then throw the water on soil or a fire.",
         "category": "consumable",
-        "mass": 1.2,
+        "mass": 6,
+        "durability": 3,
+        "friction": 0.6,
+        "buoyancy": 0.5,
         "stack_size": 1,
+        "icon": "textures/items/water_bucket_icon.png",
         "sounds": {
           "fill": "bucket_fill"
         },
@@ -416,8 +455,8 @@
           "stations": ["fabricator"],
           "inputs": [
             {
-              "item": "scrap_metal_block",
-              "count": 12
+              "item": "metal_block",
+              "count": 5
             }
           ],
           "outputs": [
@@ -472,8 +511,12 @@
         "name": "Water Bucket (Full)",
         "description": "Throw the water on soil to water it, or on a fire to put it out.",
         "category": "consumable",
-        "mass": 11.5,
+        "mass": 16.3,
+        "durability": 3,
+        "friction": 0.6,
+        "buoyancy": 0.5,
         "stack_size": 1,
+        "icon": "textures/items/water_bucket_full_icon.png",
         "sounds": {
           "throw": "bucket_throw",
           "splash": "water_splash"
@@ -674,15 +717,17 @@
       "template": "item",
       "set": {
         "name": "Paint Ammo",
-        "description": "A cartridge of paint for the Paint Tool. Each stroke of paint uses one.",
+        "description": "A tin of paint for the Paint Tool. Each stroke of paint uses one.",
         "category": "resource",
         "tab": "consumable",
         "mass": 0.1,
         "stack_size": 100,
+        "icon": "textures/items/paint_ammo_icon.png",
         "visual": {
           "color": "#3874dc"
         }
       },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/paint_ammo.glb" }],
       "recipes": [
         {
           "id": "paint_ammo",
@@ -713,13 +758,74 @@
         "category": "resource",
         "mass": 1,
         "stack_size": 20,
+        "icon": "textures/items/chemical_icon.png",
         "visual": {
           "color": "#7ee03c"
         },
         "sounds": {
           "pickup": "pickup_fuel"
         }
-      }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/chemical.glb" }]
+    },
+    {
+      "file": "parts/explosive_remnant.json",
+      "template": "item",
+      "set": {
+        "name": "Explosive Remnant",
+        "description": "What is left of a Red Scuttler's pressure tank: dented, its gauge cracked, still charged. Red Scuttlers drop it.",
+        "category": "resource",
+        "mass": 0.5,
+        "stack_size": 10,
+        "icon": "textures/items/explosive_remnant_icon.png",
+        "visual": { "color": "#d0402e" },
+        "sounds": { "pickup": "pickup_metal", "drop": "drop_metal" }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/explosive_remnant.glb" }]
+    },
+    {
+      "file": "parts/master_battery.json",
+      "template": "item",
+      "set": {
+        "name": "Master Battery",
+        "description": "The SV-04's main power cell. The crash threw it clear of the ship; it belongs in the Power Core in engineering.",
+        "category": "resource",
+        "loose": true,
+        "mass": 12,
+        "durability": 10,
+        "friction": 0.2,
+        "buoyancy": 0.7,
+        "flammable": false,
+        "stack_size": 1,
+        "sound_material": "metal",
+        "size": [2, 2, 3],
+        "icon": "textures/items/master_battery_icon.png",
+        "visual": { "color": "#ffffff", "roughness": 0.6, "metallic": 0 },
+        "sounds": { "pickup": "pickup_battery" }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/master_battery.glb" }]
+    },
+    {
+      "file": "parts/warehouse_key.json",
+      "template": "item",
+      "set": {
+        "name": "Warehouse Key",
+        "description": "A Colony keycard on a split ring. It opens a warehouse's locked door.",
+        "category": "resource",
+        "loose": true,
+        "mass": 4.5,
+        "durability": 9,
+        "friction": 0.3,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "stack_size": 1,
+        "sound_material": "plastic",
+        "size": [1, 1, 1],
+        "icon": "textures/items/warehouse_key_icon.png",
+        "visual": { "color": "#ffffff", "roughness": 0.5, "metallic": 0 },
+        "sounds": { "pickup": "pickup_metal", "drop": "drop_metal" }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/warehouse_key.glb" }]
     },
     {
       "file": "parts/battery_pack.json",
@@ -944,11 +1050,11 @@
         "description": "Place it on flat ground to spill a soil mound to plant seeds in. Hold Force build to set the bag down instead.",
         "category": "interactive",
         "tab": "consumable",
-        "mass": 20,
+        "mass": 3,
         "durability": 2,
-        "friction": 0.8,
-        "buoyancy": 0.3,
-        "flammable": true,
+        "friction": 0.4,
+        "buoyancy": 0.7,
+        "flammable": false,
         "stack_size": 10,
         "sound_material": "fabric",
         "size": [5, 1, 3],
