@@ -3,7 +3,7 @@
   "name": "Switch",
   "description": "Use it to turn it on, and again to turn it off. Its light shows red while off and teal while on.",
   "category": "interactive",
-  "mass": 1,
+  "mass": 3,
   "durability": 3,
   "friction": 0.5,
   "buoyancy": 0.2,

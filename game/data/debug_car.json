@@ -8,7 +8,7 @@
   "yaw": 0.0,
   // Gasoline in its Gas Container (25 s of full throttle each).
   "gasoline": 40,
-  // The Scrap Gas Engine's power (1 to 4) and whether it starts switched on.
-  "gear": 4,
+  // The Scrap Gas Engine's power (1 to 3) and whether it starts switched on.
+  "gear": 3,
   "engine_on": true
 }

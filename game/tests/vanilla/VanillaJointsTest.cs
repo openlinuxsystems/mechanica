@@ -68,14 +68,14 @@ public partial class VanillaJointsTest : StagedTest
             if (_batch is not { IsCompleted: true })
                 return false;
             var result = _batch.Result;
-            Check(result.Succeeded && result.Exports.Count == 8, $"the batch exports 4 parts and 4 recipes ({string.Join("; ", result.Diagnostics)})");
+            Check(result.Succeeded && result.Exports.Count == 9, $"the batch exports 4 parts and 5 recipes (the Bearing's scrap one too) ({string.Join("; ", result.Diagnostics)})");
             var made = Directory.GetFiles(_scratchMod, "*", SearchOption.AllDirectories)
                 .Select(f => Path.GetRelativePath(_scratchMod, f).Replace('\\', '/'))
                 .Where(IsBatchOutput)
                 .Order(StringComparer.Ordinal).ToList();
             // Every joint part's models are files made elsewhere (tools/bearing_engine, tools/piston,
             // tools/sport_suspension, tools/offroad_suspension), so none gets a generated mesh.
-            Check(made.Count == 12, $"it writes a part, an editor source and a recipe for each ({made.Count} files)");
+            Check(made.Count == 13, $"it writes a part, an editor source and a recipe for each, and the Bearing's scrap recipe ({made.Count} files)");
             var differing = made.Where(f => !File.Exists(Path.Combine(VanillaDir, f))
                 || !File.ReadAllBytes(Path.Combine(VanillaDir, f)).AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(_scratchMod, f)))).ToList();
             Check(differing.Count == 0, $"every file matches mods/vanilla (differing: {string.Join(", ", differing)}); re-run tools/author-vanilla.sh");
@@ -287,5 +287,5 @@ public partial class VanillaJointsTest : StagedTest
 
     private static bool IsBatchOutput(string relative) =>
         Outputs.Any(id => relative == $"parts/{id}.json" || relative == $"meshes/{id}.glb" || relative == $"editor/parts/{id}.json"
-            || relative == $"recipes/{id}.json");
+            || relative == $"recipes/{id}.json" || relative == $"recipes/{id}_scrap.json");
 }

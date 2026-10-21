@@ -1,0 +1,20 @@
+{
+  "id": "bearing_scrap",
+  "stations": [
+    "portable_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal_block",
+      "count": 3
+    }
+  ],
+  "outputs": [
+    {
+      "item": "bearing",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 1005
+}

@@ -1,0 +1,24 @@
+{
+  "id": "switch_scrap",
+  "stations": [
+    "portable_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal_block",
+      "count": 5
+    },
+    {
+      "item": "circuit_board",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "switch",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 1205
+}

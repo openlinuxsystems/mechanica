@@ -8,10 +8,10 @@
       "set": {
         "name": "Bearing",
         "description": "A free-turning hinge. Wheels and arms go on its rotor; engines and seats drive it.",
-        "mass": 3,
-        "durability": 2,
-        "buoyancy": 0,
-        "stack_size": 20,
+        "mass": 6,
+        "durability": 1,
+        "buoyancy": 0.1,
+        "stack_size": 10,
         "icon": "textures/items/bearing_icon.png",
         "collision": { "shape": "cylinder", "radius": 0.115, "height": 0.25 },
         "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
@@ -24,14 +24,19 @@
       "recipes": [
         {
           "id": "bearing",
-          "stations": ["fabricator", "portable_fabricator"],
-          "inputs": [
-            { "item": "scrap_metal_block", "count": 8 },
-            { "item": "component_kit", "count": 1 }
-          ],
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 1 }],
           "outputs": [{ "item": "bearing", "count": 1 }],
           "time": 5,
           "order": 1010
+        },
+        {
+          "id": "bearing_scrap",
+          "stations": ["portable_fabricator"],
+          "inputs": [{ "item": "scrap_metal_block", "count": 3 }],
+          "outputs": [{ "item": "bearing", "count": 1 }],
+          "time": 5,
+          "order": 1005
         }
       ]
     },

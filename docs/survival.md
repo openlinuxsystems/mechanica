@@ -46,7 +46,10 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
   and usually a seed back. Crops keep growing while nobody is near (the soil catches up from the world
   clock when it next runs) and are saved with the soil's Creation.
 - **Building costs items.** Placing a part takes one from your inventory; removing it gives it back
-  (or drops it when your inventory is full). Craft parts at a Portable Fabricator (a short list) or a Fabricator.
+  (or drops it when your inventory is full). Craft parts at a Portable Fabricator or a Fabricator.
+  The Portable Fabricator (every player starts with one) makes the scrap tier from scrap blocks: the Scrap Seat, Scrap
+  Driver's Seat, Scrap Gas Engine and Scrap Wheel (made only there), and cheap scrap recipes for the Bearing, Switch and
+  Beacon, which the Fabricator makes from Metal Blocks.
 - **Breaking things:** a part breaks off at 0 health. A container that breaks spills what it held.
   Trees, rocks and bushes with `health` break into resources (`drops` in `world/worldgen.json`).
   Crashes and falls never damage a Creation: only the Sledgehammer, weapons, bots, explosions and fire do.

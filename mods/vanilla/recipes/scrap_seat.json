@@ -1,16 +1,12 @@
 {
   "id": "scrap_seat",
   "stations": [
-    "fabricator"
+    "portable_fabricator"
   ],
   "inputs": [
     {
       "item": "scrap_wood_block",
-      "count": 12
-    },
-    {
-      "item": "scrap_metal_block",
-      "count": 4
+      "count": 20
     }
   ],
   "outputs": [
@@ -19,6 +15,6 @@
       "count": 1
     }
   ],
-  "time": 4,
+  "time": 10,
   "order": 510
 }

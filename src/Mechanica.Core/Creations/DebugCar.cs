@@ -22,8 +22,8 @@ public sealed record DebugCarSettings
     /// <summary>Gasoline the car's Gas Container starts with.</summary>
     public int Gasoline { get; init; } = 40;
 
-    /// <summary>The engine's power setting.</summary>
-    public int Gear { get; init; } = 4;
+    /// <summary>The engine's power setting (the Scrap Gas Engine has 3; 3 is its top speed).</summary>
+    public int Gear { get; init; } = 3;
 
     /// <summary>Whether the engine starts switched on.</summary>
     public bool EngineOn { get; init; } = true;

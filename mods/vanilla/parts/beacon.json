@@ -1,22 +1,20 @@
 {
   "id": "beacon",
   "name": "Beacon",
-  "description": "Use it to switch it on: it flashes and pings so a base or a wreck can be found again, by day or night.",
+  "description": "Use it to switch it on: its lamp flashes cyan and pings so a base or a wreck can be found again, by day or night.",
   "category": "light",
-  "mass": 2,
-  "durability": 4,
-  "friction": 0.5,
+  "mass": 4.5,
+  "durability": 6,
+  "friction": 0.3,
   "buoyancy": 0.2,
   "flammable": false,
-  "stack_size": 10,
+  "stack_size": 1,
   "sound_material": "metal",
   "size": [1, 2, 1],
-  "mesh": "meshes/beacon.glb",
+  "mesh": "meshes/parts/beacon.glb",
+  "icon": "textures/items/beacon_icon.png",
   "visual": {
-    "color": "#c03030",
-    "roughness": 0.4,
-    "metallic": 0.4,
-    "emission": "#ff3030"
+    "color": "#ffffff"
   },
   "sockets": [
     {
@@ -36,10 +34,15 @@
   },
   "light": {
     "kind": "omni",
-    "color": "#ff4040",
+    "color": "#38c8ff",
     "energy": 3,
     "range": 12,
-    "offset": [0, 0.15, 0]
+    "offset": [0, 0.05, 0]
+  },
+  "display": {
+    "clips": {
+      "readout": "pose"
+    }
   },
   "properties": {
     "ping": 3,

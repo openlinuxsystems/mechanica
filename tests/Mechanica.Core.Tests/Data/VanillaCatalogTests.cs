@@ -248,10 +248,75 @@ public class VanillaCatalogTests
     }
 
     [Theory]
-    [InlineData("fabricator", "vanilla:scrap_wheel", "vanilla:wheel", "vanilla:big_wheel")]
-    [InlineData("fabricator", "vanilla:scrap_gas_engine", "vanilla:gas_engine", "vanilla:electric_engine")]
-    [InlineData("portable_fabricator", "vanilla:scrap_wood_wedge",
-        "vanilla:scrap_metal_wedge", "vanilla:scrap_wheel", "vanilla:gasoline", "vanilla:bearing", "vanilla:switch", "vanilla:connect_tool")]
+    // Parts map batch 2 (the scrap tier): the wiki's bars, except that the wheels keep their tuned friction and the Off
+    // Road Wheel (SM's Big Wheel) its 20 kg.
+    [InlineData("bearing", 6, 1, 0.4, 0.1, false, 10)]
+    [InlineData("switch", 3, 3, 0.5, 0.2, false, 10)]
+    [InlineData("button", 3, 3, 0.5, 0.2, false, 10)]
+    [InlineData("beacon", 4.5, 6, 0.3, 0.2, false, 1)]
+    [InlineData("scrap_seat", 4.5, 2, 0.5, 0.2, true, 1)]
+    [InlineData("scrap_drivers_seat", 7.5, 2, 0.5, 0.2, true, 1)]
+    [InlineData("scrap_gas_engine", 12, 3, 0.5, 0.2, true, 1)]
+    [InlineData("scrap_wheel", 4.5, 2, 1.05, 0.4, true, 1)]
+    [InlineData("wheel", 10.5, 5, 1.0, 0.6, true, 20)]
+    [InlineData("big_wheel", 20, 5, 1.15, 0.6, true, 20)]
+    public void ScrapTierPartsTakeTheWikiStats(string id, double mass, int durability, double friction, double buoyancy,
+        bool flammable, int stack)
+    {
+        var part = Part(id);
+
+        Assert.Equal((mass, durability, friction, buoyancy, flammable, stack),
+            (Math.Round((double)part.Mass!.Value, 3), (int)part.Durability!.Value, Math.Round((double)part.Friction!.Value, 3),
+                Math.Round((double)part.Buoyancy!.Value, 3), part.Flammable!.Value, part.StackSize!.Value));
+    }
+
+    [Theory]
+    // Parts map batch 2: the wiki's recipes. The scrap tier is made at the Portable Fabricator (SM's Mini Craftbot); parts
+    // SM makes at both stations have a scrap recipe there and a Metal Block one at the Fabricator (SM's Craftbot).
+    [InlineData("bearing_scrap", "portable_fabricator", 5, "scrap_metal_block:3")]
+    [InlineData("bearing", "fabricator", 5, "metal_block:1")]
+    [InlineData("switch_scrap", "portable_fabricator", 5, "scrap_metal_block:5", "circuit_board:1")]
+    [InlineData("switch", "fabricator", 5, "metal_block:1", "circuit_board:1")]
+    [InlineData("button", "fabricator", 15, "metal_block:1", "circuit_board:1")]
+    [InlineData("beacon_scrap", "portable_fabricator", 10, "scrap_metal_block:40", "circuit_board:4")]
+    [InlineData("beacon", "fabricator", 10, "metal_block:20", "circuit_board:4")]
+    [InlineData("scrap_seat", "portable_fabricator", 10, "scrap_wood_block:20")]
+    [InlineData("scrap_drivers_seat", "portable_fabricator", 10, "scrap_metal_block:10", "scrap_wood_block:30", "circuit_board:1")]
+    [InlineData("scrap_gas_engine", "portable_fabricator", 10, "scrap_metal_block:10", "scrap_wood_block:5", "circuit_board:2")]
+    [InlineData("scrap_wheel", "portable_fabricator", 5, "scrap_wood_block:5", "scrap_metal_block:5")]
+    [InlineData("wheel", "fabricator", 15, "wood_block:20", "metal_block:5", "beeswax:3")]
+    [InlineData("big_wheel", "fabricator", 30, "wood_block:40", "metal_block:10", "beeswax:6")]
+    public void ScrapTierPartsTakeTheWikiRecipes(string id, string station, float time, params string[] inputs)
+    {
+        var recipe = RecipeBook.Load(Vanilla.Value).Find(id)!;
+
+        Assert.Equal([$"vanilla:{station}"], recipe.Stations);
+        Assert.Equal(inputs.Select(i => $"vanilla:{i}"), recipe.Inputs.Select(i => $"{i.Item}:{i.Count}"));
+        Assert.Equal(1, recipe.Outputs.Single().Count);
+        Assert.Equal(time, recipe.Time);
+    }
+
+    [Fact]
+    public void TheBeaconHasItsOwnModelIconAndClips()
+    {
+        // Parts map batch 2: a Salvager Tech model (tools/beacon/build_beacon.py) whose clips follow the script's "pose".
+        var part = Part("beacon");
+        var mod = Path.Combine(TestMods.RepoRoot, "mods", "vanilla");
+
+        Assert.Equal("meshes/parts/beacon.glb", part.Mesh);
+        Assert.True(File.Exists(Path.Combine(mod, part.Mesh!)), "the beacon has a model");
+        Assert.True(part.Icon is not null && File.Exists(Path.Combine(mod, part.Icon)), "the beacon has an icon");
+        Assert.Equal("pose", part.Display?.Clips?.Readout);
+        Assert.Contains("part.display(\"pose\"", File.ReadAllText(Path.Combine(mod, "scripts", "beacon.lua")), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("fabricator", "vanilla:wheel", "vanilla:big_wheel")]
+    [InlineData("fabricator", "vanilla:gas_engine", "vanilla:electric_engine")]
+    [InlineData("fabricator", "vanilla:switch", "vanilla:button")]
+    [InlineData("portable_fabricator", "vanilla:scrap_wood_wedge", "vanilla:scrap_metal_wedge", "vanilla:scrap_seat",
+        "vanilla:scrap_drivers_seat", "vanilla:scrap_wheel", "vanilla:scrap_gas_engine", "vanilla:gasoline", "vanilla:bearing_scrap",
+        "vanilla:switch_scrap", "vanilla:beacon_scrap", "vanilla:connect_tool")]
     public void RelatedRecipesSitTogetherScrapTierFirst(string station, params string[] ids)
     {
         var listed = RecipeBrowser.Ordered(RecipeBook.Load(Vanilla.Value).ForStation(station)).Select(r => r.QualifiedId).ToList();
