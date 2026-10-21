@@ -229,9 +229,9 @@ public class VanillaBlocksTests
     [InlineData("structural_blocks.json", 86)]
     [InlineData("survival.json", 34)]
     [InlineData("joints.json", 4)]
-    [InlineData("decor.json", 40)]
+    [InlineData("decor.json", 39)]
     [InlineData("containers_stations.json", 3)]
-    [InlineData("containers.json", 19)]
+    [InlineData("containers.json", 18)]
     [InlineData("lights_utility.json", 27)]
     public void PartFilesAreThePartEditorBatchOutput(string file, int parts)
     {

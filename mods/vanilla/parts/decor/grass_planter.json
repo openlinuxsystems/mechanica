@@ -1,0 +1,19 @@
+{
+  "id": "grass_planter",
+  "name": "Grass Planter",
+  "description": "A plank tray of soil with grass growing in it.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 2,
+  "friction": 0.4,
+  "buoyancy": 0.2,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "wood",
+  "size": [4, 1, 4],
+  "mesh": "meshes/parts/grass_planter.glb",
+  "icon": "textures/items/grass_planter_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

@@ -468,6 +468,230 @@
           "order": 2084
         }
       ]
+    },
+    {
+      "file": "parts/decor/hay_bale.json",
+      "template": "decor",
+      "set": {
+        "name": "Hay Bale",
+        "description": "A bale of straw tied with twine. It burns well.",
+        "icon": "textures/items/hay_bale_icon.png",
+        "mass": 3,
+        "durability": 1,
+        "friction": 0.4,
+        "buoyancy": 0.2,
+        "flammable": true,
+        "sound_material": "fabric",
+        "stack_size": 20,
+        "size": [4, 2, 2],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/hay_bale.glb" }]
+    },
+    {
+      "file": "parts/wooden_crate.json",
+      "template": "interactive",
+      "set": {
+        "name": "Wooden Crate",
+        "icon": "textures/items/wooden_crate_icon.png",
+        "mass": 6,
+        "durability": 2,
+        "friction": 0.6,
+        "buoyancy": 0.5,
+        "flammable": true,
+        "sound_material": "wood",
+        "size": [3, 3, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "category": "container",
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "container_open", "place": "place_wood" },
+        "inventory": { "slots": 10 }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/wooden_crate.glb" }]
+    },
+    {
+      "file": "parts/decor/duck_statuette.json",
+      "template": "decor",
+      "set": {
+        "name": "Duck Statuette",
+        "description": "A carved wooden duckling, painted yellow, on a log slice. A perfect addition to any home.",
+        "icon": "textures/items/duck_statuette_icon.png",
+        "mass": 3,
+        "durability": 4,
+        "friction": 0.5,
+        "buoyancy": 0.8,
+        "flammable": true,
+        "sound_material": "wood",
+        "stack_size": 1,
+        "size": [2, 2, 2],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/duck_statuette.glb" }],
+      "recipes": [
+        {
+          "id": "duck_statuette",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "wood_block", "count": 1 },
+            { "item": "paint_ammo", "count": 1 },
+            { "item": "beeswax", "count": 3 },
+            { "item": "glue", "count": 1 }
+          ],
+          "outputs": [{ "item": "duck_statuette", "count": 1 }],
+          "time": 10,
+          "order": 3040
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/produce_box_mixed.json",
+      "template": "decor",
+      "set": {
+        "name": "Produce Box",
+        "description": "A crate of produce packed under a tied burlap cover.",
+        "icon": "textures/items/produce_box_mixed_icon.png",
+        "mass": 6,
+        "durability": 1,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": true,
+        "sound_material": "wood",
+        "stack_size": 20,
+        "size": [4, 4, 4],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/produce_box_mixed.glb" }],
+      "recipes": [
+        {
+          "id": "produce_box_mixed",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_wood_block", "count": 4 }],
+          "outputs": [{ "item": "produce_box_mixed", "count": 1 }],
+          "time": 2,
+          "order": 3016
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/produce_box_carrot.json",
+      "template": "decor",
+      "set": {
+        "name": "Carrot Box",
+        "description": "A slatted crate heaped with carrots.",
+        "icon": "textures/items/produce_box_carrot_icon.png",
+        "mass": 6,
+        "durability": 1,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": true,
+        "sound_material": "wood",
+        "stack_size": 20,
+        "size": [4, 4, 4],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/produce_box_carrot.glb" }],
+      "recipes": [
+        {
+          "id": "produce_box_carrot",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_wood_block", "count": 4 }],
+          "outputs": [{ "item": "produce_box_carrot", "count": 1 }],
+          "time": 2,
+          "order": 3010
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/produce_box_tomato.json",
+      "template": "decor",
+      "set": {
+        "name": "Tomato Box",
+        "description": "A slatted crate heaped with tomatoes.",
+        "icon": "textures/items/produce_box_tomato_icon.png",
+        "mass": 6,
+        "durability": 1,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": true,
+        "sound_material": "wood",
+        "stack_size": 20,
+        "size": [4, 4, 4],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/produce_box_tomato.glb" }],
+      "recipes": [
+        {
+          "id": "produce_box_tomato",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_wood_block", "count": 4 }],
+          "outputs": [{ "item": "produce_box_tomato", "count": 1 }],
+          "time": 2,
+          "order": 3014
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/grass_planter.json",
+      "template": "decor",
+      "set": {
+        "name": "Grass Planter",
+        "description": "A plank tray of soil with grass growing in it.",
+        "icon": "textures/items/grass_planter_icon.png",
+        "mass": 6,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.2,
+        "flammable": true,
+        "sound_material": "wood",
+        "stack_size": 20,
+        "size": [4, 1, 4],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/grass_planter.glb" }],
+      "recipes": [
+        {
+          "id": "grass_planter",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_wood_block", "count": 5 }, { "item": "soil_bag", "count": 1 }],
+          "outputs": [{ "item": "grass_planter", "count": 1 }],
+          "time": 2,
+          "order": 3020
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/mannequin_boot.json",
+      "template": "decor",
+      "set": {
+        "name": "Mannequin Boot",
+        "description": "A mannequin's work boot. Its long flat rubber sole grips well, so it makes a good foot for a walker.",
+        "icon": "textures/items/mannequin_boot_icon.png",
+        "mass": 3,
+        "durability": 7,
+        "friction": 0.7,
+        "buoyancy": 0.1,
+        "flammable": true,
+        "sound_material": "fabric",
+        "stack_size": 20,
+        "size": [2, 2, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/mannequin_boot.glb" }],
+      "recipes": [
+        {
+          "id": "mannequin_boot",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "cotton", "count": 1 },
+            { "item": "wood_block", "count": 2 },
+            { "item": "paint_ammo", "count": 1 },
+            { "item": "beeswax", "count": 1 }
+          ],
+          "outputs": [{ "item": "mannequin_boot", "count": 1 }],
+          "time": 10,
+          "order": 3044
+        }
+      ]
     }
   ]
 }

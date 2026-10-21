@@ -1,0 +1,19 @@
+{
+  "id": "duck_statuette",
+  "name": "Duck Statuette",
+  "description": "A carved wooden duckling, painted yellow, on a log slice. A perfect addition to any home.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 4,
+  "friction": 0.5,
+  "buoyancy": 0.8,
+  "flammable": true,
+  "stack_size": 1,
+  "sound_material": "wood",
+  "size": [2, 2, 2],
+  "mesh": "meshes/parts/duck_statuette.glb",
+  "icon": "textures/items/duck_statuette_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

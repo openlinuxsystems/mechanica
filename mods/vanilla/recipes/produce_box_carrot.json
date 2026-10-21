@@ -1,0 +1,20 @@
+{
+  "id": "produce_box_carrot",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_wood_block",
+      "count": 4
+    }
+  ],
+  "outputs": [
+    {
+      "item": "produce_box_carrot",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 3010
+}
