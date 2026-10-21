@@ -10,10 +10,10 @@
   "flammable": false,
   "sound_material": "metal",
   "size": [2, 5, 3],
-  "mesh": "meshes/file_cabinet.glb",
+  "mesh": "meshes/parts/file_cabinet.glb",
+  "icon": "textures/items/file_cabinet_icon.png",
   "visual": {
-    "color": "#7a7a72",
-    "paintable": true
+    "color": "#ffffff"
   },
   "sockets": [
     {

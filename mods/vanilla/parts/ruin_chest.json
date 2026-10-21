@@ -10,10 +10,10 @@
   "flammable": false,
   "sound_material": "concrete",
   "size": [4, 3, 3],
-  "mesh": "meshes/ruin_chest.glb",
+  "mesh": "meshes/parts/ruin_chest.glb",
+  "icon": "textures/items/ruin_chest_icon.png",
   "visual": {
-    "color": "#8a867c",
-    "paintable": true
+    "color": "#ffffff"
   },
   "sockets": [
     {

@@ -2,14 +2,8 @@
   "format_version": 1,
   "model": [
     {
-      "kind": "box",
-      "size": [0.5, 1, 0.5]
-    },
-    {
-      "kind": "box",
-      "operation": "subtract",
-      "size": [0.4, 0.8, 0.04],
-      "position": [0, 0, 0.25]
+      "kind": "mesh",
+      "mesh": "meshes/parts/barrel.glb"
     }
   ]
 }

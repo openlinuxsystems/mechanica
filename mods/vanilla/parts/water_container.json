@@ -10,10 +10,10 @@
   "flammable": false,
   "sound_material": "metal",
   "size": [4, 3, 3],
-  "mesh": "meshes/water_container.glb",
+  "mesh": "meshes/parts/water_container.glb",
+  "icon": "textures/items/water_container_icon.png",
   "visual": {
-    "color": "#3a6a9a",
-    "paintable": true
+    "color": "#ffffff"
   },
   "sockets": [
     {

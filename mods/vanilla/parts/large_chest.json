@@ -11,10 +11,10 @@
   "stack_size": 1,
   "sound_material": "metal",
   "size": [5, 3, 4],
-  "mesh": "meshes/large_chest.glb",
+  "mesh": "meshes/parts/large_chest.glb",
+  "icon": "textures/items/large_chest_icon.png",
   "visual": {
-    "color": "#5a6068",
-    "paintable": true
+    "color": "#ffffff"
   },
   "sockets": [
     {

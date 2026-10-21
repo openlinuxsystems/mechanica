@@ -11,10 +11,10 @@
   "stack_size": 1,
   "sound_material": "metal",
   "size": [2, 7, 2],
-  "mesh": "meshes/locker.glb",
+  "mesh": "meshes/parts/locker.glb",
+  "icon": "textures/items/locker_icon.png",
   "visual": {
-    "color": "#4a6a8a",
-    "paintable": true
+    "color": "#ffffff"
   },
   "sockets": [
     {

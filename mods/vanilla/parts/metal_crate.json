@@ -9,10 +9,10 @@
   "flammable": false,
   "sound_material": "metal",
   "size": [3, 3, 3],
-  "mesh": "meshes/metal_crate.glb",
+  "mesh": "meshes/parts/metal_crate.glb",
+  "icon": "textures/items/metal_crate_icon.png",
   "visual": {
-    "color": "#5a6068",
-    "paintable": true
+    "color": "#ffffff"
   },
   "sockets": [
     {

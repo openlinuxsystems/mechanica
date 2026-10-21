@@ -11,10 +11,10 @@
   "stack_size": 1,
   "sound_material": "metal",
   "size": [8, 6, 6],
-  "mesh": "meshes/cargo_chest.glb",
+  "mesh": "meshes/parts/cargo_chest.glb",
+  "icon": "textures/items/cargo_chest_icon.png",
   "visual": {
-    "color": "#5a6068",
-    "paintable": true
+    "color": "#ffffff"
   },
   "sockets": [
     {

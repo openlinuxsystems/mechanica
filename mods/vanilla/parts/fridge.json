@@ -11,10 +11,10 @@
   "stack_size": 1,
   "sound_material": "metal",
   "size": [4, 7, 3],
-  "mesh": "meshes/fridge.glb",
+  "mesh": "meshes/parts/fridge.glb",
+  "icon": "textures/items/fridge_icon.png",
   "visual": {
-    "color": "#e8e8e0",
-    "paintable": true
+    "color": "#ffffff"
   },
   "sockets": [
     {

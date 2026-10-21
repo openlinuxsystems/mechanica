@@ -10,10 +10,10 @@
   "flammable": false,
   "sound_material": "metal",
   "size": [4, 3, 3],
-  "mesh": "meshes/chemical_container.glb",
+  "mesh": "meshes/parts/chemical_container.glb",
+  "icon": "textures/items/chemical_container_icon.png",
   "visual": {
-    "color": "#6a3a9a",
-    "paintable": true
+    "color": "#ffffff"
   },
   "sockets": [
     {
