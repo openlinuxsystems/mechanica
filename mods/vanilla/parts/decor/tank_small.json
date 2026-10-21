@@ -1,0 +1,19 @@
+{
+  "id": "tank_small",
+  "name": "Small Tank",
+  "description": "A small colony storage tank. It is empty and floats very well: a good float for a boat.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 2,
+  "friction": 0.4,
+  "buoyancy": 0.6,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [3, 4, 3],
+  "mesh": "meshes/parts/tank_small.glb",
+  "icon": "textures/items/tank_small_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

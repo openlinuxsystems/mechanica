@@ -1,0 +1,20 @@
+{
+  "id": "reflector_dish",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 4
+    }
+  ],
+  "outputs": [
+    {
+      "item": "reflector_dish",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 3182
+}
