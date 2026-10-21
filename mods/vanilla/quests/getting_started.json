@@ -18,14 +18,38 @@
       ]
     },
     {
-      "id": "restore_power",
-      "text": "Restore power at the ship's Master Battery.",
+      "id": "find_battery",
+      "text": "Find the Master Battery the crash threw clear of the ship.",
+      "objective": {
+        "type": "have_item",
+        "poi": "crash_site",
+        "marker": "object",
+        "ref": "master_battery_fallen",
+        "item": "master_battery"
+      },
+      "dialogue": [
+        {
+          "speaker": "Logbook",
+          "text": "Fires out. Master cell missing from its bay: ejected on impact. Its locator still pings, close by. Recover it."
+        }
+      ]
+    },
+    {
+      "id": "install_battery",
+      "text": "Install the Master Battery in the Power Core in engineering.",
       "objective": {
         "type": "interact",
         "poi": "crash_site",
         "marker": "item",
-        "ref": "master_battery"
-      }
+        "ref": "master_battery",
+        "item": "master_battery"
+      },
+      "dialogue": [
+        {
+          "speaker": "Logbook",
+          "text": "Cell recovered. Seat it in the Power Core: engineering, aft of the crew quarters."
+        }
+      ]
     }
   ],
   "rewards": {

@@ -53,8 +53,8 @@ every player, one after another.
 | `type` | Done when | Keys |
 |--------|-----------|------|
 | `reach` | Any player stands within `radius` (default: the POI's radius) of a placed `poi` | `poi`, `radius` |
-| `interact` | Players use `count` different markers of type `marker` (and `ref`, if given) at the `poi` with E | `poi`, `marker`, `ref`, `count` |
-| `have_item` | Any player holds `count` of `item` | `item`, `count` |
+| `interact` | Players use `count` different markers of type `marker` (and `ref`, if given) at the `poi` with E. With an `item`, only a player carrying one can, each use takes one, and the player plays the install gesture (the Master Battery into its bay) | `poi`, `marker`, `ref`, `count`, `item` |
+| `have_item` | Any player holds `count` of `item`. An optional `poi`, with a `marker` type (and `ref`) in it, is where the compass points to find it | `item`, `count`, `poi`, `marker`, `ref` |
 | `place` | Players place `count` parts (of `part`, if given) | `part`, `count` |
 | `craft` | Players craft `count` items (of `recipe`, if given) | `recipe`, `count` |
 | `drive` | Players seated in a moving Creation cover `distance` metres | `distance` |
@@ -71,7 +71,7 @@ has, players near an `npc` marker of the quest's POI can press E to hear the ste
 POI markers are points with a `type` and an optional `ref`. Quests read any type; vanilla uses
 `fire` (a fire burns at each one from the start, for `extinguish`), `item` (with the part's id as `ref`), `npc` (with a character id as `ref`, such as
 `farmer`, who is drawn standing there when the id names a [non-player character](characters.md#non-player-characters)) and `core` (the AI core at the AI Core Facility). The prompt on screen says "talk" for an
-`npc` marker and "use the ..." with the `ref`'s name for the rest of the `interact` markers.
+`npc` marker, "install the ..." with the item's name for a step that takes an `item`, and "use the ..." with the `ref`'s name for the rest of the `interact` markers. The compass points at the nearest marker an `interact` (or `have_item`) step names, or at the POI.
 
 ## Actions
 

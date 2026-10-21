@@ -1045,6 +1045,22 @@
       "harvest": true,
       "drops": [{ "item": "scrap_metal_block", "count": 16, "count_max": 24 }]
     },
+    // The SV-04's Master Battery where the crash threw it (the crash site's object marker; Getting Started): press Use
+    // to pick it up. Model: tools/master_battery/build_master_battery.py. It lies there again an hour after it is
+    // taken, so a lost one never strands the quest.
+    {
+      "id": "master_battery_fallen",
+      "collider": { "shape": "box", "size": [0.8, 0.5, 0.9], "at": [0.0, 0.2, 0.0] },
+      "mesh": { "file": "meshes/world/master_battery_fallen.glb", "clips": { "idle": "idle" } },
+      "glow": { "color": "#38c8ff", "energy": 1.2, "range": 4.0, "at": [0.0, 0.5, 0.0], "pulse": 2.0 },
+      "footprint": 1.6,
+      "sink": 0.0,
+      "max_slope": 0.4,
+      "damage_from": [],
+      "harvest": true,
+      "regrow": 3600.0,
+      "drops": [{ "item": "master_battery", "count": 1 }]
+    },
     {
       "id": "scrap_pile_wood",
       "collider": { "shape": "box", "size": [1.4, 0.6, 1.0], "at": [0.0, 0.3, 0.0] },

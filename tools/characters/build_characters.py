@@ -4079,6 +4079,39 @@ def clip_plant(t):
     return oneshot([(0.0, r_w), (0.32, reach), (0.45, pat), (0.56, reach), (0.8, r_w)], t, template=r_w)
 
 
+# Installing (the Master Battery into its bay, a quest marker that takes an item): both hands on the cell's side grips,
+# a bow from the waist as the arms drive it home, then the hands let go and the body straightens. Upper body only, so
+# it plays over standing or walking like the other gestures.
+INSTALL_SECONDS = 1.4
+
+
+def install_grip(side, y, z, open_hand=False):
+    """A hand on the cell's side grip: palm in, fingers forward, thumb up (world space, forward -Y)."""
+    s = side_sign(side)
+    return arm_ik_from_grip(side, np.array([s * 0.27, y, z]), (0.0, -1.0, -0.3 if not open_hand else -0.1), (0.0, 0.0, 1.0),
+                            pole=(s * 0.8, 0.4, -0.6), space="world")
+
+
+def clip_install(t):
+    r = relaxed_ik_upper()
+    rest = dict(r)
+    pose = build_pose(r)
+    for side in ("l", "r"):          # the relaxed arms as world targets, for the blend into the grips
+        W = pose.W[f"hand_{side}"]
+        d0, w0, _ = hand_frame(side)
+        rest[f"arm_{side}"] = {"pos": tuple(pose.P[f"hand_{side}"]), "d": tuple(W @ d0), "w": tuple(W @ w0),
+                               "pole": (side_sign(side) * 0.8, 0.4, -0.6), "space": "world"}
+    body = dict(spine=(26.0, 0, 0), chest=(14.0, 0, 0), neck=(-14.0, 0, 0), head=(-8.0, 0, 0))
+    grab = with_right_arm(rest, arm_l=install_grip("l", -0.48, 0.86), arm_r=install_grip("r", -0.48, 0.86),
+                          fingers_l=70.0, fingers_r=70.0, thumb_l=40.0, thumb_r=40.0, **body)
+    push = with_right_arm(grab, arm_l=install_grip("l", -0.66, 0.84), arm_r=install_grip("r", -0.66, 0.84),
+                          spine=(34.0, 0, 0), chest=(18.0, 0, 0))
+    let_go = with_right_arm(push, arm_l=install_grip("l", -0.6, 0.9, True), arm_r=install_grip("r", -0.6, 0.9, True),
+                            fingers_l=10.0, fingers_r=10.0, thumb_l=12.0, thumb_r=12.0)
+    keys = [(0.0, rest), (0.3, grab), (0.9, push), (1.05, let_go), (INSTALL_SECONDS, rest)]
+    return oneshot(keys, t, template=rest)
+
+
 def clip_pour(t):
     carry = upper_base(0.0)
     relaxed_left(carry)
@@ -5592,6 +5625,7 @@ CLIPS = {
     "throw": (clip_throw, 0.5, False, False),
     "plant": (clip_plant, 0.8, False, True),
     "pour": (clip_pour, 0.8, False, True),
+    "install": (clip_install, INSTALL_SECONDS, False, True),
     "interact": (clip_interact, 0.4, False, True),
     "hurt": (clip_hurt, 0.3, False, True),
     **BUCKET_CLIPS,

@@ -64,8 +64,10 @@ public sealed record QuestStep
 /// What finishes a step. <see cref="Type"/> picks the rule and which other keys it reads:
 /// <list type="bullet">
 /// <item><c>reach</c>: a player comes within <see cref="Radius"/> (default: the POI's own radius) of a <see cref="Poi"/>.</item>
-/// <item><c>interact</c>: players use <see cref="Count"/> different <see cref="Marker"/> markers (optionally with <see cref="Ref"/>) of a <see cref="Poi"/>.</item>
-/// <item><c>have_item</c>: a player holds <see cref="Count"/> of <see cref="Item"/>.</item>
+/// <item><c>interact</c>: players use <see cref="Count"/> different <see cref="Marker"/> markers (optionally with <see cref="Ref"/>) of a <see cref="Poi"/>;
+/// with an <see cref="Item"/>, only a player carrying one can, and each use takes one.</item>
+/// <item><c>have_item</c>: a player holds <see cref="Count"/> of <see cref="Item"/>; an optional <see cref="Poi"/> with its
+/// <see cref="Marker"/> (and <see cref="Ref"/>) is where the compass points to find it.</item>
 /// <item><c>place</c>: players place <see cref="Count"/> of <see cref="Part"/> (any part when absent).</item>
 /// <item><c>craft</c>: players order <see cref="Count"/> crafts of <see cref="Recipe"/> (any when absent).</item>
 /// <item><c>drive</c>: a seated player's Creation travels <see cref="Distance"/> metres.</item>
@@ -80,16 +82,16 @@ public sealed record QuestObjective
     /// <summary>The rule (see the type summary).</summary>
     public string? Type { get; init; }
 
-    /// <summary>POI id (this mod's, or <c>mod:id</c>) for <c>reach</c>, <c>interact</c> and <c>extinguish</c>.</summary>
+    /// <summary>POI id (this mod's, or <c>mod:id</c>) for <c>reach</c>, <c>interact</c> and <c>extinguish</c>, and where to look for <c>have_item</c>.</summary>
     public string? Poi { get; init; }
 
-    /// <summary>Marker type for <c>interact</c> (<c>item</c>, <c>npc</c>, ...) and <c>extinguish</c> (default <c>fire</c>).</summary>
+    /// <summary>Marker type for <c>interact</c> (<c>item</c>, <c>npc</c>, ...), <c>extinguish</c> (default <c>fire</c>) and <c>have_item</c>'s compass.</summary>
     public string? Marker { get; init; }
 
-    /// <summary>Marker ref an <c>interact</c> marker must have, or null for any.</summary>
+    /// <summary>Marker ref an <c>interact</c> (or <c>have_item</c>'s compass) marker must have, or null for any.</summary>
     public string? Ref { get; init; }
 
-    /// <summary>Item id for <c>have_item</c>.</summary>
+    /// <summary>Item id for <c>have_item</c>, and the item an <c>interact</c> marker takes from the player using it.</summary>
     public string? Item { get; init; }
 
     /// <summary>Part id for <c>place</c>.</summary>

@@ -282,15 +282,14 @@ def salvager_ship(o=(0, 0, 0), yaw=0, name="ship", seed=11, scar=True, fires=Tru
         FR.framed_box(fore, "locker", (side * 3.9, 6.0, 1.3), (0.9, 1.6, 2.0), M(STEEL, metal=0.3), gm, fw=0.07)
     ceiling_light(fore, 6.0)
     ceiling_light(fore, 4.0, x=3.3, on=False)
-    # ---- engineering (y -8..2): the Master Battery, pipes, a generator
-    FR.framed_box(fore, "master_battery", (0, -2.5, 1.5), (1.8, 1.4, 2.4), M(GRAPHITE, metal=0.3), gm, fw=0.12, screws=gm)
+    # ---- engineering (y -8..2): the Power Core with the Master Battery's bay, its coils, pipes, a generator. The
+    # Power Core (y -3.2..-1.8, facing the crew door) is its own model with the install clips:
+    # tools/master_battery/build_master_battery.py (sv04_battery_bay.glb); the coils behind it are the ship's.
     cu = K.mat("copper", COPPER, rough=0.35, metal=0.8, wear=0.3)
     for x in (-0.5, 0.5):
-        K.cyl("coil_core", 0.22, 1.6, gm, loc=(x, -3.25, 1.5), bev=0.02, parent=fore)
+        K.cyl("coil_core", 0.22, 1.6, gm, loc=(x, -3.55, 1.5), bev=0.02, parent=fore)
         for k in range(8):
-            K.torus("coil", 0.26, 0.05, cu, loc=(x, -3.25, 0.85 + k * 0.18), parent=fore)
-    FR.screen(fore, (0, -1.76, 2.2), 1.0, 0.45, M(GRAPHITE), glow(CYAN, 1.2))
-    FR.label(fore, "MASTER CELL", (0, -1.85, 1.75), 0.14, M(BONE, wear=0, scratches=0, grime=0))
+            K.torus("coil", 0.26, 0.05, cu, loc=(x, -3.55, 0.85 + k * 0.18), parent=fore)
     FR.framed_box(fore, "generator", (-3.2, -6.0, 1.2), (2.2, 2.4, 1.8), M(STEEL, metal=0.3), gm, fw=0.1)
     FR.vent(fore, (-3.2, -7.22, 1.2), 1.4, 1.0, gm, M(GRAPHITE))
     for k in range(3):

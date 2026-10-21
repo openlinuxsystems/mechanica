@@ -44,10 +44,10 @@ public enum QuestObjectiveKind
 /// <param name="Id">Step id.</param>
 /// <param name="Text">Quest log text.</param>
 /// <param name="Kind">The objective rule.</param>
-/// <param name="Poi">Qualified POI id, for reach, interact and extinguish.</param>
-/// <param name="Marker">Marker type, for interact and extinguish.</param>
+/// <param name="Poi">Qualified POI id, for reach, interact and extinguish (and where a have_item step's compass points).</param>
+/// <param name="Marker">Marker type, for interact and extinguish (and a have_item step's compass).</param>
 /// <param name="Ref">Marker ref, for interact, or null for any.</param>
-/// <param name="Target">Qualified item, part or recipe id, or null for any.</param>
+/// <param name="Target">Qualified item, part or recipe id, or null for any; for interact, the item each use takes.</param>
 /// <param name="Count">How many.</param>
 /// <param name="Radius">Reach radius in m, or null for the POI's.</param>
 /// <param name="Distance">Metres to drive.</param>
@@ -307,12 +307,32 @@ public sealed class QuestBook
                     else if (poi is not null && world.Pois.First(p => p.QualifiedId == poi).Prefab.Markers?.Count(m => m.Type == marker && (o.Ref is null || m.Ref == o.Ref)) is var n && n < (o.Count ?? 1))
                         sink.Error(code, $"{at}.count", $"the POI has {n} '{marker}' markers{(o.Ref is null ? "" : $" with ref '{o.Ref}'")}, fewer than count.");
                 }
+                if (kind == QuestObjectiveKind.Interact && o.Item is not null)
+                {
+                    if (catalog.FindDefinition(Identifiers.Qualify(o.Item, modId)) is null)
+                        sink.Error(code, $"{at}.item", $"item '{o.Item}' is not in the loaded mods.");
+                    else
+                        target = Identifiers.Qualify(o.Item, modId);
+                }
                 break;
             case QuestObjectiveKind.HaveItem:
                 if (o.Item is null || catalog.FindDefinition(Identifiers.Qualify(o.Item, modId)) is null)
                     sink.Error(code, $"{at}.item", $"item '{o.Item}' is not in the loaded mods.");
                 else
                     target = Identifiers.Qualify(o.Item, modId);
+                // Where to look: the compass points at the POI's nearest matching marker (or the POI itself).
+                if (o.Poi is not null)
+                {
+                    poi = FindPoi(world, o.Poi, modId);
+                    if (poi is null)
+                        sink.Error(code, $"{at}.poi", $"POI '{o.Poi}' is not in the world data.");
+                    else if (o.Marker is not null && world.Pois.First(p => p.QualifiedId == poi).Prefab.Markers?.Any(m => m.Type == o.Marker && (o.Ref is null || m.Ref == o.Ref)) != true)
+                        sink.Error(code, $"{at}.marker", $"the POI has no '{o.Marker}' marker{(o.Ref is null ? "" : $" with ref '{o.Ref}'")}.");
+                }
+                else if (o.Marker is not null)
+                {
+                    sink.Error(code, $"{at}.marker", "a have_item marker needs the poi it is in.");
+                }
                 break;
             case QuestObjectiveKind.Place:
                 if (o.Part is not null && catalog.FindDefinition(Identifiers.Qualify(o.Part, modId)) is null)

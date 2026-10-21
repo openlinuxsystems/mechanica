@@ -34,6 +34,7 @@ public partial class TerrainChunk : Node3D
         ObjectMeshes.Clear();
         StructureModel.Clear();
         AnimatedObject.ClearModels();
+        StoryModel.ClearModels();
     }
 
     private readonly Dictionary<ulong, WorldObjectId> _objectShapes = [];
@@ -76,6 +77,9 @@ public partial class TerrainChunk : Node3D
     /// the marker without a figure. Set before adding to the tree.
     /// </summary>
     public Func<PoiMarkerPlacement, Node3D?>? Npc { get; init; }
+
+    /// <summary>Whether a quest (qualified id) is done, for models that follow one (<see cref="StoryModel"/>); null: none is.</summary>
+    public Func<string, bool>? QuestDone { get; init; }
 
     /// <summary>The static body every loaded chunk's ground shape belongs to, a sibling of this node. Set before adding to the tree.</summary>
     public StaticBody3D Ground { get; init; } = null!;
@@ -539,7 +543,10 @@ public partial class TerrainChunk : Node3D
             if (model.File is not { } file || StructureModel.Of(file, model.Model.File!) is not { } built)
                 continue;
             var transform = new Transform3D(new Basis(Vector3.Up, model.Yaw), model.Position.ToGodot() - origin);
-            var node = built.Instantiate($"Model{model.Index}", transform);
+            var node = model.Model.Story is { Quest: { } quest } story
+                && StoryModel.Create(file, $"Model{model.Index}", transform, PoiMarker.Qualify(quest, model.Poi.Poi.QualifiedId), story, QuestDone) is { } animated
+                ? animated
+                : built.Instantiate($"Model{model.Index}", transform);
             Structures.AddChild(node);
             _models[(model.Poi.Index, model.Index)] = node;
             if (!Scenery && model.Model.Solid)

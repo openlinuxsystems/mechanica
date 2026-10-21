@@ -34,6 +34,12 @@
     // The SV-04 Salvager broken in two; both halves share the ship's origin.
     { "file": "meshes/structures/sv04_fore.glb", "at": [0.0, 0.0, 0.0], "yaw": 20.0 },
     { "file": "meshes/structures/sv04_aft.glb", "at": [0.0, 0.0, 0.0], "yaw": 20.0 },
+    // The Power Core in engineering, with the Master Battery's bay: empty until Getting Started is done, which plays the
+    // install (tools/master_battery/build_master_battery.py).
+    {
+      "file": "meshes/structures/sv04_battery_bay.glb", "at": [0.0, 0.0, 0.0], "yaw": 20.0,
+      "story": { "quest": "getting_started", "waiting": "empty", "finish": "install", "done": "powered" }
+    },
     // Its port nacelle, torn off in flight (the opening cinematic), lying where it fell.
     { "file": "meshes/structures/sv04_nacelle.glb", "at": [44.0, 0.0, 50.0], "yaw": 35.0 },
     // Old Stone court to the north, at the end of the cargo spill.
@@ -74,8 +80,10 @@
     { "type": "fire", "at": [6.36, 0.0, -4.44] },
     // At the break.
     { "type": "fire", "at": [-1.66, 0.0, 14.44] },
-    // In engineering.
+    // In engineering, in front of the Power Core's battery bay.
     { "type": "item", "ref": "master_battery", "at": [0.5, 0.94, 1.28] },
+    // The Master Battery, thrown out of the break in the crash, lying in the furrow it ploughed west of the wreck.
+    { "type": "object", "ref": "master_battery_fallen", "at": [-17.0, 0.0, 27.0], "yaw": 35.0 },
     // On the bridge.
     { "type": "item", "ref": "logbook", "at": [-3.75, 0.61, -10.36] },
     // The cargo hold: loot crates and scrap.

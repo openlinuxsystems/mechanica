@@ -51,6 +51,12 @@ public interface IQuestWorld
     /// <summary>Gives a player items; returns how many fit.</summary>
     int GiveItem(int peer, string item, int count);
 
+    /// <summary>Takes <paramref name="count"/> of an item from a player; false (taking nothing) when they hold fewer.</summary>
+    bool TakeItem(int peer, string item, int count);
+
+    /// <summary>An item's display name, for messages.</summary>
+    string ItemName(string item) => item;
+
     /// <summary>Crops planted in the world now.</summary>
     int PlantedCrops();
 
@@ -70,7 +76,8 @@ public sealed record ChooseQuestOptionArgs(string Quest, string Choice);
 /// <param name="Quest">The quest the marker counted for.</param>
 /// <param name="Marker">Marker type used.</param>
 /// <param name="Ref">Its ref, or null.</param>
-public sealed record QuestInteractResult(string Quest, string Marker, string? Ref);
+/// <param name="Item">The item using it took (or, for a preview, will take), or null.</param>
+public sealed record QuestInteractResult(string Quest, string Marker, string? Ref, string? Item = null);
 
 /// <summary>Lines said to everyone, with the quest that said them.</summary>
 /// <param name="Quest">Qualified quest id.</param>
@@ -121,7 +128,7 @@ public sealed class QuestTracker(QuestBook book, IQuestWorld world, QuestState? 
     /// <summary>Registers the quest actions.</summary>
     public void Register(ActionDispatcher dispatcher)
     {
-        dispatcher.Register<NoArgs>(QuestInteract, (c, a) => FindUse(c.Peer, out _, out _) is { } error && TalkNear(c.Peer) is null ? error : null,
+        dispatcher.Register<NoArgs>(QuestInteract, (c, a) => CheckUse(c.Peer) is { } error && TalkNear(c.Peer) is null ? error : null,
             (c, a) => Value(Interact(c.Peer) ?? Talk(c.Peer)!));
         dispatcher.Register<ChooseQuestOptionArgs>(ChooseQuestOption, (c, a) => CheckChoice(a.Quest, a.Choice), (c, a) => { Choose(a.Quest, a.Choice); return null; });
         dispatcher.Register<NoArgs>(GetQuests, (_, _) => null, (_, _) => State.ToElement(), readOnly: true);
@@ -222,16 +229,28 @@ public sealed class QuestTracker(QuestBook book, IQuestWorld world, QuestState? 
     /// </summary>
     public QuestInteractResult? Interact(int peer)
     {
-        if (FindUse(peer, out var use, out var quest) is not null)
+        if (CheckUse(peer) is not null || FindUse(peer, out var use, out var marker) is not null)
             return null;
         var (q, step, progress, key) = use!.Value;
+        if (step.Target is { } item && !world.TakeItem(peer, item, 1))
+            return null;
         var used = new SortedSet<string>(progress.Used ?? [], StringComparer.Ordinal) { key };
-        var marker = quest!;
         if (used.Count >= step.Count)
             Advance(q);
         else
             Set(q, progress with { Used = used, Count = used.Count });
-        return new QuestInteractResult(q.QualifiedId, marker.Type, marker.Ref);
+        return new QuestInteractResult(q.QualifiedId, marker!.Type, marker.Ref, step.Target);
+    }
+
+    /// <summary>
+    /// Null when <paramref name="peer"/> can use the nearest quest marker in reach now, or why not: nothing in reach,
+    /// or the marker takes an item they are not carrying.
+    /// </summary>
+    public string? CheckUse(int peer)
+    {
+        if (FindUse(peer, out var use, out _) is { } error)
+            return error;
+        return use!.Value.Step.Target is { } item && world.CountItem(peer, item) < 1 ? $"You need a {world.ItemName(item)}." : null;
     }
 
     /// <summary>Null when <paramref name="choice"/> can be picked for <paramref name="quest"/> now, or why not.</summary>
@@ -288,7 +307,7 @@ public sealed class QuestTracker(QuestBook book, IQuestWorld world, QuestState? 
     public QuestInteractResult? Preview(int peer)
     {
         if (FindUse(peer, out var use, out var marker) is null)
-            return new QuestInteractResult(use!.Value.Quest.QualifiedId, marker!.Type, marker.Ref);
+            return new QuestInteractResult(use!.Value.Quest.QualifiedId, marker!.Type, marker.Ref, use.Value.Step.Target);
         return TalkNear(peer) is { } talk ? new QuestInteractResult(talk.Quest, "npc", null) : null;
     }
 

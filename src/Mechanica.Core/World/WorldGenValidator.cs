@@ -650,6 +650,14 @@ internal static class WorldGenValidator
                 sink.Error(code, path, "at and yaw must be numbers.");
             else if (new Vector2(model.At.X, model.At.Z).Length() > prefab.Radius + 1e-3f)
                 sink.Error(code, $"{path}.at", $"is {new Vector2(model.At.X, model.At.Z).Length():0.##} m from the centre, past the POI radius ({prefab.Radius}).");
+            if (model.Story is { } story)
+            {
+                KnownKeys.WarnUnknown(story.Extra, $"{path}.story", sink, typeof(PoiModelStory));
+                if (story.Quest?.Split(':') is not { Length: <= 2 } questParts || !questParts.All(Identifiers.IsValid))
+                    sink.Error(code, $"{path}.story.quest", $"'{story.Quest}' is not a quest id (id or mod_id:id).");
+                if (story.Waiting is null && story.Finish is null && story.Done is null)
+                    sink.Error(code, $"{path}.story", "a story model needs at least one of the waiting, finish and done clips.");
+            }
         }
         for (var i = 0; i < (prefab.Markers?.Count ?? 0); i++)
         {
