@@ -78,6 +78,15 @@ public class StructuralPartsTests
         new("duct_holder", new GridSize(1, 1, 1), 3, 2, 0.4, 0.2, false, 20, 2, 2815, ["metal_block:1"]),
         new("metal_tube", new GridSize(1, 1, 2), 6, 4, 0.5, 0.7, false, 20, 2, 2820, ["metal_block:2"]),
         new("tubes_short", new GridSize(2, 1, 2), 6, 4, 0.3, 0.4, true, 20, 2, 2830, ["metal_block:1", "scrap_wood_block:1"]),
+        // Batch 10b: the rest of the conduits and the cable runs.
+        new("tubes_long", new GridSize(2, 1, 4), 6, 4, 0.3, 0.4, true, 20, 2, 2831, ["metal_block:2", "scrap_wood_block:1"]),
+        new("tubes_corner", new GridSize(2, 1, 2), 6, 4, 0.3, 0.4, true, 20, 2, 2832, ["metal_block:1", "scrap_wood_block:1"]),
+        new("tubes_tee", new GridSize(2, 1, 2), 6, 4, 0.3, 0.4, true, 20, 2, 2833, ["metal_block:1", "scrap_wood_block:1"]),
+        new("wires_short", new GridSize(1, 1, 1), 3, 1, 0.4, 0.4, true, 20, 2, 2840, ["scrap_metal_block:1"]),
+        new("wires_long", new GridSize(1, 1, 4), 3, 1, 0.4, 0.4, true, 20, 2, 2841, ["scrap_metal_block:2"]),
+        new("wires_bend", new GridSize(1, 1, 1), 3, 1, 0.4, 0.4, true, 20, 2, 2842, ["scrap_metal_block:1"]),
+        new("wires_concave_bend", new GridSize(1, 1, 1), 3, 1, 0.4, 0.4, true, 20, 2, 2843, ["scrap_metal_block:1"]),
+        new("wires_convex_bend", new GridSize(1, 1, 1), 3, 1, 0.4, 0.4, true, 20, 2, 2844, ["scrap_metal_block:1"]),
     ];
 
     public static TheoryData<string> Ids => [.. All.Select(r => r.Id)];

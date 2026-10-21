@@ -1,0 +1,19 @@
+{
+  "id": "wires_concave_bend",
+  "name": "Cable (Inner Bend)",
+  "description": "Cables running from the floor up a wall, round an inside corner.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 1,
+  "friction": 0.4,
+  "buoyancy": 0.4,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/parts/wires_concave_bend.glb",
+  "icon": "textures/items/wires_concave_bend_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}
