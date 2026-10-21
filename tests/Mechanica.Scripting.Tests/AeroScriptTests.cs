@@ -62,6 +62,25 @@ public sealed class AeroScriptTests : IDisposable
     }
 
     [Fact]
+    public void EachPowerStepPushesHalfAgainAsHardUpToTheTopItsLevelUnlocks()
+    {
+        // properties.step_gain is 1.5: step 1 is 200 N, step 2 300 N, step 3 450 N, the most level 1 allows.
+        var creation = Board();
+        var toggle = Place(creation, "vanilla:switch", new GridCell(-1, 1, 0));
+        var thruster = Place(creation, "vanilla:thruster", new GridCell(0, 1, 0));
+        Link(creation, toggle, thruster);
+        Activate(creation, toggle);
+        foreach (var (step, push) in new[] { (1, 200f), (2, 300f), (3, 450f) })
+        {
+            Configure(creation, thruster, "power", step);
+            Steps(2);
+            AssertNear(new Vector3(0, -push, 0), Last(thruster)!.Value.Force);
+        }
+        Assert.Equal(3.0, (double)creation.DefinitionOf(thruster).Settings!.Single(s => s.Id == "power").Max!.Value);
+        Assert.Equal("on", _runtime.Readouts.Text(Craft, thruster, "pose"));
+    }
+
+    [Fact]
     public void AThrottleLeverMovesWithSpaceAndShiftAndStaysPut()
     {
         var creation = Board();

@@ -647,8 +647,11 @@ public static class DamageKinds
     /// <summary>A bot's attack.</summary>
     public const string Bot = "bot";
 
+    /// <summary>Burning (a part on fire, <see cref="Fire.FireActions"/>).</summary>
+    public const string Fire = "fire";
+
     /// <summary>Every kind.</summary>
-    public static readonly IReadOnlyList<string> All = [Sledge, Drill, Saw, Weapon, Explosion, Bot];
+    public static readonly IReadOnlyList<string> All = [Sledge, Drill, Saw, Weapon, Explosion, Bot, Fire];
 }
 
 /// <summary>A model a world object is drawn with.</summary>

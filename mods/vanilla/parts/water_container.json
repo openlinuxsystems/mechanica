@@ -1,7 +1,7 @@
 {
   "id": "water_container",
   "name": "Water Container",
-  "description": "Holds five full water buckets.",
+  "description": "Holds five full water buckets. Link it to Water Cannons with the Connect Tool and they fire its water.",
   "category": "container",
   "mass": 7.5,
   "durability": 6,
@@ -32,5 +32,9 @@
     "accepts": [
       "water_bucket_full"
     ]
+  },
+  "logic": {
+    "outputs": 16,
+    "kind": "power"
   }
 }

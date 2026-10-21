@@ -1,0 +1,28 @@
+{
+  "id": "plasma_drill",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block_2",
+      "count": 100
+    },
+    {
+      "item": "component_kit",
+      "count": 10
+    },
+    {
+      "item": "circuit_board",
+      "count": 10
+    }
+  ],
+  "outputs": [
+    {
+      "item": "plasma_drill",
+      "count": 1
+    }
+  ],
+  "time": 60,
+  "order": 1315
+}

@@ -805,7 +805,7 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
             CropDestroyed?.Invoke(creation.Id, partId, bot.Id);
             return new ShotHitView("crop", point, damage, Creation: creation.Id, Part: partId);
         }
-        survivalWorld.DamagePart(creation, partId, damage);
+        survivalWorld.DamagePart(creation, partId, damage, DamageKinds.Bot);
         return new ShotHitView("part", point, damage, Creation: creation.Id, Part: partId);
     }
 

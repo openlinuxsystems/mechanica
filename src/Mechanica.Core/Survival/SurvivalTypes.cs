@@ -249,8 +249,11 @@ public interface ISurvivalWorld
     {
     }
 
-    /// <summary>Takes health off a part; at 0 it breaks off (<see cref="ToolActions.DamagePart"/>).</summary>
-    SledgeResult DamagePart(Creation creation, int partId, float damage);
+    /// <summary>
+    /// Takes health off a part; at 0 it breaks off (<see cref="ToolActions.DamagePart"/>). <paramref name="kind"/> says
+    /// what dealt it (<see cref="DamageKinds"/>), for the part's own script (<c>on_damage</c>).
+    /// </summary>
+    SledgeResult DamagePart(Creation creation, int partId, float damage, string kind);
 
     /// <summary>Gives a Body an impulse (N·s) at a world point.</summary>
     void Push(Creation creation, int bodyIndex, Vector3 point, Vector3 impulse);
@@ -290,6 +293,14 @@ public interface ISurvivalWorld
     /// (<c>wood</c>, <c>metal</c>, ...); a bot is <c>metal</c>.
     /// </summary>
     void Impact(Vector3 at, string material)
+    {
+    }
+
+    /// <summary>
+    /// An explosion <paramref name="radius"/> m across went off at <paramref name="at"/> (cosmetic, for every peer: a
+    /// flash, a fireball and smoke). The damage is <see cref="SurvivalActions.Splash"/>'s.
+    /// </summary>
+    void Blast(Vector3 at, float radius)
     {
     }
 }

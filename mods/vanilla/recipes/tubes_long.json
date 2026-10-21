@@ -1,0 +1,24 @@
+{
+  "id": "tubes_long",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 2
+    },
+    {
+      "item": "scrap_wood_block",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "tubes_long",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 2831
+}

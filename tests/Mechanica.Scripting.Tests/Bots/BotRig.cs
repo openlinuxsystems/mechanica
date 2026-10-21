@@ -189,7 +189,7 @@ internal sealed class BotRig : ISurvivalWorld, IInventoryWorld, IBotWorld, IRaid
 
     public void DestroyObject(WorldObjectId id) => World.Destroy(id);
 
-    public SledgeResult DamagePart(Creation creation, int partId, float damage) => new(false, null, false, []);
+    public SledgeResult DamagePart(Creation creation, int partId, float damage, string kind) => new(false, null, false, []);
 
     public void Push(Creation creation, int bodyIndex, Vector3 point, Vector3 impulse)
     {

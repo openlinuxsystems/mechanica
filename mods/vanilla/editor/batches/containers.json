@@ -1,5 +1,7 @@
 // Every container (SM parity, Containers step): chests, storage and the consumable containers, with the wiki's stats,
-// slots and recipes (see /mnt/project-files/mechanica/containers/CONTAINER_MAP.md). Re-run with tools/author-vanilla.sh.
+// slots and recipes (see /mnt/project-files/mechanica/containers/CONTAINER_MAP.md). The consumable containers have logic
+// outputs (power links) so the parts that burn their contents can be linked to them (parts map batch 6). Re-run with
+// tools/author-vanilla.sh.
 {
   "format_version": 1,
   "parts": [
@@ -360,7 +362,7 @@
       "template": "interactive",
       "set": {
         "name": "Chemical Container",
-        "description": "Holds five stacks of chemicals.",
+        "description": "Holds five stacks of chemicals. Link it to Sticky Wheels with the Connect Tool and they burn its chemicals.",
         "icon": "textures/items/chemical_container_icon.png",
         "category": "container",
         "mass": 7.5,
@@ -373,7 +375,8 @@
         "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
-        "inventory": { "slots": 5, "accepts": ["chemical"] }
+        "inventory": { "slots": 5, "accepts": ["chemical"] },
+        "logic": { "outputs": 16, "kind": "power" }
       },
       "model": [{ "kind": "mesh", "mesh": "meshes/parts/chemical_container.glb" }],
       "recipes": [
@@ -397,7 +400,7 @@
       "template": "interactive",
       "set": {
         "name": "Water Container",
-        "description": "Holds five full water buckets.",
+        "description": "Holds five full water buckets. Link it to Water Cannons with the Connect Tool and they fire its water.",
         "icon": "textures/items/water_container_icon.png",
         "category": "container",
         "mass": 7.5,
@@ -410,7 +413,8 @@
         "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
-        "inventory": { "slots": 5, "accepts": ["water_bucket_full"] }
+        "inventory": { "slots": 5, "accepts": ["water_bucket_full"] },
+        "logic": { "outputs": 16, "kind": "power" }
       },
       "model": [{ "kind": "mesh", "mesh": "meshes/parts/water_container.glb" }],
       "recipes": [
@@ -433,7 +437,7 @@
       "template": "interactive",
       "set": {
         "name": "Potato Ammo Container",
-        "description": "Holds five stacks of potatoes for mounted potato guns.",
+        "description": "Holds five stacks of potatoes. Link it to Mounted Potato Blasters with the Connect Tool and they fire its potatoes.",
         "icon": "textures/items/potato_ammo_container_icon.png",
         "category": "container",
         "mass": 7.5,
@@ -446,7 +450,8 @@
         "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
-        "inventory": { "slots": 5, "accepts": ["potato"] }
+        "inventory": { "slots": 5, "accepts": ["potato"] },
+        "logic": { "outputs": 16, "kind": "power" }
       },
       "model": [{ "kind": "mesh", "mesh": "meshes/parts/potato_ammo_container.glb" }],
       "recipes": [
@@ -600,7 +605,7 @@
       "template": "interactive",
       "set": {
         "name": "Battery Container",
-        "description": "Holds batteries, which power the creation's electric engines; the gauges on its sides show how charged it is. Its yellow lid and terminals tell it apart from a Gas Container.",
+        "description": "Holds batteries, which power the creation's electric engines, and Plasma Drills linked to it with the Connect Tool; the gauges on its sides show how charged it is. Its yellow lid and terminals tell it apart from a Gas Container.",
         "category": "container",
         "mass": 7.5,
         "durability": 6,
@@ -614,6 +619,7 @@
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
         "inventory": { "slots": 5, "accepts": ["battery_pack"] },
+        "logic": { "outputs": 16, "kind": "power" },
         "script": "scripts/battery.lua",
         "display": {
           "clips": { "readout": "clip", "scrub": [{ "readout": "charge", "clip": "charge" }] }

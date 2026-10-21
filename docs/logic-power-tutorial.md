@@ -100,6 +100,11 @@ linked burns from any in the creation. The gauges on the container's sides show 
 one of its five slots), and you can pick it up (hold right click on it) while it still holds fuel: the gasoline goes
 into your inventory with it.
 
+The other supply containers link the same way. A Water Cannon fires only the full water buckets of the Water
+Containers linked into it and a Mounted Potato Blaster only the potatoes of its Potato Ammo Containers (with none
+linked they just click); a Sticky Wheel burns the chemicals of its Chemical Containers and a Plasma Drill the
+batteries of its Battery Containers, or those of any container in the creation when none is linked.
+
 ## A switch and a piston
 
 1. Put a switch and a piston on a block, and something on the piston's head.
@@ -127,6 +132,14 @@ Settings are changed with E on the part; properties are fixed in the part's data
 | Switch | 1 while on; E toggles it. Its rocker tips over and its light shows red while off, teal while on | | |
 | Button | 1 while someone holds it down: E, or its key while seated | | |
 | Controller | 1 while it runs; its step cells and lamp light teal | `frames` (up to 10; joint speed up to 2 at level 1, 9 at level 5), `frame_time` (s), `loop` | `speed` (rad/s), `torque` (N·m), `force` (N) |
+| Alarm Clock | 1 while it rings; an input turning on (a button) stops it | `hour`, `minute` (in steps of 5), `alarm` (bell, beep, chime), `armed` | `ring` (s it rings), `repeat_time` (s between rings) |
+| Cash Register | 1 while its drawer is open; E opens and shuts it, an input opens it while on | | |
+| Scuttler Head | (none); plays a note each time its input turns on | `note` (0 to 24 semitones; 12 is the voice's own pitch), `voice` (blip, bass, drum, voice) | |
+
+The **alarm clock** rings once a day when the world's clock passes the time it is set to. A world's day starts at 06:00
+and lasts its `day_length` (24 real minutes in vanilla, so a game hour is a minute); the clock's menu shows the time
+now and when it rings. Link it to an engine, a door's controller or a cannon to start them at dawn, and a button into
+it to stop the ringing. A few **Scuttler Heads**, each on its own button or along a chain of timers, play a tune.
 
 The **controller** steps the bearings and pistons it is linked to through its frames while its input is
 on: every `frame_time` seconds it moves to the next frame, and starts over when `loop` is on. In its

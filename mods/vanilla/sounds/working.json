@@ -1,0 +1,145 @@
+{
+  "events": [
+    {
+      "id": "alarm_clock_bell",
+      "clips": [
+        "sounds/working/alarm_clock_bell.ogg"
+      ],
+      "max_distance": 60
+    },
+    {
+      "id": "alarm_clock_beep",
+      "clips": [
+        "sounds/working/alarm_clock_beep.ogg"
+      ],
+      "max_distance": 40
+    },
+    {
+      "id": "alarm_clock_chime",
+      "clips": [
+        "sounds/working/alarm_clock_chime.ogg"
+      ],
+      "max_distance": 50
+    },
+    {
+      "id": "alarm_clock_set",
+      "clips": [
+        "sounds/working/alarm_clock_set.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "scuttler_head_blip",
+      "clips": [
+        "sounds/working/scuttler_head_blip.ogg"
+      ],
+      "max_distance": 40,
+      "max_instances": 8
+    },
+    {
+      "id": "scuttler_head_bass",
+      "clips": [
+        "sounds/working/scuttler_head_bass.ogg"
+      ],
+      "max_distance": 40,
+      "max_instances": 8
+    },
+    {
+      "id": "scuttler_head_drum",
+      "clips": [
+        "sounds/working/scuttler_head_drum.ogg"
+      ],
+      "max_distance": 40,
+      "max_instances": 8
+    },
+    {
+      "id": "scuttler_head_voice",
+      "clips": [
+        "sounds/working/scuttler_head_voice.ogg"
+      ],
+      "max_distance": 40,
+      "max_instances": 8
+    },
+    {
+      "id": "cash_register_open",
+      "clips": [
+        "sounds/working/cash_register_open.ogg"
+      ],
+      "max_distance": 30
+    },
+    {
+      "id": "cash_register_close",
+      "clips": [
+        "sounds/working/cash_register_close.ogg"
+      ],
+      "max_distance": 30
+    },
+    {
+      "id": "canister_fuse",
+      "clips": [
+        "sounds/working/canister_fuse.ogg"
+      ],
+      "max_distance": 30
+    },
+    {
+      "id": "canister_explode",
+      "clips": [
+        "sounds/working/canister_explode.ogg",
+        "sounds/working/canister_explode_2.ogg"
+      ],
+      "pitch_variation": 0.05,
+      "max_distance": 160,
+      "rolloff": "linear"
+    },
+    {
+      "id": "plasma_drill_start",
+      "clips": [
+        "sounds/working/plasma_drill_start.ogg"
+      ],
+      "max_distance": 40
+    },
+    {
+      "id": "plasma_drill_loop",
+      "clips": [
+        "sounds/working/plasma_drill_loop.ogg"
+      ],
+      "loop": true,
+      "max_distance": 40,
+      "parameters": [
+        {
+          "name": "load",
+          "pitch": [
+            1,
+            0.85
+          ],
+          "volume_db": [
+            0,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "id": "plasma_drill_stop",
+      "clips": [
+        "sounds/working/plasma_drill_stop.ogg"
+      ],
+      "max_distance": 40
+    },
+    {
+      "id": "sticky_wheel_pump",
+      "clips": [
+        "sounds/working/sticky_wheel_pump.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "sticky_wheel_loop",
+      "clips": [
+        "sounds/working/sticky_wheel_loop.ogg"
+      ],
+      "loop": true,
+      "max_distance": 25
+    }
+  ]
+}

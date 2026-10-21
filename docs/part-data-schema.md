@@ -271,7 +271,7 @@ level again. Only the part as written (level 0) has a recipe. A part's script ke
 | Key | Type | Meaning |
 |-----|------|---------|
 | `cost` | list of `{ "item", "count" }` | What reaching this level costs in Survival. |
-| `set` | object | Keys merged over the part at this level, on top of the levels below. Only `name`, `description`, `durability`, `mesh`, `icon`, `sockets`, `settings`, `display`, `crafting`, `inventory`, `logic` and `properties` can change; objects merge key by key and lists are replaced. A level can't shrink `inventory.slots` or remove `crafting`, and its `sockets` must list the same sockets (ids, types, positions and normals) with only their `joint` changed, such as a suspension's stiffer spring. |
+| `set` | object | Keys merged over the part at this level, on top of the levels below. Only `name`, `description`, `mass` (kg; the Body gets the new mass at once), `durability`, `mesh`, `icon`, `sockets`, `settings`, `display`, `crafting`, `inventory`, `logic` and `properties` can change; objects merge key by key and lists are replaced. A level can't shrink `inventory.slots` or remove `crafting`, and its `sockets` must list the same sockets (ids, types, positions and normals) with only their `joint` changed, such as a suspension's stiffer spring. |
 
 At most 10 levels. The Part Editor lists them under Upgrades.
 
@@ -477,9 +477,10 @@ setting (`link`, `w_s`, `a_d` or `space_shift`) and the `invert` toggle.
 
 | Script | Property | Meaning |
 |--------|----------|---------|
-| `scripts/thruster.lua` | `thrust` (N) | Push toward its base at full power. |
+| `scripts/thruster.lua` | `thrust` (N) | Push toward its base at full power on power step 1. |
+| | `step_gain` | What each step of the `power` setting (1 to the top its level unlocks) multiplies the push and the fuel burn by: 1.5, so step 3 pushes 2.25 times step 1. |
 | | `lever_rate` (1/s) | How fast Space and Shift move the `space_shift` lever. |
-| | `fuel`, `fuel_time` (s) | Item burned from the creation's containers, and seconds of full power per item. Creative needs none. |
+| | `fuel`, `fuel_time` (s) | Item burned from the gas containers linked into it (or from all of the creation's when none is), and seconds of full power on step 1 per item; a higher level's longer `fuel_time` is its better mileage. Creative needs none. |
 | `scripts/wing.lua` | `area` (m²), `air_density` (kg/m³) | Lifting area and the air. |
 | | `camber_lift`, `lift_slope` (per rad) | Lift coefficient with the air along the surface, and its growth with the angle of attack. |
 | | `max_lift`, `stall_lift` | Lift coefficient where it stalls, and that of a stalled plate at 45°. |
@@ -502,8 +503,14 @@ setting (`link`, `w_s`, `a_d` or `space_shift`) and the `invert` toggle.
 | `scripts/horn.lua` | `honk` (s) | How long E sounds it; a linked input sounds it while above 0. |
 | `scripts/drill.lua` | `min_spin` (rad/s), `interval` (s), `damage`, `damage_to` ({type = damage}), `tip` ({from, reach}), `flank` ({at, from, reach, rays, lean}), `shake` (N) | Drill: no input; while a bearing spins it at `min_spin` or more it bites what its tip and the flanks of its bit touch (the only tool that breaks rock deposits), and each bite shakes its Body sideways with `shake` N (more the faster it turns). Its `spin` readout (0 to 1 of `min_spin`) drives the base ring glow. |
 | `scripts/saw_blade.lua` | `min_spin` (rad/s), `interval` (s), `damage`, `damage_to` ({type = damage}), `rim` and `faces` ({from, reach, rays}) | Saw Blade: no input; while a bearing spins it at `min_spin` or more it bites what its rim and faces touch, `damage_to` per part type or world object kind (logs cut faster than standing trees). Its `spin` readout (0 to 1 of `min_spin`) drives the hub glow. |
-| `scripts/water_cannon.lua` | `muzzle`, `range` (m), `water` (s), `impulse` (N·s), `interval` (s) | Fires on a rising input or E: waters soil it hits, else pushes what it hits. |
-| `scripts/mounted_gun.lua` | `ammo`, `muzzle`, `range` (m), `damage`, `impulse` (N·s), `interval` (s) | Hitscan shots taking `ammo` from the creation's containers (none in Creative). |
+| `scripts/water_cannon.lua` | `muzzle`, `range` (m), `water` (s), `impulse` (N·s), `interval` (s), `water_item`, `jets`, `douse`, `splash` (m) | Fires on a rising input or E: waters soil it hits, else pushes what it hits, and douses fires along its jet. Its water is `water_item` (a full bucket, `jets` jets each) from the Water Containers linked into it; with none it only clicks (its `dry` sound). Creative needs none. Its model plays `fire` on its `clip` readout. |
+| `scripts/mounted_gun.lua` | `ammo`, `muzzle`, `range` (m), `damage`, `impulse` (N·s), `interval` (s) | Hitscan shots taking `ammo` from the Potato Ammo Containers linked into it (none in Creative; with none it only clicks): once on E, and every `interval` while a linked trigger is on. Its model plays `fire` on its `clip` readout. |
+| `scripts/plasma_drill.lua` | `range` (m, the most its `range` setting allows), `interval` (s), `damage`, `kind`, `muzzle`, `impulse` (N·s), `burn`, `charge_item`, `charge_time` (s) | While its input is on, a beam out of its front bites the first thing within its `range` setting every `interval` for `damage` of `kind` (drill: it mines rock as the Drill does) and sets flammable parts burning at `burn`. One `charge_item` (a battery) from the containers linked into it (or any of the creation's) lasts `charge_time` s; Creative needs none. Shows `on`/`off` on `pose`, `beam`, and `charge` and `batteries` in its menu. |
+| `scripts/sticky_wheel.lua` | `radius`, `reach` (m), `rays`, `force` (N), `chemical`, `chemical_time` (s) | Every other step casts `rays` rays round its tread out to `reach` past `radius`, and pulls its Body toward the surfaces they find with up to `force` N times its `stickiness` setting (1 to 10 tenths). Burns one `chemical` per `chemical_time` s at full stickiness from the containers linked into it (or any of the creation's); a linked switch makes it stick only while on. Shows `on`/`off` on `pose`, and `gel` and `chemicals` in its menu. |
+| `scripts/explosive_canister.lua` | `radius` (m), `damage`, `impulse` (N·s), `fuse` (s), `impact_speed` (m/s), `burn_radius` (m), `burn` | Goes off when it breaks, when a blast reaches it (canisters chain) or when it hits something at `impact_speed` or more; any other damage lights a `fuse`-second fuse (`fuse_loop` on `pose`). The blast (`combat.explode`) deals `damage` at its middle falling to 0 at `radius`, pushes with up to `impulse`, and sets flammable parts within `burn_radius` burning at `burn`. |
+| `scripts/alarm_clock.lua` | `ring` (s), `repeat_time` (s) | Ticks (its `set` sound) when its settings change. Rings when the time of day (`world.time_of_day`) passes its `hour`:`minute` settings while `armed`: plays its `alarm` sound (`bell`, `beep` or `chime`) every `repeat_time` for `ring` s with its output on. A linked input turning on stops it. Shows `off`, `armed` and `ring_loop` on `pose`, and `now` and `rings` in its menu. |
+| `scripts/cash_register.lua` | (none) | E opens and shuts the drawer; a linked input opens it while on. Its output is on while open; its model plays `open` and `close` on its `clip` readout. |
+| `scripts/scuttler_head.lua` | (the `note` and `voice` settings) | Plays its `voice` sound (`blip`, `bass`, `drum` or `voice`) at `note` semitones from two octaves (12 is the sound's own pitch) each time its input turns on, and once when either setting changes. Flashes its lens (`note#n` on `pose`). |
 
 ## light and animation
 
@@ -668,21 +675,21 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 | 300 | Beams and frames | `ibeam_stub`, `ibeam_short`, `ibeam_long`, `ibeam_corner`, `ibeam_end`, `ibeam_holder`, `u_beam`, `metal_column_short`, `metal_column`, `metal_support`, `support_bracket`, `stand_support`, `support_pillar`, `lattice_pillar`, `support_pillar_stand`, `support_truss_small`, `support_truss`, `support_truss_large`, `tower_pole`, `tower_pole_top`, `door_frame`, `window_frame` |
 | 400 | Pipes | `small_pipe_short`, `small_pipe_long`, `small_pipe_bend`, `small_pipe_corner`, `small_pipe_tee`, `small_pipe_cross`, `small_pipe_four_way_tee`, `small_pipe_five_way`, `small_pipe_six_way`, `valve`, `large_pipe_short`, `large_pipe_long`, `large_pipe_corner`, `large_pipe_tee`, `main_pipe_short`, `main_pipe_long`, `main_pipe_corner`, `main_pipe_tee`, `main_pipe_extension`, `main_pipe_mount`, `main_pipe_cap`, `main_pipe_compressor` |
 | 500 | Seats and controls | `scrap_seat`, `scrap_drivers_seat`, `passenger_seat`, `saddle`, `drivers_seat`, `drivers_saddle`, `controller` |
-| 600 | Wheels | `scrap_wheel`, `wheel`, `big_wheel` |
+| 600 | Wheels | `scrap_wheel`, `wheel`, `big_wheel`, `sticky_wheel` |
 | 700 | Suspension | `sport_suspension`, `offroad_suspension` |
 | 800 | Engines | `scrap_gas_engine`, `gas_engine`, `electric_engine` |
 | 900 | Fuel and power | `gasoline`, `ember`, `gas_container`, `battery`, `battery_pack` |
 | 1000 | Bearings and pistons | `bearing_scrap`, `bearing`, `piston` |
 | 1100 | Flight | `thruster`, `hover_jet`, `rotor`, `wing`, `control_surface` |
-| 1200 | Logic | `switch_scrap`, `switch`, `button`, `logic_gate`, `timer`, `sensor` |
-| 1300 | Working parts | `drill`, `saw_blade`, `water_cannon`, `potato_blaster_mounted` |
+| 1200 | Logic | `switch_scrap`, `switch`, `button`, `logic_gate`, `timer`, `sensor`, `alarm_clock` |
+| 1300 | Working parts | `drill`, `plasma_drill`, `saw_blade`, `water_cannon`, `potato_blaster_mounted`, `explosive_canister_small`, `explosive_canister_large` |
 | 1400 | Sound | `horn`, `radio` |
 | 1500 | Vehicle body | `bumper_front`, `bumper_rear`, `mud_flap`, `exhaust_pipe`, `license_plate`, `roof_rack`, `antenna`, `windshield`, `side_window` |
 | 1600 | Lights | `shack_light`, `glowstick`, `fluorescent_light`, `packing_lamp`, `interior_light`, `headlight`, `spotlight`, `construction_light`, `warning_light`, `beacon_scrap`, `beacon`, `warehouse_spotlight`, `frame_beam_light`, `neon_sign`, `protector_sign` |
 | 1700 | Storage | `chest` (Scrap Chest), `small_chest`, `large_chest`, `cargo_chest`, `barrel`, `locker`, `tool_cabinet`, `file_cabinet`, `fridge`, `chemical_container`, `water_container`, `potato_ammo_container`, `dispenser`, `broken_microwave`, `ruin_chest` |
 | 1800 | Stations | `portable_fabricator`, `refiner`, `respawn_bed` |
 | 1900 | Farming | `soil_bag`, `water_bucket`, `feeding_trough`, `lead` |
-| 2000 | Furniture | `stool`, `chair`, `toilet`, `bathtub`, `wooden_table`, `metal_table`, `office_table`, `table_support`, `office_chair_base`, `cubicle_wall`, `shelf_unit`, `shelf_pillar`, `shelf_support`, `shelf_support_tall`, `pallet`, `stall_door`, `sink`, `mattress`, `pillow`, `mug`, `calendar`, `toilet_paper` |
+| 2000 | Furniture | `stool`, `chair`, `toilet`, `bathtub`, `cash_register`, `wooden_table`, `metal_table`, `office_table`, `table_support`, `office_chair_base`, `cubicle_wall`, `shelf_unit`, `shelf_pillar`, `shelf_support`, `shelf_support_tall`, `pallet`, `stall_door`, `sink`, `mattress`, `pillow`, `mug`, `calendar`, `toilet_paper` |
 | 2100 | Road signs | `stop_sign`, `caution_sign`, `danger_sign`, `no_entry_sign`, `speed_limit_sign`, `direction_arrow_left`, `direction_arrow_straight`, `direction_arrow_right` |
 | 2200 | Road and site | `traffic_cone`, `barrier_tape`, `outpost_sign`, `warehouse_key_sign` |
 | 2300 | Nature | `fallen_log`, `tree_trunk` |
@@ -690,7 +697,7 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 | 2500 | Weapons | `potato_blaster`, `potato_scattergun`, `potato_launcher`, `popper` |
 | 2600 | Refined materials | `wood_rod`, `pine_rod`, `stone_rod`, `metal_rod` |
 | 2700 | Crafting materials | `glue` |
-| 2800 | Ducts, conduits and cables | `duct_short`, `duct_long`, `duct_corner`, `duct_tee`, `duct_end`, `duct_holder`, `metal_tube`, `tubes_short` |
+| 2800 | Ducts, conduits and cables | `duct_short`, `duct_long`, `duct_corner`, `duct_tee`, `duct_end`, `duct_holder`, `metal_tube`, `tubes_short`, `tubes_long`, `tubes_corner`, `tubes_tee`, `wires_short`, `wires_long`, `wires_bend`, `wires_concave_bend`, `wires_convex_bend` |
 | 3000 | Farm and shack decor | `produce_box_carrot`, `produce_box_tomato`, `produce_box_mixed`, `grass_planter`, `duck_statuette`, `mannequin_boot` |
 
 ## The editor source file

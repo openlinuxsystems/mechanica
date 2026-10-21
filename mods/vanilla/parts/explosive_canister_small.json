@@ -1,0 +1,51 @@
+{
+  "id": "explosive_canister_small",
+  "name": "Small Explosive Canister",
+  "description": "A canister of volatile fuel. Hit it and its fuse hisses for a few seconds; break it, drop it hard or catch it in a blast and it goes off at once, wrecking everything within seven blocks and setting what burns alight.",
+  "category": "interactive",
+  "mass": 6,
+  "durability": 10,
+  "friction": 0.3,
+  "buoyancy": 0.7,
+  "flammable": true,
+  "stack_size": 10,
+  "sound_material": "metal",
+  "size": [1, 2, 1],
+  "mesh": "meshes/parts/explosive_canister_small.glb",
+  "icon": "textures/items/explosive_canister_small_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "collision": {
+    "shape": "cylinder",
+    "radius": 0.11,
+    "height": 0.5
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.25, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/explosive_canister.lua",
+  "sounds": {
+    "fuse": "canister_fuse",
+    "explode": "canister_explode"
+  },
+  "display": {
+    "clips": {
+      "readout": "pose"
+    }
+  },
+  "properties": {
+    "radius": 1.75,
+    "damage": 120,
+    "impulse": 600,
+    "fuse": 3,
+    "impact_speed": 8,
+    "burn_radius": 1.0,
+    "burn": 0.5
+  }
+}

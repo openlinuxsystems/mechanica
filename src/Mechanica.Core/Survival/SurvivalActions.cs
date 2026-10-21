@@ -169,6 +169,14 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// <summary>A blow rocked a player who lived through it (<see cref="HitSettings"/>): how hard, and where it came from.</summary>
     public event Action<PlayerHitView>? PlayerHit;
 
+    /// <summary>
+    /// A part took damage of any kind (a shot, a blast, a Sledgehammer, fire, a bot), or broke off: the part's own script
+    /// hears it as <c>on_damage</c>. Raised by <see cref="ToolActions.DamagePart"/> through <see cref="IStrikeTargets"/>.
+    /// </summary>
+    public event Action<PartDamage>? PartDamaged;
+
+    void IStrikeTargets.PartDamaged(PartDamage damage) => PartDamaged?.Invoke(damage);
+
     /// <summary>Registers every survival action.</summary>
     public void Register(ActionDispatcher dispatcher)
     {
@@ -471,7 +479,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             var body = creation.BodyIndexOf(part);
             if (cutting)
                 world.Impact(hit.Point, creation.DefinitionOf(part).SoundMaterial ?? "metal");
-            var result = world.DamagePart(creation, part, damage);
+            var result = world.DamagePart(creation, part, damage, kind);
             if (!result.Broken && push != Vector3.Zero && float.IsFinite(push.LengthSquared()))
                 world.Push(creation, body, hit.Point, push);
             return new ShotHitView("part", point, damage, Creation: id, Part: part);
@@ -540,18 +548,21 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         }
         // FindCreation brings each Creation's Body poses up to date.
         // A world-owned Creation (WorldOwned) is not hurt or moved by a blast.
-        foreach (var creation in world.AllCreations.Where(c => !c.IsWorldOwned).Select(c => c.Id).ToList().Select(world.FindCreation).OfType<Creation>())
+        foreach (var whole in world.AllCreations.Where(c => !c.IsWorldOwned).Select(c => c.Id).ToList().Select(world.FindCreation).OfType<Creation>())
         {
-            foreach (var part in creation.Parts.ToList())
+            // A break can split the Creation: its pieces keep their part ids, so each part is looked for in them too.
+            var pieces = new List<Creation> { whole };
+            foreach (var part in whole.Parts.ToList())
             {
-                if (creation.FindPart(part.Id) is null)
-                    continue; // broken off by an earlier part's damage, with the Creation split
+                if (pieces.FirstOrDefault(p => p.FindPart(part.Id) is { } found && found.Part == part.Part) is not { } creation)
+                    continue; // broken by an earlier part's blast damage
                 var centre = PartCentre(creation, part.Id);
                 if (Vector3.Distance(centre, at) is var d && d > radius)
                     continue;
                 var dealt = Falloff(d);
                 var body = creation.BodyIndexOf(part.Id);
-                var result = world.DamagePart(creation, part.Id, dealt);
+                var result = world.DamagePart(creation, part.Id, dealt, DamageKinds.Explosion);
+                pieces.AddRange(result.SplitOff.Select(world.FindCreation).OfType<Creation>());
                 if (!result.Broken && impulse > 0 && centre != at)
                     world.Push(creation, body, centre, Vector3.Normalize(centre - at) * impulse * (dealt / damage));
                 hits.Add(new ShotHitView("part", centre.ToVec3(), dealt, Creation: creation.Id, Part: part.Id));

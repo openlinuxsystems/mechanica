@@ -1,0 +1,19 @@
+{
+  "id": "tubes_long",
+  "name": "Conduit (Long)",
+  "description": "Four blocks of conduit tubes in a channel tray.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 4,
+  "friction": 0.3,
+  "buoyancy": 0.4,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [2, 1, 4],
+  "mesh": "meshes/parts/tubes_long.glb",
+  "icon": "textures/items/tubes_long_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

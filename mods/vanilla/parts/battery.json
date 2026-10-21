@@ -1,7 +1,7 @@
 {
   "id": "battery",
   "name": "Battery Container",
-  "description": "Holds batteries, which power the creation's electric engines; the gauges on its sides show how charged it is. Its yellow lid and terminals tell it apart from a Gas Container.",
+  "description": "Holds batteries, which power the creation's electric engines, and Plasma Drills linked to it with the Connect Tool; the gauges on its sides show how charged it is. Its yellow lid and terminals tell it apart from a Gas Container.",
   "category": "container",
   "mass": 7.5,
   "durability": 6,
@@ -33,6 +33,10 @@
     "accepts": [
       "battery_pack"
     ]
+  },
+  "logic": {
+    "outputs": 16,
+    "kind": "power"
   },
   "display": {
     "clips": {
