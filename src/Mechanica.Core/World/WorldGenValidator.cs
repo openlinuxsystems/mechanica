@@ -535,6 +535,8 @@ internal static class WorldGenValidator
             sink.Error(code, "$.id", $"POI id '{prefab.Id}' must be lowercase snake_case.");
         if (!(prefab.Radius > 0f) || !float.IsFinite(prefab.Radius))
             sink.Error(code, "$.radius", $"radius must be greater than 0 (got {prefab.Radius}).");
+        if (prefab.BotFreeRadius is { } botFree && !(botFree > 0f && float.IsFinite(botFree)))
+            sink.Error(code, "$.bot_free_radius", $"bot_free_radius must be greater than 0 (got {botFree}).");
 
         if (prefab.Placement is not { } placement)
             sink.Error(code, "$.placement", "a POI needs placement rules.");
