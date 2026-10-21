@@ -1,13 +1,14 @@
 {
   "id": "fridge",
   "name": "Fridge",
-  "description": "Keeps produce and seeds: 30 slots.",
+  "description": "Keeps food: 20 slots.",
   "category": "container",
-  "mass": 40,
-  "durability": 10,
-  "friction": 0.5,
-  "buoyancy": 0.2,
+  "mass": 6,
+  "durability": 3,
+  "friction": 0.4,
+  "buoyancy": 0.6,
   "flammable": false,
+  "stack_size": 1,
   "sound_material": "metal",
   "size": [4, 7, 3],
   "mesh": "meshes/fridge.glb",
@@ -28,14 +29,11 @@
     "place": "place_metal"
   },
   "inventory": {
-    "slots": 30,
+    "slots": 20,
     "accepts": [
       "carrot",
       "potato",
-      "tomato",
-      "carrot_seed",
-      "potato_seed",
-      "tomato_seed"
+      "tomato"
     ]
   }
 }

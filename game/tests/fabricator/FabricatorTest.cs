@@ -92,7 +92,7 @@ public partial class FabricatorTest : StagedTest
             }
             if (frame == 1)
                 _screen.Show(FabricatorRef);
-            if (!_screen.StationMode || _client.Main.Inventory.Shown.GetValueOrDefault(NearRef) is not { } chest || chest.Count(Metal) != 8 || frame < 10)
+            if (!_screen.StationMode || _client.Main.Inventory.Shown.GetValueOrDefault(NearRef) is not { } chest || chest.Count(Metal) != 10 || frame < 10)
                 return false;
             var (main, card) = (_screen.StationPanels[0].GetGlobalRect(), _screen.StationPanels[1].GetGlobalRect());
             var narrow = GetViewport().GetVisibleRect().Size.X < 1280;
@@ -107,7 +107,7 @@ public partial class FabricatorTest : StagedTest
                 _screen.ToggleStorage();
             Check(_screen.StorageOpen, "the Storage button opens the drawer");
             Check(_screen.LinkedShown.SequenceEqual([NearRef]), "the linked chest is in the drawer");
-            Check(_screen.LinkedSlots(NearRef).Any(s => s.Entry == Metal && s.Count == 8 && s.IsVisibleInTree()), "its scrap shows");
+            Check(_screen.LinkedSlots(NearRef).Any(s => s.Entry == Metal && s.Count == 10 && s.IsVisibleInTree()), "its scrap shows");
             Check(_screen.StationOwnSlots.Any(s => s.Entry == Wood), "and the player's inventory under it");
             Check(_screen.StationLevel == "Level 1 / 5", $"the station's level ({_screen.StationLevel})");
             return true;
@@ -142,14 +142,14 @@ public partial class FabricatorTest : StagedTest
             _screen.Choose(Chest);
             _screen.SetQuantity(3);
             var inputs = _screen.PreviewInputs;
-            Check(inputs.Any(i => i.Missing && i.Text.StartsWith("32 / 48")), $"48 scrap wood blocks is short in red ({Lines(inputs)})");
-            Check(inputs.Any(i => !i.Missing && i.Text.StartsWith("16 / 24")) == false && inputs.Any(i => i.Missing && i.Text.StartsWith("16 / 24")), $"24 scrap metal blocks is short too ({Lines(inputs)})");
+            Check(inputs.Any(i => i.Missing && i.Text.StartsWith("120 / 180")), $"180 scrap wood blocks is short in red ({Lines(inputs)})");
+            Check(inputs.Any(i => !i.Missing && i.Text.StartsWith("20 / 30")) == false && inputs.Any(i => i.Missing && i.Text.StartsWith("20 / 30")), $"30 scrap metal blocks is short too ({Lines(inputs)})");
             Check(_screen.CraftButton.Disabled, "Craft is off");
             Check(_screen.Reason.StartsWith("Needs"), $"and says why ({_screen.Reason})");
             Check(_screen.StatRowsShown.Select(r => r.Name).SequenceEqual(["Mass", "Durability", "Friction", "Buoyancy"]), $"the chest's stats ({string.Join(", ", _screen.StatRowsShown)})");
             _screen.SetQuantity(2);
             inputs = _screen.PreviewInputs;
-            Check(inputs.All(i => !i.Missing) && inputs.Any(i => i.Text.StartsWith("16 / 16")), $"two chests' worth counts the chest's scrap ({Lines(inputs)})");
+            Check(inputs.All(i => !i.Missing) && inputs.Any(i => i.Text.StartsWith("20 / 20")), $"two chests' worth counts the chest's scrap ({Lines(inputs)})");
             Check(!_screen.CraftButton.Disabled && _screen.Reason == "", "Craft is on, with no reason");
             return true;
         });
@@ -257,9 +257,9 @@ public partial class FabricatorTest : StagedTest
         creation.SetAllBodyPoses(new Pose((feet + new Vector3(-1, 0, -4)).ToNumerics(), System.Numerics.Quaternion.Identity));
         _host.Main.Build.Added(creation);
         _workshop = creation.Id;
-        HostPockets.Add(Wood, 32);
-        HostPockets.Add(Metal, 8);
-        creation.InventoryOf(_near)!.Add(Metal, 8);
+        HostPockets.Add(Wood, 120);
+        HostPockets.Add(Metal, 10);
+        creation.InventoryOf(_near)!.Add(Metal, 10);
     }
 
     // Puts a part on top of the floor with its lowest x cell at x, trying cells until its base socket attaches.

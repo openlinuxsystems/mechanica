@@ -1,0 +1,736 @@
+// Every container (SM parity, Containers step): chests, storage and the consumable containers, with the wiki's stats,
+// slots and recipes (see /mnt/project-files/mechanica/containers/CONTAINER_MAP.md). Re-run with tools/author-vanilla.sh.
+{
+  "format_version": 1,
+  "parts": [
+    {
+      "file": "parts/chest.json",
+      "template": "interactive",
+      "set": {
+        "name": "Scrap Chest",
+        "description": "A chest knocked together from scrap wood and metal. Holds ten stacks of anything.",
+        "category": "container",
+        "mass": 9,
+        "durability": 3,
+        "friction": 0.5,
+        "buoyancy": 0.8,
+        "flammable": false,
+        "stack_size": 5,
+        "sound_material": "wood",
+        "size": [3, 2, 3],
+        "visual": { "color": "#8a5a30", "paintable": true },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.25, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "chest_open", "close": "chest_close", "place": "chest_place" },
+        "inventory": { "slots": 10 }
+      },
+      "model": [
+        { "kind": "box", "size": [0.75, 0.5, 0.75] },
+        {
+          "kind": "box",
+          "operation": "subtract",
+          "size": [0.6, 0.4, 0.04],
+          "position": [0, 0, 0.375]
+        }
+      ],
+      "recipes": [
+        {
+          "id": "chest",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "scrap_wood_block", "count": 60 },
+            { "item": "scrap_metal_block", "count": 10 }
+          ],
+          "outputs": [{ "item": "chest", "count": 1 }],
+          "time": 10,
+          "order": 1710
+        }
+      ]
+    },
+    {
+      "file": "parts/small_chest.json",
+      "template": "interactive",
+      "set": {
+        "name": "Small Chest",
+        "description": "A steel chest with ten slots and a port on its side for pipes.",
+        "category": "container",
+        "mass": 6,
+        "durability": 6,
+        "friction": 0.5,
+        "buoyancy": 0.8,
+        "flammable": false,
+        "stack_size": 5,
+        "sound_material": "metal",
+        "size": [3, 3, 3],
+        "visual": { "color": "#5a6068", "paintable": true },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "container_open", "place": "place_metal" },
+        "inventory": { "slots": 10 }
+      },
+      "model": [
+        { "kind": "box", "size": [0.75, 0.75, 0.75] },
+        {
+          "kind": "box",
+          "operation": "subtract",
+          "size": [0.6, 0.6, 0.04],
+          "position": [0, 0, 0.375]
+        }
+      ],
+      "recipes": [
+        {
+          "id": "small_chest",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "metal_block", "count": 20 },
+            { "item": "circuit_board", "count": 2 },
+            { "item": "glue", "count": 2 }
+          ],
+          "outputs": [{ "item": "small_chest", "count": 1 }],
+          "time": 10,
+          "order": 1712
+        }
+      ]
+    },
+    {
+      "file": "parts/large_chest.json",
+      "template": "interactive",
+      "set": {
+        "name": "Large Chest",
+        "description": "A big steel chest with thirty slots and three pipe ports.",
+        "category": "container",
+        "mass": 7.5,
+        "durability": 6,
+        "friction": 0.4,
+        "buoyancy": 0.6,
+        "flammable": false,
+        "stack_size": 1,
+        "sound_material": "metal",
+        "size": [5, 3, 4],
+        "visual": { "color": "#5a6068", "paintable": true },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "container_open", "place": "place_metal" },
+        "inventory": { "slots": 30 }
+      },
+      "model": [
+        { "kind": "box", "size": [1.25, 0.75, 1.0] },
+        {
+          "kind": "box",
+          "operation": "subtract",
+          "size": [1.0, 0.6, 0.04],
+          "position": [0, 0, 0.5]
+        }
+      ],
+      "recipes": [
+        {
+          "id": "large_chest",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "metal_block_2", "count": 20 },
+            { "item": "circuit_board", "count": 5 },
+            { "item": "glue", "count": 5 }
+          ],
+          "outputs": [{ "item": "large_chest", "count": 1 }],
+          "time": 30,
+          "order": 1714
+        }
+      ]
+    },
+    {
+      "file": "parts/cargo_chest.json",
+      "template": "interactive",
+      "set": {
+        "name": "Cargo Chest",
+        "description": "A cargo bin with a hundred slots and ten pipe ports, for a base's whole store.",
+        "category": "container",
+        "mass": 12,
+        "durability": 6,
+        "friction": 0.5,
+        "buoyancy": 0.8,
+        "flammable": false,
+        "stack_size": 1,
+        "sound_material": "metal",
+        "size": [8, 6, 6],
+        "visual": { "color": "#5a6068", "paintable": true },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.75, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "container_open", "place": "place_metal" },
+        "inventory": { "slots": 100 }
+      },
+      "model": [
+        { "kind": "box", "size": [2.0, 1.5, 1.5] },
+        {
+          "kind": "box",
+          "operation": "subtract",
+          "size": [1.6, 1.2, 0.04],
+          "position": [0, 0, 0.75]
+        }
+      ],
+      "recipes": [
+        {
+          "id": "cargo_chest",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "metal_block_2", "count": 100 },
+            { "item": "circuit_board", "count": 10 },
+            { "item": "glue", "count": 5 }
+          ],
+          "outputs": [{ "item": "cargo_chest", "count": 1 }],
+          "time": 30,
+          "order": 1716
+        }
+      ]
+    },
+    {
+      "file": "parts/barrel.json",
+      "template": "interactive",
+      "set": {
+        "name": "Barrel",
+        "description": "A steel drum with 8 slots.",
+        "category": "container",
+        "mass": 12,
+        "durability": 6,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "sound_material": "metal",
+        "size": [2, 4, 2],
+        "visual": { "color": "#3a5a8a", "paintable": true },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.5, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "container_open", "place": "place_metal" },
+        "inventory": { "slots": 8 }
+      },
+      "model": [
+        { "kind": "box", "size": [0.5, 1, 0.5] },
+        {
+          "kind": "box",
+          "operation": "subtract",
+          "size": [0.4, 0.8, 0.04],
+          "position": [0, 0, 0.25]
+        }
+      ],
+      "recipes": [
+        {
+          "id": "barrel",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_metal_block", "count": 12 }],
+          "outputs": [{ "item": "barrel", "count": 1 }],
+          "time": 3,
+          "order": 1720
+        }
+      ]
+    },
+    {
+      "file": "parts/locker.json",
+      "template": "interactive",
+      "set": {
+        "name": "Locker",
+        "description": "A tall steel locker with four slots. Lockers in warehouses and wrecks often hold something.",
+        "category": "container",
+        "mass": 6,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.6,
+        "flammable": false,
+        "stack_size": 1,
+        "sound_material": "metal",
+        "size": [2, 7, 2],
+        "visual": { "color": "#4a6a8a", "paintable": true },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.875, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "container_open", "place": "place_metal" },
+        "inventory": { "slots": 4 }
+      },
+      "model": [
+        { "kind": "box", "size": [0.5, 1.75, 0.5] },
+        {
+          "kind": "box",
+          "operation": "subtract",
+          "size": [0.4, 1.4, 0.04],
+          "position": [0, 0, 0.25]
+        }
+      ],
+      "recipes": [
+        {
+          "id": "locker",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_metal_block", "count": 20 }],
+          "outputs": [{ "item": "locker", "count": 1 }],
+          "time": 5,
+          "order": 1730
+        }
+      ]
+    },
+    {
+      "file": "parts/tool_cabinet.json",
+      "template": "interactive",
+      "set": {
+        "name": "Tool Cabinet",
+        "description": "A red tool chest with 15 slots.",
+        "category": "container",
+        "mass": 20,
+        "durability": 8,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "sound_material": "metal",
+        "size": [3, 4, 2],
+        "visual": { "color": "#b03030", "paintable": true },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.5, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "container_open", "place": "place_metal" },
+        "inventory": { "slots": 15 }
+      },
+      "model": [
+        { "kind": "box", "size": [0.75, 1, 0.5] },
+        {
+          "kind": "box",
+          "operation": "subtract",
+          "size": [0.6, 0.8, 0.04],
+          "position": [0, 0, 0.25]
+        }
+      ],
+      "recipes": [
+        {
+          "id": "tool_cabinet",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_metal_block", "count": 16 }, { "item": "component_kit", "count": 1 }],
+          "outputs": [{ "item": "tool_cabinet", "count": 1 }],
+          "time": 4,
+          "order": 1740
+        }
+      ]
+    },
+    {
+      "file": "parts/file_cabinet.json",
+      "template": "interactive",
+      "set": {
+        "name": "File Cabinet",
+        "description": "A steel cabinet with 10 slots.",
+        "category": "container",
+        "mass": 10.5,
+        "durability": 7,
+        "friction": 0.4,
+        "buoyancy": 0.6,
+        "flammable": false,
+        "sound_material": "metal",
+        "size": [2, 5, 3],
+        "visual": { "color": "#7a7a72", "paintable": true },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.625, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "container_open", "place": "place_metal" },
+        "inventory": { "slots": 10 }
+      },
+      "model": [
+        { "kind": "box", "size": [0.5, 1.25, 0.75] },
+        {
+          "kind": "box",
+          "operation": "subtract",
+          "size": [0.4, 1, 0.04],
+          "position": [0, 0, 0.375]
+        }
+      ],
+      "recipes": [
+        {
+          "id": "file_cabinet",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_metal_block", "count": 16 }],
+          "outputs": [{ "item": "file_cabinet", "count": 1 }],
+          "time": 4,
+          "order": 1750
+        }
+      ]
+    },
+    {
+      "file": "parts/fridge.json",
+      "template": "interactive",
+      "set": {
+        "name": "Fridge",
+        "description": "Keeps food: 20 slots.",
+        "category": "container",
+        "mass": 6,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.6,
+        "flammable": false,
+        "stack_size": 1,
+        "sound_material": "metal",
+        "size": [4, 7, 3],
+        "visual": { "color": "#e8e8e0", "paintable": true },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.875, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "container_open", "place": "place_metal" },
+        "inventory": { "slots": 20, "accepts": ["carrot", "potato", "tomato"] }
+      },
+      "model": [
+        { "kind": "box", "size": [1, 1.75, 0.75] },
+        {
+          "kind": "box",
+          "operation": "subtract",
+          "size": [0.8, 1.4, 0.04],
+          "position": [0, 0, 0.375]
+        }
+      ],
+      "recipes": [
+        {
+          "id": "fridge",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "metal_block", "count": 10 },
+            { "item": "chemical", "count": 2 },
+            { "item": "circuit_board", "count": 1 },
+            { "item": "glue", "count": 2 }
+          ],
+          "outputs": [{ "item": "fridge", "count": 1 }],
+          "time": 60,
+          "order": 1760
+        }
+      ]
+    },
+    {
+      "file": "parts/chemical_container.json",
+      "template": "interactive",
+      "set": {
+        "name": "Chemical Container",
+        "description": "Holds five stacks of chemicals.",
+        "category": "container",
+        "mass": 7.5,
+        "durability": 6,
+        "friction": 0.4,
+        "buoyancy": 0.6,
+        "flammable": false,
+        "sound_material": "metal",
+        "size": [4, 3, 3],
+        "visual": { "color": "#6a3a9a", "paintable": true },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "container_open", "place": "place_metal" },
+        "inventory": { "slots": 5, "accepts": ["chemical"] }
+      },
+      "model": [
+        { "kind": "box", "size": [1, 0.75, 0.75] },
+        {
+          "kind": "box",
+          "operation": "subtract",
+          "size": [0.8, 0.6, 0.04],
+          "position": [0, 0, 0.375]
+        }
+      ],
+      "recipes": [
+        {
+          "id": "chemical_container",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "metal_block_2", "count": 10 },
+            { "item": "glass_block", "count": 20 },
+            { "item": "circuit_board", "count": 5 },
+            { "item": "glue", "count": 2 }
+          ],
+          "outputs": [{ "item": "chemical_container", "count": 1 }],
+          "time": 60,
+          "order": 1770
+        }
+      ]
+    },
+    {
+      "file": "parts/water_container.json",
+      "template": "interactive",
+      "set": {
+        "name": "Water Container",
+        "description": "Holds five full water buckets.",
+        "category": "container",
+        "mass": 7.5,
+        "durability": 6,
+        "friction": 0.4,
+        "buoyancy": 0.6,
+        "flammable": false,
+        "sound_material": "metal",
+        "size": [4, 3, 3],
+        "visual": { "color": "#3a6a9a", "paintable": true },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "container_open", "place": "place_metal" },
+        "inventory": { "slots": 5, "accepts": ["water_bucket_full"] }
+      },
+      "model": [
+        { "kind": "box", "size": [1.0, 0.75, 0.75] },
+        {
+          "kind": "box",
+          "operation": "subtract",
+          "size": [0.8, 0.6, 0.04],
+          "position": [0, 0, 0.375]
+        }
+      ],
+      "recipes": [
+        {
+          "id": "water_container",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "metal_block", "count": 10 },
+            { "item": "circuit_board", "count": 5 },
+            { "item": "glue", "count": 4 }
+          ],
+          "outputs": [{ "item": "water_container", "count": 1 }],
+          "time": 30,
+          "order": 1772
+        }
+      ]
+    },
+    {
+      "file": "parts/potato_ammo_container.json",
+      "template": "interactive",
+      "set": {
+        "name": "Potato Ammo Container",
+        "description": "Holds five stacks of potatoes for mounted potato guns.",
+        "category": "container",
+        "mass": 7.5,
+        "durability": 6,
+        "friction": 0.4,
+        "buoyancy": 0.6,
+        "flammable": false,
+        "sound_material": "metal",
+        "size": [4, 3, 3],
+        "visual": { "color": "#8a7a3a", "paintable": true },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "container_open", "place": "place_metal" },
+        "inventory": { "slots": 5, "accepts": ["potato"] }
+      },
+      "model": [
+        { "kind": "box", "size": [1.0, 0.75, 0.75] },
+        {
+          "kind": "box",
+          "operation": "subtract",
+          "size": [0.8, 0.6, 0.04],
+          "position": [0, 0, 0.375]
+        }
+      ],
+      "recipes": [
+        {
+          "id": "potato_ammo_container",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "metal_block_2", "count": 10 },
+            { "item": "glass_block", "count": 20 },
+            { "item": "circuit_board", "count": 5 },
+            { "item": "glue", "count": 2 }
+          ],
+          "outputs": [{ "item": "potato_ammo_container", "count": 1 }],
+          "time": 30,
+          "order": 1774
+        }
+      ]
+    },
+    {
+      "file": "parts/broken_microwave.json",
+      "template": "interactive",
+      "set": {
+        "name": "Broken Microwave",
+        "description": "A dead microwave from the SV-04's galley. Its one slot still makes a cupboard.",
+        "category": "container",
+        "mass": 7.5,
+        "durability": 3,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": true,
+        "stack_size": 1,
+        "sound_material": "metal",
+        "size": [2, 2, 2],
+        "visual": { "color": "#d8d4c8", "paintable": true },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.25, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "container_open", "place": "place_metal" },
+        "inventory": { "slots": 1 }
+      },
+      "model": [
+        { "kind": "box", "size": [0.5, 0.5, 0.5] },
+        {
+          "kind": "box",
+          "operation": "subtract",
+          "size": [0.4, 0.4, 0.04],
+          "position": [0, 0, 0.25]
+        }
+      ],
+      "recipes": [
+        {
+          "id": "broken_microwave",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_metal_block", "count": 6 }],
+          "outputs": [{ "item": "broken_microwave", "count": 1 }],
+          "time": 3,
+          "order": 1790
+        }
+      ]
+    },
+    {
+      "file": "parts/ruin_chest.json",
+      "template": "interactive",
+      "set": {
+        "name": "Ruin Chest",
+        "description": "An old stone chest from the ruins. It holds six stacks.",
+        "category": "container",
+        "mass": 7.5,
+        "durability": 6,
+        "friction": 0.4,
+        "buoyancy": 0.6,
+        "flammable": false,
+        "sound_material": "concrete",
+        "size": [4, 3, 3],
+        "visual": { "color": "#8a867c", "paintable": true },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "container_open", "place": "place_concrete" },
+        "inventory": { "slots": 6 }
+      },
+      "model": [
+        { "kind": "box", "size": [1.0, 0.75, 0.75] },
+        {
+          "kind": "box",
+          "operation": "subtract",
+          "size": [0.8, 0.6, 0.04],
+          "position": [0, 0, 0.375]
+        }
+      ],
+      "recipes": [
+        {
+          "id": "ruin_chest",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_stone_block", "count": 20 }],
+          "outputs": [{ "item": "ruin_chest", "count": 1 }],
+          "time": 5,
+          "order": 1792
+        }
+      ]
+    },
+    {
+      "file": "parts/wooden_crate.json",
+      "template": "interactive",
+      "set": {
+        "name": "Wooden Crate",
+        "category": "container",
+        "mass": 10,
+        "durability": 5,
+        "friction": 0.5,
+        "buoyancy": 0.6,
+        "flammable": true,
+        "sound_material": "wood",
+        "size": [3, 3, 3],
+        "visual": { "color": "#a07040", "paintable": true },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "container_open", "place": "place_wood" },
+        "inventory": { "slots": 10 }
+      },
+      "model": [
+        { "kind": "box", "size": [0.75, 0.75, 0.75] },
+        {
+          "kind": "box",
+          "operation": "subtract",
+          "size": [0.6, 0.6, 0.04],
+          "position": [0, 0, 0.375]
+        }
+      ]
+    },
+    {
+      "file": "parts/metal_crate.json",
+      "template": "interactive",
+      "set": {
+        "name": "Metal Crate",
+        "category": "container",
+        "mass": 20,
+        "durability": 10,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "sound_material": "metal",
+        "size": [3, 3, 3],
+        "visual": { "color": "#5a6068", "paintable": true },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "container_open", "place": "place_metal" },
+        "inventory": { "slots": 15 }
+      },
+      "model": [
+        { "kind": "box", "size": [0.75, 0.75, 0.75] },
+        {
+          "kind": "box",
+          "operation": "subtract",
+          "size": [0.6, 0.6, 0.04],
+          "position": [0, 0, 0.375]
+        }
+      ]
+    },
+    {
+      "file": "parts/gas_container.json",
+      "template": "interactive",
+      "set": {
+        "name": "Gas Container",
+        "description": "Holds five stacks of gasoline. Link it to Gas Engines and Thrusters with the Connect Tool and they burn its fuel; the gauges on its sides show how full it is. Pick it up (hold right click) even when it is full: the gasoline comes with it.",
+        "category": "container",
+        "mass": 7.5,
+        "durability": 6,
+        "friction": 0.4,
+        "buoyancy": 0.6,
+        "flammable": false,
+        "stack_size": 5,
+        "sound_material": "metal",
+        "size": [4, 3, 3],
+        "icon": "textures/items/gas_container_icon.png",
+        "visual": { "color": "#ffffff" },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "container_open", "place": "place_metal" },
+        "inventory": { "slots": 5, "accepts": ["gasoline"], "carry_contents": true },
+        "logic": { "outputs": 16, "kind": "power" },
+        "script": "scripts/gas_container.lua",
+        "display": {
+          "clips": { "readout": "clip", "scrub": [{ "readout": "fill", "clip": "fill" }] }
+        },
+        "properties": { "fuel": "gasoline", "ease": 0.3, "pulse_time": 0.4, "supply_time": 0.6 }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/gas_container.glb" }],
+      "recipes": [
+        {
+          "id": "gas_container",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "metal_block", "count": 20 },
+            { "item": "circuit_board", "count": 5 },
+            { "item": "paint_ammo", "count": 10 },
+            { "item": "glue", "count": 2 }
+          ],
+          "outputs": [{ "item": "gas_container", "count": 1 }],
+          "time": 30,
+          "order": 920
+        }
+      ]
+    },
+    {
+      "file": "parts/battery.json",
+      "template": "interactive",
+      "set": {
+        "name": "Battery Container",
+        "description": "Holds batteries, which power the creation's electric engines; the gauges on its sides show how charged it is. Its yellow lid and terminals tell it apart from a Gas Container.",
+        "category": "container",
+        "mass": 7.5,
+        "durability": 6,
+        "friction": 0.4,
+        "buoyancy": 0.6,
+        "flammable": false,
+        "sound_material": "metal",
+        "size": [4, 3, 3],
+        "icon": "textures/items/battery_icon.png",
+        "visual": { "color": "#ffffff" },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "container_open", "place": "place_metal" },
+        "inventory": { "slots": 5, "accepts": ["battery_pack"] },
+        "script": "scripts/battery.lua",
+        "display": {
+          "clips": { "readout": "clip", "scrub": [{ "readout": "charge", "clip": "charge" }] }
+        },
+        "properties": { "charge_item": "battery_pack", "ease": 0.3 }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/battery.glb" }],
+      "recipes": [
+        {
+          "id": "battery",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "metal_block_2", "count": 20 },
+            { "item": "circuit_board", "count": 10 },
+            { "item": "paint_ammo", "count": 15 },
+            { "item": "glue", "count": 2 }
+          ],
+          "outputs": [{ "item": "battery", "count": 1 }],
+          "time": 60,
+          "order": 930
+        }
+      ]
+    }
+  ]
+}

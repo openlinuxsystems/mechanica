@@ -1,0 +1,34 @@
+{
+  "id": "small_chest",
+  "name": "Small Chest",
+  "description": "A steel chest with ten slots and a port on its side for pipes.",
+  "category": "container",
+  "mass": 6,
+  "durability": 6,
+  "friction": 0.5,
+  "buoyancy": 0.8,
+  "flammable": false,
+  "stack_size": 5,
+  "sound_material": "metal",
+  "size": [3, 3, 3],
+  "mesh": "meshes/small_chest.glb",
+  "visual": {
+    "color": "#5a6068",
+    "paintable": true
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.375, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "sounds": {
+    "open": "container_open",
+    "place": "place_metal"
+  },
+  "inventory": {
+    "slots": 10
+  }
+}
