@@ -236,6 +236,9 @@ public sealed record BotModelDefinition
     /// </summary>
     public List<string>? Variants { get; init; }
 
+    /// <summary>Nodes of the model shown only while the bot is kept (a tamed animal's collar); hidden on a wild one.</summary>
+    public List<string>? KeptNodes { get; init; }
+
     /// <summary>
     /// Clips it plays now and then while it stands calm (grazing, looking round, mooing), one picked at random every
     /// <see cref="IdleEvery"/> seconds. Cosmetic: each peer picks its own.

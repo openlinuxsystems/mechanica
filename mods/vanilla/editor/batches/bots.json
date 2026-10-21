@@ -1908,6 +1908,7 @@
             "meshes/bots/grazer_fawn.glb",
             "meshes/bots/grazer_chocolate.glb"
           ],
+          "kept_nodes": ["Collar"],
           "clip_speeds": {
             "patrol": 0.61,
             "chase": 2.36

@@ -86,6 +86,9 @@ public sealed record BotModel(string Mesh, IReadOnlyDictionary<string, IReadOnly
     /// <summary>Clips it plays now and then while it stands calm.</summary>
     public IReadOnlyList<BotIdle> Idles { get; init; } = [];
 
+    /// <summary>Nodes shown only while the bot is kept (<see cref="BotModelDefinition.KeptNodes"/>).</summary>
+    public IReadOnlyList<string> KeptNodes { get; init; } = [];
+
     /// <summary>The shortest wait between idles, in s.</summary>
     public float IdleMin { get; init; } = BotBook.DefaultIdleMin;
 
@@ -510,6 +513,11 @@ public sealed class BotBook : IBotCatalog
             else
                 idles.Add(new BotIdle(idle.Clip, idle.Sound, idle.Weight ?? 1f));
         }
+        for (var i = 0; i < (m.KeptNodes?.Count ?? 0); i++)
+        {
+            if (string.IsNullOrWhiteSpace(m.KeptNodes![i]))
+                sink.Error(code, $"$.model.kept_nodes[{i}]", "a node name is required.");
+        }
         var (idleMin, idleMax) = (DefaultIdleMin, DefaultIdleMax);
         if (m.IdleEvery is { } every)
         {
@@ -521,7 +529,7 @@ public sealed class BotBook : IBotCatalog
         if (sink.ErrorCount > errors)
             return null;
         return new BotModel(mesh!, clips, speeds, m.EyeCalm?.ToLowerInvariant() ?? DefaultEyeCalm, m.EyeEngaged?.ToLowerInvariant() ?? DefaultEyeEngaged,
-            effects) { Variants = variants, Idles = idles, IdleMin = idleMin, IdleMax = idleMax };
+            effects) { Variants = variants, Idles = idles, IdleMin = idleMin, IdleMax = idleMax, KeptNodes = m.KeptNodes ?? [] };
     }
 
     private static BotAttack? CheckAttack(BotAttackDefinition a, string path, string family, DiagnosticSink sink)

@@ -60,6 +60,9 @@
       "meshes/bots/grazer_fawn.glb",
       "meshes/bots/grazer_chocolate.glb"
     ],
+    "kept_nodes": [
+      "Collar"
+    ],
     "idles": [
       {
         "clip": "graze",

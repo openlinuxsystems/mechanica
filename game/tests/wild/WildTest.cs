@@ -23,6 +23,9 @@ public partial class WildTest : StagedTest
     private Instance _client = null!;
     private Vector3 _shore;
     private int _kept;
+
+    // A Grazer's collar on the client.
+    private Node3D? Collar(int bot) => _client.Main.Bots.Bodies.GetValueOrDefault(bot)?.Model?.Scene.FindChild("Collar", true, false) as Node3D;
     private Vector3 _keptAt;
 
     protected override string Tag => "wild";
@@ -115,6 +118,7 @@ public partial class WildTest : StagedTest
                 Check(gen.BiomeAt(bot!.Position.X, bot.Position.Z).Id is "meadow" or "field", $"Grazer {bot.Id} is in a meadow or field");
             // a herd appears within 5 m and each wanders up to 8 m round its own spot
             Check(grazers.All(a => grazers.Count(b => (a!.Position - b!.Position).Length() < 22f) >= 2), "each Grazer has herd mates near it");
+            Check(grazers.All(b => Collar(b!.Id) is { Visible: false }), "wild Grazers wear no collar");
             _kept = grazers[0]!.Id;
             return true;
         });
@@ -143,6 +147,7 @@ public partial class WildTest : StagedTest
             }
             Check(fed.All(r => r.Ok), $"every feed is taken ({string.Join(", ", fed)})");
             Check(_host.Main.Bots.Bots!.Find(_kept) is { Kept: true, Fed: 3 }, "three feeds tame it on the host");
+            Check(Collar(_kept) is { Visible: true }, "the client shows its collar");
             Check(_host.Main.Inventory.Items!.PlayerInventory(_client.Peer).Count(Carrot) == carrots - 3, "three carrots were eaten");
             return true;
         });

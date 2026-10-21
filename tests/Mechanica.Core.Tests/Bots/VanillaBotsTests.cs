@@ -279,6 +279,7 @@ public class VanillaBotsTests
     [InlineData("""{ "mesh": "meshes/x.glb", "idles": [{ "sound": "moo" }] }""", "$.model.idles[0].clip", "clip is required.")]
     [InlineData("""{ "mesh": "meshes/x.glb", "idles": [{ "clip": "moo", "sound": " " }] }""", "$.model.idles[0].sound", "sound must name a sound event (or be left out).")]
     [InlineData("""{ "mesh": "meshes/x.glb", "idles": [{ "clip": "moo", "weight": 0 }] }""", "$.model.idles[0].weight", "weight 0 must be above 0.")]
+    [InlineData("""{ "mesh": "meshes/x.glb", "kept_nodes": [" "] }""", "$.model.kept_nodes[0]", "a node name is required.")]
     [InlineData("""{ "mesh": "meshes/x.glb", "idle_every": [5] }""", "$.model.idle_every", "idle_every must be [min, max] seconds, 0 < min <= max.")]
     [InlineData("""{ "mesh": "meshes/x.glb", "idle_every": [9, 4] }""", "$.model.idle_every", "idle_every must be [min, max] seconds, 0 < min <= max.")]
     public void BadModelsAreReported(string model, string path, string? message)
@@ -378,6 +379,7 @@ public class VanillaBotsTests
 
         Assert.Contains("vanilla:carrot", tame.Foods);
         Assert.True(tame.Feeds >= 1);
+        Assert.Equal(["Collar"], Book.Value.FindBot("vanilla:grazer")!.Model!.KeptNodes);
     }
 
     [Theory]

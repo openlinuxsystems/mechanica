@@ -13,7 +13,8 @@ Three coats share the rig: slate with cream spots (the reference colours, ``graz
 What it writes: ``mods/vanilla/meshes/bots/grazer[_coat].glb``. Feet are at the origin and it faces -Z, as bots do.
 The nodes are the rig (the game plays the clips on them and plants the feet):
 
-* ``Body`` (the barrel), ``Neck`` (lowers and turns at the shoulders), ``Head`` (turns on the neck), ``Jaw`` (the lower jaw, hinged under the cheeks),
+* ``Body`` (the barrel), ``Neck`` (lowers and turns at the shoulders), ``Collar`` (on the neck: leather, a bell and a
+  name tag; the game shows it only on a tamed Grazer, the bot's ``model.kept_nodes``), ``Head`` (turns on the neck), ``Jaw`` (the lower jaw, hinged under the cheeks),
   ``EarL`` / ``EarR``, ``Tail1`` / ``Tail2``;
 * legs ``Leg<FL|FR|BL|BR>_Hip`` / ``_Knee`` / ``_Foot`` (``_Foot`` is an empty on the ground under the hoof).
 
@@ -203,7 +204,67 @@ def neck_geometry():
     at("Neck")
     mb = Meta(0.03)
     mb.cap(SHOULDER + V((0, 0.12, -0.06)), NECK + V((0, -0.08, 0.0)), 0.38)
-    add(mb.bmesh(0.2), "coat")
+    bm = mb.bmesh(0.2)
+    skin = Skin(bm)
+    add(bm, "coat")
+    return skin
+
+
+def band(pts, outs, width, thick, mat):
+    """A closed flat strap through `pts` (a ring on the skin), `width` across the ring, `thick` out along `outs`."""
+    bm = bmesh.new()
+    n = len(pts)
+    axis = (pts[1] - pts[0]).cross(pts[2] - pts[1]).normalized()
+    rings = [[bm.verts.new(p + o * dz + axis * dw) for dz, dw in ((0, -width / 2), (thick, -width / 2), (thick, width / 2), (0, width / 2))]
+             for p, o in zip(pts, outs)]
+    for i in range(n):
+        a, b = rings[i], rings[(i + 1) % n]
+        for k in range(4):
+            bm.faces.new((a[k], a[(k + 1) % 4], b[(k + 1) % 4], b[k]))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    add(bm, mat)
+
+
+def collar_geometry(skins):
+    """
+    The collar a tamed Grazer wears (on Collar, which the game shows only while it is kept): a leather strap round
+    the narrowest part of the neck, a brass buckle on its left, and a brass bell and a round name tag under the throat.
+    """
+    at("Collar")
+    a, b = SHOULDER + V((0, 0.12, -0.06)), NECK + V((0, -0.08, 0))
+    axis = (b - a).normalized()
+    u = axis.cross(X).normalized()
+
+    def ring(t, n=48):
+        c = a.lerp(b, t)
+        pts, outs = [], []
+        for k in range(n):
+            ang = 2 * math.pi * k / n
+            d = math.cos(ang) * u + math.sin(ang) * X
+            hits = [skin.bvh.ray_cast(c + d * 1.2, -d) for skin in skins]
+            loc = min((h[0] for h in hits if h[0] is not None), key=lambda p: (p - (c + d * 1.2)).length)
+            pts.append(loc + d * 0.004)
+            outs.append(d)
+        return pts, outs, sum((p - c).length for p in pts) / n
+
+    pts, outs, _ = min((ring(t / 20) for t in range(4, 18)), key=lambda r: r[2])
+    band(pts, outs, 0.085, 0.02, "leather")
+    band(pts, outs, 0.012, 0.025, "leather")      # the stitched ridge
+    side = min(range(len(pts)), key=lambda i: pts[i].x)
+    p, d = pts[side], outs[side]
+    sc.box((0.024, 0.09, 0.09), p + d * 0.02, "brass", bevel=0.006, rot=d.to_track_quat("X", "Z").to_matrix().to_4x4())
+    low = min(range(len(pts)), key=lambda i: pts[i].z)
+    p, d = pts[low], outs[low]
+    hang = p + d * 0.03 + V((0, 0, -0.03))
+    rod(hang + V((0.02, 0, 0)), hang - V((0.02, 0, 0)), 0.012, "brass", segs=10)
+    bell = hang + V((0, -0.02, -0.075))
+    rod(bell + V((0, 0, 0.045)), bell + V((0, 0, -0.035)), 0.026, "brass", r2=0.05, segs=24)
+    sphere(bell + V((0, 0, 0.045)), 0.027, "brass", segs=16)
+    sc.disc(bell + V((0, 0, -0.04)), 0.044, 0.008, (0, 0, 1), "bell_in")
+    sphere(bell + V((0, 0, -0.05)), 0.014, "brass")
+    tag = hang + V((0.07, -0.03, -0.05))
+    sc.disc(tag, 0.034, 0.006, (0.3, -1, 0.1), "brass", segs=28)
+    rod(hang + V((0.03, 0, 0)), tag + V((0, 0, 0.03)), 0.005, "brass", segs=6)
 
 
 def head_geometry():
@@ -317,7 +378,7 @@ def pivots(skins=None):
     """Node -> (parent, pivot in model space)."""
     body, head = skins or SKINS
     tail = tail_points(body)
-    piv = {"Body": (None, V((0, 0.1, 0.68))), "Neck": ("Body", SHOULDER), "Head": ("Neck", NECK), "Jaw": ("Head", HINGE)}
+    piv = {"Body": (None, V((0, 0.1, 0.68))), "Neck": ("Body", SHOULDER), "Collar": ("Neck", NECK), "Head": ("Neck", NECK), "Jaw": ("Head", HINGE)}
     for side, sx in (("L", -1), ("R", 1)):
         piv[f"Ear{side}"] = ("Head", ear_points(head, sx)[0])
     piv["Tail1"] = ("Body", tail[0])
@@ -336,8 +397,9 @@ def geometry():
     sc.GEO.clear()
     Meta.count[0] = 0
     body = body_geometry()
-    neck_geometry()
+    neck = neck_geometry()
     head = head_geometry()
+    collar_geometry([body, neck, head])
     SKINS[:] = [body, head]
     ears_geometry(head)
     jaw_geometry()
@@ -403,6 +465,9 @@ def materials():
         "iris": lambda: plain("grazer_iris", "#4a3220", 0.1),
         "pupil": lambda: plain("grazer_pupil", "#0a0908", 0.05),
         "glint": lambda: plain("grazer_glint", "#ffffff", 0.05),
+        "leather": lambda: lt.textured("grazer_leather", lt.metal_surface(301, "#5a3a22", 0.62, 0.0, wear=0.5, edge_light=0.2), normal_strength=1.2),
+        "brass": lambda: lt.textured("grazer_brass", lt.metal_surface(303, "#c49a3c", 0.32, 1.0, wear=0.6), normal_strength=1.0),
+        "bell_in": lambda: plain("grazer_bell_in", "#2a2018", 0.6),
     }
 
 

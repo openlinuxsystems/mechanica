@@ -129,6 +129,7 @@ how the bot looks: the host still moves and hits with the bot's capsule (`size`)
 | `eye_calm` | `"#rrggbb"` | `#2bff3a` (green) | Colour of its glowing (emissive) materials while calm. |
 | `eye_engaged` | `"#rrggbb"` | `#ff1a0a` (red) | The same while engaged (`bot.engage()`, section 4). |
 | `variants` | `[path, …]` | none | Other looks of the same rig (coats, paint). Each bot shows `mesh` or one of these, picked from its id, so every peer sees the same one. |
+| `kept_nodes` | `[node, …]` | none | Nodes of the model shown only while the bot is kept (tamed), such as the Grazer's `Collar`. They are hidden on a wild one. |
 | `idles` | `[{clip, sound, weight}, …]` | none | Clips it plays now and then while it stands calm (grazing, a look round). `sound` is a sound event played with it on each peer (optional); `weight` is how often it is picked against the others (default 1). |
 | `idle_every` | `[min, max]` | `[6, 14]` | Seconds between idles, picked at random in this range. |
 | `effects` | `{attack id or "death": effect}` | none | An effect every peer sees when it uses the attack or dies: `explosion` (a fireball, flames, smoke, sparks and flying scrap), `shockwave` (a ring rippling over the ground with dust and stones) or `shot` (attacks only). An explosion or shockwave is as big as the attack's `radius` (its `range` for a melee or ranged attack; a death uses its largest area attack), and one shows at a time, so a blast that kills its bot shows once. A `shot` flies a copy of the model's node named `Shot` (hidden on the bot; put it at the muzzle, its front facing the model's front) to the point the attack hit, or straight ahead to its `range` when it hit nothing; every use shows one. |
@@ -208,7 +209,7 @@ players its `find_player` finds (out of the water too) before wandering home. Wi
 
 A bot with `tame` can be tamed by players: they hold one of its foods and press Use (E) on it, and each feed takes one
 from their inventory. Enough feeds keep it (a domesticated animal). Hearts rise on every feed and more when it is
-tamed, and its model plays its `eat` clip, then `happy`. A frightened bot (one that is engaged) will not eat. The
+tamed, and its model plays its `eat` clip, then `happy`, and shows its `kept_nodes` (the Grazer's collar). A frightened bot (one that is engaged) will not eat. The
 Grazer is tamed with three carrots:
 
 ```json
