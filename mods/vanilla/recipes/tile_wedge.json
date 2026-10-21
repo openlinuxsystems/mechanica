@@ -1,0 +1,20 @@
+{
+  "id": "tile_wedge",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "tile_block",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "tile_wedge",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 144
+}

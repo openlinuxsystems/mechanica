@@ -1,0 +1,24 @@
+{
+  "id": "concrete_block_3",
+  "name": "Concrete Block 3",
+  "description": "Steel-framed concrete with glowing teal markers. The heaviest, toughest concrete.",
+  "category": "block",
+  "mass": 13.5,
+  "durability": 7,
+  "friction": 0.6,
+  "buoyancy": 0.5,
+  "flammable": false,
+  "stack_size": 256,
+  "sound_material": "concrete",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/concrete_block_3.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.75,
+    "metallic": 0.25,
+    "emission": "#16b09e",
+    "texture": "textures/blocks/concrete_3.png",
+    "emission_texture": "textures/blocks/concrete_3_glow.png",
+    "texture_span": 4
+  }
+}

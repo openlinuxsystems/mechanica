@@ -1,0 +1,26 @@
+{
+  "id": "wood_wedge_3",
+  "name": "Wood Wedge 3",
+  "description": "Wood Block 3 cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 1.5,
+  "durability": 6,
+  "friction": 0.5,
+  "buoyancy": 0.9,
+  "flammable": true,
+  "stack_size": 500,
+  "sound_material": "wood",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/wood_wedge_3.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.65,
+    "metallic": 0.2,
+    "texture": "textures/blocks/wood_3.png",
+    "texture_span": 4
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/wood_wedge_3.glb"
+  }
+}

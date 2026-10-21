@@ -1,0 +1,22 @@
+{
+  "id": "sand_block",
+  "name": "Sand Block",
+  "description": "Packed sand. Heavy and soft; Glass and Concrete are made from it.",
+  "category": "block",
+  "mass": 9,
+  "durability": 1,
+  "friction": 0.4,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 500,
+  "sound_material": "concrete",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/sand_block.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.95,
+    "metallic": 0,
+    "texture": "textures/blocks/sand.png",
+    "texture_span": 4
+  }
+}

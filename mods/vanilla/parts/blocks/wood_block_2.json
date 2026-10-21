@@ -1,0 +1,22 @@
+{
+  "id": "wood_block_2",
+  "name": "Wood Block 2",
+  "description": "Wood Block 1 bound with steel straps: much tougher and still light.",
+  "category": "block",
+  "mass": 3,
+  "durability": 5,
+  "friction": 0.5,
+  "buoyancy": 0.8,
+  "flammable": true,
+  "stack_size": 500,
+  "sound_material": "wood",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/wood_block_2.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.7,
+    "metallic": 0.15,
+    "texture": "textures/blocks/wood_2.png",
+    "texture_span": 4
+  }
+}

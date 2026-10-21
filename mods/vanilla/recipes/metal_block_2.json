@@ -1,0 +1,28 @@
+{
+  "id": "metal_block_2",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 20
+    },
+    {
+      "item": "ember",
+      "count": 4
+    },
+    {
+      "item": "water_bucket_full",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "metal_block_2",
+      "count": 10
+    }
+  ],
+  "time": 10,
+  "order": 125
+}

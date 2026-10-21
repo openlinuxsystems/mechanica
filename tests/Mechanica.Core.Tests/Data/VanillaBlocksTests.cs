@@ -7,7 +7,7 @@ namespace Mechanica.Core.Tests.Data;
 
 /// <summary>
 /// Chunk 6: vanilla's structural blocks and wedges. Checks them against CATALOG_IDS.md (ids and sound
-/// materials) and the spec's block table (§11.2 and §21.2), that every wedge inherits its block, that
+/// materials) and the Scrap Mechanic wiki's block list (stats, stacks, recipes), that every wedge inherits its block, that
 /// they attach on every face (D7), and that the checked-in part files are exactly what the Part Editor
 /// batch produces (D3: authored with the editor, never by hand).
 /// </summary>
@@ -15,29 +15,73 @@ public class VanillaBlocksTests
 {
     private static readonly Lazy<ModLoadResult> Vanilla = new(() => ModLoader.LoadAll(Path.Combine(TestMods.RepoRoot, "mods")));
 
-    // CATALOG_IDS.md "Blocks": material → sound material.
-    public static TheoryData<string, string> Catalog => new()
+    // CATALOG_IDS.md "Blocks" and the Scrap Mechanic wiki's block list: block, wedge, sound material, stack size.
+    public static TheoryData<string, string, string, int> Catalog => new()
     {
-        { "wood", "wood" }, { "metal", "metal" }, { "concrete", "concrete" }, { "glass", "glass" },
-        { "scrap_wood", "scrap" }, { "scrap_metal", "scrap" }, { "scrap_stone", "concrete" }, { "barrier", "plastic" }, { "tile", "tile" },
-        { "brick", "concrete" }, { "net", "fabric" }, { "cardboard", "cardboard" }, { "hull_plate", "metal" },
-        { "path_light", "glass" }, { "armored_glass", "glass" }, { "aluminum", "metal" }, { "rusted_metal", "metal" },
-        { "insulation", "fabric" }, { "plaster", "concrete" }, { "carpet", "fabric" }, { "diamond_plate", "metal" },
+        { "aluminum_block", "aluminum_wedge", "metal", 256 }, { "armored_glass_block", "armored_glass_wedge", "glass", 256 },
+        { "barrier_block", "barrier_wedge", "plastic", 500 }, { "brick_block", "brick_wedge", "concrete", 500 },
+        { "bubble_plastic_block", "bubble_plastic_wedge", "plastic", 256 }, { "cardboard_block", "cardboard_wedge", "cardboard", 256 },
+        { "carpet_block", "carpet_wedge", "fabric", 500 }, { "concrete_block", "concrete_wedge", "concrete", 500 },
+        { "concrete_block_2", "concrete_wedge_2", "concrete", 256 }, { "concrete_block_3", "concrete_wedge_3", "concrete", 256 },
+        { "diamond_plate_block", "diamond_plate_wedge", "metal", 256 }, { "glass_block", "glass_wedge", "glass", 256 },
+        { "glass_tile_block", "glass_tile_wedge", "glass", 256 }, { "hull_plate_block", "hull_plate_wedge", "metal", 500 },
+        { "insulation_block", "insulation_wedge", "fabric", 256 }, { "metal_block", "metal_wedge", "metal", 500 },
+        { "metal_block_2", "metal_wedge_2", "metal", 500 }, { "metal_block_3", "metal_wedge_3", "metal", 500 },
+        { "net_block", "net_wedge", "fabric", 256 }, { "path_light_block", "path_light_wedge", "glass", 256 },
+        { "plaster_block", "plaster_wedge", "concrete", 256 }, { "plastic_block", "plastic_wedge", "plastic", 500 },
+        { "rusted_metal_block", "rusted_metal_wedge", "metal", 256 }, { "sand_block", "sand_wedge", "concrete", 500 },
+        { "scrap_metal_block", "scrap_metal_wedge", "scrap", 256 }, { "scrap_stone_block", "scrap_stone_wedge", "concrete", 500 },
+        { "scrap_wood_block", "scrap_wood_wedge", "scrap", 500 }, { "tile_block", "tile_wedge", "tile", 500 },
+        { "wood_block", "wood_wedge", "wood", 500 }, { "wood_block_2", "wood_wedge_2", "wood", 500 },
+        { "wood_block_3", "wood_wedge_3", "wood", 500 },
     };
 
-    public static TheoryData<string> Materials => [.. Catalog.Select(row => (string)row[0])];
+    public static TheoryData<string, string> Pairs
+    {
+        get
+        {
+            var pairs = new TheoryData<string, string>();
+            foreach (var row in Catalog)
+                pairs.Add((string)row[0], (string)row[1]);
+            return pairs;
+        }
+    }
 
-    // Spec §11.2 (mass, durability, friction, buoyancy, flammable); the other blocks have no numbers in the spec.
+    // The wiki's stat bars: 1.5 kg a weight bar, durability in bars, friction and buoyancy a tenth a bar. Scrap Metal is
+    // the one change: the wiki has it flammable, and metal never burns here.
     public static TheoryData<string, float, int, float, float, bool> SpecTable => new()
     {
-        { "wood", 4, 3, 0.5f, 0.6f, true },
-        { "metal", 8, 6, 0.4f, 0.1f, false },
-        { "concrete", 10, 8, 0.6f, 0.0f, false },
-        { "glass", 3, 1, 0.3f, 0.4f, false },
-        { "scrap_wood", 3, 2, 0.5f, 0.5f, true },
-        { "scrap_metal", 6, 4, 0.4f, 0.1f, false },
-        { "barrier", 5, 4, 0.5f, 0.3f, true },
-        { "tile", 7, 4, 0.4f, 0.2f, false },
+        { "aluminum_block", 9f, 4, 0.4f, 0.1f, false },
+        { "armored_glass_block", 4.5f, 4, 0.3f, 0.5f, false },
+        { "barrier_block", 3f, 2, 0.4f, 0.7f, true },
+        { "brick_block", 10.5f, 4, 0.4f, 0.5f, false },
+        { "bubble_plastic_block", 1.5f, 1, 0.4f, 0.8f, true },
+        { "cardboard_block", 1.5f, 1, 0.4f, 0.2f, true },
+        { "carpet_block", 4.5f, 2, 0.4f, 0.4f, true },
+        { "concrete_block", 10.5f, 5, 0.6f, 0.5f, false },
+        { "concrete_block_2", 12f, 6, 0.6f, 0.5f, false },
+        { "concrete_block_3", 13.5f, 7, 0.6f, 0.5f, false },
+        { "diamond_plate_block", 7.5f, 5, 0.6f, 0.2f, false },
+        { "glass_block", 4.5f, 1, 0.3f, 0.5f, false },
+        { "glass_tile_block", 4.5f, 1, 0.3f, 0.5f, false },
+        { "hull_plate_block", 7.5f, 7, 0.4f, 0.5f, false },
+        { "insulation_block", 3f, 2, 0.5f, 0.6f, true },
+        { "metal_block", 7.5f, 5, 0.4f, 0.4f, false },
+        { "metal_block_2", 7.5f, 7, 0.4f, 0.5f, false },
+        { "metal_block_3", 7.5f, 8, 0.4f, 0.6f, false },
+        { "net_block", 3f, 3, 0.3f, 0.1f, false },
+        { "path_light_block", 7.5f, 5, 0.5f, 0.2f, false },
+        { "plaster_block", 6f, 3, 0.5f, 0.3f, false },
+        { "plastic_block", 6f, 2, 0.4f, 0.7f, false },
+        { "rusted_metal_block", 6f, 2, 0.5f, 0.8f, false },
+        { "sand_block", 9f, 1, 0.4f, 0.1f, false },
+        { "scrap_metal_block", 7.5f, 3, 0.4f, 0.2f, false },
+        { "scrap_stone_block", 9f, 3, 0.6f, 0.5f, false },
+        { "scrap_wood_block", 3f, 2, 0.4f, 0.4f, true },
+        { "tile_block", 10.5f, 4, 0.4f, 0.5f, false },
+        { "wood_block", 3f, 3, 0.5f, 0.6f, true },
+        { "wood_block_2", 3f, 5, 0.5f, 0.8f, true },
+        { "wood_block_3", 3f, 6, 0.5f, 0.9f, true },
     };
 
     private static PartDefinition Part(string id) =>
@@ -50,7 +94,7 @@ public class VanillaBlocksTests
     [Fact]
     public void BlocksAreExactlyTheCatalogs()
     {
-        var expected = Catalog.SelectMany(row => new[] { $"vanilla:{(string)row[0]}_block", $"vanilla:{(string)row[0]}_wedge" }).Order();
+        var expected = Catalog.SelectMany(row => new[] { $"vanilla:{(string)row[0]}", $"vanilla:{(string)row[1]}" }).Order();
         var blocks = Vanilla.Value.Parts.Values.Where(p => p.Definition.Category == PartCategory.Block).Select(p => p.QualifiedId).Order();
 
         Assert.Equal(expected, blocks);
@@ -58,9 +102,9 @@ public class VanillaBlocksTests
 
     [Theory]
     [MemberData(nameof(Catalog))]
-    public void BlockIsAOneCellPlaceableWithItsSoundMaterial(string material, string sound)
+    public void BlockIsAOneCellPlaceableWithItsSoundMaterial(string blockId, string wedgeId, string sound, int stack)
     {
-        foreach (var part in new[] { Part($"{material}_block"), Part($"{material}_wedge") })
+        foreach (var part in new[] { Part(blockId), Part(wedgeId) })
         {
             Assert.Equal(PartCategory.Block, part.Category);
             Assert.Equal(GridSize.One, part.Size);
@@ -68,7 +112,7 @@ public class VanillaBlocksTests
             Assert.False(string.IsNullOrWhiteSpace(part.Name));
             Assert.False(string.IsNullOrWhiteSpace(part.Description));
             Assert.Null(part.Sockets);
-            Assert.Equal(100, part.StackSize);
+            Assert.Equal(stack, part.StackSize);
             Assert.NotNull(part.Mesh);
             Assert.True(File.Exists(Path.Combine(TestMods.RepoRoot, "mods", "vanilla", part.Mesh)), $"{part.Id}'s mesh {part.Mesh} exists");
         }
@@ -76,20 +120,20 @@ public class VanillaBlocksTests
 
     [Theory]
     [MemberData(nameof(SpecTable))]
-    public void BlockUsesTheSpecNumbers(string material, float mass, int durability, float friction, float buoyancy, bool flammable)
+    public void BlockUsesTheSpecNumbers(string blockId, float mass, int durability, float friction, float buoyancy, bool flammable)
     {
-        var block = Part($"{material}_block");
+        var block = Part(blockId);
 
         Assert.Equal((mass, durability, friction, buoyancy, flammable), (block.Mass, block.Durability, block.Friction, block.Buoyancy, block.Flammable));
     }
 
     [Theory]
     [MemberData(nameof(Catalog))]
-    public void WedgeInheritsItsBlockAtHalfTheMass(string material, string sound)
+    public void WedgeInheritsItsBlockAtHalfTheMass(string blockId, string wedgeId, string sound, int stack)
     {
-        var (block, wedge) = (Part($"{material}_block"), Part($"{material}_wedge"));
+        var (block, wedge) = (Part(blockId), Part(wedgeId));
 
-        Assert.Equal(sound, wedge.SoundMaterial);
+        Assert.Equal((sound, stack), (wedge.SoundMaterial, wedge.StackSize));
         Assert.Equal((block.Durability, block.Friction, block.Buoyancy, block.Flammable), (wedge.Durability, wedge.Friction, wedge.Buoyancy, wedge.Flammable));
         Assert.Equal(DataJsonVisual(block), DataJsonVisual(wedge));
         Assert.Equal(block.Mass / 2, wedge.Mass);
@@ -98,42 +142,51 @@ public class VanillaBlocksTests
     }
 
     [Theory]
-    [MemberData(nameof(Materials))]
-    public void BlocksAndWedgesAttachOnEveryFace(string material)
+    [MemberData(nameof(Pairs))]
+    public void BlocksAndWedgesAttachOnEveryFace(string blockId, string wedgeId)
     {
         foreach (var rotation in new[] { GridRotation.Identity, GridRotation.All[5], GridRotation.All[17] })
         {
             // A wedge in the middle with a block on all six sides, its slope included: one rigid Body.
             var creation = new Creation(1, Vanilla.Value);
-            Assert.True(creation.TryPlacePart($"{material}_wedge", GridCell.Zero, rotation, out _, out var error), error);
+            Assert.True(creation.TryPlacePart(wedgeId, GridCell.Zero, rotation, out _, out var error), error);
             foreach (var side in Sides)
-                Assert.True(creation.TryPlacePart($"{material}_block", side, GridRotation.Identity, out _, out error), error);
+                Assert.True(creation.TryPlacePart(blockId, side, GridRotation.Identity, out _, out error), error);
             Assert.Single(creation.Bodies);
             Assert.Equal(7, creation.Parts.Count);
 
             // And the other way round: wedges on every side of a block.
             creation = new Creation(1, Vanilla.Value);
-            Assert.True(creation.TryPlacePart($"{material}_block", GridCell.Zero, GridRotation.Identity, out _, out error), error);
+            Assert.True(creation.TryPlacePart(blockId, GridCell.Zero, GridRotation.Identity, out _, out error), error);
             foreach (var side in Sides)
-                Assert.True(creation.TryPlacePart($"{material}_wedge", side, rotation, out _, out error), error);
+                Assert.True(creation.TryPlacePart(wedgeId, side, rotation, out _, out error), error);
             Assert.Single(creation.Bodies);
         }
     }
 
     [Theory]
-    [InlineData("metal", "scrap_metal_block:8,component_kit:1", "fabricator")]
-    public void SpecBlockRecipesMakeFourOfTheBlockOrWedge(string material, string inputs, string stations)
+    [InlineData("metal_block", "scrap_metal_block:20", 10)]
+    [InlineData("metal_block_2", "metal_block:20,ember:4,water_bucket_full:1", 10)]
+    [InlineData("concrete_block_3", "concrete_block_2:10,metal_block_3:2", 10)]
+    [InlineData("glass_tile_block", "sand_block:10,ember:1", 10)]
+    [InlineData("sand_block", "scrap_stone_block:5", 10)]
+    public void BlockRecipesAreTheWikis(string id, string inputs, int count)
     {
         var book = RecipeBook.Load(Vanilla.Value);
         Assert.Empty(book.Diagnostics);
-        foreach (var id in new[] { $"{material}_block", $"{material}_wedge" })
-        {
-            var recipe = book.Find(id) ?? throw new Xunit.Sdk.XunitException($"no recipe makes {id}");
-            Assert.Equal(inputs, string.Join(",", recipe.Inputs.Select(i => $"{i.Item[8..]}:{i.Count}")));
-            Assert.Equal(stations, string.Join(",", recipe.Stations.Select(s => s[8..])));
-            var output = Assert.Single(recipe.Outputs);
-            Assert.Equal(($"vanilla:{id}", 4), (output.Item, output.Count));
-        }
+        var recipe = book.Find(id) ?? throw new Xunit.Sdk.XunitException($"no recipe makes {id}");
+        Assert.Equal(inputs, string.Join(",", recipe.Inputs.Select(i => $"{i.Item[8..]}:{i.Count}")));
+        Assert.Equal("fabricator", string.Join(",", recipe.Stations.Select(s => s[8..])));
+        Assert.Equal(($"vanilla:{id}", count), (Assert.Single(recipe.Outputs).Item, Assert.Single(recipe.Outputs).Count));
+    }
+
+    [Theory]
+    [MemberData(nameof(Pairs))]
+    public void EveryWedgeIsCutFromOneOfItsBlock(string blockId, string wedgeId)
+    {
+        var wedge = RecipeBook.Load(Vanilla.Value).Find(wedgeId) ?? throw new Xunit.Sdk.XunitException($"no recipe makes {wedgeId}");
+        Assert.Equal(($"vanilla:{blockId}", 1), (Assert.Single(wedge.Inputs).Item, Assert.Single(wedge.Inputs).Count));
+        Assert.Equal(($"vanilla:{wedgeId}", 1), (Assert.Single(wedge.Outputs).Item, Assert.Single(wedge.Outputs).Count));
     }
 
     [Theory]
@@ -150,7 +203,7 @@ public class VanillaBlocksTests
     }
 
     [Theory]
-    [InlineData("structural_blocks.json", 42)]
+    [InlineData("structural_blocks.json", 62)]
     [InlineData("survival.json", 26)]
     [InlineData("joints.json", 4)]
     [InlineData("lights_utility.json", 15)]

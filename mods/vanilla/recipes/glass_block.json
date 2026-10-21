@@ -1,0 +1,24 @@
+{
+  "id": "glass_block",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "sand_block",
+      "count": 10
+    },
+    {
+      "item": "ember",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "glass_block",
+      "count": 10
+    }
+  ],
+  "time": 5,
+  "order": 153
+}

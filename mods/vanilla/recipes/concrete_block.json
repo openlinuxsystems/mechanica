@@ -1,0 +1,28 @@
+{
+  "id": "concrete_block",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "sand_block",
+      "count": 10
+    },
+    {
+      "item": "water_bucket_full",
+      "count": 1
+    },
+    {
+      "item": "chemical",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "concrete_block",
+      "count": 10
+    }
+  ],
+  "time": 5,
+  "order": 145
+}

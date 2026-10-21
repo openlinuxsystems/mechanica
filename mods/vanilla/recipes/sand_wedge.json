@@ -1,0 +1,20 @@
+{
+  "id": "sand_wedge",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "sand_block",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "sand_wedge",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 108
+}

@@ -1,0 +1,24 @@
+{
+  "id": "wood_block_2",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "wood_block",
+      "count": 10
+    },
+    {
+      "item": "metal_block_2",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "wood_block_2",
+      "count": 10
+    }
+  ],
+  "time": 5,
+  "order": 111
+}

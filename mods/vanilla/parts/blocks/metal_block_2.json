@@ -1,0 +1,22 @@
+{
+  "id": "metal_block_2",
+  "name": "Metal Block 2",
+  "description": "Metal Block 1 hardened with Ember and water: tougher, and it floats better.",
+  "category": "block",
+  "mass": 7.5,
+  "durability": 7,
+  "friction": 0.4,
+  "buoyancy": 0.5,
+  "flammable": false,
+  "stack_size": 500,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/metal_block_2.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.38,
+    "metallic": 0.8,
+    "texture": "textures/blocks/metal_2.png",
+    "texture_span": 4
+  }
+}

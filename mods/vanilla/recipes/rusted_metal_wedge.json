@@ -1,0 +1,20 @@
+{
+  "id": "rusted_metal_wedge",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "rusted_metal_block",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "rusted_metal_wedge",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 136
+}

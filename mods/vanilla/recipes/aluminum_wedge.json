@@ -1,0 +1,20 @@
+{
+  "id": "aluminum_wedge",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "aluminum_block",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "aluminum_wedge",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 134
+}
