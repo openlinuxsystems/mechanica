@@ -1,0 +1,19 @@
+{
+  "id": "main_pipe_mount",
+  "name": "Main Pipe (Mount)",
+  "description": "A bolted saddle that holds a main pipe to the floor or a wall.",
+  "category": "decor",
+  "mass": 7.5,
+  "durability": 5,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [3, 3, 1],
+  "mesh": "meshes/parts/main_pipe_mount.glb",
+  "icon": "textures/items/main_pipe_mount_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}
