@@ -85,4 +85,16 @@ public readonly record struct InputChord(string Code, bool Shift = false, bool C
 
     /// <summary>True when this chord is just a modifier key with no other modifiers (Shift for Sprint).</summary>
     public bool IsBareModifier => ModifierKeys.Contains(Code) && !Shift && !Ctrl && !Alt;
+
+    /// <summary>
+    /// This chord without the modifier <paramref name="held"/> is (Shift+WheelDown without Shift is WheelDown), for a
+    /// modifier held for its own action, such as Shift held to sprint. Unchanged when <paramref name="held"/> is not a
+    /// bare modifier.
+    /// </summary>
+    public InputChord Without(InputChord held) => !held.IsBareModifier ? this : held.Code switch
+    {
+        "Shift" => this with { Shift = false },
+        "Ctrl" => this with { Ctrl = false },
+        _ => this with { Alt = false },
+    };
 }
