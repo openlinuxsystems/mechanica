@@ -609,6 +609,13 @@ internal static class WorldGenValidator
                 if (!(shore > 0f) || !float.IsFinite(shore))
                     sink.Error(code, "$.placement.shore", $"shore must be greater than 0 (got {shore}).");
             }
+            if (placement.Level is { } level)
+            {
+                if (placement.Spacing is null)
+                    sink.Error(code, "$.placement.level", "level applies to spaced POIs: give spacing too.");
+                if (!(level > 0f) || !float.IsFinite(level))
+                    sink.Error(code, "$.placement.level", $"level must be greater than 0 (got {level}).");
+            }
             for (var i = 0; i < (placement.Biomes?.Count ?? 0); i++)
             {
                 if (!biomeIds.Contains(placement.Biomes![i]))

@@ -902,6 +902,61 @@ public class WorldGenTests
     }
 
     [Fact]
+    public void RockFormationsStandInTheirBiomes()
+    {
+        var gen = Vanilla.Value;
+        // The arches, the window and the hoodoos are wild POIs with a colliding model, in their biomes, on a pad levelled
+        // under their legs; no scattered object grows inside them.
+        var kinds = new (string Id, string[] Biomes, int Fewest, int Most)[]
+        {
+            ("rock_arch_medium", ["desert", "mountain", "burned_forest", "meadow"], 12, 40),
+            ("rock_arch_large", ["desert", "mountain"], 3, 15),
+            ("rock_arch_double", ["desert", "mountain", "burned_forest"], 4, 20),
+            ("rock_arch_collapsed", ["desert", "mountain", "burned_forest", "meadow"], 5, 25),
+            ("rock_window", ["desert", "mountain", "burned_forest"], 5, 25),
+            ("hoodoo_cluster", ["desert"], 30, 60),
+        };
+        var arches = 0;
+        var report = string.Join(", ", kinds.Select(k => $"{k.Id} {gen.Pois.Count(p => p.Poi.Prefab.Id == k.Id)}"));
+        foreach (var (id, biomes, fewest, most) in kinds)
+        {
+            var placed = gen.Pois.Where(p => p.Poi.Prefab.Id == id).ToList();
+            Assert.True(placed.Count >= fewest && placed.Count <= most, $"{id}: {placed.Count} ({report})");
+            if (id.StartsWith("rock_arch", StringComparison.Ordinal))
+                arches += placed.Count;
+            foreach (var poi in placed)
+            {
+                var prefab = poi.Poi.Prefab;
+                Assert.True(prefab.Wild);
+                Assert.Contains(gen.BiomeAt(poi.Centre.X, poi.Centre.Y).Id, biomes);
+                var model = Assert.Single(prefab.Models!);
+                Assert.True(File.Exists(VanillaData.Value.ModelFileOf(poi.Poi, model)), model.File);
+                Assert.Equal(poi.PadHeight, gen.HeightAt(poi.Centre.X, poi.Centre.Y), 0.05f);
+                var r = prefab.Radius;
+                Assert.Empty(gen.ObjectsIn(poi.Centre.X - r / 2, poi.Centre.Y - r / 2, poi.Centre.X + r / 2, poi.Centre.Y + r / 2));
+            }
+        }
+        // Notable, not common: a few dozen arches over the island.
+        Assert.InRange(arches, 40, 80);
+        // Sea stacks stand in the coast's shallows, balanced rocks in the desert.
+        foreach (var (id, biome, fewest, most) in new[] { ("sea_stack", "coastal", 20, 40), ("balanced_rock", "desert", 15, 45) })
+        {
+            var placed = Scattered(gen, r => r.Object.Id == id).ToList();
+            Assert.True(placed.Count >= fewest && placed.Count <= most, $"{id}: {placed.Count}");
+            Assert.All(placed, c => Assert.Equal(biome, gen.Data.Biomes[c.Rule.Biome].Id));
+            var all = placed.SelectMany(c => c.Placed).ToList();
+            foreach (var o in all)
+            {
+                var p = o.Position;
+                if (id == "sea_stack")
+                    Assert.InRange(gen.WaterLevelAt(p.X, p.Z) - gen.HeightAt(p.X, p.Z), -0.3f, 0.6f);
+                // Each stands alone, clear of the next.
+                Assert.All(all.Where(q => q != o), q => Assert.True(Vector3.Distance(q.Position, p) > 2f * o.Definition.Footprint, $"{id} at {p} and {q.Position}"));
+            }
+        }
+    }
+
+    [Fact]
     public void LandmarksStandAloneAcrossTheIsland()
     {
         var gen = Vanilla.Value;

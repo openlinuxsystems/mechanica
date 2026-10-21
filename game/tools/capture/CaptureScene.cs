@@ -110,7 +110,8 @@ public partial class CaptureScene : Node
         var connectLines = args.Length > 1 && args[1] == "connect_lines";
         var husbandry = args.Length > 1 && args[1] == "husbandry";
         var fields = args.Length > 1 && args[1] == "fields";
-        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !connectLines && !husbandry && !fields && args[1] != "survey" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        var formations = args.Length > 1 && args[1] == "formations";
+        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !connectLines && !husbandry && !fields && args[1] != "survey" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
@@ -250,6 +251,11 @@ public partial class CaptureScene : Node
         if (fields)
         {
             FieldShots();
+            return;
+        }
+        if (formations)
+        {
+            FormationShots();
             return;
         }
         if (borders)
@@ -996,6 +1002,71 @@ public partial class CaptureScene : Node
             });
             Shot($"small_{id}_wide", 30, () => { _main.Flora.BuildAll(); ViewAt(_meadow, _away.Rotated(Vector3.Up, 0.5f) * wide + Vector3.Up * wide * 0.45f, 0f); });
             Shot($"small_{id}_close", 30, () => ViewAt(_meadow, _away.Rotated(Vector3.Up, -0.4f) * wide * 0.5f + Vector3.Up * wide * 0.2f, 1f));
+        }
+    }
+
+    // The rock formations nearest the middle of the world (docs/world-generation.md, Rock formations): each POI kind wide
+    // and through its opening at eye height, and the nearest sea stack and balanced rock wide and close.
+    private void FormationShots()
+    {
+        Engine.TimeScale = 1.0;
+        var gen = _main.Streamer.Generator;
+        Shot("formations_00_wait", 60, () => { });
+        foreach (var (id, size, height) in new[] { ("rock_arch_large", 40f, 9f), ("rock_arch_medium", 16f, 3.5f), ("rock_arch_double", 30f, 5f),
+                     ("rock_arch_collapsed", 22f, 3f), ("rock_window", 22f, 6f), ("hoodoo_cluster", 15f, 5f) })
+        {
+            PoiInstance? poi = null;
+            System.Numerics.Vector3 At(float x, float y, float z) => poi!.ToWorld(new System.Numerics.Vector3(x, y, z));
+            Shot($"formations_00_{id}_go", 150, () =>
+            {
+                poi = gen.Pois.Where(p => p.Poi.Prefab.Id == id).MinBy(p => p.Centre.Length())!;
+                GD.Print($"[capture] {id} at {poi.Centre}, pad {poi.PadHeight}");
+                _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, At(size * 0.6f, 2f, -size * 0.9f).ToGodot(), 0f);
+            });
+            Shot($"formations_{id}_wide", 30, () =>
+            {
+                _main.Flora.BuildAll();
+                _follow = null;
+                _camera.MakeCurrent();
+                _camera.GlobalPosition = At(size * 1.1f, size * 0.45f, -size * 1.5f).ToGodot();
+                _camera.LookAt(At(0f, height, 0f).ToGodot());
+            });
+            // From in front of the opening (the models' openings face −z), at a player's eye height on the ground.
+            Shot($"formations_{id}_through", 30, () =>
+            {
+                var eye = At(size * 0.12f, 0f, -size * 1.3f);
+                _camera.GlobalPosition = new Vector3(eye.X, gen.HeightAt(eye.X, eye.Z) + 1.7f, eye.Z);
+                _camera.LookAt(At(0f, height * 0.8f, 0f).ToGodot());
+            });
+        }
+        foreach (var (id, size, height) in new[] { ("sea_stack", 20f, 8f), ("balanced_rock", 10f, 4f) })
+        {
+            Shot($"formations_00_{id}_go", 150, () =>
+            {
+                var rule = gen.Data.ScatterRules.First(r => r.Object.Id == id);
+                var s = rule.Spacing;
+                var nearest = Enumerable.Range((int)MathF.Floor(-6000f / s), (int)(12000f / s) + 1)
+                    .SelectMany(ix => Enumerable.Range((int)MathF.Floor(-4500f / s), (int)(9000f / s) + 1).SelectMany(iz => gen.InCell(rule, ix, iz)))
+                    .MinBy(o => o.Position.Length())!;
+                _meadow = nearest.Position.ToGodot();
+                _away = new Vector3(1f, 0f, 0f);
+                // Look from the land at a sea stack: the side the ground rises on.
+                if (id == "sea_stack")
+                {
+                    var best = -1e9f;
+                    for (var a = 0; a < 8; a++)
+                    {
+                        var dir = new Vector3(1f, 0f, 0f).Rotated(Vector3.Up, a * Mathf.Pi / 4f);
+                        var h = gen.HeightAt(_meadow.X + dir.X * size * 1.5f, _meadow.Z + dir.Z * size * 1.5f);
+                        if (h > best)
+                            (best, _away) = (h, dir);
+                    }
+                }
+                GD.Print($"[capture] {id} at {_meadow}");
+                _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, Ground(_meadow + _away * size) + Vector3.Up * 2f, 0f);
+            });
+            Shot($"formations_{id}_wide", 30, () => { _main.Flora.BuildAll(); ViewAt(_meadow, _away.Rotated(Vector3.Up, 0.4f) * size * 1.6f + Vector3.Up * size * 0.5f, height); });
+            Shot($"formations_{id}_close", 30, () => ViewAt(_meadow, _away.Rotated(Vector3.Up, -0.3f) * size * 0.8f + Vector3.Up * 1.7f, height * 0.7f));
         }
     }
 
