@@ -1,0 +1,19 @@
+{
+  "id": "small_pipe_long",
+  "name": "Small Pipe (Long)",
+  "description": "Galvanised pipe, 4 blocks long, with a mustard flow band.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 4,
+  "friction": 0.3,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 4],
+  "mesh": "meshes/parts/small_pipe_long.glb",
+  "icon": "textures/items/small_pipe_long_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

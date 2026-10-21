@@ -1,0 +1,19 @@
+{
+  "id": "small_pipe_short",
+  "name": "Small Pipe (Short)",
+  "description": "Galvanised pipe, 2 blocks long, with a half coupling at each end.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 4,
+  "friction": 0.3,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 2],
+  "mesh": "meshes/parts/small_pipe_short.glb",
+  "icon": "textures/items/small_pipe_short_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

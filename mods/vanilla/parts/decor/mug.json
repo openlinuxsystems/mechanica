@@ -1,0 +1,19 @@
+{
+  "id": "mug",
+  "name": "Mug",
+  "description": "A colony mess hall mug, the coffee long gone cold.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 2,
+  "friction": 0.3,
+  "buoyancy": 0.3,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/parts/mug.glb",
+  "icon": "textures/items/mug_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "id": "small_pipe_five_way",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "small_pipe_five_way",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 408
+}

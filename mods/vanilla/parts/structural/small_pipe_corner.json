@@ -1,0 +1,19 @@
+{
+  "id": "small_pipe_corner",
+  "name": "Small Pipe (Corner)",
+  "description": "A cast-steel corner fitting with three outlets on three axes.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 4,
+  "friction": 0.3,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/parts/small_pipe_corner.glb",
+  "icon": "textures/items/small_pipe_corner_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

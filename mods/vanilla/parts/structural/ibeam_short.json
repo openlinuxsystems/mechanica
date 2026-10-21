@@ -1,0 +1,19 @@
+{
+  "id": "ibeam_short",
+  "name": "I-Beam (Short)",
+  "description": "A steel I-beam, 1 m (4 blocks) long.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 4,
+  "friction": 0.3,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 4],
+  "mesh": "meshes/parts/ibeam_short.glb",
+  "icon": "textures/items/ibeam_short_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

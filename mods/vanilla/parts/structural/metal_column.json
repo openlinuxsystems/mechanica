@@ -1,0 +1,19 @@
+{
+  "id": "metal_column",
+  "name": "Metal Column",
+  "description": "A square steel box column, 2 m (8 blocks) tall, with bolted end plates.",
+  "category": "decor",
+  "mass": 9.6,
+  "durability": 5,
+  "friction": 0.4,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 8, 1],
+  "mesh": "meshes/parts/metal_column.glb",
+  "icon": "textures/items/metal_column_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

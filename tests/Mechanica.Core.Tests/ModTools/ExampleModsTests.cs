@@ -57,7 +57,7 @@ public class ExampleModsTests
             Assert.NotNull(recipe);
             Assert.NotNull(recipe.Definition.Order);
         }
-        Assert.Equal("vanilla:meshes/decor/small_pipe_short.glb", content.Mods.FindDefinition("example_items:pea_shooter")!.Held!.Mesh);
+        Assert.Equal("vanilla:meshes/parts/small_pipe_short.glb", content.Mods.FindDefinition("example_items:pea_shooter")!.Held!.Mesh);
     }
 
     [Fact]

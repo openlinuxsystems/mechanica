@@ -1,0 +1,20 @@
+{
+  "id": "support_truss_small",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "support_truss_small",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 340
+}

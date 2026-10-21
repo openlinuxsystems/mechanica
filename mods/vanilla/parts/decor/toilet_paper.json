@@ -1,0 +1,19 @@
+{
+  "id": "toilet_paper",
+  "name": "Toilet Paper",
+  "description": "A roll of toilet paper. Stack two for a roll of paper towels.",
+  "category": "decor",
+  "mass": 1.5,
+  "durability": 1,
+  "friction": 0.3,
+  "buoyancy": 0.2,
+  "flammable": true,
+  "stack_size": 1,
+  "sound_material": "cardboard",
+  "size": [1, 1, 1],
+  "mesh": "meshes/parts/toilet_paper.glb",
+  "icon": "textures/items/toilet_paper_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

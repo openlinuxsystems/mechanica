@@ -1,0 +1,19 @@
+{
+  "id": "shelf_support_tall",
+  "name": "Tall Shelf Support",
+  "description": "A shelf frame a metre tall, braced in the middle.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 4,
+  "friction": 0.4,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 4, 1],
+  "mesh": "meshes/parts/shelf_support_tall.glb",
+  "icon": "textures/items/shelf_support_tall_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "id": "metal_column_short",
+  "name": "Metal Column (Short)",
+  "description": "A square steel box column, 5 blocks tall.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 5,
+  "friction": 0.4,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 5, 1],
+  "mesh": "meshes/parts/metal_column_short.glb",
+  "icon": "textures/items/metal_column_short_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

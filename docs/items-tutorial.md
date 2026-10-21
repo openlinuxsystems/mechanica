@@ -147,7 +147,7 @@ The ammo is a plain `resource` item with no script, `parts/dried_pea.json`:
     "zoom": 0.7
   },
   "held": {
-    "mesh": "vanilla:meshes/decor/small_pipe_short.glb",
+    "mesh": "vanilla:meshes/parts/small_pipe_short.glb",
     "offset": [0, 0.02, -0.08],
     "scale": 0.6
   },

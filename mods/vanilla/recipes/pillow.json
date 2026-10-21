@@ -1,0 +1,20 @@
+{
+  "id": "pillow",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "cotton",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "pillow",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 2072
+}

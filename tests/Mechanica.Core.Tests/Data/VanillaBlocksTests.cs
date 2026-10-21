@@ -230,7 +230,7 @@ public class VanillaBlocksTests
     [InlineData("survival.json", 34)]
     [InlineData("joints.json", 4)]
     [InlineData("lights_utility.json", 21)]
-    [InlineData("decor.json", 56)]
+    [InlineData("decor.json", 44)]
     [InlineData("containers_stations.json", 3)]
     [InlineData("containers.json", 19)]
     public void PartFilesAreThePartEditorBatchOutput(string file, int parts)
