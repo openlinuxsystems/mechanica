@@ -211,7 +211,10 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
         Raids!.Tick();
         // The world's POIs are placed when the streamer is ready, which may come after this node registers.
         if (Guards is null && World.Generator is { } world)
+        {
+            Bots.BotFree = BotFreeZones.Of(world);
             Guards = new PoiGuards(PoiGuards.PostsOf(world), Bots, Survival.Actions!);
+        }
         Guards?.Tick();
         if (Wild is null && World.Generator is { } generator)
             Wild = new WildSpawns(Book.All, Bots, Survival.Actions!, generator.SeaLevel, generator.HeightAt, (int)generator.Seed,

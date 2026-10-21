@@ -8,7 +8,8 @@ namespace Mechanica.Core.Bots;
 /// <see cref="BotWild.Interval"/> the host tops up each living player's neighbourhood to <see cref="BotWild.Count"/> of
 /// that type, at a random spot between <see cref="BotWild.MinDistance"/> and <see cref="BotWild.MaxDistance"/> away in its
 /// habitat (open water at least <see cref="BotWild.MinDepth"/> deep, or dry land), with its habitat all round it out to
-/// <see cref="BotWild.ClearRadius"/>, and in one of its <see cref="BotWild.Biomes"/> when it names any. A herd
+/// <see cref="BotWild.ClearRadius"/>, and in one of its <see cref="BotWild.Biomes"/> when it names any, never in a
+/// <see cref="BotActions.BotFree"/> zone. A herd
 /// (<see cref="BotWild.HerdMin"/> to <see cref="BotWild.HerdMax"/>) appears together a few metres apart, and a share of
 /// them appear round one of its <see cref="BotWild.Near"/> objects in reach. A wild bot every player has left farther than <see cref="BotWild.DespawnDistance"/>
 /// behind, and that is not fighting, goes away; a kept one (<see cref="BotState.Kept"/>) is no longer wild and stays. Wild bots count towards <see cref="BotSettings.MaxBots"/>.
@@ -152,6 +153,8 @@ public sealed class WildSpawns
 
     private bool Fits(float x, float z, BotWild wild)
     {
+        if (_bots.BotFree.Contains(x, z))
+            return false;
         var ground = _heightAt(x, z);
         if (!(wild.Water ? _seaLevel - ground >= wild.MinDepth : ground > _seaLevel + 0.2f))
             return false;
