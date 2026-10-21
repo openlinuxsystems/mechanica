@@ -135,4 +135,13 @@ public class KeymapTests
         Assert.Equal("Tab", map.Get(InputActions.Inventory)?.ToString());
         Assert.Null(map.Get(InputActions.Inventory, BindingSlot.Alternate));
     }
+
+    [Theory]
+    [InlineData("Shift+WheelDown", "Shift", "WheelDown")]
+    [InlineData("Ctrl+Shift+Q", "Ctrl", "Shift+Q")]
+    [InlineData("Alt+WheelUp", "Shift", "Alt+WheelUp")]
+    [InlineData("Shift+WheelUp", "Q", "Shift+WheelUp")]
+    [InlineData("Shift", "Shift", "Shift")]
+    public void HeldModifiersComeOff(string chord, string held, string left) =>
+        Assert.Equal(left, InputChord.Parse(chord).Without(InputChord.Parse(held)).ToString());
 }
