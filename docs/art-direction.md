@@ -69,7 +69,8 @@ A structure is a `.glb` under `meshes/structures/`, placed by a POI prefab's `mo
 - **Origin** on the ground at the structure's centre, +Y up, front towards +Z.
 - **Collider.** Add a mesh named `collider` (or starting with it) holding only the parts a player should bump into:
   walls, floors, big machines. It is not drawn. Leave out screws, labels and anything under about 0.5 m, so the
-  player never snags on detail. Without a `collider` mesh the drawn meshes collide.
+  player never snags on detail. Without a `collider` mesh the drawn meshes collide. In `kit.py`, `no_collide` keeps a
+  part out of it (a cable, leaves) and `collide_only` puts in a part that is not drawn (a smooth ramp under steps).
 - **Lights.** Point lights in the file become room lamps: their colour is kept, and every lamp gets one room-sized
   brightness and reach. They cast no shadows and fade out beyond 40 m, so a structure can have several.
 - **Materials.** A flat base colour times a grey detail texture, with an optional normal map and `COLOR_0` vertex
@@ -150,11 +151,13 @@ python tools/structures/build_structures.py
 | `families.py` | The palette and the Colony Works, Settler Patchwork and Old Stone structures |
 | `ship.py` | The SV-04 Salvager (Salvager Tech) |
 | `workshop.py` | The Workshop (Colony Works) |
+| `landmarks.py` | The eight landmarks (all four families; see [World Generation](world-generation.md#landmarks)), whose stairs, ramps and catwalks collide as walkable ramps (`build_structures.py landmarks` builds only them) |
 | `build_structures.py` | Exports every vanilla structure and the starting scrap piles |
 
 The outputs are committed. Re-run the build after changing any of these files and commit the result; it is
 deterministic. To see a structure in the world, run `tools/capture-crash-site.sh OUT_DIR`, which renders the crash
-site from the spawn, from above and inside the ship, or `tools/capture-workshop.sh OUT_DIR` for the first Workshop.
+site from the spawn, from above and inside the ship, `tools/capture-workshop.sh OUT_DIR` for the first Workshop, or
+`tools/capture-landmarks.sh OUT_DIR` for the landmarks.
 
 A new structure uses the palette constants and the builders in `families.py` and `frame.py`, so it follows the rules
 without anyone having to remember them. Show renders for approval before a new structure merges.

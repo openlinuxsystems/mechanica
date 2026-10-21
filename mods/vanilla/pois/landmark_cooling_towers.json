@@ -1,0 +1,17 @@
+{
+  // A landmark (docs/world-generation.md, Landmarks): Two Colony cooling towers, one cracked open in the fall. Drive
+  // between the columns, fly in at the top or out through the broken side, or climb the service stair up the whole one
+  // to its rim. Its model (tools/structures/landmarks.py) is moved so its footprint is centred on the POI; landmarks
+  // hold no loot and need no road.
+  "id": "landmark_cooling_towers",
+  "name": "Cooling Towers",
+  "radius": 80.0,
+  "size": [114.0, 61.0, 58.0],
+  "placement": { "spacing": [3800.0, 5400.0], "biomes": ["field", "meadow", "desert"], "priority": 35, "clearance": 200.0 },
+  "terrain": [
+    { "op": "flatten", "radius": 60.0, "blend": 20.0 }
+  ],
+  "models": [
+    { "file": "meshes/structures/landmark_cooling_towers.glb", "at": [-4.5, -0.1, 1.8] }
+  ]
+}

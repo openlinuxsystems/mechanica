@@ -16,6 +16,9 @@ structure's centre (glTF +Y up, front towards +Z):
   an office and a worn forecourt. Every Workshop POI uses it; its Fabricator is a part the POI places (a ``part``
   marker), not part of the model.
 * ``meshes/structures/cargo_crate_colony.glb`` - a framed Colony cargo crate (decoration in the cargo spill).
+* ``meshes/structures/landmark_*.glb`` - the eight landmarks (landmarks.py): set pieces that stand alone in open
+  country, placed by the ``pois/landmark_*.json`` prefabs. Their colliders keep what a player climbs walkable: each
+  flight of steps no steeper than 40 degrees collides as a smooth ramp, and cables, leaves and crystals do not collide.
 * ``meshes/world/scrap_pile_metal.glb`` and ``scrap_pile_wood.glb`` - the starting scrap piles (world objects).
 * ``meshes/world/props/*.glb`` - the props the world's scenes lay out between places (world objects): props.py,
   props_settler_a.py, props_settler_b.py, props_farm.py, props_camp.py and props_salvage.py (Settler Patchwork),
@@ -34,9 +37,10 @@ How to run (Blender as a Python module, no Blender UI needed):
     python tools/structures/build_structures.py          # everything
     python tools/structures/build_structures.py props    # only the scene props
     python tools/structures/build_structures.py props props_fields    # only the props of the modules named
+    python tools/structures/build_structures.py landmarks [landmark_ziggurat ...]   # only the landmarks
 
 The outputs are committed; re-run this script after changing it (or kit.py, frame.py, families.py, ship.py,
-workshop.py, props*.py, textures.py) and commit the result. The build is deterministic (seeded noise only).
+workshop.py, landmarks.py, props*.py, textures.py) and commit the result. The build is deterministic (seeded noise only).
 """
 
 from __future__ import annotations
@@ -76,6 +80,7 @@ import props_fields  # noqa: E402
 import props_roadside  # noqa: E402
 import ship as S  # noqa: E402
 import workshop as W  # noqa: E402
+import landmarks as LM  # noqa: E402
 
 STRUCTURES = K.MESH / "structures"
 WORLD = K.MESH / "world"
@@ -141,9 +146,18 @@ def props(only=()):
             single(name, build, WORLD / "props", collider=False)
 
 
+def landmarks(only=()):
+    for name, build in LM.PROPS.items():
+        if not only or name in only:
+            single(name, build)
+
+
 def main():
     if sys.argv[1:2] == ["props"]:
         props(sys.argv[2:])
+        return
+    if sys.argv[1:2] == ["landmarks"]:
+        landmarks(sys.argv[2:])
         return
     ship()
     single("relay_beacon_dead", lambda: F.dead_beacon())
@@ -155,6 +169,7 @@ def main():
     single("stone_court", court)
     single("workshop", lambda: W.workshop())
     single("cargo_crate_colony", crate)
+    landmarks()
     single("scrap_pile_metal", pile("metal"), WORLD, collider=False)
     single("scrap_pile_wood", pile("wood"), WORLD, collider=False)
     props()
