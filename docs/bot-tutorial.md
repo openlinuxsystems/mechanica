@@ -238,6 +238,35 @@ driving off). Both numbers are in `game/data/bots.json`.
 **Homes.** Every `home_check_seconds` a tame bot that is not on a Lead moves its home to the nearest of its `homes`
 within `home_radius` (a part on any Creation), so a Feeding Trough keeps a herd round it.
 
+**Breeding.** A `tame` block with `breed` lets two tame bots of the same type have young. A player holding the
+`treat` presses Use (E) on a tame bot (`FeedBot`): it takes one, hearts rise and it looks for a partner for
+`love_seconds` (`game/data/bots.json`). Two of the same type looking within `radius` m of each other pair up, unless
+their home already has `herd` tame animals round it. One of them gives birth `seconds` later to a `calf` bot, born tame,
+with the coat (model variant) of one of its parents; it follows its mother. Neither parent breeds again for `cooldown`
+seconds. The Grazer breeds with a tomato:
+
+```json
+"breed": { "treat": "tomato", "calf": "grazer_calf", "seconds": 60, "cooldown": 600, "herd": 8, "radius": 8 }
+```
+
+| Key | Type | Default | Meaning |
+|-----|------|---------|---------|
+| `treat` | item id | required | What a player feeds a tame bot to make it look for a partner. |
+| `calf` | bot id | required | The bot that is born. |
+| `seconds` | number (s) | 60 | From pairing to birth. |
+| `cooldown` | number (s) | 600 | Before a parent can breed again. |
+| `herd` | integer | 8 | No more pair up once this many tame animals live round their home. |
+| `radius` | number (m) | 8 | How near two must be to pair up. |
+
+**Growing up.** A bot with `grow` turns into another bot after `seconds`, keeping its coat, home, Lead and tameness.
+The Grazer Calf grows into a Grazer in 1200 s (one in-game day):
+
+```json
+"grow": { "into": "grazer", "seconds": 1200 }
+```
+
+Births and growing up carry on through saves: the time left is saved with the world.
+
 A kept bot (`KeepBot`, see [Action API](#6-action-api)) is no longer wild: it stays when the players leave, never
 counts towards `count`, and is saved with the world (see [Saves](saves.md)).
 

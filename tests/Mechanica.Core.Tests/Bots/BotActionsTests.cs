@@ -356,6 +356,72 @@ public sealed class BotActionsTests
     }
 
     [Fact]
+    public void Tame_animals_fed_a_treat_pair_up_and_have_young_that_grow_up()
+    {
+        // You stand at (0, 0, 6), I at (0, 0, 3).
+        var mum = _f.Spawn(BotFixture.Critter, new Vector3(1, 0, 3));
+        var dad = _f.Spawn(BotFixture.Critter, new Vector3(-1, 0, 3));
+        var wild = _f.Spawn(BotFixture.Critter, new Vector3(0, 0, 4));
+        _f.Bots.Keep(mum);
+        _f.Bots.Keep(dad);
+        S.Pockets(Me).Add(SurvivalFixture.Seed, 5);
+        S.Pockets(Me).Add(SurvivalFixture.Crop, 5);
+        Assert.Contains("does not eat", S.Refused(Me, BotActions.FeedBot, new FeedBotArgs(wild, SurvivalFixture.Seed)));
+        Assert.Contains("already tame", S.Refused(Me, BotActions.FeedBot, new FeedBotArgs(mum, SurvivalFixture.Crop)));
+
+        // One in the mood alone waits for a partner, and gives up after love_seconds.
+        Assert.Equal(new FeedBotResult(0, 2, true, true), S.Ok<FeedBotResult>(Me, BotActions.FeedBot, new FeedBotArgs(mum, SurvivalFixture.Seed)));
+        Assert.True(S.Ok<BotView>(Me, BotActions.GetBot, new BotArgs(mum)).InLove);
+        Assert.Contains("already looking", S.Refused(Me, BotActions.FeedBot, new FeedBotArgs(mum, SurvivalFixture.Seed)));
+        _f.Advance(31);
+        Assert.False(_f.Bots.Find(mum)!.InLove);
+
+        // Two in the mood pair up: one is expecting, neither can pair again for a while.
+        S.Ok<FeedBotResult>(Me, BotActions.FeedBot, new FeedBotArgs(mum, SurvivalFixture.Seed));
+        S.Ok<FeedBotResult>(Me, BotActions.FeedBot, new FeedBotArgs(dad, SurvivalFixture.Seed));
+        _f.Advance(0.1);
+        var mother = _f.Bots.Find(mum)!.DueAt is not null ? mum : dad;
+        var father = mother == mum ? dad : mum;
+        Assert.Null(_f.Bots.Find(father)!.DueAt);
+        Assert.False(_f.Bots.Find(mum)!.InLove || _f.Bots.Find(dad)!.InLove);
+        Assert.Contains("expecting", S.Refused(Me, BotActions.FeedBot, new FeedBotArgs(mother, SurvivalFixture.Seed)));
+        Assert.Contains("not ready", S.Refused(Me, BotActions.FeedBot, new FeedBotArgs(father, SurvivalFixture.Seed)));
+
+        // The young is born tame by its mother, wanders round her and grows up.
+        _f.Advance(10);
+        var kit = Assert.Single(_f.Bots.Bots.Values, b => b.Type.QualifiedId == BotFixture.Kit);
+        Assert.Equal((true, mother, _f.Bots.Find(mother)!.Home), (kit.Kept, kit.Mother, kit.Home));
+        _f.Bots.Moved(mother, new Vector3(4, 0, 2), false);
+        _f.Advance(0.1);
+        Assert.Equal(new Vector3(4, 0, 2), kit.Home);
+        var saved = Assert.Single(_f.Bots.SaveKept(), s => s.Type == BotFixture.Kit);
+        Assert.InRange(saved.GrowsIn!.Value, 49f, 50f);
+        Assert.InRange(Assert.Single(_f.Bots.SaveKept(), s => s.Type == BotFixture.Critter && s.BreedIn is not null && s.Position.X > 3).BreedIn!.Value, 89f, 90f);
+        var again = new BotFixture();
+        Assert.True(again.Bots.Restore(saved));
+        Assert.Equal(again.Now + saved.GrowsIn.Value, again.Bots.Bots.Values.Single().GrowsAt!.Value, 3);
+        _f.Advance(50);
+        Assert.Null(_f.Bots.Find(kit.Id));
+        Assert.Equal(4, _f.Bots.Bots.Values.Count(b => b.Type.QualifiedId == BotFixture.Critter));
+        Assert.Equal(3, _f.Bots.Bots.Values.Count(b => b.Kept));
+    }
+
+    [Fact]
+    public void A_full_herd_does_not_breed()
+    {
+        var herd = Enumerable.Range(0, 4).Select(i => _f.Spawn(BotFixture.Critter, new Vector3(i * 0.5f, 0, 3))).ToList();
+        herd.ForEach(b => _f.Bots.Keep(b));
+        S.Pockets(Me).Add(SurvivalFixture.Seed, 5);
+        S.Ok<FeedBotResult>(Me, BotActions.FeedBot, new FeedBotArgs(herd[0], SurvivalFixture.Seed));
+        S.Ok<FeedBotResult>(Me, BotActions.FeedBot, new FeedBotArgs(herd[1], SurvivalFixture.Seed));
+        _f.Advance(0.1);
+        Assert.All(herd, b => Assert.Null(_f.Bots.Find(b)!.DueAt));
+        _f.Bots.Keep(herd[3], false);
+        _f.Advance(0.1);
+        Assert.Single(herd, b => _f.Bots.Find(b)!.DueAt is not null);
+    }
+
+    [Fact]
     public void Tame_animals_move_in_with_a_home_part_nearby()
     {
         var critter = _f.Spawn(BotFixture.Critter, new Vector3(1, 0, 3));

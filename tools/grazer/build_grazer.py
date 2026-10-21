@@ -85,6 +85,39 @@ HINGE = HEAD + V((0, -0.12, -0.28))    # the jaw's hinge under the cheeks
 HIP_Z, KNEE_Z = 0.5, 0.29
 LEGS = {"FL": (-0.22, -0.26), "FR": (0.22, -0.26), "BL": (-0.23, 0.42), "BR": (0.23, 0.42)}
 
+# Proportions, the adult's; calf() changes them for the calf (built at adult size, then scaled down by SCALE).
+BODY_LIFT = 0.0      # how far the barrel (and the neck and head on it) sits above the adult's
+BODY = 1.0           # the barrel's size
+BODY_LENGTH = 1.0    # its length on top of that
+SNOUT = 1.0          # the snout's length
+EYE = 1.0            # the eyes' size
+HORNS = "curl"       # "curl" (a big curl and a stub) or "buds" (two small nubs)
+LEG_R = 1.0          # the legs' thickness
+TAIL = 1.0           # the tail's length
+SCALE = 1.0          # the whole model, in the game
+CALF = [False]
+
+
+def calf():
+    """A calf's proportions: leggy, a short round body, a big head with a short snout, big eyes, horn buds."""
+    global HEAD, SHOULDER, NECK, HINGE, HIP_Z, KNEE_Z, LEGS, BODY_LIFT, BODY, BODY_LENGTH, SNOUT, EYE, HORNS, LEG_R, TAIL, SCALE
+    BODY_LIFT = 0.16
+    lift = V((0, 0, BODY_LIFT))
+    HEAD = V((0, -0.6, 1.07)) + lift
+    SHOULDER = V((0, -0.2, 0.8)) + lift
+    NECK = V((0, -0.38, 0.93)) + lift
+    SNOUT = 0.72
+    HINGE = HEAD + V((0, -0.12 * SNOUT, -0.28))
+    HIP_Z, KNEE_Z = 0.5 + BODY_LIFT, 0.33
+    LEGS = {"FL": (-0.19, -0.2), "FR": (0.19, -0.2), "BL": (-0.2, 0.34), "BR": (0.2, 0.34)}
+    BODY, BODY_LENGTH = 0.84, 0.86
+    EYE = 1.2
+    HORNS = "buds"
+    LEG_R = 0.78
+    TAIL = 0.7
+    SCALE = 0.55
+    CALF[0] = True
+
 
 # =====================================================================================================
 # Soft shapes: metaballs baked to meshes
@@ -189,11 +222,12 @@ def body_geometry():
     """The barrel and the tops of the legs (the legs' own pieces turn inside them)."""
     at("Body")
     mb = Meta(0.03)
-    mb.ell((0, 0.1, 0.68), 0.62, (0.85, 1.0, 0.85))
-    mb.ell((0, 0.36, 0.72), 0.48, (0.9, 0.8, 0.88))
-    mb.ell((0, -0.2, 0.7), 0.5, (0.9, 0.8, 0.9))
+    k, ky, dz = BODY, BODY * BODY_LENGTH, BODY_LIFT
+    mb.ell((0, 0.1 * ky, 0.68 + dz), 0.62 * k, (0.85, 1.0, 0.85))
+    mb.ell((0, 0.36 * ky, 0.72 + dz), 0.48 * k, (0.9, 0.8, 0.88))
+    mb.ell((0, -0.2 * ky, 0.7 + dz), 0.5 * k, (0.9, 0.8, 0.9))
     for x, y in LEGS.values():
-        mb.cap((x, y, 0.66), (x, y, HIP_Z - 0.04), 0.21)
+        mb.cap((x, y, 0.66 + dz), (x, y, HIP_Z - 0.04), 0.21 * LEG_R)
     bm = mb.bmesh(0.2)
     skin = Skin(bm)
     add(bm, "coat")
@@ -284,17 +318,17 @@ def head_geometry():
     mb = Meta(0.022)
     mb.cap(NECK + V((0, 0.12, -0.02)), HEAD + V((0, 0.1, -0.02)), 0.36)   # neck stub, hidden in the body
     mb.ell(HEAD, 0.52, (1.0, 0.95, 0.95))
-    mb.cap(HEAD + V((0, -0.1, -0.06)), HEAD + V((0, -0.4, -0.24)), 0.33)
-    mb.ell(HEAD + V((0, -0.44, -0.26)), 0.36, (1.05, 0.72, 0.9))
+    mb.cap(HEAD + V((0, -0.1, -0.06)), HEAD + V((0, -0.4 * SNOUT, -0.24)), 0.33)
+    mb.ell(HEAD + V((0, -0.44 * SNOUT, -0.26)), 0.36, (1.05, 0.72, 0.9))
     for sx in (-1, 1):
         mb.ell(HEAD + V((sx * 0.18, -0.2, 0.08)), 0.2)      # brows round the eyes
         mb.ell(HEAD + V((sx * 0.2, -0.1, -0.16)), 0.2)      # cheeks
-    mb.ell(HEAD + V((0, -0.4, -0.5)), 0.3, (1.15, 1.25, 0.55), neg=True)   # the slot the jaw sits in
+    mb.ell(HEAD + V((0, -0.4 * SNOUT, -0.5)), 0.3, (1.15, 1.25 * SNOUT, 0.55), neg=True)   # the slot the jaw sits in
     bm = mb.bmesh(0.25)
     skin = Skin(bm)
     add(bm, "coat")
     # the nose: a flat pink pad on the end of the snout with two deep nostrils
-    tip, _ = skin.hit(HEAD + V((0, -0.4, -0.27)), HEAD + V((0, -2, -0.27)))
+    tip, _ = skin.hit(HEAD + V((0, -0.4 * SNOUT, -0.27)), HEAD + V((0, -2, -0.27)))
     nose = tip + V((0, 0.03, 0))
     sphere(nose, 0.21, "nose", scale=(1.12, 0.36, 0.85), segs=24)
     for sx in (-1, 1):
@@ -303,18 +337,23 @@ def head_geometry():
         # wide open friendly eyes: white, a brown iris looking forward, catchlights, a raised brow and the cheek
         # pushed up under the eye in a smile
         p, n = skin.hit(HEAD + V((sx * 0.18, -0.2, 0.1)), HEAD + V((sx * 0.9, -1.4, 0.1)))
-        sphere(p - n * 0.06, 0.12, "mask", segs=18)
-        sphere(p, 0.095, "white", segs=20)
+        e = EYE
+        sphere(p - n * 0.06 * e, 0.12 * e, "mask", segs=18)
+        sphere(p, 0.095 * e, "white", segs=20)
         fwd = (n + V((0, -0.9, 0))).normalized()
-        sphere(p + fwd * 0.058, 0.07, "iris", scale=(1, 1, 1.05), segs=18)
-        sphere(p + fwd * 0.083, 0.044, "pupil", segs=14)
-        sphere(p + fwd * 0.112 + V((0, 0, 0.032)) + n * 0.01, 0.018, "glint", segs=8)
-        sphere(p + fwd * 0.115 + V((0, 0, -0.022)) - n * 0.012, 0.008, "glint", segs=6)
-        sphere(p + V((0, 0, -0.098)) - n * 0.01, 0.09, "mask", scale=(1.1, 1.0, 0.55), segs=18)
-        sphere(p + V((0, 0, 0.14)) - n * 0.04, 0.065, "mask", scale=(1.0, 1.0, 0.36), segs=14)
+        sphere(p + fwd * 0.058 * e, 0.07 * e, "iris", scale=(1, 1, 1.05), segs=18)
+        sphere(p + fwd * 0.083 * e, 0.044 * e, "pupil", segs=14)
+        sphere(p + (fwd * 0.112 + V((0, 0, 0.032)) + n * 0.01) * e, 0.018 * e, "glint", segs=8)
+        sphere(p + (fwd * 0.115 + V((0, 0, -0.022)) - n * 0.012) * e, 0.008 * e, "glint", segs=6)
+        sphere(p + (V((0, 0, -0.098)) - n * 0.01) * e, 0.09 * e, "mask", scale=(1.1, 1.0, 0.55), segs=18)
+        sphere(p + (V((0, 0, 0.14)) - n * 0.04) * e, 0.065 * e, "mask", scale=(1.0, 1.0, 0.36), segs=14)
         # soft fleshy horns: a big curl up, out and over, and a short stub in front of it
         a, _ = skin.hit(HEAD + V((sx * 0.14, 0, 0.2)), HEAD + V((sx * 0.14, 0, 1.5)))
         a = a - V((0, 0, 0.04))
+        if HORNS == "buds":
+            # a calf's horns: two soft pink nubs just breaking through the coat
+            soft(curve(a, a + V((sx * 0.01, 0, 0.06)), a + V((sx * 0.04, -0.01, 0.1)), 4), 0.06, 0.042, "flesh")
+            continue
         soft(curve(a, a + V((sx * 0.04, 0.04, 0.42)), a + V((sx * 0.42, 0, 0.2)), 12), 0.085, 0.062, "flesh")
         b, _ = skin.hit(HEAD + V((sx * 0.1, -0.16, 0.2)), HEAD + V((sx * 0.1, -0.16, 1.5)))
         b = b - V((0, 0, 0.03))
@@ -341,19 +380,19 @@ def jaw_geometry():
     at("Jaw")
     h = HINGE
     mb = Meta(0.018)
-    mb.cap(h + V((0, -0.02, -0.02)), h + V((0, -0.3, -0.06)), 0.17)
-    mb.ell(h + V((0, -0.33, -0.06)), 0.19, (1.1, 0.75, 0.55))
+    mb.cap(h + V((0, -0.02, -0.02)), h + V((0, -0.3 * SNOUT, -0.06)), 0.17)
+    mb.ell(h + V((0, -0.33 * SNOUT, -0.06)), 0.19, (1.1, 0.75, 0.55))
     for sx in (-1, 1):
         mb.ell(h + V((sx * 0.12, -0.06, 0)), 0.12)
     add(mb.bmesh(0.35), "coat")
-    sphere(h + V((0, -0.24, -0.02)), 0.15, "mouth", scale=(1.05, 1.15, 0.28), segs=18)
-    sphere(h + V((0, -0.3, 0.005)), 0.1, "tongue", scale=(0.95, 1.2, 0.3), segs=16)
-    sphere(h + V((0, -0.41, -0.04)), 0.12, "nose", scale=(1.25, 0.4, 0.42), segs=16)
+    sphere(h + V((0, -0.24 * SNOUT, -0.02)), 0.15, "mouth", scale=(1.05, 1.15 * SNOUT, 0.28), segs=18)
+    sphere(h + V((0, -0.3 * SNOUT, 0.005)), 0.1, "tongue", scale=(0.95, 1.2 * SNOUT, 0.3), segs=16)
+    sphere(h + V((0, -0.41 * SNOUT, -0.04)), 0.12, "nose", scale=(1.25, 0.4, 0.42), segs=16)
 
 
 def tail_points(body):
-    t0, _ = body.hit((0, 0.5, 0.95), (0, 2, 0.95))
-    pts = curve(t0 - V((0, 0.03, 0)), t0 + V((0, 0.34, 0.06)), t0 + V((0, 0.42, -0.46)), 10)
+    t0, _ = body.hit((0, 0.5, 0.95 + BODY_LIFT), (0, 2, 0.95 + BODY_LIFT))
+    pts = curve(t0 - V((0, 0.03, 0)), t0 + V((0, 0.34 * TAIL, 0.06)), t0 + V((0, 0.42 * TAIL, -0.46 * TAIL)), 10)
     return pts
 
 
@@ -372,24 +411,24 @@ def legs_geometry():
     for name, (x, y) in LEGS.items():
         at(f"Leg{name}_Hip")
         mb = Meta(0.02)
-        mb.cap((x, y, HIP_Z + 0.04), (x, y, KNEE_Z), 0.19)
-        mb.ell((x, y, KNEE_Z), 0.17)
+        mb.cap((x, y, HIP_Z + 0.04), (x, y, KNEE_Z), 0.19 * LEG_R)
+        mb.ell((x, y, KNEE_Z), 0.17 * LEG_R)
         add(mb.bmesh(0.3), "coat")
         at(f"Leg{name}_Knee")
         mb = Meta(0.02)
-        mb.cap((x, y, KNEE_Z + 0.02), (x, y, 0.12), 0.185)
-        mb.ell((x, y, 0.13), 0.16, (1, 1, 0.8))
+        mb.cap((x, y, KNEE_Z + 0.02), (x, y, 0.12), 0.185 * LEG_R)
+        mb.ell((x, y, 0.13), 0.16 * LEG_R, (1, 1, 0.8))
         add(mb.bmesh(0.3), "cream")
-        rod((x, y - 0.01, 0), (x, y, 0.1), 0.15, "hoof", r2=0.14, segs=20)
+        rod((x, y - 0.01, 0), (x, y, 0.1), 0.15 * LEG_R, "hoof", r2=0.14 * LEG_R, segs=20)
         # the cleft between the two toes, at the front
-        rod((x, y - 0.12, 0.002), (x, y - 0.12, 0.085), 0.012, "nostril", segs=6)
+        rod((x, y - 0.12 * LEG_R, 0.002), (x, y - 0.12 * LEG_R, 0.085), 0.012, "nostril", segs=6)
 
 
 def pivots(skins=None):
     """Node -> (parent, pivot in model space)."""
     body, head = skins or SKINS
     tail = tail_points(body)
-    piv = {"Body": (None, V((0, 0.1, 0.68))), "Neck": ("Body", SHOULDER), "Collar": ("Neck", NECK), "LeadRing": ("Collar", LEAD_RING[0]), "Head": ("Neck", NECK), "Jaw": ("Head", HINGE)}
+    piv = {"Body": (None, V((0, 0.1, 0.68 + BODY_LIFT))), "Neck": ("Body", SHOULDER), "Collar": ("Neck", NECK), "LeadRing": ("Collar", LEAD_RING[0]), "Head": ("Neck", NECK), "Jaw": ("Head", HINGE)}
     for side, sx in (("L", -1), ("R", 1)):
         piv[f"Ear{side}"] = ("Head", ear_points(head, sx)[0])
     piv["Tail1"] = ("Body", tail[0])
@@ -904,9 +943,10 @@ def build_game(coats):
         root, nodes = build()
         tris = sum(len(ob.data.polygons) for ob in root.children_recursive if ob.type == "MESH")
         bake_clips(nodes)
-        out = MESHES / f"{COATS[coat][0]}.glb"
+        root.scale = (SCALE, SCALE, SCALE)
+        out = MESHES / f"{COATS[coat][0]}{'_calf' if CALF[0] else ''}.glb"
         sc.export(root, out)
-        speeds = ", ".join(f"{clip} {gait_speed(clip):.2f}" for clip in GAITS)
+        speeds = ", ".join(f"{clip} {gait_speed(clip) * SCALE:.2f}" for clip in GAITS)
         print(f"wrote {out.relative_to(REPO)} ({tris} faces; clip speeds, m/s: {speeds})")
 
 
@@ -951,7 +991,7 @@ def render_review(out: Path, coat, only=None):
         else:
             set_pose(nodes, clip, t * CLIPS[clip], CLIPS[clip])
         bpy.context.view_layer.update()
-        path = rl.render(cams[cam], out / f"{coat}_{name}.png", 800, 900)
+        path = rl.render(cams[cam], out / f"{coat}{'_calf' if CALF[0] else ''}_{name}.png", 800, 900)
         shots.append((name, path))
 
     take("rest", None, 0, "tq")
@@ -968,7 +1008,7 @@ def render_review(out: Path, coat, only=None):
     rows = (len(shots) + cols - 1) // cols
     sheet = Image.new("RGB", (60 + cols * (w + 16) + 40, 150 + rows * (h + 16) + 20), (246, 246, 244))
     d = ImageDraw.Draw(sheet)
-    d.text((60, 30), f"GRAZER, {coat.upper()} COAT (game model and clips)", fill=INK, font=F(40, True))
+    d.text((60, 30), f"GRAZER{' CALF' if CALF[0] else ''}, {coat.upper()} COAT (game model and clips)", fill=INK, font=F(40, True))
     d.text((60, 86), "Final game model with its fur textures, in its rest pose and at key frames of its clips.",
            fill=INK, font=F(20))
     for i, (name, path) in enumerate(shots):
@@ -976,7 +1016,7 @@ def render_review(out: Path, coat, only=None):
         sheet.paste(Image.open(path).convert("RGB").resize((w, h), Image.LANCZOS), (x, y))
         d.rectangle([x, y, x + w - 1, y + h - 1], outline=(190, 190, 190), width=2)
         d.text((x + 10, y + 8), name.replace("_", " ").upper(), fill=INK, font=F(16, True))
-    sheet.save(out / f"{coat}_review_sheet.png")
+    sheet.save(out / f"{coat}{'_calf' if CALF[0] else ''}_review_sheet.png")
     print(f"rendered the review sheet into {out}")
 
 
@@ -984,6 +1024,8 @@ if __name__ == "__main__":
     args = sys.argv[1:]
     chosen = [args[i + 1] for i, a in enumerate(args) if a == "--coat"] or list(COATS)
     only = [args[i + 1] for i, a in enumerate(args) if a == "--only"]
+    if "--calf" in args:
+        calf()
     if "--render" in args:
         for key in chosen:
             render_review(Path(args[args.index("--render") + 1]), key, only)

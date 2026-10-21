@@ -87,6 +87,30 @@ public sealed class BotState
     /// <summary>The player leading it on a Lead (<see cref="BotActions.LeadBot"/>), or null. A led bot follows them instead of running its behaviour.</summary>
     public int? LedBy { get; internal set; }
 
+    /// <summary>Which of its model's looks it has (<see cref="BotModel.LookOf"/>), or null to go by its id. Young take a parent's.</summary>
+    public int? Look { get; internal set; }
+
+    /// <summary>Whether it is in the mood to pair: a player fed it its breed's treat (<c>tame.breed</c>).</summary>
+    public bool InLove { get; internal set; }
+
+    /// <summary>Host time it stops being in the mood.</summary>
+    internal double LoveUntil { get; set; }
+
+    /// <summary>Host time it can pair again.</summary>
+    public double BreedsAt { get; internal set; }
+
+    /// <summary>Host time its young is born (it paired), or null.</summary>
+    public double? DueAt { get; internal set; }
+
+    /// <summary>The look its young will have.</summary>
+    internal int DueLook { get; set; }
+
+    /// <summary>Host time it grows up (a young one, <c>grow</c>), or null.</summary>
+    public double? GrowsAt { get; internal set; }
+
+    /// <summary>Its mother while both live: a young one wanders round her.</summary>
+    public int? Mother { get; internal set; }
+
     /// <summary>Whether it is fighting (see <see cref="BotActions.Engage"/>).</summary>
     public bool Engaged { get; internal set; }
 
@@ -110,7 +134,7 @@ public sealed class BotState
         LastUse.TryGetValue(attack.Id, out var last) ? (float)Math.Max(0, last + attack.Interval - now) : 0f;
 
     /// <summary>The view clients are sent.</summary>
-    public BotView View => new(Id, Type.QualifiedId, Position.ToVec3(), Yaw, Health, Type.Health, Dead, Raid, Engaged, Swimming, Kept, Fed, LedBy);
+    public BotView View => new(Id, Type.QualifiedId, Position.ToVec3(), Yaw, Health, Type.Health, Dead, Raid, Engaged, Swimming, Kept, Fed, LedBy, Look, InLove);
 
     /// <summary>Whether it is swimming: a swimmer (<see cref="Bot.SwimDepth"/>) in water.</summary>
     public bool Swimming => InWater && Type.SwimDepth is not null;
@@ -291,7 +315,7 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
         if (bot.Type.Tame is not { } tame)
             return $"The {bot.Type.Name} cannot be tamed.";
         if (bot.Kept)
-            return $"The {bot.Type.Name} is already tame.";
+            return ValidateTreat(caller, bot, args.Item);
         if (string.IsNullOrWhiteSpace(args.Item) || !tame.Foods.Contains(Identifiers.Qualify(args.Item)))
             return $"The {bot.Type.Name} does not eat that.";
         if (bot.Engaged)
@@ -299,11 +323,32 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
         return survival.CheckReach(caller, bot.Centre) ?? survival.CheckSpend(caller, Identifiers.Qualify(args.Item), 1);
     }
 
+    // A tame one takes only its breed's treat, and only when it could pair.
+    private string? ValidateTreat(ActionCaller caller, BotState bot, string item)
+    {
+        if (bot.Type.Tame!.Breed is not { } breed || string.IsNullOrWhiteSpace(item) || Identifiers.Qualify(item) != breed.Treat)
+            return $"The {bot.Type.Name} is already tame.";
+        if (bot.InLove)
+            return $"The {bot.Type.Name} is already looking for a partner.";
+        if (bot.DueAt is not null)
+            return $"The {bot.Type.Name} is expecting.";
+        if (Now < bot.BreedsAt)
+            return $"The {bot.Type.Name} is not ready to breed again yet.";
+        return survival.CheckReach(caller, bot.Centre) ?? survival.CheckSpend(caller, breed.Treat, 1);
+    }
+
     private JsonElement? ApplyFeed(ActionCaller caller, FeedBotArgs args)
     {
         var bot = _bots[args.Bot];
         var tame = bot.Type.Tame!;
         survival.Spend(caller, Identifiers.Qualify(args.Item), 1);
+        if (bot.Kept)
+        {
+            bot.InLove = true;
+            bot.LoveUntil = Now + settings.LoveSeconds;
+            Changed?.Invoke(bot);
+            return BotValues.Value(new FeedBotResult(bot.Fed, tame.Feeds, true, true));
+        }
         bot.Fed++;
         if (bot.Fed >= tame.Feeds)
             bot.Kept = true;
@@ -386,11 +431,112 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
         }
     }
 
+    // ---- Breeding ----
+
+    // Two in the mood near each other pair up (while their home has room), mothers give birth when due, young follow
+    // their mothers and grow up.
+    private void TendBreeding(double now)
+    {
+        foreach (var bot in _bots.Values.Where(b => b.InLove && (b.Dead || now >= b.LoveUntil)).ToList())
+        {
+            bot.InLove = false;
+            Changed?.Invoke(bot);
+        }
+        foreach (var bot in _bots.Values.Where(b => b.InLove).ToList())
+        {
+            if (!bot.InLove || bot.Type.Tame?.Breed is not { } breed)
+                continue;
+            var partner = _bots.Values.FirstOrDefault(o => o != bot && o.InLove && o.Type == bot.Type
+                && Vector3.Distance(o.Position, bot.Position) <= breed.Radius);
+            if (partner is null || HerdAround(bot, breed) >= breed.Herd)
+                continue;
+            var model = bot.Type.Model;
+            bot.DueAt = now + breed.Seconds;
+            bot.DueLook = model is null ? 0 : ((bot.Id + partner.Id) & 1) == 0 ? model.LookOf(bot.Id, bot.Look) : model.LookOf(partner.Id, partner.Look);
+            foreach (var parent in new[] { bot, partner })
+            {
+                parent.InLove = false;
+                parent.BreedsAt = now + breed.Cooldown;
+                Changed?.Invoke(parent);
+            }
+        }
+        foreach (var mother in _bots.Values.Where(b => b.DueAt is { } due && now >= due).ToList())
+        {
+            mother.DueAt = null;
+            if (mother.Dead || mother.Type.Tame?.Breed is not { } breed || bots.FindBot(breed.Calf) is not { } type || _bots.Count >= settings.MaxBots)
+                continue;
+            var calf = Spawn(type, mother.Position, mother.Yaw, mother.Home, mother.DueLook);
+            calf.Mother = mother.Id;
+        }
+        foreach (var young in _bots.Values.Where(b => b.GrowsAt is { } at && now >= at && !b.Dead).ToList())
+        {
+            if (young.Type.Grow is not { } grow || bots.FindBot(grow.Into) is not { } type)
+            {
+                young.GrowsAt = null;
+                continue;
+            }
+            Remove(young.Id);
+            var grown = Spawn(type, young.Position, young.Yaw, young.Home, young.Look ?? young.Type.Model?.LookOf(young.Id));
+            if (young.LedBy is { } leader)
+            {
+                grown.LedBy = leader;
+                Changed?.Invoke(grown);
+            }
+        }
+        foreach (var young in _bots.Values.Where(b => b.Mother is not null && b.LedBy is null))
+        {
+            if (Find(young.Mother!.Value) is { Dead: false } mother)
+                young.Home = mother.Position;
+            else
+                young.Mother = null;
+        }
+    }
+
+    /// <summary>Brings a bot's birth (it is expecting) and its growing up (a young one) forward to now (tests and tools).</summary>
+    public void Hurry(int id)
+    {
+        if (!_bots.TryGetValue(id, out var bot))
+            return;
+        if (bot.DueAt is not null)
+            bot.DueAt = Now;
+        if (bot.GrowsAt is not null)
+            bot.GrowsAt = Now;
+    }
+
+    // How many tame ones live round a bot's home: its own type and its young, and young on the way.
+    private int HerdAround(BotState bot, BotBreed breed)
+    {
+        var radius = bot.Type.Tame!.HomeRadius;
+        return _bots.Values.Count(o => o.Kept && !o.Dead && (o.Type == bot.Type || o.Type.QualifiedId == breed.Calf)
+            && Vector3.Distance(new Vector3(o.Home.X, 0, o.Home.Z), new Vector3(bot.Home.X, 0, bot.Home.Z)) <= radius)
+            + _bots.Values.Count(o => o.DueAt is not null && Vector3.Distance(new Vector3(o.Home.X, 0, o.Home.Z), new Vector3(bot.Home.X, 0, bot.Home.Z)) <= radius);
+    }
+
+    // A tame bot born or grown up here: kept, at home, with its look, growing up when its type does.
+    private BotState Spawn(Bot type, Vector3 feet, float yaw, Vector3 home, int? look)
+    {
+        var bot = new BotState(_nextId++, type, feet, yaw)
+        {
+            Home = home,
+            Kept = true,
+            Look = look,
+            GrowsAt = type.Grow is { } grow ? Now + grow.Seconds : null,
+        };
+        _bots[bot.Id] = bot;
+        Spawned?.Invoke(bot);
+        return bot;
+    }
+
     // ---- Saves ----
 
     /// <summary>Every living kept bot, for the save, by id. Other bots come back on their own (wild ones, guards) or not at all (raiders).</summary>
     public IReadOnlyList<SavedBot> SaveKept() =>
-        [.. _bots.Values.Where(b => b.Kept && !b.Dead).Select(b => new SavedBot(b.Type.QualifiedId, b.Position.ToVec3(), b.Yaw, b.Home.ToVec3(), b.Health))];
+        [.. _bots.Values.Where(b => b.Kept && !b.Dead).Select(b => new SavedBot(b.Type.QualifiedId, b.Position.ToVec3(), b.Yaw, b.Home.ToVec3(), b.Health,
+            b.Type.Model?.LookOf(b.Id, b.Look) ?? b.Look, Left(b.BreedsAt), b.DueAt is { } due ? Left(due) ?? 0f : null, b.DueLook,
+            b.GrowsAt is { } grows ? Left(grows) ?? 0f : null))];
+
+    // Seconds from now until a host time, or null when it has passed.
+    private float? Left(double at) => at > Now ? (float)(at - Now) : null;
 
     /// <summary>Puts a saved kept bot back in the world; false when its type is gone (its mod is no longer loaded).</summary>
     public bool Restore(SavedBot saved)
@@ -402,6 +548,11 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
             Home = new Vector3(saved.Home.X, saved.Home.Y, saved.Home.Z),
             Health = Math.Clamp(saved.Health, 1f, type.Health),
             Kept = true,
+            Look = saved.Look,
+            BreedsAt = saved.BreedIn is { } breed ? Now + breed : 0,
+            DueAt = saved.DueIn is { } due ? Now + due : null,
+            DueLook = saved.DueLook,
+            GrowsAt = saved.GrowsIn is { } grows ? Now + grows : type.Grow is { } grow ? Now + grow.Seconds : null,
         };
         _bots[bot.Id] = bot;
         Spawned?.Invoke(bot);
@@ -854,6 +1005,7 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
             Changed?.Invoke(calm);
         }
         TendTame(now);
+        TendBreeding(now);
     }
 
     // ---- Shared ----

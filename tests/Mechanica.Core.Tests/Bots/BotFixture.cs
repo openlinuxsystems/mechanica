@@ -15,6 +15,7 @@ internal sealed class BotFixture : IBotWorld, IRaidWorld
     public const string Bomber = "test:bomber";
     public const string Tank = "test:tank";
     public const string Critter = "test:critter";
+    public const string Kit = "test:kit";
     public const string Spitter = "test:spitter";
     public const string Smasher = "test:smasher";
     public const string Swimmer = "test:swimmer";
@@ -51,7 +52,17 @@ internal sealed class BotFixture : IBotWorld, IRaidWorld
             ("test", new BotDefinition
             {
                 Id = "critter", Name = "Critter", Health = 30, Speed = 2, Passive = true,
-                Tame = new BotTameDefinition { Foods = [SurvivalFixture.Crop], Feeds = 2, Lead = SurvivalFixture.Connector, Homes = [SurvivalFixture.Chest], HomeRadius = 10 },
+                Tame = new BotTameDefinition
+                {
+                    Foods = [SurvivalFixture.Crop], Feeds = 2, Lead = SurvivalFixture.Connector, Homes = [SurvivalFixture.Chest], HomeRadius = 10,
+                    Breed = new BotBreedDefinition { Treat = SurvivalFixture.Seed, Calf = Kit, Seconds = 10, Cooldown = 100, Herd = 4, Radius = 5 },
+                },
+            }),
+            ("test", new BotDefinition
+            {
+                Id = "kit", Name = "Kit", Health = 15, Speed = 2, Passive = true,
+                Tame = new BotTameDefinition { Foods = [SurvivalFixture.Crop], Feeds = 1, Lead = SurvivalFixture.Connector },
+                Grow = new BotGrowDefinition { Into = Critter, Seconds = 50 },
             }),
             ("test", new BotDefinition
             {

@@ -116,11 +116,11 @@ public partial class BotModelView : Node3D
 
     /// <summary>
     /// Loads <paramref name="type"/>'s model as bot <paramref name="botId"/> shows it (its own look of the model's
-    /// variants), or null when it has none or it does not load.
+    /// variants, or <paramref name="look"/>: one it was born with), or null when it has none or it does not load.
     /// </summary>
-    public static BotModelView? For(Bot type, PartAssets? assets, Rid owner, int botId = 0)
+    public static BotModelView? For(Bot type, PartAssets? assets, Rid owner, int botId = 0, int? look = null)
     {
-        if (type.Model is not { } model || assets?.InstantiateScene(model.MeshFor(botId), type.ModId) is not { } scene)
+        if (type.Model is not { } model || assets?.InstantiateScene(model.MeshFor(botId, look), type.ModId) is not { } scene)
             return null;
         return new BotModelView { Name = "Model", Type = type, Scene = scene, OwnerBody = owner };
     }

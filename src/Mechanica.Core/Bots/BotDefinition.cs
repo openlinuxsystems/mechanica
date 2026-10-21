@@ -72,6 +72,9 @@ public sealed record BotDefinition
     /// <summary>Its animated model. Omitted means the placeholder capsule in <see cref="Color"/>.</summary>
     public BotModelDefinition? Model { get; init; }
 
+    /// <summary>What it grows up into, for a young one (a calf). Omitted means it never changes.</summary>
+    public BotGrowDefinition? Grow { get; init; }
+
     /// <summary>Whether melee hits (the Sledgehammer) do nothing to it.</summary>
     public bool? MeleeImmune { get; init; }
 
@@ -121,6 +124,52 @@ public sealed record BotTameDefinition
 
     /// <summary>How near one of <see cref="Homes"/> must be for it to move in, in m (default 20).</summary>
     public float? HomeRadius { get; init; }
+
+    /// <summary>How two tame ones have young. Omitted means they never do.</summary>
+    public BotBreedDefinition? Breed { get; init; }
+
+    /// <summary>Unknown keys (warned about).</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// How two tame bots of a type have young: a player feeds each a treat, and two in the mood near each other pair up; the
+/// mother has the young (<see cref="Calf"/>, a bot type of its own) after <see cref="Seconds"/>.
+/// </summary>
+public sealed record BotBreedDefinition
+{
+    /// <summary>The treat that puts one in the mood (an item id or <c>mod_id:item_id</c>).</summary>
+    public string? Treat { get; init; }
+
+    /// <summary>The bot type of the young (a bot id or <c>mod_id:bot_id</c>), born tame.</summary>
+    public string? Calf { get; init; }
+
+    /// <summary>Seconds from pairing to the birth (default 60).</summary>
+    public float? Seconds { get; init; }
+
+    /// <summary>Seconds after pairing before either can pair again (default 600).</summary>
+    public float? Cooldown { get; init; }
+
+    /// <summary>Most tame ones (young included) round one home before they stop breeding (default 8).</summary>
+    public int? Herd { get; init; }
+
+    /// <summary>How near the two must be to pair, in m (default 8).</summary>
+    public float? Radius { get; init; }
+
+    /// <summary>Unknown keys (warned about).</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>What a young bot grows up into, and when.</summary>
+public sealed record BotGrowDefinition
+{
+    /// <summary>The bot type it becomes (a bot id or <c>mod_id:bot_id</c>), keeping its look, home and keeping.</summary>
+    public string? Into { get; init; }
+
+    /// <summary>Seconds from birth until it grows up.</summary>
+    public float? Seconds { get; init; }
 
     /// <summary>Unknown keys (warned about).</summary>
     [JsonExtensionData]
