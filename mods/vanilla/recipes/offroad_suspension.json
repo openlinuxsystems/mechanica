@@ -5,11 +5,15 @@
   ],
   "inputs": [
     {
-      "item": "scrap_metal_block",
-      "count": 16
+      "item": "metal_block",
+      "count": 20
     },
     {
       "item": "component_kit",
+      "count": 1
+    },
+    {
+      "item": "crude_oil",
       "count": 2
     }
   ],
@@ -19,6 +23,6 @@
       "count": 1
     }
   ],
-  "time": 8,
+  "time": 10,
   "order": 720
 }

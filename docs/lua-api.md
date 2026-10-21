@@ -278,7 +278,7 @@ A loop's parameters are the ones its event declares, each with its own range (`t
 
 | Function | Returns |
 |----------|---------|
-| `sound.play(id, at?)` | Plays a one-shot at the part's centre (an item script: its holder's eyes), or at the world point `at`. Returns `true`, or `false` and the reason. |
+| `sound.play(id, at?, options?)` | Plays a one-shot at the part's centre (an item script: its holder's eyes), or at the world point `at` (pass `nil` to keep the default place and still give options). `options.pitch` scales its pitch for every listener: 1 as recorded, 2 an octave up, 0.5 an octave down, kept between 0.25 and 4 (`sound.play("vanilla:horn_honk", nil, {pitch = 1.5})`). Returns `true`, or `false` and the reason. |
 | `sound.start(id, parameters?)` | Starts a looping event that follows the part, with optional starting parameter values (`{thrust = 0.5}`). Returns its handle, or `nil` and the reason. A part runs at most `max_loops_per_part` loops. |
 | `sound.set_parameter(handle, name, value)` | Sets a parameter of one of the part's loops, which bends its pitch and volume as the event says. Changes reach clients up to 20 times a second. Returns `true`, or `false` and the reason. |
 | `sound.stop(handle)` | Stops one of the part's loops. Returns `true`, or `false` and the reason. |

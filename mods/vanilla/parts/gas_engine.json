@@ -1,14 +1,14 @@
 {
   "id": "gas_engine",
   "name": "Gas Engine 1",
-  "description": "Turns the wheel bearings it is linked to toward its front, with a seat's throttle as its input: it runs while someone sits in a linked seat or a linked switch is on, and stays off with nothing linked. Burns gasoline from the creation's gas containers. Upgrade it in place with Component Kits (U) for more bearings, power steps, power and mileage.",
+  "description": "Turns the wheel bearings it is linked to toward its front, with a seat's throttle as its input: it runs while someone sits in a linked seat or a linked switch is on, and stays off with nothing linked. Every power step turns the wheels at the same speed and pulls harder; low power saves gasoline, which it burns from the creation's gas containers. Upgrade it in place with Component Kits (U) for more bearings, power steps, speed, power and mileage.",
   "category": "interactive",
   "mass": 12,
-  "durability": 6,
+  "durability": 4,
   "friction": 0.5,
   "buoyancy": 0.2,
   "flammable": false,
-  "stack_size": 5,
+  "stack_size": 1,
   "sound_material": "metal",
   "size": [2, 2, 2],
   "mesh": "meshes/parts/gas_engine_1.glb",
@@ -59,12 +59,12 @@
       "cost": [
         {
           "item": "component_kit",
-          "count": 2
+          "count": 4
         }
       ],
       "set": {
         "name": "Gas Engine 2",
-        "durability": 7,
+        "durability": 5,
         "mesh": "meshes/parts/gas_engine_2.glb",
         "icon": "textures/items/gas_engine_2_icon.png",
         "logic": {
@@ -124,12 +124,12 @@
       "cost": [
         {
           "item": "component_kit",
-          "count": 4
+          "count": 6
         }
       ],
       "set": {
         "name": "Gas Engine 3",
-        "durability": 8,
+        "durability": 6,
         "mesh": "meshes/parts/gas_engine_3.glb",
         "icon": "textures/items/gas_engine_3_icon.png",
         "logic": {
@@ -189,12 +189,12 @@
       "cost": [
         {
           "item": "component_kit",
-          "count": 6
+          "count": 8
         }
       ],
       "set": {
         "name": "Gas Engine 4",
-        "durability": 9,
+        "durability": 7,
         "mesh": "meshes/parts/gas_engine_4.glb",
         "icon": "textures/items/gas_engine_4_icon.png",
         "logic": {
@@ -252,7 +252,7 @@
           "speed": 49,
           "torque": 980,
           "brake": 600,
-          "fuel_time": 135,
+          "fuel_time": 120,
           "gears": 11,
           "hard_gear": 8,
           "smoke": 0.8
@@ -263,12 +263,12 @@
       "cost": [
         {
           "item": "component_kit",
-          "count": 8
+          "count": 10
         }
       ],
       "set": {
         "name": "Gas Engine 5",
-        "durability": 10,
+        "durability": 8,
         "mesh": "meshes/parts/gas_engine_5.glb",
         "icon": "textures/items/gas_engine_5_icon.png",
         "logic": {
@@ -344,7 +344,7 @@
           "speed": 57,
           "torque": 1300,
           "brake": 800,
-          "fuel_time": 202.5,
+          "fuel_time": 200,
           "gears": 13,
           "hard_gear": 10,
           "smoke": 1.0
@@ -439,6 +439,7 @@
     "speed": 25,
     "torque": 360,
     "brake": 240,
+    "slider": "power",
     "fuel": "gasoline",
     "fuel_time": 40,
     "loop_parameter": "load",

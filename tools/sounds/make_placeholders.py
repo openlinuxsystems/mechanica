@@ -740,7 +740,8 @@ ev("logic", "sensor_lose", lambda rng: beeps([1900, 1400], 0.06, level=0.5), **Q
 ev("logic", "sensor_ping", lambda rng: edges(peak(tone(2400, 0.3) * decay(0.3, 0.06), 0.4)), max_instances=4, **QUIET)
 ev("logic", "switch_toggle", lambda rng: click(rng, 1900, 0.07), **QUIET)
 ev("logic", "button_press", lambda rng: click(rng, 1300, 0.07), **QUIET)
-ev("logic", "horn_honk", tonal_loop([(400, 0.5), (500, 0.4), (800, 0.15), (1000, 0.1)], 0.0), loop=1.0, max_distance=80.0)
+ev("logic", "horn_honk", tonal_loop([(400, 0.5), (500, 0.4), (800, 0.15), (1000, 0.1)], 0.0), loop=1.0, max_distance=80.0,
+   parameters=[dict(name="pitch", min=1.0, max=9.0, default=5.0, pitch=[0.5, 1.5])])
 
 # Tools on parts
 ev("part_tools", "saw_spin", tonal_loop([(1200, 0.3), (2400, 0.15)], 0.1, 30.0, 0.25, 2000, 8000), loop=1.5, max_distance=40.0,

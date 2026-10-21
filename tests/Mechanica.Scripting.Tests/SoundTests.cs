@@ -40,6 +40,26 @@ public sealed class SoundTests : IDisposable
     }
 
     [Fact]
+    public void AOneShotTakesAPitchWithinTwoOctaves()
+    {
+        _rig.Write("scripts/thruster.lua", """
+            function on_create()
+              sound.play("thruster_ignite", nil, {pitch = 1.5})
+              sound.play("thruster_ignite", vec3(1, 2, 3), {pitch = 9})
+              sound.play("thruster_ignite", nil, {})
+              sound.play("thruster_ignite")
+            end
+            """);
+        var creation = _rig.AddCreation(1, Thruster);
+        _rig.Runtime.Update(0.1f);
+
+        Assert.Empty(_rig.Errors);
+        Assert.Equal([1.5f, 4f, 1f, 1f], _sound.Pitches);
+        Assert.Equal(PartKinematics.Of(creation, PartOf(creation, Thruster)).Position, _sound.Played[0].At);
+        Assert.Equal(new Vector3(1, 2, 3), _sound.Played[1].At);
+    }
+
+    [Fact]
     public void LoopsFollowThePartAndOnlyItsOwnHandlesWork()
     {
         _rig.Write("scripts/thruster.lua", """
@@ -124,6 +144,8 @@ public sealed class SoundTests : IDisposable
 
         public List<(string Sound, string Mod, Vector3 At)> Played { get; } = [];
 
+        public List<float> Pitches { get; } = [];
+
         public List<IReadOnlyDictionary<string, float>?> Started { get; } = [];
 
         public Dictionary<int, (int Creation, int Part, Dictionary<string, float> Parameters)> Loops { get; } = [];
@@ -134,6 +156,12 @@ public sealed class SoundTests : IDisposable
                 return $"there is no sound event '{sound}'";
             Played.Add((sound, ownerModId, position));
             return null;
+        }
+
+        public string? Play(string sound, string ownerModId, Vector3 position, float pitch)
+        {
+            Pitches.Add(pitch);
+            return Play(sound, ownerModId, position);
         }
 
         public int StartLoop(string sound, string ownerModId, int creation, int part, IReadOnlyDictionary<string, float>? parameters, out string? error)

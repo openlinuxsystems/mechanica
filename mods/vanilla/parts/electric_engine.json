@@ -3,12 +3,12 @@
   "name": "Electric Engine 1",
   "description": "Turns the wheel bearings it is linked to toward its front, with a seat's throttle as its input: it runs while someone sits in a linked seat or a linked switch is on, and stays off with nothing linked. Its slider sets the speed; it pulls hard at any speed. Draws batteries from the creation's Battery Containers. Upgrade it in place with Component Kits (U) for more bearings, speed settings and mileage.",
   "category": "interactive",
-  "mass": 9,
-  "durability": 6,
-  "friction": 0.5,
-  "buoyancy": 0.2,
+  "mass": 10.5,
+  "durability": 5,
+  "friction": 0.7,
+  "buoyancy": 0.5,
   "flammable": false,
-  "stack_size": 5,
+  "stack_size": 1,
   "sound_material": "metal",
   "size": [2, 2, 2],
   "mesh": "meshes/parts/electric_engine_1.glb",
@@ -59,12 +59,12 @@
       "cost": [
         {
           "item": "component_kit",
-          "count": 2
+          "count": 4
         }
       ],
       "set": {
         "name": "Electric Engine 2",
-        "durability": 7,
+        "durability": 6,
         "mesh": "meshes/parts/electric_engine_2.glb",
         "icon": "textures/items/electric_engine_2_icon.png",
         "logic": {
@@ -99,12 +99,12 @@
       "cost": [
         {
           "item": "component_kit",
-          "count": 4
+          "count": 6
         }
       ],
       "set": {
         "name": "Electric Engine 3",
-        "durability": 8,
+        "durability": 7,
         "mesh": "meshes/parts/electric_engine_3.glb",
         "icon": "textures/items/electric_engine_3_icon.png",
         "logic": {
@@ -153,12 +153,12 @@
       "cost": [
         {
           "item": "component_kit",
-          "count": 6
+          "count": 8
         }
       ],
       "set": {
         "name": "Electric Engine 4",
-        "durability": 9,
+        "durability": 8,
         "mesh": "meshes/parts/electric_engine_4.glb",
         "icon": "textures/items/electric_engine_4_icon.png",
         "logic": {
@@ -207,12 +207,12 @@
       "cost": [
         {
           "item": "component_kit",
-          "count": 8
+          "count": 10
         }
       ],
       "set": {
         "name": "Electric Engine 5",
-        "durability": 10,
+        "durability": 9,
         "mesh": "meshes/parts/electric_engine_5.glb",
         "icon": "textures/items/electric_engine_5_icon.png",
         "logic": {
@@ -224,9 +224,9 @@
             "name": "Speed",
             "type": "number",
             "min": 1,
-            "max": 13,
+            "max": 16,
             "step": 1,
-            "default": 7
+            "default": 8
           },
           {
             "id": "on",
@@ -272,8 +272,8 @@
         "properties": {
           "speed": 57,
           "fuel_time": 456,
-          "gears": 13,
-          "hard_gear": 10
+          "gears": 16,
+          "hard_gear": 12
         }
       }
     }
@@ -358,6 +358,7 @@
     "speed": 20,
     "torque": 300,
     "brake": 225,
+    "slider": "speed",
     "fuel": "battery_pack",
     "fuel_time": 90,
     "loop_parameter": "speed",

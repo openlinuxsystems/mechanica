@@ -140,7 +140,19 @@
         "sounds/logic/horn_honk.wav"
       ],
       "loop": true,
-      "max_distance": 80
+      "max_distance": 80,
+      "parameters": [
+        {
+          "name": "pitch",
+          "min": 1,
+          "max": 9,
+          "default": 5,
+          "pitch": [
+            0.5,
+            1.5
+          ]
+        }
+      ]
     }
   ]
 }

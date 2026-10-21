@@ -135,15 +135,15 @@ public class VanillaCatalogTests
     }
 
     [Theory]
-    [InlineData("gas_engine", "gasoline", new[] { "+2", "+2", "+44%", "+50%" })]
-    [InlineData("electric_engine", "battery_pack", new[] { "+2", "+2", "+40%", "+50%" })]
-    public void EachEngineMenuIsALeverWithItsFuelAndWhatTheNextLevelGains(string id, string fuel, string[] gains)
+    [InlineData("gas_engine", "gasoline", 13, new[] { "+2", "+2", "+44%", "+50%" })]
+    [InlineData("electric_engine", "battery_pack", 16, new[] { "+2", "+2", "+40%", "+50%" })]
+    public void EachEngineMenuIsALeverWithItsFuelAndWhatTheNextLevelGains(string id, string fuel, int steps, string[] gains)
     {
         var written = Part(id);
         var lever = written.Menu!.Lever!;
         Assert.Equal(("gear", "on", fuel), (lever.Setting, lever.Off, lever.Fuel));
-        // The lever runs to the last level's top step.
-        Assert.Equal(13, PartUpgrades.Stat(PartUpgrades.At(written, PartUpgrades.MaxLevel(written)), "settings.gear"));
+        // The lever runs to the last level's top step (the wiki's gears: 13 for the Gas Engine, 16 for the Electric).
+        Assert.Equal(steps, PartUpgrades.Stat(PartUpgrades.At(written, PartUpgrades.MaxLevel(written)), "settings.gear"));
         var next = PartUpgrades.At(written, 1);
         Assert.Equal(gains, lever.UpgradeStats!.Select(s => PartUpgrades.Gain(written, next, s.Value, s.Show ?? UpgradeStatShow.Difference)));
         // The Scrap Gas Engine shares the Gas Engine's menu, with no levels to gain.
@@ -308,6 +308,82 @@ public class VanillaCatalogTests
         Assert.True(part.Icon is not null && File.Exists(Path.Combine(mod, part.Icon)), "the beacon has an icon");
         Assert.Equal("pose", part.Display?.Clips?.Readout);
         Assert.Contains("part.display(\"pose\"", File.ReadAllText(Path.Combine(mod, "scripts", "beacon.lua")), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    // Parts map batch 3 (vehicle parts): the wiki's bars. The Piston keeps its durability ladder (4 to 8) and the wiki
+    // gives no stack for most, so they keep ours.
+    [InlineData("gas_engine", 12, 4, 0.5, 0.2, false, 1)]
+    [InlineData("electric_engine", 10.5, 5, 0.7, 0.5, false, 1)]
+    [InlineData("sport_suspension", 1.5, 5, 0.5, 0.1, false, 5)]
+    [InlineData("offroad_suspension", 1.5, 5, 0.5, 0.1, false, 5)]
+    [InlineData("piston", 7.5, 4, 0.7, 0.5, false, 20)]
+    [InlineData("drill", 7.5, 7, 0.2, 0.1, false, 5)]
+    [InlineData("saw_blade", 7.5, 7, 0.2, 0.1, false, 5)]
+    [InlineData("horn", 3, 2, 0.5, 0.5, true, 20)]
+    [InlineData("radio", 3, 3, 0.5, 0.6, false, 10)]
+    [InlineData("logic_gate", 3, 3, 0.5, 0.2, false, 20)]
+    [InlineData("timer", 4.5, 3, 0.5, 0.4, false, 20)]
+    public void VehiclePartsTakeTheWikiStats(string id, double mass, int durability, double friction, double buoyancy,
+        bool flammable, int stack)
+    {
+        var part = Part(id);
+
+        Assert.Equal((mass, durability, friction, buoyancy, flammable, stack),
+            (Math.Round((double)part.Mass!.Value, 3), (int)part.Durability!.Value, Math.Round((double)part.Friction!.Value, 3),
+                Math.Round((double)part.Buoyancy!.Value, 3), part.Flammable!.Value, part.StackSize!.Value));
+    }
+
+    [Theory]
+    // Parts map batch 3: the wiki's Craftbot recipes, at the Fabricator only.
+    [InlineData("gas_engine", 30, "metal_block:20", "component_kit:5", "circuit_board:1", "crude_oil:5")]
+    [InlineData("electric_engine", 90, "metal_block_2:20", "battery_pack:5", "circuit_board:10", "component_kit:5")]
+    [InlineData("sport_suspension", 10, "metal_block:20", "component_kit:1", "crude_oil:2")]
+    [InlineData("offroad_suspension", 10, "metal_block:20", "component_kit:1", "crude_oil:2")]
+    [InlineData("piston", 10, "metal_block_2:10", "component_kit:1", "circuit_board:1")]
+    [InlineData("drill", 60, "metal_block_2:20", "component_kit:1")]
+    [InlineData("saw_blade", 60, "metal_block:40", "component_kit:1")]
+    [InlineData("horn", 10, "metal_block:1", "circuit_board:1", "glue:1")]
+    [InlineData("radio", 10, "metal_block:5", "circuit_board:1", "glue:1")]
+    [InlineData("logic_gate", 20, "metal_block:1", "circuit_board:1", "glue:1")]
+    [InlineData("timer", 45, "metal_block:2", "circuit_board:2", "glue:1")]
+    public void VehiclePartsTakeTheWikiRecipes(string id, float time, params string[] inputs)
+    {
+        var book = RecipeBook.Load(Vanilla.Value);
+        var recipe = book.Find(id)!;
+
+        Assert.Equal(["vanilla:fabricator"], recipe.Stations);
+        Assert.Equal(inputs.Select(i => $"vanilla:{i}"), recipe.Inputs.Select(i => $"{i.Item}:{i.Count}"));
+        Assert.Equal(1, recipe.Outputs.Single().Count);
+        Assert.Equal(time, recipe.Time);
+        Assert.Single(book.All, r => r.Outputs.Any(o => o.Item == $"vanilla:{id}"));
+    }
+
+    [Theory]
+    [InlineData("gas_engine")]
+    [InlineData("electric_engine")]
+    public void EachEngineUpgradesForTheWikisKitsAndGetsTougherEachLevel(string id)
+    {
+        // Parts map batch 3: 4/6/8/10 Component Kits (28 in all), as the wiki; durability rises a point a level.
+        var written = Part(id);
+
+        Assert.Equal([4, 6, 8, 10], written.Upgrades!.Select(u => u.Cost!.Single(c => c.Item == "component_kit").Count!.Value));
+        for (var level = 1; level <= PartUpgrades.MaxLevel(written); level++)
+            Assert.Equal(PartUpgrades.At(written, level - 1).Durability + 1, PartUpgrades.At(written, level).Durability);
+    }
+
+    [Fact]
+    public void GasEnginesHaveAPowerSliderAndTheElectricEngineASpeedSlider()
+    {
+        // Parts map batch 3 (Scrap Mechanic's engines): a gas engine turns its level's fixed speed and its slider sets the
+        // power; the Electric Engine pulls its full torque and its slider sets the speed.
+        foreach (var id in new[] { "gas_engine", "scrap_gas_engine" })
+            Assert.Equal("power", Part(id).Properties!["slider"]!.GetValue<string>());
+        Assert.Equal("speed", Part("electric_engine").Properties!["slider"]!.GetValue<string>());
+        // A Gas Engine's mileage per gasoline goes 1, 1.5, 2.25, 3 and 5 times level 1's (the wiki's power per unit of fuel).
+        var gas = Part("gas_engine");
+        var mileage = Enumerable.Range(0, 5).Select(l => PartUpgrades.At(gas, l).Properties!["fuel_time"]!.GetValue<double>() / 40).ToList();
+        Assert.Equal([1, 1.5, 2.25, 3, 5], mileage);
     }
 
     [Theory]

@@ -8,14 +8,17 @@
 -- seat (one that shows "passenger") never does.
 -- Any other control (a switch, a button, a logic gate) runs it while its signal is not 0. Removing or destroying the
 -- controls leaves it with none, so it stops (also when the driver was still sitting in the seat).
--- Properties: "speed" (rad/s at the top gear), "torque" (N·m), "brake" (N·m), "fuel" (item id) and
--- "fuel_time" (seconds of full throttle per item). In Creative it needs no fuel. It burns fuel from the containers
--- linked into it with the Connect Tool (gas containers), or from every container of the Creation when none is.
--- Setting "gear" (shown as Power, 1 to properties.gears, default 5): each step turns that share of the top speed, and 0
--- stops it. Setting "on": switched off it never runs, whatever its controls do (an engine without the setting is on).
+-- Properties: "speed" (rad/s at the top gear), "torque" (N·m), "brake" (N·m), "fuel" (item id), "fuel_time"
+-- (seconds of full throttle per item) and "slider" ("speed", the default, or "power"). In Creative it needs no fuel.
+-- It burns fuel from the containers linked into it with the Connect Tool (gas containers), or from every container
+-- of the Creation when none is.
+-- Setting "gear" (1 to properties.gears, default 5), 0 stops it. With properties.slider "speed" (the Electric Engine)
+-- each step turns that share of the top speed with the full torque; with "power" (the gas engines, as in Scrap
+-- Mechanic) every step turns the full speed and pulls with that share of the torque, and burns its fuel that much
+-- slower. Setting "on": switched off it never runs, whatever its controls do (an engine without the setting is on).
 -- Its menu shows "fuel" (how much of the current item is left, 0 to 1; full in Creative), "fuel_items"
--- (items left in the containers it burns from), "rpm" (the first wheel's speed), "top_rpm" (the wheel speed its power
--- setting reaches) and "torque" (N·m it drives with while switched on). Its
+-- (items left in the containers it burns from), "rpm" (the first wheel's speed), "top_rpm" (the wheel speed its
+-- setting reaches) and "torque" (N·m its setting drives with while switched on). Its
 -- "running" display is on while it drives, and each wheel bearing's "drive" display turns with it.
 -- Sounds: "start" when it starts, the "loop" while it runs (its properties.loop_parameter follows the
 -- throttle), and "stop" when it runs out of fuel.
@@ -34,6 +37,23 @@ local SHOW_EVERY = 10
 
 local function clamp(v)
   return math.max(-1, math.min(1, v))
+end
+
+-- The share of the top speed (speed slider) or of the torque (power slider) a setting gives, 0 to 1.
+local function share(gear)
+  return gear / (properties.gears or 5)
+end
+
+local function power_slider()
+  return properties.slider == "power"
+end
+
+-- Wheel speed (rad/s) and torque (N·m) at full throttle for a setting.
+local function output(gear)
+  if power_slider() then
+    return properties.speed, properties.torque * share(gear)
+  end
+  return properties.speed * share(gear), properties.torque
 end
 
 -- +1 when a positive velocity on the bearing rolls its wheel toward the engine's front, -1 when it rolls it
@@ -99,7 +119,9 @@ local function burn(throttle, dt)
   if world.creative() or throttle == 0 then
     return true
   end
-  state.fuel = (state.fuel or 0) - math.abs(throttle) * dt
+  -- a power slider burns fuel as hard as it pulls
+  local rate = power_slider() and share(part.setting("gear") or 1) or 1
+  state.fuel = (state.fuel or 0) - math.abs(throttle) * rate * dt
   if state.fuel > 0 then
     return true
   end
@@ -112,14 +134,14 @@ local function burn(throttle, dt)
 end
 
 local function drive(throttle)
-  local gear = part.setting("gear") or 1
-  local speed = throttle * properties.speed * gear / (properties.gears or 5)
+  local top, pull = output(part.setting("gear") or 1)
+  local speed = throttle * top
   local resend = world.tick() % RESEND == 0
   local sent = state.sent
   for _, id in ipairs(part.links()) do
     local sign = direction(id)
     if sign then
-      local velocity, torque = sign * speed, properties.torque
+      local velocity, torque = sign * speed, pull
       if throttle == 0 then
         torque = properties.brake
       end
@@ -131,7 +153,7 @@ local function drive(throttle)
       end
     end
   end
-  state.torque = throttle == 0 and properties.brake or properties.torque
+  state.torque = throttle == 0 and properties.brake or pull
 end
 
 function on_create()
@@ -187,12 +209,13 @@ local function show(throttle, dt)
   part.display("running", throttle ~= 0)
   part.display("fuel", world.creative() and 1 or math.max(0, math.min(1, (state.fuel or 0) / properties.fuel_time)))
   part.display("fuel_items", creation.count(properties.fuel, tanks()))
-  -- torque: what it drives with while switched on (also between throttle presses); top_rpm: the wheel speed its power
-  -- setting reaches at full throttle
+  -- torque: what its setting drives with while switched on (also between throttle presses); top_rpm: the wheel speed
+  -- its setting reaches at full throttle
   local gear = part.setting("gear") or 1
   local on = switched_on() and gear > 0
-  part.display("torque", on and properties.torque or 0)
-  part.display("top_rpm", on and math.floor(properties.speed * gear / (properties.gears or 5) * 60 / (2 * math.pi) + 0.5) or 0)
+  local top, pull = output(gear)
+  part.display("torque", on and math.floor(pull + 0.5) or 0)
+  part.display("top_rpm", on and math.floor(top * 60 / (2 * math.pi) + 0.5) or 0)
   local rpm = 0
   for _, id in ipairs(part.links()) do
     if direction(id) then

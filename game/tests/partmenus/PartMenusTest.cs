@@ -217,8 +217,8 @@ public partial class PartMenusTest : StagedTest
             Check(menu.FuelBar == 1, $"Creative shows a full tank ({menu.FuelBar})");
             Check(menu.FuelText == "0", $"the slot counts the gasoline in the tanks ({menu.FuelText})");
             Check(rpm?.EndsWith("rpm") == true, $"the speed reads in rpm ({rpm})");
-            // Power 2 of 5 on the 25 rad/s Gas Engine: 10 rad/s at the wheels, and its torque while it is on.
-            Check(menu.StatTexts.Contains("Top speed 95 rpm") && menu.StatTexts.Contains("Torque 360 N·m"),
+            // Power 2 of 5 on the 25 rad/s Gas Engine: every power step turns the wheels at 25 rad/s, with 2/5 of its 360 N·m.
+            Check(menu.StatTexts.Contains("Top speed 239 rpm") && menu.StatTexts.Contains("Torque 144 N·m"),
                 $"the menu shows its top speed and torque ({string.Join(", ", menu.StatTexts)})");
             Check(menu.Lever.Value == 2, $"the lever stays at 2 ({menu.Lever.Value})");
             return true;

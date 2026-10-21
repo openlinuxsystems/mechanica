@@ -153,6 +153,7 @@
     "speed": 15,
     "torque": 240,
     "brake": 180,
+    "slider": "power",
     "fuel": "gasoline",
     "fuel_time": 25,
     "loop_parameter": "load",

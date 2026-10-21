@@ -301,6 +301,9 @@
         "description": "Use it to play music where it stands. Pick one of six stations in its settings with the Connect Tool.",
         "mass": 3,
         "durability": 3,
+        "friction": 0.5,
+        "buoyancy": 0.6,
+        "flammable": false,
         "stack_size": 10,
         "size": [2, 2, 1],
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.25, 0], "normal": [0, -1, 0] }],
@@ -340,12 +343,12 @@
           "id": "radio",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "scrap_wood_block", "count": 8 },
-            { "item": "component_kit", "count": 1 },
-            { "item": "circuit_board", "count": 1 }
+            { "item": "metal_block", "count": 5 },
+            { "item": "circuit_board", "count": 1 },
+            { "item": "glue", "count": 1 }
           ],
           "outputs": [{ "item": "radio", "count": 1 }],
-          "time": 5,
+          "time": 10,
           "order": 1420
         }
       ]
@@ -406,14 +409,20 @@
       "template": "interactive",
       "set": {
         "name": "Horn",
-        "description": "Honks while its input is on: link a button or a seat-controlled switch to it. Use it for a short honk.",
-        "mass": 0.8,
+        "description": "Honks while its input is on: link a button or a seat-controlled switch to it. Use it for a short honk. Set its pitch in its settings with the Connect Tool.",
+        "mass": 3,
         "durability": 2,
+        "friction": 0.5,
+        "buoyancy": 0.5,
+        "flammable": true,
         "stack_size": 20,
         "script": "scripts/horn.lua",
         "visual": { "color": "#c8b040", "roughness": 0.4, "metallic": 0.7 },
         "sounds": { "honk": "horn_honk" },
         "logic": { "inputs": 1, "use": "honk" },
+        "settings": [
+          { "id": "pitch", "name": "Pitch", "type": "number", "min": 1, "max": 9, "step": 1, "default": 5 }
+        ],
         "properties": { "honk": 0.6 },
         "sound_material": "metal"
       },
@@ -432,9 +441,13 @@
         {
           "id": "horn",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 4 }, { "item": "component_kit", "count": 1 }],
+          "inputs": [
+            { "item": "metal_block", "count": 1 },
+            { "item": "circuit_board", "count": 1 },
+            { "item": "glue", "count": 1 }
+          ],
           "outputs": [{ "item": "horn", "count": 1 }],
-          "time": 3,
+          "time": 10,
           "order": 1410
         }
       ]
@@ -479,7 +492,7 @@
       "set": {
         "name": "Saw Blade",
         "description": "A toothed disc 5 blocks across. Put it on a bearing and spin it fast enough (an engine, or a controller at full speed) and its teeth and faces cut whatever they touch: trees of every size (the only tool that fells a Pine), logs, bots, other creations. Scuttlers and Rakehands balk at a spinning one.",
-        "mass": 30,
+        "mass": 7.5,
         "durability": 7,
         "friction": 0.2,
         "buoyancy": 0.1,
@@ -508,9 +521,9 @@
         {
           "id": "saw_blade",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 16 }, { "item": "component_kit", "count": 2 }],
+          "inputs": [{ "item": "metal_block", "count": 40 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "saw_blade", "count": 1 }],
-          "time": 6,
+          "time": 60,
           "order": 1320
         }
       ]
@@ -521,7 +534,7 @@
       "set": {
         "name": "Drill",
         "description": "A fluted steel bit with a faceted point, held by four hooked claws on a round base. Put it on a bearing and spin it fast enough (an engine, or a controller at full speed), then push its tip into a rock deposit: it is the only tool that breaks the rocks, and it grinds their boulders and chunks down too. It also chews through bots, parts and other creations. Scuttlers and Rakehands balk at a spinning one.",
-        "mass": 40,
+        "mass": 7.5,
         "durability": 7,
         "friction": 0.2,
         "buoyancy": 0.1,
@@ -551,7 +564,7 @@
           "id": "drill",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "metal_block", "count": 20 },
+            { "item": "metal_block_2", "count": 20 },
             { "item": "component_kit", "count": 1 }
           ],
           "outputs": [{ "item": "drill", "count": 1 }],

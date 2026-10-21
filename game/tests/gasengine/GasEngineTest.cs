@@ -41,6 +41,12 @@ public partial class GasEngineTest : StagedTest
     /// <summary>Its name without the level ("Gas Engine").</summary>
     protected virtual string Title => "Gas Engine";
 
+    /// <summary>Its level 1 durability (the wiki's bars; each upgrade adds one).</summary>
+    protected virtual int Durability => 4;
+
+    /// <summary>Component Kits the first upgrade costs (the wiki's 4/6/8/10).</summary>
+    protected const int FirstUpgradeKits = 4;
+
     protected override int StageTimeoutFrames => 900;
 
     private Creation HostFloor => _host.Main.Creations.Find(_floor)!;
@@ -78,18 +84,18 @@ public partial class GasEngineTest : StagedTest
                     Catalog = _client.Main.Build.Catalog,
                 };
                 AddChild(_upgrades);
-                HostPockets.Add(Kit, 2);
+                HostPockets.Add(Kit, FirstUpgradeKits);
                 return false;
             }
             if (!_upgrades.IsOpen)
             {
-                if (_client.Main.Inventory.Own?.Count(Kit) != 2)
+                if (_client.Main.Inventory.Own?.Count(Kit) != FirstUpgradeKits)
                     return false;
                 _upgrades.Open((_floor, _engine));
                 Check(_upgrades.TitleText == Title && _upgrades.LevelText == "Level 1 → 2", $"the title and level ({_upgrades.TitleText}, {_upgrades.LevelText})");
-                Check(_upgrades.ChangeLines.Contains("Durability: 6 → 7") && _upgrades.ChangeLines.Contains("Outputs: 2 → 4"),
+                Check(_upgrades.ChangeLines.Contains($"Durability: {Durability} → {Durability + 1}") && _upgrades.ChangeLines.Contains("Outputs: 2 → 4"),
                     $"what changes ({string.Join("; ", _upgrades.ChangeLines)})");
-                Check(_upgrades.CostLines.SequenceEqual([("2 / 2 Component Kit", false)]) && !_upgrades.Confirm.Disabled,
+                Check(_upgrades.CostLines.SequenceEqual([($"{FirstUpgradeKits} / {FirstUpgradeKits} Component Kit", false)]) && !_upgrades.Confirm.Disabled,
                     $"the cost ({string.Join("; ", _upgrades.CostLines)}), Upgrade {(_upgrades.Confirm.Disabled ? "off" : "on")}");
                 Check(_upgrades.Upgrade(_results.Add), "the dialog asks the host");
                 return false;

@@ -11,4 +11,6 @@ public partial class ElectricEngineTest : GasEngineTest
     protected override string PartId => "electric_engine";
 
     protected override string Title => "Electric Engine";
+
+    protected override int Durability => 5;
 }
