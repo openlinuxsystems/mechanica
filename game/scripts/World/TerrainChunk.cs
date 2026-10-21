@@ -559,7 +559,7 @@ public partial class TerrainChunk : Node3D
             {
                 Name = $"Pool_{pool.Pool.Liquid}",
                 Mesh = PoolMesh(pool.Radius),
-                MaterialOverride = LiquidSurface.MaterialFor(pool.Liquid),
+                MaterialOverride = pool.Liquid.Water ? WaterSurface.Material : LiquidSurface.MaterialFor(pool.Liquid),
                 Position = pool.Centre.ToGodot() - origin,
                 CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
             }, forceReadableName: true);

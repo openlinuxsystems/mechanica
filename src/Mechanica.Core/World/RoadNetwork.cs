@@ -171,6 +171,9 @@ public sealed partial class RoadNetwork
     public IReadOnlyDictionary<int, RoadKind> Connected => _connected;
 
     /// <summary>Half the width of the levelled bed: surface, curb and shoulder.</summary>
+    /// <summary>Metres from a chain's centre line to the outer edge of its bed (shoulders included).</summary>
+    public float HalfBed(RoadChain chain) => Core(chain);
+
     private float Core(RoadChain chain) => chain.Kind == RoadKind.Road
         ? chain.Width / 2f + _def!.Curb + _def.Shoulder
         : chain.Width / 2f + 0.5f;

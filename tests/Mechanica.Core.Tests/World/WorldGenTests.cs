@@ -399,13 +399,14 @@ public class WorldGenTests
             Assert.True(nearest >= min, $"{poi.Poi.QualifiedId} at {poi.Centre}: nearest of its kind is {nearest} m, under {min} m");
 
             // The pad is level wherever no basin cuts into it and no road crosses its edge, even where its own track falls away.
-            var flatten = poi.Poi.Prefab.Terrain!.First(t => t.Op == TerrainOpKind.Flatten);
+            if (poi.Poi.Prefab.Terrain!.FirstOrDefault(t => t.Op == TerrainOpKind.Flatten) is not { } flatten)
+                continue;
             for (var a = 0; a < 8; a++)
             {
                 var local = new Vector2(a % 3 - 1, a / 3 - 1) * flatten.Radius * 0.6f;
                 var p = poi.ToWorld(local);
                 var inBasin = poi.Poi.Prefab.Terrain!.Any(t => t.Op == TerrainOpKind.Basin
-                    && Vector2.Distance(local, t.At is [var bx, var bz] ? new Vector2(bx, bz) : Vector2.Zero) < t.Radius + t.Blend);
+                    && Vector2.Distance(local, t.At is [var bx, var bz] ? new Vector2(bx, bz) : Vector2.Zero) < (t.Radius + t.Blend) * (1f + (t.Wobble ?? 0f)));
                 if (!inBasin && !gen.Roads.Near(p.X, p.Y, 2f))
                     Assert.True(MathF.Abs(poi.PadHeight - gen.HeightAt(p.X, p.Y)) < 1e-3f, $"{poi.Poi.QualifiedId} at {poi.Centre}: pad {poi.PadHeight}, ground {gen.HeightAt(p.X, p.Y)} at {p}");
             }
@@ -413,7 +414,7 @@ public class WorldGenTests
     }
 
     [Fact]
-    public void ObjectsStayOnDryGroundOutsidePoisInTheirBiome()
+    public void ObjectsStayOnDryGroundOutsideBuiltPoisInTheirBiome()
     {
         var gen = Vanilla.Value;
         var objects = gen.ObjectsIn(-1024, -1024, 1024, 1024).Where(o => !o.Id.IsPoi).ToList();
@@ -431,8 +432,10 @@ public class WorldGenTests
                 Assert.Equal(PrimitiveShape.Box, o.Definition.Collider!.Shape);
             // In its biome, or reaching across a border into the next.
             Assert.True(gen.BiomeShare(o.Position.X, o.Position.Z, rule.Biome) > 0f, $"{o.Id} grows outside {gen.Data.Biomes[rule.Biome].Id}");
-            Assert.Empty(gen.PoisAt(o.Position.X, o.Position.Z));
-            Assert.True(gen.HeightAt(o.Position.X, o.Position.Z) > gen.SeaLevel);
+            // Only wild POIs (ponds, ravines) let the land's own objects in; water rules keep to water, the rest to dry land.
+            Assert.DoesNotContain(gen.PoisAt(o.Position.X, o.Position.Z), p => !p.Poi.Prefab.Wild);
+            if (rule.Water is null)
+                Assert.True(gen.HeightAt(o.Position.X, o.Position.Z) > gen.WaterLevelAt(o.Position.X, o.Position.Z), $"{o.Id} in the water at {o.Position}");
         }
     }
 
@@ -454,7 +457,7 @@ public class WorldGenTests
                     if (gen.Find(new WorldObjectId(rule.Index, ix, iz)) is not { } find)
                         continue;
                     counts[find.Definition.Id!] = counts.GetValueOrDefault(find.Definition.Id!) + 1;
-                    Assert.Empty(gen.PoisAt(find.Position.X, find.Position.Z));
+                    Assert.DoesNotContain(gen.PoisAt(find.Position.X, find.Position.Z), p => !p.Poi.Prefab.Wild);
                     Assert.False(gen.Roads.Covers(find.Position.X, find.Position.Z), $"{find.Definition.Id} on a road at {find.Position}");
                     if (rule.Perch is { } perch)
                     {
@@ -732,6 +735,92 @@ public class WorldGenTests
                     wreck.Centre.Y + MathF.Sin(k * MathF.Tau / 64) * (wreck.Radius + 12f)) < gen.SeaLevel);
             Assert.True(wet, $"shore wreck at {wreck.Centre} is by the water");
         }
+    }
+
+    [Fact]
+    public void PondsAndMarshesDotTheLandWithLiliesAndReeds()
+    {
+        var gen = Vanilla.Value;
+        var counts = gen.Pois.GroupBy(p => p.Poi.Prefab.Id!).ToDictionary(g => g.Key, g => g.Count());
+        // Scrap Mechanic's lake tiles are its biggest set: small water turns up all over (World fill, item 6).
+        foreach (var (id, fewest) in new[] { ("pond", 50), ("pond_large", 6), ("marsh", 15) })
+            Assert.True(counts.GetValueOrDefault(id) >= fewest, $"{id}: {counts.GetValueOrDefault(id)}");
+        var lilies = 0;
+        var reeds = 0;
+        foreach (var pond in gen.Pois.Where(p => p.Poi.Prefab.Id is "pond" or "pond_large" or "marsh").Take(12))
+        {
+            // Every one holds swimmable water above sea level, the land round it is dry, and plants grow in and round it.
+            var pool = pond.Poi.Prefab.Pools![0];
+            var level = pond.PadHeight + pool.Level;
+            Assert.True(level > gen.SeaLevel);
+            Assert.True(Enumerable.Range(0, 400).Any(k => gen.WaterLevelAt(pond.Centre.X + (k % 20 - 10) * 3f, pond.Centre.Y + (k / 20 - 10) * 3f) == level
+                && gen.HeightAt(pond.Centre.X + (k % 20 - 10) * 3f, pond.Centre.Y + (k / 20 - 10) * 3f) < level - 0.4f), $"{pond.Poi.Prefab.Id} at {pond.Centre} holds water");
+            var near = gen.ObjectsIn(pond.Centre.X - pond.Radius, pond.Centre.Y - pond.Radius, pond.Centre.X + pond.Radius, pond.Centre.Y + pond.Radius).ToList();
+            lilies += near.Count(o => o.Definition.Id == "lily_pad_cluster");
+            reeds += near.Count(o => o.Definition.Id is "reed_bed" or "cattail_clump");
+        }
+        Assert.True(lilies >= 12, $"lily pads ({lilies})");
+        Assert.True(reeds >= 30, $"reeds ({reeds})");
+    }
+
+    [Fact]
+    public void PondsAndLakesAreDeepEnoughToFish()
+    {
+        var gen = Vanilla.Value;
+        // Each pond has shallows by its bank and a deep hole; a large pond goes deeper, a marsh stays shallow, and each
+        // knows which water it is (a fishing game keys its catch on that).
+        foreach (var (id, deepest, most) in new[] { ("pond", 3.5f, 5f), ("pond_large", 5.5f, 7f), ("marsh", 0.4f, 1.2f) })
+        {
+            foreach (var pond in gen.Pois.Where(p => p.Poi.Prefab.Id == id).Take(6))
+            {
+                var bodies = Enumerable.Range(0, 1600)
+                    .Select(k => gen.WaterBodyAt(pond.Centre.X + (k % 40 - 20) * 2f, pond.Centre.Y + (k / 40 - 20) * 2f))
+                    .OfType<WaterBody>().Where(b => b.Kind == WaterBodyKind.Pond).ToList();
+                Assert.NotEmpty(bodies);
+                Assert.All(bodies, b => Assert.Equal($"vanilla:{id}", b.Id));
+                var depth = bodies.Max(b => b.Depth);
+                Assert.InRange(depth, deepest, most);
+                Assert.Contains(bodies, b => b.Depth is > 0.2f and < 1.2f);
+            }
+        }
+        // The lakes are open water at sea level, many metres deep over most of their bed.
+        var lake = new List<float>();
+        for (var x = -6000f; x < 6000f; x += 40f)
+        {
+            for (var z = -4500f; z < 4500f; z += 40f)
+            {
+                if (gen.WaterBodyAt(x, z) is { Kind: WaterBodyKind.Open, Id: "lake" } body)
+                    lake.Add(body.Depth);
+            }
+        }
+        Assert.True(lake.Count > 1000, $"lake water ({lake.Count} samples)");
+        Assert.True(lake.Count(d => d > 10f) > lake.Count / 2, "most of the lake is over 10 m deep");
+        Assert.Contains(lake, d => d < 2f);
+        // The creeks are rivers, wadeable deep.
+        var creek = gen.Rivers.SelectMany(line => line).Select(p => gen.WaterBodyAt(p.X, p.Y)).OfType<WaterBody>().Where(b => b.Kind == WaterBodyKind.River).ToList();
+        Assert.NotEmpty(creek);
+        Assert.All(creek, b => Assert.Equal("river", b.Id));
+    }
+
+    [Fact]
+    public void RavinesAndMesasRoughenTheLand()
+    {
+        var gen = Vanilla.Value;
+        var counts = gen.Pois.GroupBy(p => p.Poi.Prefab.Id!).ToDictionary(g => g.Key, g => g.Count());
+        foreach (var (id, fewest) in new[] { ("ravine", 8), ("ravine_bend", 5), ("gully", 5), ("mesa", 8), ("butte", 8) })
+            Assert.True(counts.GetValueOrDefault(id) >= fewest, $"{id}: {counts.GetValueOrDefault(id)}");
+        foreach (var ravine in gen.Pois.Where(p => p.Poi.Prefab.Id == "ravine").Take(6))
+        {
+            // Cut well below its rim along its length, and no road runs down it.
+            foreach (var along in new[] { -60f, 0f, 60f })
+            {
+                var floor = ravine.ToWorld(new Vector3(along, 0f, 0f));
+                Assert.True(gen.HeightAt(floor.X, floor.Z) < ravine.PadHeight - 7f, $"ravine at {ravine.Centre} is cut at {along}");
+                Assert.False(gen.Roads.Covers(floor.X, floor.Z));
+            }
+        }
+        foreach (var mesa in gen.Pois.Where(p => p.Poi.Prefab.Id == "mesa").Take(6))
+            Assert.True(gen.HeightAt(mesa.Centre.X, mesa.Centre.Y) > mesa.PadHeight + 15f, $"mesa at {mesa.Centre} stands up");
     }
 
     [Fact]

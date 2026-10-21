@@ -294,6 +294,17 @@ internal static class WorldGenValidator
                     Positive(perch.Rise, $"{rulePath}.perch.rise", sink);
                     Positive(perch.Within, $"{rulePath}.perch.within", sink);
                 }
+                if (rule.Water is not null && rule.Object is { } wet && objects.GetValueOrDefault(wet) is { } floating
+                    && (floating.Scene is not null || floating.Outcrop is not null || rule.Perch is not null || rule.Roadside is not null))
+                    sink.Error(Code, $"{rulePath}.water", "a water rule places single objects: no scene, rock outcrop, perch or roadside.");
+                if (rule.Roadside is { } roadside)
+                {
+                    KnownKeys.WarnUnknown(roadside.Extra, $"{rulePath}.roadside", sink, typeof(RoadsideDefinition));
+                    if (rule.Perch is not null)
+                        sink.Error(Code, $"{rulePath}.roadside", "a roadside rule cannot also be perched.");
+                    if (rule.Object is { } id && objects.GetValueOrDefault(id) is { } beside && !(roadside.Gap > beside.Footprint + 1f))
+                        sink.Error(Code, $"{rulePath}.roadside.gap", $"gap must be more than the object's footprint plus 1 m ({beside.Footprint + 1f}), or the road keeps it away (got {roadside.Gap}).");
+                }
                 if (rule.Cluster is { } cluster)
                 {
                     KnownKeys.WarnUnknown(cluster.Extra, $"{rulePath}.cluster", sink, typeof(ClusterDefinition));
@@ -586,10 +597,11 @@ internal static class WorldGenValidator
             var path = $"$.terrain[{i}]";
             KnownKeys.WarnUnknown(op.Extra, path, sink, typeof(TerrainOp));
             if (op.Op is null)
-                sink.Error(code, $"{path}.op", "op is required (flatten or basin).");
+                sink.Error(code, $"{path}.op", "op is required (flatten, basin or raise).");
             NonNegative(op.Radius, $"{path}.radius", sink, code);
             NonNegative(op.Blend, $"{path}.blend", sink, code);
             NonNegative(op.Depth, $"{path}.depth", sink, code);
+            NonNegative(op.Height, $"{path}.height", sink, code);
             if (op.Wobble is { } w && !(w is >= 0f and <= 0.5f))
                 sink.Error(code, $"{path}.wobble", $"wobble must be 0 to 0.5 (got {w}).");
             var wobble = Math.Clamp(op.Wobble ?? 0f, 0f, 0.5f);
@@ -601,13 +613,21 @@ internal static class WorldGenValidator
                 else
                     offset = new Vector2(at[0], at[1]);
             }
+            var far = offset.Length();
+            if (op.To is { } to)
+            {
+                if (to.Count != 2 || !to.All(float.IsFinite))
+                    sink.Error(code, $"{path}.to", "to must be [x, z].");
+                else
+                    far = MathF.Max(far, new Vector2(to[0], to[1]).Length());
+            }
             // A basin's bank is steepest halfway through the blend (smoothstep: 1.5 × depth / blend). Steeper than
             // the 45° a player can walk up, a basin below sea level is a pond nobody can climb out of.
             // A wobbling edge narrows the blend by up to (1 - wobble) where it pulls in.
             if (op.Op == TerrainOpKind.Basin && op.Depth > 0f && !(1.5f * op.Depth <= MaxBasinSlope * op.Blend * (1f - wobble)))
                 sink.Error(code, $"{path}.blend", $"a basin {op.Depth} m deep needs a blend of at least {1.5f * op.Depth / MaxBasinSlope / (1f - wobble):0.##} m, or its bank is too steep to climb out of (got {op.Blend}).");
             // Shaping must stay inside the footprint, or it would reach under a neighbouring POI.
-            var reach = offset.Length() + (op.Radius + op.Blend) * (1f + wobble);
+            var reach = far + (op.Radius + op.Blend) * (1f + wobble);
             if (reach > prefab.Radius + 1e-3f)
                 sink.Error(code, path, $"reaches {reach:0.##} m from the centre, past the POI radius ({prefab.Radius}).");
         }

@@ -30,8 +30,8 @@ public partial class WaterSurface : Node
     /// <summary>The tuning; null loads <see cref="DefaultSettingsPath"/>.</summary>
     public WaterSettings? Settings { get; set; }
 
-    /// <summary>Height of the water's surface (the world's sea level).</summary>
-    public Func<float>? Level { get; init; }
+    /// <summary>Height of the water's surface over a position: the sea level, or a pond's.</summary>
+    public Func<Vector3, float>? Level { get; init; }
 
     /// <summary>The quality level the material draws now.</summary>
     public static Quality Quality => _quality ?? Quality.High;
@@ -111,7 +111,7 @@ public partial class WaterSurface : Node
         Configure(Settings!, GameSettings.Current.Graphics.Effective().Water);
         var camera = GetViewport()?.GetCamera3D();
         if (_underwater is not null)
-            _underwater.Visible = camera is not null && Level is not null && camera.GlobalPosition.Y < Level() - 0.02f;
+            _underwater.Visible = camera is not null && Level is not null && camera.GlobalPosition.Y < Level(camera.GlobalPosition) - 0.02f;
     }
 
     /// <summary>True while the screen is tinted because the camera is under the surface.</summary>

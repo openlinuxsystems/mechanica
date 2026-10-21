@@ -961,9 +961,9 @@ public partial class CaptureScene : Node
         Engine.TimeScale = 1.0;
         var gen = _main.Streamer.Generator;
         Shot("small_00_wait", 60, () => { });
-        foreach (var id in new[] { "camp", "forest_ruin", "roadside_kiosk", "farming_patch", "build_area", "shore_wreck", "ruin_cluster" })
+        foreach (var id in new[] { "camp", "forest_ruin", "roadside_kiosk", "farming_patch", "build_area", "shore_wreck", "ruin_cluster", "pond", "pond_large", "marsh" })
         {
-            var wide = id is "build_area" or "farming_patch" ? 36f : 24f;
+            var wide = id switch { "build_area" or "farming_patch" or "pond" => 36f, "marsh" => 48f, "pond_large" => 64f, _ => 24f };
             Shot($"small_00_{id}_go", 240, () =>
             {
                 var poi = gen.Pois.Where(p => p.Poi.Prefab.Id == id).MinBy(p => p.Centre.Length())!;
