@@ -33,8 +33,8 @@
     "outputs": 6
   },
   "seat": {
-    "offset": [0, -0.44, 0.18],
-    "cushion": [0, -0.05, 0.18],
+    "offset": [0, -0.44, 0.14],
+    "cushion": [0, -0.12, 0.14],
     "hands": "wheel",
     "bounce": 1
   },

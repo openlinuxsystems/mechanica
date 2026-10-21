@@ -16,5 +16,6 @@ import furniture_kit as F  # noqa: E402
 if __name__ == "__main__":
     K.run("toilet", F.build_toilet, levels=(None,), half=(0.375, 0.5, 0.5), ortho=1.2, icon_target=(0, 0, -0.02),
           title="Toilet (3 x 4 x 4 blocks)",
-          lines=["Settler Patchwork: an enamel bowl with a plank seat on a plank stand, a zinc cistern with a pull chain.",
-                 "The seat's top 0.39 m above the ground the feet stand on (the sit clip); 10 links into the junction box."])
+          lines=["A classic US two-piece toilet in glossy white porcelain: elongated bowl, closed seat and lid, the tank with a",
+                 "chrome flush handle on its left front, a shutoff valve and braided supply line at the wall side, bolt caps.",
+                 "The lid's top 0.39 m above the floor the feet stand on (the sit clip); 10 links into the link box behind it."])

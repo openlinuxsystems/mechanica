@@ -17,5 +17,6 @@ import seat_kit as S  # noqa: E402
 if __name__ == "__main__":
     K.run("drivers_seat", lambda mats, level: S.build_seat(mats, level, driver=True), half=(0.5, 0.5, 0.5), ortho=1.45,
           icon_target=(0, 0, -0.07), title="Driver's Seat (4 x 4 x 4 blocks)", bake=K.bake_seat_clips,
-          lines=["Bucket seat on a pedestal over a framed plinth; steering wheel on a 40 deg column into a dash pod.",
-                 "Hips 0.18 m behind centre, cushion 0.39 m above the plinth (the sit clip); the link box front left."])
+          lines=["Moulded bucket shell (bolsters, back reclined 15 deg, headrest in the shell) low on seat rails over a framed",
+                 "plinth; the column out of a firewall panel at 40 deg, a gauge pod on the column, pedals. Hips 0.14 m behind centre,",
+                 "cushion 0.32 m above the plinth (sit eased toward sit_low, legs out to the pedals); the link box front left."])

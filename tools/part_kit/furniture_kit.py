@@ -1,11 +1,13 @@
-"""The parts map's batch 4 furniture seats in the Settler Patchwork look (docs/art-direction.md): the Toilet and the
-Bathtub. Bone enamel, scrap planks, zinc and rust, a graphite clawfoot; the logic outputs (10 each) go into a small
-zinc junction box with brass terminals. One level each, no clips (their data has no display readout).
+"""The parts map's batch 4 furniture seats: the Toilet and the Bathtub. The Toilet is a clean porcelain fixture, a
+classic US two-piece toilet in glossy white with chrome fittings; the Bathtub is in the Settler Patchwork look
+(docs/art-direction.md): bone enamel, scrap planks, zinc and rust, a graphite clawfoot. Their logic outputs (10 each) go
+into a link box (the Toilet: the batch's, on the floor behind it) or a small zinc junction box with brass terminals
+(the Bathtub). One level each, no clips (their data has no display readout).
 
 Seat points (Blender: x right, y forward, z up; the part data's ``seat`` uses game axes x, z up, -y):
 
-* the Toilet (3 x 4 x 4 blocks): the feet on the part's bottom (-0.5), the seat ring's top at -0.11 over y -0.05,
-  chair height for the ``sit`` clip; the cistern behind is the back rest;
+* the Toilet (3 x 4 x 4 blocks): the feet on the part's bottom (-0.5), the closed lid's top at -0.11 over y -0.05,
+  chair height for the ``sit`` clip; the tank behind is the back rest;
 * the Bathtub (3 x 3 x 7 blocks, long along y): the feet on the tub's inner floor (-0.235), a plank seat across the
   tub at y -0.43 with its top at -0.065 (a low seat, ``sit_low``, the legs out along the tub); the taps at the far end.
 """
@@ -20,16 +22,17 @@ import part_kit as K
 from part_kit import Geo, box, cylinder, dome, sweep
 
 
-def basin(g, half_w, half_l, profile, power=3.0, steps=48, center=(0, 0)):
-    """A vessel turned round a rounded-rectangle plan (half sizes `half_w` x `half_l`, squircle `power`): `profile`
-    is an open run of (k, z, mat) points, k the fraction of the plan (0 the middle, 1 the outside); each segment takes
-    the material of its first point."""
+def basin(g, half_w, half_l, profile, power=3.0, steps=48, center=(0, 0), taper=0.0):
+    """A vessel turned round a rounded-rectangle plan (half sizes `half_w` x `half_l`, squircle `power`; `taper`
+    narrows its front half, +y, toward the front for an egg shape): `profile` is an open run of (k, z, mat) points, k
+    the fraction of the plan (0 the middle, 1 the outside); each segment takes the material of its first point."""
     e = 2.0 / power
     ring = []
     for s in range(steps):
         a = 2 * math.pi * s / steps
         c, sn = math.cos(a), math.sin(a)
-        ring.append((half_w * math.copysign(abs(c) ** e, c), half_l * math.copysign(abs(sn) ** e, sn)))
+        y = half_l * math.copysign(abs(sn) ** e, sn)
+        ring.append((half_w * math.copysign(abs(c) ** e, c) * (1 - taper * max(y / half_l, 0.0) ** 2), y))
     n = len(profile)
     verts = []
     for (px, py) in ring:
@@ -71,60 +74,95 @@ def plank(g, c, half, mat, rot=None):
 # The Toilet
 # =====================================================================================================
 
+TOILET_FLOOR = -0.5
+TOILET_LID = -0.11           # the closed lid's top: the seat point, 0.39 m above the floor (the sit clip)
+BOWL_Y, BOWL_W, BOWL_L, BOWL_TAPER = -0.02, 0.18, 0.25, 0.2
+
+
 def build_toilet(mats, _level=None):
+    """A classic US two-piece toilet in glossy white porcelain: an elongated bowl on a tapered foot with bolt caps, a
+    closed seat and lid, the tank on the bowl's back with its lid and a chrome flush handle on its left front (the
+    left as you face it), and the shutoff valve and braided supply line at the wall side under the tank."""
     root = K.make_empty("Toilet")
     g = Geo()
-    bottom = -0.5
-    # the plank stand under the bowl and cistern (the feet stand on the ground in front of it)
-    for k, x in enumerate((-0.2, -0.067, 0.067, 0.2)):
-        plank(g, (x, -0.16, bottom + 0.018), (0.064, 0.3, 0.018), "plank" if k % 2 else "plank_dark")
-    for y in (-0.4, 0.08):
-        plank(g, (0, y, bottom + 0.042), (0.29, 0.04, 0.006), "plank_dark")
-        for x in (-0.24, 0.0, 0.24):
-            K.screw(g, (x, y, bottom + 0.048), (0, 0, 1), 0.006, "rust")
-    floor = bottom + 0.048
-    # the bowl: enamel, turned round an oval plan, a foot widening onto the stand
-    cy = 0.0
-    prof = [(0.62, floor, "enamel"), (0.7, floor + 0.02, "enamel"), (0.62, floor + 0.12, "enamel"), (0.72, floor + 0.26, "enamel"),
-            (0.92, floor + 0.33, "enamel"), (1.0, -0.15, "enamel"), (1.0, -0.135, "enamel"), (0.8, -0.135, "enamel_in"),
-            (0.7, -0.2, "enamel_in"), (0.42, -0.3, "water"), (0.0, -0.3, "water")]
-    basin(g, 0.19, 0.24, prof, power=2.4, steps=40, center=(0, cy))
-    # the plank seat ring (a hole cut as a ring of planks) and the lid up against the cistern
-    seat_top = -0.11
-    ring_prof = [(0.62, -0.135, "plank"), (1.04, -0.135, "plank"), (1.06, seat_top - 0.006, "plank"), (1.0, seat_top, "plank"),
-                 (0.66, seat_top, "plank"), (0.6, seat_top - 0.01, "plank"), (0.62, -0.135, "plank")]
-    basin(g, 0.19, 0.24, ring_prof, power=2.4, steps=40, center=(0, cy))
-    lean = math.radians(8)
-    lid_c = Vector((0, -0.25 - 0.012, seat_top + 0.19))
-    rot = Matrix.Rotation(-lean, 3, "X")
-    for k, x in enumerate((-0.12, 0.0, 0.12)):
-        plank(g, tuple(lid_c + rot @ Vector((x, 0, 0))), (0.059, 0.011, 0.19), "plank_dark" if k == 1 else "plank", rot=rot)
-    for z in (-0.12, 0.12):
-        plank(g, tuple(lid_c + rot @ Vector((0, -0.013, z))), (0.17, 0.004, 0.025), "rust", rot=rot)
-    # hinges
+    floor, lid_top = TOILET_FLOOR, TOILET_LID
+    seat_top = lid_top - 0.026
+    rim = seat_top - 0.03
+    plan = dict(center=(0, BOWL_Y), taper=BOWL_TAPER)
+    # the bowl: the foot on the floor narrowing to a waist, flaring out to the rolled rim, the bowl's inside below it
+    prof = [(0.64, floor, "porcelain"), (0.69, floor + 0.01, "porcelain"), (0.66, floor + 0.03, "porcelain"),
+            (0.6, floor + 0.1, "porcelain"), (0.61, floor + 0.17, "porcelain"), (0.7, floor + 0.245, "porcelain"),
+            (0.85, floor + 0.29, "porcelain"), (0.96, rim - 0.035, "porcelain"), (1.0, rim - 0.01, "porcelain"),
+            (0.985, rim, "porcelain"), (0.82, rim, "porcelain"), (0.76, rim - 0.03, "porcelain"),
+            (0.52, rim - 0.12, "porcelain"), (0.0, rim - 0.13, "porcelain")]
+    basin(g, BOWL_W, BOWL_L, prof, power=2.3, steps=48, **plan)
+    # the bowl's neck behind the seat, up under the tank
+    neck = [(-0.375, 0, 0.115, floor + 0.2, rim + 0.012), (-0.33, 0, 0.13, floor + 0.13, rim + 0.012),
+            (-0.26, 0, 0.13, floor + 0.04, rim + 0.006), (-0.19, 0, 0.12, floor + 0.0, rim - 0.02)]
+    K.squircle_loft(g, K.smooth_sections(neck, 3), "porcelain", ring_pts=28, power=3.5)
+    # bolt caps either side of the foot
     for sx in (-1, 1):
-        cylinder(g, (sx * 0.1 - 0.03, -0.235, seat_top - 0.005), (sx * 0.1 + 0.03, -0.235, seat_top - 0.005), 0.009, "zinc", segs=10)
-    # the cistern: a zinc tank on a plank back board, a pipe down into the bowl, a pull lever with a brass handle
-    plank(g, (0, -0.44, -0.05), (0.2, 0.012, 0.4), "plank_dark")
-    for z in (-0.38, 0.27):
-        plank(g, (0, -0.425, z), (0.22, 0.006, 0.025), "plank")
-    tank_c = Vector((0, -0.36, 0.2))
-    box(g, tuple(tank_c), (0.2, 0.068, 0.11), "zinc", bevel=0.012)
-    box(g, tuple(tank_c + Vector((0, 0, 0.115))), (0.21, 0.075, 0.01), "rust", bevel=0.004)
-    for x in (-0.13, 0.0, 0.13):
-        box(g, tuple(tank_c + Vector((x, 0.069, 0))), (0.006, 0.0015, 0.1), "rust")
-    cylinder(g, tank_c + Vector((0.0, 0.03, -0.11)), (0, -0.25, -0.16), 0.022, "zinc", segs=12)
-    cylinder(g, (0, -0.27, -0.155), (0, -0.21, -0.165), 0.03, "rust", segs=12)
-    lever = tank_c + Vector((0.2, 0.03, 0.06))
-    cylinder(g, lever, lever + Vector((0.035, 0, 0)), 0.008, "zinc", segs=8)
-    chain_top = lever + Vector((0.035, 0, 0))
-    chain_end = chain_top + Vector((0, 0.02, -0.22))
-    sweep(g, [chain_top, chain_top.lerp(chain_end, 0.5) + Vector((0, 0.008, 0)), chain_end], 0.003, "zinc", segs=5)
-    cylinder(g, chain_end + Vector((0, 0, -0.045)), chain_end, 0.012, "brass", segs=10)
-    # the junction box on the stand's front right corner (its links)
-    junction_box(g, (0.25, 0.18, bottom + 0.036), (0, 1, 0))
+        p = Vector((sx * 0.13, BOWL_Y - 0.05, floor))
+        dome(g, p, (0, 0, 1), 0.019, "porcelain", segs=14, height=0.03)
+    # the seat ring and the closed lid over it, hinged at the back
+    ring_prof = [(0.66, rim + 0.002, "seat_white"), (1.02, rim + 0.002, "seat_white"), (1.035, seat_top - 0.01, "seat_white"),
+                 (1.01, seat_top, "seat_white"), (0.7, seat_top, "seat_white"), (0.64, seat_top - 0.012, "seat_white"),
+                 (0.66, rim + 0.002, "seat_white")]
+    basin(g, BOWL_W, BOWL_L, ring_prof, power=2.3, steps=48, **plan)
+    lid_prof = [(0.0, seat_top + 0.001, "seat_white"), (0.99, seat_top + 0.001, "seat_white"), (1.03, seat_top + 0.009, "seat_white"),
+                (1.02, lid_top - 0.008, "seat_white"), (0.95, lid_top, "seat_white"), (0.0, lid_top, "seat_white")]
+    basin(g, BOWL_W, BOWL_L, lid_prof, power=2.3, steps=48, **plan)
+    hinge_y = BOWL_Y - BOWL_L - 0.012
+    for sx in (-1, 1):
+        box(g, (sx * 0.075, hinge_y, rim + 0.016), (0.022, 0.018, 0.016), "seat_white", bevel=0.006)
+        cylinder(g, (sx * 0.075 - 0.024, hinge_y + 0.004, seat_top - 0.004), (sx * 0.075 + 0.024, hinge_y + 0.004, seat_top - 0.004),
+                 0.011, "seat_white", segs=12)
+    # the tank on the neck: rounded, a little wider at the top, its lid overhanging
+    t_back, t_front, t_bot, t_top = -0.475, -0.29, rim + 0.012, 0.222
+    tank = [(t_back, 0, 0.23, t_bot + 0.012, t_top - 0.01), (t_back + 0.008, 0, 0.243, t_bot, t_top),
+            (t_front - 0.008, 0, 0.243, t_bot, t_top), (t_front, 0, 0.23, t_bot + 0.012, t_top - 0.01)]
+    K.squircle_loft(g, tank, "porcelain", ring_pts=36, power=7.0)
+    box(g, (0, (t_back + t_front) / 2, t_top + 0.012), (0.255, (t_front - t_back) / 2 + 0.009, 0.012), "porcelain", bevel=0.009)
+    # the flush handle: a chrome escutcheon on the tank's front near its left end, the lever out toward that side
+    esc = Vector((0.17, t_front, t_top - 0.065))
+    cylinder(g, esc - Vector((0, 0.003, 0)), esc + Vector((0, 0.008, 0)), 0.021, "chrome", segs=20)
+    cylinder(g, esc + Vector((0, 0.008, 0)), esc + Vector((0, 0.016, 0)), 0.01, "chrome", segs=14)
+    cylinder(g, esc + Vector((0, 0.016, 0)), esc + Vector((0.075, 0.02, -0.006)), 0.0075, "chrome", segs=12, r1=0.0105)
+    dome(g, esc + Vector((0.075, 0.02, -0.006)), (1, 0.05, -0.08), 0.0105, "chrome", segs=12, height=0.008)
+    # the shutoff valve at the wall side and the braided supply line up to the fill valve under the tank's left
+    sx = 0.17
+    shank = Vector((sx, -0.41, t_bot))
+    cylinder(g, shank - Vector((0, 0, 0.022)), shank + Vector((0, 0, 0.002)), 0.019, "seat_white", segs=8)
+    valve = Vector((sx, -0.455, floor + 0.11))
+    cylinder(g, (sx, valve.y, floor), (sx, valve.y, floor + 0.006), 0.032, "chrome", segs=20)
+    cylinder(g, (sx, valve.y, floor + 0.006), valve - Vector((0, 0, 0.02)), 0.011, "chrome", segs=14)
+    cylinder(g, valve - Vector((0, 0, 0.022)), valve + Vector((0, 0, 0.02)), 0.015, "chrome", segs=16)
+    cylinder(g, valve, valve + Vector((0, 0.035, 0)), 0.006, "chrome", segs=10)
+    box(g, tuple(valve + Vector((0, 0.04, 0))), (0.022, 0.006, 0.012), "chrome", bevel=0.005)
+    line = [valve + Vector((0, 0, 0.02)), valve + Vector((0, 0.004, 0.08)), valve + Vector((0, 0.02, 0.16)),
+            shank + Vector((0, -0.015, -0.11)), shank + Vector((0, -0.002, -0.05)), shank - Vector((0, 0, 0.022))]
+    sweep(g, bend(line, 0.05), 0.0065, "steel", segs=10)
+    for p in (line[0], line[-1]):
+        cylinder(g, p - Vector((0, 0, 0.012)), p + Vector((0, 0, 0.012)), 0.0105, "chrome", segs=6)
+    # where the links plug in: the batch's link box on the floor at the back right
+    K.link_box(g, (-0.26, -0.43, floor), (0, 1, 0), K.FINISH[1], scale=0.9)
     K.make_object("Body", g, mats, root)
     return {"root": root}
+
+
+def bend(points, radius, steps=5):
+    """A polyline with rounded corners (quadratic fillets), for the supply line."""
+    pts = [Vector(p) for p in points]
+    out = [pts[0]]
+    for i in range(1, len(pts) - 1):
+        a, p, b = pts[i - 1], pts[i], pts[i + 1]
+        r = min(radius, (a - p).length * 0.45, (b - p).length * 0.45)
+        s, e = p + (a - p).normalized() * r, p + (b - p).normalized() * r
+        for k in range(steps + 1):
+            t = k / steps
+            out.append(s * (1 - t) ** 2 + p * 2 * t * (1 - t) + e * t * t)
+    out.append(pts[-1])
+    return out
 
 
 # =====================================================================================================

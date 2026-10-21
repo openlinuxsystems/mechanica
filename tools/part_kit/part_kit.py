@@ -2,8 +2,9 @@
 
 The look is the part models' look (docs/art-direction.md): **Salvager Tech** for the powered and craftable parts
 (hull dark ``#24282E``, gunmetal ``#5A6068``, copper ``#B8733A``, cyan ``#38C8FF`` only on powered lights, the
-Switch and Button's teal on logic trim) and **Settler Patchwork** for the furniture (bone enamel, scrap wood, zinc,
-rust). Built on the Lift's geometry and texture kit (``tools/lift``) and the Gas Engine's materials, like the Switch.
+Switch and Button's teal on logic trim) and **Settler Patchwork** for the Bathtub (bone enamel, scrap wood, zinc,
+rust); the Toilet is plain white porcelain and chrome. Built on the Lift's geometry and texture kit (``tools/lift``) and the Gas
+Engine's materials, like the Switch.
 
 What it holds:
 
@@ -108,6 +109,19 @@ def enamel_surface(seed, color, chips=1.0):
     return albedo, height, rough, metal
 
 
+def porcelain_surface(seed, color, wear=1.0):
+    """Glossy vitreous china: near-flat white with a faint mottle, a little grime and the odd hairline craze."""
+    size = lt.SIZE
+    mottle = lt.fbm(seed, 3.0)
+    grime = np.clip(lt.fbm(seed + 1, 2.0) * 1.3 - 0.45, 0, 1) * wear
+    craze = lt.scratches(seed + 2, 24, bias=0.1) * 0.25 * wear
+    albedo = lt.srgb(color)[None, None, :] * (1 + 0.02 * mottle[..., None]) * (1 - 0.08 * grime[..., None])
+    albedo = albedo * (1 - 0.12 * craze[..., None])
+    height = 0.03 * mottle - 0.08 * craze
+    rough = 0.07 + 0.08 * grime + 0.02 * mottle
+    return albedo, height, rough, np.zeros((size, size))
+
+
 def plank_surface(seed, color):
     """Weathered scrap planks: grain along the image's u (box UVs run it along a plank's long side)."""
     size = lt.SIZE
@@ -160,6 +174,9 @@ def materials():
         "mustard": tex("k_mustard", half_res(fabric_surface(457, "#e0b530")), normal_strength=1.2),
         "sea_teal": tex("k_sea_teal", half_res(lt.paint_surface(459, "#4f9a93", "#4a4e54"))),
         "water": pt.plain("k_water", "#4f7f86", 0.05, 0.0),
+        # the Toilet's porcelain and its plastic seat
+        "porcelain": tex("k_porcelain", half_res(porcelain_surface(461, "#f2f1ec")), normal_strength=0.5),
+        "seat_white": pt.plain("k_seat_white", "#e9e7e1", 0.3, 0.0),
     }
     return m
 

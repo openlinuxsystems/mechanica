@@ -1,21 +1,30 @@
 """The Salvager Tech seats and saddles of the parts map's batch 4, at their five levels (see part_kit.py).
 
-* ``build_seat(level, driver)`` - the Driver's Seat (4 x 4 x 4 blocks) and the Passenger Seat (4 x 4 x 3): a padded
-  bucket seat on a pedestal over a framed base plinth. The driver's has a steering wheel on a column into a dash pod.
+* ``build_seat(level, driver)`` - the Driver's Seat (4 x 4 x 4 blocks) and the Passenger Seat (4 x 4 x 3): a vehicle
+  seat, one moulded bucket shell (side bolsters on the pan and the back, the back reclined 15 degrees, the headrest part
+  of the shell) mounted low on a pair of seat rails over a framed base plinth. The driver's has a firewall panel at
+  the plinth's front, the steering column out of it at a vehicle's angle, a gauge pod on the column and pedals on the
+  floor.
 * ``build_saddle(level, driver)`` - the Driver's Saddle (3 x 4 x 4) and the Saddle (3 x 3 x 3): a saddle on a
   narrow body ridden astride, footboards either side; the driver's has handlebars, the passenger's a grab rail.
 
 Every level keeps the seat point and the envelope and adds to the look (Chase's rule: each level looks cooler):
 
-1. worn gunmetal and hull dark, charcoal fabric, copper screws, one copper pip;
-2. teal piping on the cushions, side bolsters and a headrest (a saddle: knee pads), two pips;
-3. steel frame, armrests (a saddle: copper side covers) and quilting seams, the dash screen lit cyan, three pips;
-4. a roll hoop with copper collars and teal harness straps (a saddle: crash bars), a cyan running light, four pips;
-5. black chrome and polished copper, black quilted fabric stitched in cyan, cyan under-glow, five lit cyan pips.
+1. worn gunmetal and hull dark, charcoal fabric, copper screws, one copper pip; the seats: a lap belt, the rails on
+   two stamped risers;
+2. teal piping on the cushions and taller bolsters (a saddle: knee pads), a copper buckle and slider bar, rubber
+   pedal pads and a heel plate, two pips;
+3. steel frame, quilting seams (a saddle: copper side covers); the seats: a welded box subframe, a four-point harness
+   through slots in the shell, an outboard grab handle, head wings, the dash screen lit cyan, three pips;
+4. a roll cage with copper collars, its hoop round the seat back and side bars into the subframe, a five-point
+   harness (a saddle: crash bars), a cyan running light, four pips;
+5. black chrome and polished copper, black quilted fabric stitched in cyan, a harness bar and lamp on the cage, cyan
+   under-glow, five lit cyan pips.
 
 Seat points (Blender: x right, y forward, z up; the part data's ``seat`` uses game axes x, z up, -y):
 
-* the seats: feet on the plinth (``DECK``), the cushion 0.39 m above it, chair height for the ``sit`` clip;
+* the seats: feet on the plinth (``DECK``), the cushion 0.32 m above it, a vehicle seat's height: lower than the
+  ``sit`` clip's chair, so the game eases it a third of the way to ``sit_low`` (legs out toward the pedals);
 * the saddles: feet on the footboards (``FLOOR``), the cushion 0.528 m above them, where ``sit_saddle``'s hips
   (0.668 m, ``SADDLE_HIPS`` in tools/characters/build_characters.py) less 0.14 m land; the driver's handlebar grips
   are at ``SADDLE_GRIP`` from there.
@@ -25,6 +34,7 @@ from __future__ import annotations
 
 import math
 
+import bmesh
 from mathutils import Matrix, Vector
 
 import part_kit as K
@@ -32,10 +42,16 @@ from part_kit import Geo, box, cylinder, dome, sweep
 
 # ---- the bucket seats -------------------------------------------------------------------------------------------
 DECK = -0.44                 # top of the base plinth: the floor the feet rest on
-CUSHION_H = 0.39             # cushion above the deck (a chair: the sit clip)
+CUSHION_H = 0.32             # cushion above the deck: a vehicle seat, lower than a chair (the game blends sit and sit_low)
+RECLINE = 15.0               # the shell's back, degrees back from upright
+SHELL_TOP = 0.41             # the top of the shell's headrest
+RAIL_X = 0.17                # the seat rails either side of the middle
+HOOP_X, HOOP_BACK = 0.31, 0.29   # the roll cage's hoop: half its width, and how far behind the hips it stands
 WHEEL_R = 0.19
 COLUMN_TILT = 40.0           # degrees from upright; the wheel is square to the column (the scrap seat's)
-HUB_FROM_HIPS = (0.347, 0.319)  # the hub forward of and above the cushion point (where the sit clip's hands land)
+# The hub forward of and above the cushion point, where the hands land: the sit clip's (0.347, 0.319) eased toward
+# sit_low's for this cushion (both keep the grip in the chest's space; sit_low's hands are 0.028 m back, 0.016 m up).
+HUB_FROM_HIPS = (0.338, 0.324)
 
 # ---- the saddles ------------------------------------------------------------------------------------------------
 SADDLE_HIPS = 0.668          # tools/characters/build_characters.py (measured), character.json clip_hips.sit_saddle
@@ -46,7 +62,7 @@ SADDLE_GRIP = (0.26, 0.42, 0.92)   # handlebar grips (fist centres): out, forwar
 def seat_spec(driver):
     """The seat's dimensions: half size, the cushion point (y) and the cushion top (z)."""
     half = (0.5, 0.5, 0.5) if driver else (0.5, 0.375, 0.5)
-    hips_y = -0.18 if driver else -0.04
+    hips_y = -0.14 if driver else 0.0
     return {"half": half, "hips_y": hips_y, "top": DECK + CUSHION_H}
 
 
@@ -61,8 +77,10 @@ def saddle_spec(driver):
 # Shared pieces
 # =====================================================================================================
 
-def plinth(g, half_x, y0, y1, z0, z1, f, level):
-    """A framed base plinth: a dark plate in gunmetal rails with corner blocks, bolts on the corners."""
+def plinth(g, half_x, y0, y1, z0, z1, f, level, light=False):
+    """A framed base plinth: a dark plate in gunmetal rails with corner blocks, bolts on the corners (`light`: chamfered
+    in one segment, lighter bolts, for the seats' triangle budget)."""
+    box, screw = (cbox, bolt) if light else (globals()["box"], K.screw)
     hx, hy = half_x, (y1 - y0) / 2
     cy, h = (y0 + y1) / 2, (z1 - z0) / 2
     cz = (z0 + z1) / 2
@@ -76,7 +94,7 @@ def plinth(g, half_x, y0, y1, z0, z1, f, level):
         for sy in (-1, 1):
             c = (sx * (hx - 0.026), cy + sy * (hy - 0.026), cz + 0.002)
             box(g, c, (0.026, 0.026, h + 0.002), f["frame"], bevel=0.008)
-            K.screw(g, (c[0], c[1], z1 + 0.002), (0, 0, 1), 0.0075, f["bolt"])
+            screw(g, (c[0], c[1], z1 + 0.002), (0, 0, 1), 0.0075, f["bolt"])
     if level >= 3:
         # copper trim plates on the long sides
         for sx in (-1, 1):
@@ -94,86 +112,285 @@ def running_light(root, mats, name, at, half, mat="cyan_glow"):
 # The bucket seats
 # =====================================================================================================
 
-def pan_sections(hips_y, top, bolster):
-    """The seat pan cushion, from its back to its rounded front edge; wider at the back, a little dished."""
-    back, front = hips_y - 0.2, hips_y + 0.27
-    keys = [
-        (back, 0.0, 0.215 + bolster, top - 0.075, top - 0.005),
-        (hips_y - 0.08, 0.0, 0.225 + bolster, top - 0.075, top + 0.004),
-        (hips_y + 0.12, 0.0, 0.23 + bolster, top - 0.075, top + 0.01),
-        (front - 0.03, 0.0, 0.225 + bolster, top - 0.07, top + 0.004),
-        (front, 0.0, 0.21 + bolster, top - 0.055, top - 0.02),
-    ]
-    return K.smooth_sections(keys, 2)
+def cbox(g, c, half, mat, bevel=0.0, rot=None):
+    """A box (turned by the 3x3 `rot`) with its edges chamfered by `bevel` in one segment: the seats' lighter box."""
+    bm = bmesh.new()
+    bmesh.ops.create_cube(bm, size=1.0)
+    for v in bm.verts:
+        v.co = Vector((v.co.x * 2 * half[0], v.co.y * 2 * half[1], v.co.z * 2 * half[2]))
+    if bevel > 0:
+        bmesh.ops.bevel(bm, geom=list(bm.edges), offset=min(bevel, 0.45 * min(half) * 2), segments=1,
+                        profile=0.5, affect="EDGES", clamp_overlap=True)
+    bm.verts.ensure_lookup_table()
+    verts = [tuple(v.co) for v in bm.verts]
+    faces = [tuple(v.index for v in f.verts) for f in bm.faces]
+    bm.free()
+    m = Matrix(rot) if rot is not None else Matrix.Identity(3)
+    return g.add([tuple(m @ Vector(p) + Vector(c)) for p in verts], faces, mat)
 
 
-def back_sections(height, bolster):
-    """The backrest, lofted up its local y (local z is its thickness toward the rider, from 0 at its back face)."""
-    keys = [
-        (0.0, 0.0, 0.215 + bolster, 0.0, 0.07),
-        (height * 0.35, 0.0, 0.225 + bolster, 0.0, 0.085),
-        (height * 0.8, 0.0, 0.215 + bolster, 0.0, 0.075),
-        (height, 0.0, 0.19 + bolster * 0.6, 0.0, 0.06),
-    ]
-    return K.smooth_sections(keys, 2)
+def bolt(g, p, n=(0, 0, 1), r=0.0075, mat="copper"):
+    """A light button-head bolt (six sides, no socket) for the seats."""
+    p, n = Vector(p), Vector(n).normalized()
+    cylinder(g, p - n * 0.001, p + n * r * 0.35, r, mat, segs=6, r1=r * 0.75)
 
 
-def back_frame(hips_y, top):
-    """The backrest's frame: its bottom-back point and the matrix taking the loft's local axes (x, y up the back, z
-    toward the rider) into the seat, leaning back."""
-    lean = math.radians(8)
-    origin = Vector((0, hips_y - 0.23, top - 0.06))
-    up = Vector((0, -math.sin(lean), math.cos(lean)))
-    fwd = Vector((0, math.cos(lean), math.sin(lean)))
-    m = Matrix((Vector((-1, 0, 0)), up, fwd)).transposed().to_4x4()
-    return origin, m, up, fwd
+def smoothstep(t):
+    t = min(max(t, 0.0), 1.0)
+    return t * t * (3 - 2 * t)
+
+
+def seat_path(hips_y, top, step=0.035):
+    """The bucket's centre line on its inner (rider's) face, from the pan's front lip back round the corner and up the
+    reclined back to the headrest's top, evenly spaced: [{"p": point, "n": normal toward the rider, "h": height above
+    the cushion point}]."""
+    H, C = hips_y, top
+    r = math.radians(RECLINE)
+    base = Vector((0, H - 0.16, C - 0.075))
+    up = Vector((0, -math.sin(r), math.cos(r)))
+    tip = base + up * ((SHELL_TOP - 0.012 - base.z) / math.cos(r))
+    keys = [Vector((0, H + 0.30, C - 0.03)), Vector((0, H + 0.15, C - 0.06)), Vector((0, H - 0.02, C - 0.075)), base, tip]
+    curve = bend(keys, 0.12, steps=10)
+    lengths = [0.0]
+    for a, b in zip(curve, curve[1:]):
+        lengths.append(lengths[-1] + (b - a).length)
+    n = max(2, round(lengths[-1] / step))
+    pts, j = [], 0
+    for k in range(n + 1):
+        s = lengths[-1] * k / n
+        while j < len(curve) - 2 and lengths[j + 1] < s:
+            j += 1
+        t = (s - lengths[j]) / max(lengths[j + 1] - lengths[j], 1e-9)
+        pts.append(curve[j].lerp(curve[j + 1], min(max(t, 0.0), 1.0)))
+    x = Vector((1, 0, 0))
+    out = []
+    for i, p in enumerate(pts):
+        tan = (pts[min(i + 1, n)] - pts[max(i - 1, 0)]).normalized()
+        out.append({"p": p, "n": tan.cross(x).normalized(), "h": p.z - C, "y": p.y})
+    return out
+
+
+def _wing(u, hw):
+    return smoothstep((abs(u) / hw - 0.45) / 0.55)
+
+
+def section_n(u, v, sec):
+    """The offset toward the rider of a section's point (u across, v up its squircle): the side wings rise toward the
+    rider, the inner face by `wing_in`, the outer by `wing_out` (so the wall keeps its thickness)."""
+    hw, n0, n1, win, wout = sec
+    hh = (n1 - n0) / 2
+    k = (v + hh) / (2 * hh)
+    return (n0 + n1) / 2 + v + _wing(u, hw) * (wout + (win - wout) * k)
+
+
+def bucket_loft(g, path, secs, mat, ring=32, power=4.0, matrix=None):
+    """A moulded solid along `path` (seat_path points): each section a squircle `hw` wide across x and from `n0` to
+    `n1` along the point's normal, its sides raised toward the rider (section_n). Capped at both ends."""
+    x = Vector((1, 0, 0))
+    verts, faces = [], []
+    for pt, sec in zip(path, secs):
+        hw, n0, n1 = sec[:3]
+        for u, v in K.squircle(ring, hw, (n1 - n0) / 2, power):
+            verts.append(pt["p"] + x * u + pt["n"] * section_n(u, v, sec))
+    m = len(path)
+    for i in range(m - 1):
+        for k in range(ring):
+            k1 = (k + 1) % ring
+            a, b = i * ring + k, i * ring + k1
+            faces.append((b, b + ring, a + ring, a))     # wound outward (the path's frame is left-handed)
+    faces.append(tuple(reversed(range(ring))))
+    faces.append(tuple((m - 1) * ring + k for k in range(ring)))
+    if matrix is not None:
+        verts = [matrix @ v for v in verts]
+    g.add(verts, faces, mat)
+
+
+def surface(pt, sec, u, lift=0.0, power=4.0, top=True):
+    """The point on a bucket_loft section's inner (or outer) face at `u` across, `lift` off it."""
+    hw, n0, n1 = sec[:3]
+    hh = (n1 - n0) / 2
+    a = min(abs(u) / hw, 0.999)
+    v = hh * (1 - a ** power) ** (1 / power) * (1 if top else -1)
+    n = section_n(u, v, sec) + (lift if top else -lift)
+    return pt["p"] + Vector((u, 0, 0)) + pt["n"] * n
+
+
+def nearest(path, idx, y=None, h=None):
+    """The index in `idx` whose point is nearest the given y (along the pan) or height (up the back)."""
+    if y is not None:
+        return min(idx, key=lambda i: abs(path[i]["y"] - y))
+    return min(idx, key=lambda i: abs(path[i]["h"] - h))
+
+
+def shell_sec(pt, hips_y, level):
+    """The moulded shell: (half width, n0, n1, wing in, wing out) at a path point."""
+    h, y = pt["h"], pt["y"]
+    b = smoothstep((h + 0.06) / 0.08)                 # 0 on the pan, 1 up the back
+    pan_hw = 0.215 + 0.025 * smoothstep((hips_y + 0.30 - y) / 0.2)
+    back_hw = 0.245 - 0.09 * smoothstep((h - 0.27) / 0.08)
+    hw = pan_hw + (back_hw - pan_hw) * b
+    top_h = SHELL_TOP - 0.012 - (pt["p"].z - h)       # the shell top's height above the cushion point
+    k = smoothstep((h - (top_h - 0.05)) / 0.05)
+    hw *= 1 - 0.3 * k * k
+    pan_w = 0.05 + 0.025 * smoothstep((hips_y + 0.2 - y) / 0.3)
+    head_w = 0.045 if level >= 3 else 0.025
+    back_w = 0.095 + (0.025 - 0.095) * smoothstep((h - 0.22) / 0.11)
+    back_w += (head_w - 0.025) * smoothstep((h - 0.34) / 0.04)
+    w = (pan_w + (back_w - pan_w) * b) * (0.7 if level == 1 else 1.0)
+    return (hw, -0.024, 0.0, w, max(w - 0.014, 0.0))
+
+
+def strap(g, pts, normal, mat="webbing", half_w=0.02, t=0.0026):
+    """Flat webbing through `pts`, lying on a surface facing `normal`."""
+    for a, b in zip(pts, pts[1:]):
+        d = b - a
+        if d.length < 1e-4:
+            continue
+        rot = along(d, Vector(normal).cross(d))
+        cbox(g, tuple((a + b) / 2), (half_w, d.length / 2 + 0.002, t), mat, rot=rot)
+
+
+def seat_mount(g, hips_y, level, f):
+    """What the shell sits on: a pair of seat rails on two risers (levels 1 and 2), or (3 and up) on a welded box
+    subframe with outriggers for the roll cage. Returns the rails' top height."""
+    H = hips_y
+    rz = DECK + 0.15
+    y0, y1 = H - 0.17, H + 0.27
+    slider = "chrome" if level >= 5 else "steel"
+    for sx in (-1, 1):
+        x = sx * RAIL_X
+        cbox(g, (x, (y0 + y1) / 2, rz + 0.011), (0.022, (y1 - y0) / 2, 0.011), f["frame"], bevel=0.003)
+        cbox(g, (x, (y0 + y1) / 2 + 0.015, rz + 0.031), (0.014, (y1 - y0) / 2 - 0.035, 0.009), slider, bevel=0.002)
+        for yy in (y0 + 0.004, y1 - 0.004):
+            cbox(g, (x, yy, rz + 0.012), (0.025, 0.005, 0.014), f["dark"], bevel=0.002)
+    for yr in (H + 0.20, H - 0.10):
+        # a riser under the rails, flanged and bolted down
+        if level >= 3:
+            for sx in (-1, 1):
+                cbox(g, (sx * 0.19, yr, (DECK + 0.04 + rz) / 2), (0.016, 0.02, (rz - DECK - 0.04) / 2), f["frame"], bevel=0.004)
+            cbox(g, (0, yr, rz - 0.012), (0.21, 0.022, 0.012), f["frame"], bevel=0.004)
+            cbox(g, (0, yr, (DECK + 0.04 + rz) / 2 - 0.01), (0.17, 0.004, (rz - DECK - 0.06) / 2 - 0.01), f["dark"], bevel=0.002)
+        else:
+            cbox(g, (0, yr, DECK + 0.075), (0.205, 0.02, 0.075), f["dark"], bevel=0.006)
+            cbox(g, (0, yr, DECK + 0.004), (0.215, 0.04, 0.004), f["frame"], bevel=0.002)
+            for sx in (-1, 1):
+                for sy in (-1, 1):
+                    bolt(g, (sx * 0.185, yr + sy * 0.03, DECK + 0.008), (0, 0, 1), 0.0065, f["bolt"])
+            if level >= 2:
+                for x in (-0.11, 0.0, 0.11):
+                    cylinder(g, (x, yr + 0.019, DECK + 0.08), (x, yr + 0.0215, DECK + 0.08), 0.03, "hole", segs=12)
+    if level == 2:
+        # the slider bar under the pan's front
+        bar = [Vector((-RAIL_X, y1 - 0.02, rz + 0.03)), Vector((-RAIL_X + 0.02, y1 + 0.05, rz + 0.03)),
+               Vector((RAIL_X - 0.02, y1 + 0.05, rz + 0.03)), Vector((RAIL_X, y1 - 0.02, rz + 0.03))]
+        sweep(g, bend(bar, 0.03), 0.007, f["trim"], segs=8)
+    if level >= 3:
+        # the welded box subframe on the plinth: side beams, cross tubes (the rear one out to the cage's feet), braces
+        yb, yf = H - HOOP_BACK, H + 0.30
+        tube = 0.019
+        for sx in (-1, 1):
+            cbox(g, (sx * 0.27, (yb + yf) / 2, DECK + tube), (tube, (yf - yb) / 2, tube), f["frame"], bevel=0.005)
+            cylinder(g, (sx * 0.27, yf - 0.02, DECK + 0.035), (sx * RAIL_X, y1 - 0.03, rz), 0.01, f["frame"], segs=10)
+            cylinder(g, (sx * 0.27, yb + 0.03, DECK + 0.035), (sx * RAIL_X, y0 + 0.03, rz), 0.01, f["frame"], segs=10)
+        for yy, wx in ((yf, 0.27), (H + 0.20, 0.27), (H - 0.10, 0.27), (yb, 0.33)):
+            cbox(g, (0, yy, DECK + tube), (wx + tube, tube * 0.9, tube * 0.9), f["frame"], bevel=0.005)
+        for sx in (-1, 1):
+            for yy in (yb, yf):
+                cbox(g, (sx * 0.27, yy, DECK + 0.003), (0.035, 0.035, 0.003), f["dark"], bevel=0.002)
+                bolt(g, (sx * 0.27 + sx * 0.022, yy + 0.022, DECK + 0.006), (0, 0, 1), 0.006, f["bolt"])
+    return rz + 0.04
+
+
+def dash(g, hub, level, f, hy):
+    """The driver's station at the plinth's front: a firewall panel on two legs with a cowl lip, the column out of it
+    at the vehicle angle to the wheel, a gauge pod on the column, pedals and a heel plate on the floor. Returns the
+    gauge screen's centre and normal."""
+    t = math.radians(COLUMN_TILT)
+    down = Vector((0, math.sin(t), -math.cos(t)))
+    fy = hy - 0.045                                   # the firewall's back face
+    land = hub + down * ((fy - hub.y) / down.y)
+    pz0, pz1 = -0.30, -0.085                          # the panel's bottom and top: the knees clear its top
+    cbox(g, (0, fy + 0.0125, (pz0 + pz1) / 2), (0.30, 0.0125, (pz1 - pz0) / 2), f["dark"], bevel=0.006)
+    for sx in (-1, 1):
+        cbox(g, (sx * 0.285, fy + 0.012, (DECK + pz0) / 2 + 0.01), (0.018, 0.016, (pz0 - DECK) / 2 + 0.01), f["frame"], bevel=0.004)
+        cbox(g, (sx * 0.285, fy + 0.012, DECK + 0.004), (0.035, 0.03, 0.004), f["frame"], bevel=0.002)
+        bolt(g, (sx * 0.285, fy - 0.01, DECK + 0.008), (0, 0, 1), 0.006, f["bolt"])
+        # the panel's frame edges
+        cbox(g, (sx * 0.3, fy + 0.012, (pz0 + pz1) / 2), (0.012, 0.016, (pz1 - pz0) / 2 + 0.004), f["frame"], bevel=0.004)
+    cbox(g, (0, fy + 0.012, pz0), (0.31, 0.016, 0.01), f["frame"], bevel=0.004)
+    # the cowl lip over the panel, sloping down toward the driver
+    tilt = Matrix.Rotation(math.radians(-14), 3, "X")
+    cbox(g, (0, fy - 0.012, pz1 + 0.01), (0.315, 0.042, 0.01), f["frame"], bevel=0.005, rot=tilt)
+    if level >= 3:
+        for sx in (-1, 1):
+            cbox(g, (sx * 0.215, fy - 0.0005, -0.2), (0.05, 0.002, 0.05), f["trim"], bevel=0.0015)
+    # the column: a boot in the panel, the tube, a collar under the wheel
+    cylinder(g, land - down * 0.045, land - down * 0.008, 0.04, f["trim"], segs=14)
+    cylinder(g, land, hub, 0.022, f["dark"], segs=12)
+    cylinder(g, hub + down * 0.03, hub + down * 0.085, 0.03, f["frame"], segs=14)
+    if level >= 2:
+        cylinder(g, land - down * 0.075, land - down * 0.045, 0.03, "rubber", segs=12)
+    wheel(g, hub, -down, level, f)
+    # the gauge pod on top of the column under the wheel (between the knees), its face toward the driver
+    face_n = -down
+    w_up = face_n.cross(Vector((1, 0, 0))).normalized()      # up the wheel's face
+    pod = hub + down * 0.16 + w_up * 0.032
+    rot = along(w_up, (1, 0, 0))
+    cbox(g, tuple(pod), (0.055, 0.03, 0.024), f["frame"], bevel=0.008, rot=rot)
+    cbox(g, tuple(pod + face_n * 0.025), (0.049, 0.026, 0.0015), f["trim"], bevel=0.001, rot=rot)
+    cbox(g, tuple(pod + face_n * 0.0275), (0.042, 0.021, 0.0015), "screen", rot=rot)
+    if level < 3:
+        cylinder(g, pod + face_n * 0.028, pod + face_n * 0.031, 0.014, f["trim"], segs=12)
+    # pedals: throttle under the right foot, brake under the left; a heel plate from level 2
+    for x, w in ((0.12, 0.03), (-0.1, 0.042)):
+        piv = Vector((x, fy - 0.02, DECK + 0.012))
+        cylinder(g, piv - Vector((0.03, 0, 0)), piv + Vector((0.03, 0, 0)), 0.01, f["frame"], segs=10)
+        cbox(g, (x, fy - 0.02, DECK + 0.004), (0.036, 0.018, 0.004), f["dark"], bevel=0.002)
+        a = math.radians(24)
+        d = Vector((0, -math.cos(a), math.sin(a)))
+        nrm = Vector((0, math.sin(a), math.cos(a)))
+        L = 0.11
+        rot = along(d, (1, 0, 0))
+        cbox(g, tuple(piv + d * (L / 2)), (w, L / 2, 0.006), f["frame"], bevel=0.003, rot=rot)
+        if level >= 2:
+            cbox(g, tuple(piv + d * (L / 2 + 0.01) + nrm * 0.0065), (w - 0.005, L / 2 - 0.015, 0.002), "rubber", rot=rot)
+    if level >= 2:
+        cbox(g, (0, fy - 0.2, DECK + 0.003), (0.2, 0.06, 0.003), f["dark"], bevel=0.002)
+        for k in range(5):
+            cbox(g, (0, fy - 0.245 + k * 0.022, DECK + 0.0065), (0.18, 0.005, 0.0015), "rubber")
+    return pod + face_n * 0.0295, face_n, rot
 
 
 def build_seat(mats, level, driver):
     f = K.FINISH[level]
     sp = seat_spec(driver)
     hx, hy, hz = sp["half"]
-    hips_y, top = sp["hips_y"], sp["top"]
+    H, C = sp["hips_y"], sp["top"]
     name = "DriversSeat" if driver else "PassengerSeat"
     root = K.make_empty(name)
     rig = {"root": root}
+    path = seat_path(H, C)
+    idx = range(len(path))
+    shell_secs = [shell_sec(p, H, level) for p in path]
+    pan = [i for i in idx if path[i]["y"] > H - 0.12 and path[i]["h"] < -0.035]
+    back = [i for i in idx if path[i]["y"] < H - 0.15 and -0.02 < path[i]["h"] < 0.3]
+    head = [i for i in idx if path[i]["h"] > 0.355 and path[i]["p"].z < SHELL_TOP - 0.03]
 
-    # ---- Base: plinth, pedestal rails, link box, pips, and (driver) the dash pod, column and wheel ----
+    # ---- Base: plinth, rails or subframe, link box, pips, and (driver) the firewall, column, wheel and pedals ----
     g = Geo()
-    plinth(g, hx - 0.03, -hy + 0.03, hy - 0.03, -hz, DECK, f, level)
-    # the slider rails the pedestal sits on
-    for sx in (-1, 1):
-        box(g, (sx * 0.12, hips_y - 0.02, DECK + 0.008), (0.014, 0.2, 0.008), f["trim"], bevel=0.003)
-    # pips on the plinth's front rail, the link box on its front right corner
-    K.pips(g, level, (-0.04 * (level - 1) / 2 - 0.0, hy - 0.03 - 0.0005, (DECK - hz) / 2 - 0.0), (0.04, 0, 0), (0, 1, 0), f)
+    plinth(g, hx - 0.03, -hy + 0.03, hy - 0.03, -hz, DECK, f, level, light=True)
+    rail_top = seat_mount(g, H, level, f)
+    K.pips(g, level, (-0.04 * (level - 1) / 2, hy - 0.03 - 0.0005, (DECK - hz) / 2), (0.04, 0, 0), (0, 1, 0), f)
     K.link_box(g, (-(hx - 0.13), hy - 0.12, DECK), (0, 1, 0), f)
+    screen = None
     if driver:
-        hub = Vector((0, hips_y + HUB_FROM_HIPS[0], top + HUB_FROM_HIPS[1]))
-        t = math.radians(COLUMN_TILT)
-        down = Vector((0, math.sin(t), -math.cos(t)))
-        pod_top = top + 0.16
-        reach = (hub.z - pod_top) / math.cos(t)
-        land = hub + down * reach
-        pod_c = Vector((0, land.y + 0.065, pod_top - 0.08))
-        box(g, tuple(pod_c), (0.085, 0.075, 0.08), f["frame"], bevel=0.012)
-        box(g, tuple(pod_c + Vector((0, 0.02, -0.25))), (0.055, 0.04, 0.2), f["dark"], bevel=0.008)
-        box(g, (0, pod_c.y + 0.02, DECK + 0.012), (0.09, 0.07, 0.012), f["frame"], bevel=0.004)
-        for sx in (-1, 1):
-            K.screw(g, (sx * 0.07, pod_c.y + 0.02, DECK + 0.024), (0, 0, 1), 0.006, f["bolt"])
-        # the dash face: a screen toward the driver, slanting back, with a copper bezel
-        face = pod_c + Vector((0, -0.076, 0.035))
-        box(g, tuple(face), (0.06, 0.004, 0.028), f["trim"], bevel=0.002)
-        box(g, tuple(face + Vector((0, -0.003, 0))), (0.052, 0.002, 0.022), "screen")
-        # the column with collars, then the wheel square to it
-        cylinder(g, land + down * 0.02, hub - down * 0.0, 0.022, f["dark"], segs=16)
-        cylinder(g, land - down * 0.04, land + down * 0.0, 0.032, f["trim"], segs=18)
-        cylinder(g, hub + down * 0.03, hub + down * 0.075, 0.03, f["frame"], segs=18)
-        wheel(g, hub, -down, level, f)
+        hub = Vector((0, H + HUB_FROM_HIPS[0], C + HUB_FROM_HIPS[1]))
+        screen = dash(g, hub, level, f, hy)
     K.make_object("Base", g, mats, root)
-    if driver and level >= 3:
-        screen = Geo()
-        box(screen, (0, 0, 0), (0.046, 0.001, 0.018), "cyan_glow" if level >= 3 else "teal")
-        K.make_object("DashScreen", screen, mats, root, tuple(pod_c + Vector((0, -0.0835, 0.035))))
+    if screen is not None and level >= 3:
+        sg = Geo()
+        cbox(sg, (0, 0, 0), (0.038, 0.018, 0.001), "cyan_glow", rot=screen[2])
+        K.make_object("DashScreen", sg, mats, root, tuple(screen[0]))
     if level >= 4:
         running_light(root, mats, "RunningLight", (0, hy - 0.03 + 0.003, DECK - 0.012), (hx - 0.12, 0.002, 0.004))
     if level >= 5:
@@ -181,113 +398,184 @@ def build_seat(mats, level, driver):
             running_light(root, mats, f"UnderGlow{'R' if sx > 0 else 'L'}", (sx * (hx - 0.03 + 0.003), 0, DECK - 0.02),
                           (0.002, hy - 0.1, 0.004))
 
-    # ---- Shell (moves with the clips): pedestal, pan tray, back shell, armrests, headrest posts ----
+    # ---- Shell (moves with the clips): the moulded bucket with its headrest, the brackets onto the rails, belt anchors
     shell = rig["shell"] = K.make_empty("Shell", root, (0, 0, DECK))
     rig["shell_at"] = (0, 0, DECK)
+    to_shell = Matrix.Translation((0, 0, -DECK))
     s = Geo()
-    z0 = -DECK                                   # shell-local z of the world origin
-    tray_z = top - 0.085 + z0
-    cylinder(s, (0, hips_y, 0.015), (0, hips_y, tray_z - 0.03), 0.05, f["dark"], segs=14)
-    cylinder(s, (0, hips_y, tray_z - 0.13), (0, hips_y, tray_z - 0.02), 0.034, "steel" if level < 5 else "chrome", segs=18)
-    box(s, (0, hips_y, 0.012), (0.15, 0.16, 0.012), f["frame"], bevel=0.004)
-    box(s, (0, hips_y + 0.03, tray_z - 0.01), (0.25, 0.25, 0.018), f["frame"], bevel=0.008)
+    bucket_loft(s, path, shell_secs, f["dark"], ring=20, power=4.0)
+    x_axis = Vector((1, 0, 0))
+    for yy in (H + 0.18, H - 0.07):
+        i = nearest(path, pan, y=yy)
+        for sx in (-1, 1):
+            under = surface(path[i], shell_secs[i], sx * RAIL_X, top=False)
+            zt = under.z + 0.006
+            cbox(s, (sx * RAIL_X, path[i]["y"], (rail_top + zt) / 2), (0.016, 0.026, (zt - rail_top) / 2), f["frame"], bevel=0.004)
+    # belt anchors on the shell's sides where the pan meets the back
+    i_anchor = nearest(path, pan, y=H - 0.1)
     for sx in (-1, 1):
-        box(s, (sx * 0.252, hips_y + 0.03, tray_z + 0.02), (0.008, 0.24, 0.03), f["dark"], bevel=0.004)
-    origin, m, up, fwd = back_frame(hips_y, top)
-    back_h = 0.42 if level == 1 else 0.4
-    # the back shell: a dark panel behind the backrest, framed
-    shell_g = Geo()
-    K.squircle_loft(shell_g, [(y, 0.0, hw + 0.02, -0.03, 0.005) for (y, _, hw, _, _) in back_sections(back_h, 0.03 if level >= 2 else 0.0)],
-                    f["dark"], ring_pts=16, power=6.0)
-    mm = Matrix.Translation(origin + Vector((0, 0, z0))) @ m
-    s.extend(shell_g, mm)
+        hw = shell_secs[i_anchor][0]
+        p = path[i_anchor]["p"] + Vector((sx * (hw - 0.012), 0, 0)) + path[i_anchor]["n"] * (shell_secs[i_anchor][3] * 0.75)
+        bolt(s, p + Vector((sx * 0.004, 0, 0)), (sx, 0, 0), 0.009, f["bolt"])
     if level >= 3:
-        # armrests: a bar each side on a stay from the tray, copper end caps
+        # harness slots through the shell at the shoulders
+        i_slot = nearest(path, idx, h=0.335)
+        pt = path[i_slot]
+        tan = (path[i_slot + 1]["p"] - path[i_slot - 1]["p"]).normalized()
+        rot = Matrix((x_axis, -tan, pt["n"])).transposed()
         for sx in (-1, 1):
-            x = sx * 0.265
-            a = Vector((x, hips_y - 0.17, top + 0.12 + z0))
-            b = Vector((x, hips_y + 0.17, top + 0.12 + z0))
-            box(s, tuple((a + b) / 2), (0.028, 0.17, 0.02), f["frame"], bevel=0.008)
-            box(s, tuple((a + b) / 2 + Vector((0, 0, 0.022))), (0.024, 0.15, 0.006), f["fabric"], bevel=0.004)
-            cylinder(s, b + Vector((0, 0.0, 0)), b + Vector((0, 0.012, 0)), 0.02, f["trim"], segs=16)
-            box(s, (x, hips_y + 0.07, (tray_z + top + 0.12 + z0) / 2), (0.012, 0.016, (top + 0.12 + z0 - tray_z) / 2), f["dark"], bevel=0.004)
-    if level >= 2:
-        # headrest posts
-        head_at = origin + up * (back_h + 0.06) + fwd * 0.04 + Vector((0, 0, z0))
-        for sx in (-1, 1):
-            cylinder(s, origin + up * (back_h - 0.05) + fwd * 0.03 + Vector((sx * 0.07, 0, z0)),
-                     head_at + Vector((sx * 0.07, 0, 0)), 0.008, "steel" if level < 5 else "chrome", segs=10)
-    K.make_object("ShellFrame", s, mats, shell)
+            cbox(s, tuple(surface(pt, shell_secs[i_slot], sx * 0.075, lift=-0.004)), (0.026, 0.007, 0.006), "hole", rot=rot)
+        # an outboard grab handle on the right of the pan, copper bosses
+        hw = shell_secs[nearest(path, pan, y=H + 0.04)][0]
+        hpts = [Vector((hw - 0.01, H + 0.13, C - 0.035)), Vector((hw + 0.045, H + 0.12, C + 0.015)), Vector((hw + 0.058, H + 0.04, C + 0.035)),
+                Vector((hw + 0.045, H - 0.04, C + 0.015)), Vector((hw - 0.01, H - 0.05, C - 0.03))]
+        sweep(s, bend(hpts, 0.04, steps=3), 0.0105, "chrome" if level >= 5 else "steel", segs=6)
+        cylinder(s, Vector((hw + 0.058, H + 0.075, C + 0.035)), Vector((hw + 0.058, H + 0.005, C + 0.035)), 0.016, "rubber", segs=14)
+        for e in (hpts[0], hpts[-1]):
+            cylinder(s, e - Vector((0.012, 0, 0)), e + Vector((0.012, 0, 0)), 0.018, f["trim"], segs=14)
+        # a copper screw on each of the shell's back wings
+        for h in (0.12,):
+            i = nearest(path, back, h=h)
+            for sx in (-1, 1):
+                p = surface(path[i], shell_secs[i], sx * shell_secs[i][0] * 0.97, top=False)
+                bolt(s, p + Vector((sx * 0.004, 0, 0)), (sx, 0, 0), 0.0065, f["bolt"])
+    sl = Geo()
+    sl.extend(s, to_shell)
+    K.make_object("ShellFrame", sl, mats, shell)
 
-    # ---- Cushion (sinks): the pan, bolsters and piping ----
-    bolster = 0.02 if level >= 2 else 0.0
-    secs = pan_sections(hips_y, top, 0.0)
-    pan_bottom = top - 0.075
+    piping = "piping" if level < 5 else "cyan_glow"
+    seam = "hole"
+
+    # ---- Cushion (sinks): the pan pad with its bolsters, piping, quilting and the lap belt ----
+    i_h = nearest(path, pan, y=H)
+    pad_t = C - path[i_h]["p"].z
+    bol = 0.032 if level >= 2 else 0.012
+    pad_secs = {}
+    for i in pan:
+        hw = shell_secs[i][0] * 0.8
+        t = pad_t - (0.014 if i == pan[0] else 0.0)
+        pad_secs[i] = (hw, -0.012, t, bol, 0.0)
     c = Geo()
-    local = [(y, xc, hw, zb - pan_bottom, zt - pan_bottom) for (y, xc, hw, zb, zt) in secs]
-    K.squircle_loft(c, local, f["fabric"], ring_pts=20, power=4.0)
+    bucket_loft(c, [path[i] for i in pan], [pad_secs[i] for i in pan], f["fabric"], ring=16, power=4.0)
     if level >= 2:
         for sx in (-1, 1):
-            bol = [(y, sx * (hw - 0.02), 0.035, zb + 0.01, zt + 0.03) for (y, _, hw, zb, zt) in local[:-2]]
-            K.squircle_loft(c, bol, f["fabric"], ring_pts=12, power=3.0)
-            sweep(c, K.loft_edge(bol, 70, sx, 3.0), 0.0045, "piping" if level < 5 else "cyan_glow", segs=6)
+            sweep(c, [surface(path[i], pad_secs[i], sx * pad_secs[i][0] * 0.62, lift=0.003) for i in pan[1:]], 0.0045, piping, segs=5)
     if level >= 3:
-        for k in range(3):
-            y = hips_y - 0.1 + k * 0.12
-            box(c, (0, y, local[0][4] + 0.012), (0.17, 0.003, 0.003), "hole")
-    rig["cushion"] = K.make_object("Cushion", c, mats, shell, (0, 0, pan_bottom - DECK))
+        for yy in (H - 0.06, H + 0.06, H + 0.17):
+            i = nearest(path, pan, y=yy)
+            w = pad_secs[i][0] * 0.55
+            sweep(c, [surface(path[i], pad_secs[i], u, lift=0.0005) for u in (-w, -w / 2, 0, w / 2, w)], 0.0025, seam, segs=4)
+    # the lap belt across the pad from the anchors to a buckle in the middle
+    up = Vector((0, 0, 1))
+    for sx in (-1, 1):
+        pts = []
+        for u in (0.2, 0.16, 0.12, 0.08, 0.045, 0.02):
+            yy = H - 0.10 + (0.2 - u) * 0.55
+            i = nearest(path, pan, y=yy)
+            pt = dict(path[i])
+            pt["p"] = Vector((0, yy, pt["p"].z))
+            pts.append(surface(pt, pad_secs[i], sx * u, lift=0.004))
+        strap(c, pts, up)
+    buckle = surface(path[nearest(path, pan, y=H + 0.0)], pad_secs[nearest(path, pan, y=H + 0.0)], 0.0, lift=0.006)
+    if level >= 3:
+        # the harness straps' lower ends to the buckle, and (level 4 up) the crotch strap from the pad's front
+        for sx in (-1, 1):
+            pts = []
+            for yy, u in ((H - 0.13, 0.085), (H - 0.08, 0.07), (H - 0.03, 0.045)):
+                i = nearest(path, pan, y=yy)
+                pts.append(surface(path[i], pad_secs[i], sx * u, lift=0.0045))
+            strap(c, pts + [buckle], up)
+        if level >= 4:
+            pts = [surface(path[nearest(path, pan, y=yy)], pad_secs[nearest(path, pan, y=yy)], 0.0, lift=0.0045)
+                   for yy in (H + 0.24, H + 0.17, H + 0.1, H + 0.04)]
+            strap(c, pts, up)
+        cylinder(c, buckle - up * 0.003, buckle + up * 0.006, 0.033, "chrome" if level >= 5 else f["trim"], segs=14)
+        cylinder(c, buckle + up * 0.006, buckle + up * 0.0085, 0.019, f["dark"], segs=10)
+        cbox(c, tuple(buckle + up * 0.009), (0.012, 0.003, 0.0015), f["trim"])
+    else:
+        cbox(c, tuple(buckle), (0.032, 0.02, 0.007), "steel" if level == 1 else f["trim"], bevel=0.003)
+        cbox(c, tuple(buckle + Vector((0.0, 0.0, 0.0065))), (0.012, 0.006, 0.0015), f["dark"])
+    pan_bottom = min(v[2] for v in c.v)
+    to_cushion = Matrix.Translation((0, 0, -pan_bottom))
+    cl = Geo()
+    cl.extend(c, to_cushion)
+    rig["cushion"] = K.make_object("Cushion", cl, mats, shell, (0, 0, pan_bottom - DECK))
 
-    # ---- Backrest (sinks toward its back face) ----
+    # ---- Backrest (sinks toward the shell): the back pad, the headrest pad, piping, quilting and harness ----
+    r = math.radians(RECLINE)
+    bup = Vector((0, -math.sin(r), math.cos(r)))
+    fwd = Vector((0, math.cos(r), math.sin(r)))
+    origin = path[back[0]]["p"].copy()
+    m = Matrix((Vector((-1, 0, 0)), bup, fwd)).transposed()
+    back_secs = {}
+    for i in back:
+        h = path[i]["h"]
+        t = 0.05 + 0.028 * math.sin(math.pi * min(max(h / 0.3, 0), 1)) - (0.012 if i == back[-1] else 0.0)
+        back_secs[i] = (shell_secs[i][0] * 0.8, -0.012, t, 0.035 if level >= 2 else 0.014, 0.0)
     bk = Geo()
-    bsecs = back_sections(back_h, bolster)
-    K.squircle_loft(bk, bsecs, f["fabric"], ring_pts=20, power=4.0)
+    bucket_loft(bk, [path[i] for i in back], [back_secs[i] for i in back], f["fabric"], ring=16, power=4.0)
+    head_secs = {i: (0.105, -0.01, 0.04, 0.012 if level >= 3 else 0.0, 0.0) for i in head}
+    if len(head) >= 2:
+        bucket_loft(bk, [path[i] for i in head], [head_secs[i] for i in head], f["fabric"], ring=16, power=4.0)
     if level >= 2:
         for sx in (-1, 1):
-            sweep(bk, K.loft_edge(bsecs, 55, sx, 4.0), 0.0045, "piping" if level < 5 else "cyan_glow", segs=6)
-            bol = [(y, sx * (hw - 0.015), 0.035, 0.0, zt + 0.035) for (y, _, hw, _, zt) in bsecs[1:-1]]
-            K.squircle_loft(bk, bol, f["fabric"], ring_pts=12, power=3.0)
-        # headrest
-        K.squircle_loft(bk, K.smooth_sections([(back_h + 0.03, 0, 0.1, 0.01, 0.07), (back_h + 0.08, 0, 0.11, 0.0, 0.08),
-                                               (back_h + 0.13, 0, 0.09, 0.01, 0.065)], 3), f["fabric"], ring_pts=20)
+            sweep(bk, [surface(path[i], back_secs[i], sx * back_secs[i][0] * 0.62, lift=0.003) for i in back], 0.0045, piping, segs=5)
     if level >= 3:
-        for k in range(4):
-            yy = 0.08 + k * 0.09
-            box(bk, (0, yy, 0.086), (0.16, 0.003, 0.004), "hole")
-    if level >= 4:
-        # harness straps over the shoulders down to the pan, and a lap belt
+        for h in (0.08, 0.15, 0.22):
+            i = nearest(path, back, h=h)
+            w = back_secs[i][0] * 0.55
+            sweep(bk, [surface(path[i], back_secs[i], u, lift=0.0005) for u in (-w, -w / 2, 0, w / 2, w)], 0.0025, seam, segs=4)
+        # shoulder straps from the slots down the pad
         for sx in (-1, 1):
-            pts = [Vector((sx * 0.09, back_h + 0.0, 0.07)), Vector((sx * 0.1, back_h * 0.6, 0.1)),
-                   Vector((sx * 0.11, back_h * 0.25, 0.12)), Vector((sx * 0.13, 0.02, 0.14))]
-            for a, b in zip(pts, pts[1:]):
-                mid = (a + b) / 2
-                d = (b - a)
-                rot = along(d, (1, 0, 0))
-                box(bk, tuple(mid), (0.022, d.length / 2 + 0.004, 0.003), "webbing", rot=rot)
-            box(bk, (sx * 0.13, 0.04, 0.142), (0.018, 0.022, 0.006), f["trim"], bevel=0.002)
-    ob = K.make_object("Backrest", bk, mats, shell, tuple(origin - Vector((0, 0, DECK))))
-    # local x mirrored so the frame is right-handed (the loft is symmetric): y up the back, z toward the rider
+            i_slot = nearest(path, idx, h=0.335)
+            pts = [surface(path[i_slot], shell_secs[i_slot], sx * 0.075, lift=0.002)]
+            for h, u in ((0.28, 0.08), (0.2, 0.085), (0.12, 0.09), (0.04, 0.09), (0.0, 0.09)):
+                i = nearest(path, back, h=h)
+                pts.append(surface(path[i], back_secs[i], sx * u, lift=0.0045))
+            strap(bk, pts, fwd)
+            if level >= 4:
+                # an adjuster on each strap at the chest
+                i = nearest(path, back, h=0.16)
+                p = surface(path[i], back_secs[i], sx * 0.087, lift=0.008)
+                cbox(bk, tuple(p), (0.024, 0.008, 0.004), f["trim"], bevel=0.002, rot=m)
+    to_back = (Matrix.Translation(origin) @ m.to_4x4()).inverted()
+    bl_geo = Geo()
+    bl_geo.extend(bk, to_back)
+    ob = K.make_object("Backrest", bl_geo, mats, shell, tuple(origin - Vector((0, 0, DECK))))
     ob.rotation_mode = "XYZ"
-    ob.rotation_euler = Matrix((Vector((-1, 0, 0)), up, fwd)).transposed().to_euler()
+    ob.rotation_euler = m.to_euler()
     rig["back"] = ob
     rig["back_axis"] = 2
     rig["pan_sink"], rig["back_sink"] = 0.16, 0.1
 
-    # ---- the roll hoop (level 4 and up), on the base ----
+    # ---- the roll cage (level 4 and up), on the subframe: a hoop round the seat back, side bars down to the front ----
     if level >= 4:
         hg = Geo()
-        yb = hips_y - 0.27
-        pts = [Vector((-0.3, yb, DECK)), Vector((-0.3, yb, 0.36)), Vector((-0.22, yb, 0.465)),
-               Vector((0.22, yb, 0.465)), Vector((0.3, yb, 0.36)), Vector((0.3, yb, DECK))]
-        sweep(hg, bend(pts, 0.08), 0.019, f["frame"], segs=10)
+        yb = H - HOOP_BACK
+        z0 = DECK + 0.036
+        top_z = hz - 0.03
+        pts = [Vector((-HOOP_X, yb, z0)), Vector((-HOOP_X, yb, top_z - 0.08)), Vector((-HOOP_X + 0.08, yb, top_z)),
+               Vector((HOOP_X - 0.08, yb, top_z)), Vector((HOOP_X, yb, top_z - 0.08)), Vector((HOOP_X, yb, z0))]
+        sweep(hg, bend(pts, 0.08, steps=4), 0.019, f["frame"], segs=8)
+        joint_z = C + 0.26
         for sx in (-1, 1):
-            for z in (DECK + 0.04, top + 0.2):
-                cylinder(hg, (sx * 0.3, yb, z - 0.018), (sx * 0.3, yb, z + 0.018), 0.026, f["trim"], segs=16)
-            box(hg, (sx * 0.3, yb, DECK + 0.006), (0.04, 0.04, 0.006), f["frame"], bevel=0.003)
+            a = Vector((sx * HOOP_X, yb, joint_z))
+            b = Vector((sx * 0.27, H + 0.29, DECK + 0.03))
+            cylinder(hg, a, b, 0.014, f["frame"], segs=8)
+            for z in (DECK + 0.075, joint_z):
+                cylinder(hg, (sx * HOOP_X, yb, z - 0.02), (sx * HOOP_X, yb, z + 0.02), 0.026, f["trim"], segs=10)
+            cbox(hg, (sx * HOOP_X, yb, DECK + 0.041), (0.035, 0.035, 0.005), f["frame"], bevel=0.003)
+            for k in (-1, 1):
+                bolt(hg, (sx * HOOP_X + k * 0.022, yb + 0.022, DECK + 0.046), (0, 0, 1), 0.005, f["bolt"])
         if level >= 5:
-            box(hg, (0, yb - 0.026, 0.465), (0.06, 0.008, 0.012), f["frame"], bevel=0.004)
+            # a harness bar across the hoop behind the shoulders, and a lamp on the top bar
+            cylinder(hg, (-HOOP_X, yb, C + 0.2), (HOOP_X, yb, C + 0.2), 0.014, f["frame"], segs=8)
+            for sx in (-1, 1):
+                cylinder(hg, (sx * (HOOP_X - 0.03), yb, C + 0.2), (sx * (HOOP_X - 0.005), yb, C + 0.2), 0.022, f["trim"], segs=10)
+            cbox(hg, (0, yb - 0.026, top_z), (0.06, 0.008, 0.012), f["frame"], bevel=0.004)
         K.make_object("Hoop", hg, mats, root)
         if level >= 5:
-            running_light(root, mats, "HoopLamp", (0, hips_y - 0.27 - 0.0355, 0.465), (0.05, 0.0015, 0.007))
+            running_light(root, mats, "HoopLamp", (0, yb - 0.0355, top_z), (0.05, 0.0015, 0.007))
     return rig
 
 
@@ -297,25 +585,25 @@ def wheel(g, hub, normal, level, f):
     u = Vector((1, 0, 0))
     w = n.cross(u).normalized()           # up the wheel's face
     rim = []
-    for k in range(33):
-        a = 2 * math.pi * k / 32
+    for k in range(21):
+        a = 2 * math.pi * k / 20
         rim.append(hub + (u * math.cos(a) + w * math.sin(a)) * WHEEL_R)
-    sweep(g, rim, 0.017, "rubber", segs=10)
+    sweep(g, rim, 0.017, "rubber", segs=8)
     if level >= 2:
         # grip wraps at ten and two
         for a0 in (math.radians(140), math.radians(40)):
             pts = [hub + (u * math.cos(a0 + d) + w * math.sin(a0 + d)) * WHEEL_R for d in (-0.3, -0.1, 0.1, 0.3)]
-            sweep(g, pts, 0.0195, "webbing" if level < 5 else "fabric_quilt", segs=12)
+            sweep(g, pts, 0.0195, "webbing" if level < 5 else "fabric_quilt", segs=8)
     spoke = "chrome" if level >= 5 else ("copper" if level >= 3 else f["frame"])
     for a in (math.radians(-90), math.radians(20), math.radians(160)):
         d = u * math.cos(a) + w * math.sin(a)
         a_, b_ = hub + d * 0.035, hub + d * (WHEEL_R - 0.012)
         mid, dd = (a_ + b_) / 2, (b_ - a_)
         rot = along(dd, dd.normalized().cross(n))
-        box(g, tuple(mid - n * 0.004), (0.016, dd.length / 2, 0.006), spoke, bevel=0.003, rot=rot)
-    cylinder(g, hub - n * 0.02, hub + n * 0.012, 0.045, f["frame"], segs=16)
-    cylinder(g, hub + n * 0.012, hub + n * 0.018, 0.033, f["trim"], segs=16)
-    cylinder(g, hub + n * 0.018, hub + n * 0.021, 0.02, "teal" if level < 5 else "cyan_glow", segs=14)
+        cbox(g, tuple(mid - n * 0.004), (0.016, dd.length / 2, 0.006), spoke, bevel=0.003, rot=rot)
+    cylinder(g, hub - n * 0.02, hub + n * 0.012, 0.045, f["frame"], segs=14)
+    cylinder(g, hub + n * 0.012, hub + n * 0.018, 0.033, f["trim"], segs=14)
+    cylinder(g, hub + n * 0.018, hub + n * 0.021, 0.02, "teal" if level < 5 else "cyan_glow", segs=12)
 
 
 def along(d, x_hint):

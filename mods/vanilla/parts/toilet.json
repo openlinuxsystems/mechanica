@@ -1,7 +1,7 @@
 {
   "id": "toilet",
   "name": "Toilet",
-  "description": "A patched-up outhouse toilet on a plank stand. Sit in it with E to ride along; it drives and steers nothing. Switches and buttons it is linked to go on your hotbar while you sit: 1 to 9 and 0 use them, Left and Right click the first two. It takes 10 links.",
+  "description": "A white porcelain toilet with its lid down. Sit in it with E to ride along; it drives and steers nothing. Switches and buttons it is linked to go on your hotbar while you sit: 1 to 9 and 0 use them, Left and Right click the first two. It takes 10 links.",
   "category": "interactive",
   "mass": 12,
   "durability": 3,

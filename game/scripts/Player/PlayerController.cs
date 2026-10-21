@@ -40,6 +40,9 @@ public partial class PlayerController : CharacterBody3D
     private Vector3 _shownFrom;
     private double _transitionLeft;
     private double _sinceSeatChange = double.MaxValue;
+    // Standing up, the capsule comes back only after this physics frame: the host moves the player out of the seat
+    // first, and a capsule switched on inside the seat's Body would sweep it along as it went.
+    private ulong _shapeBackAfter;
     private Vector3 _lastShown;
     private Vector3 _knock;
     // The camera's jolt from a blow: a kick (pitch, roll in radians) springing back, and a shake fading out.
@@ -125,7 +128,10 @@ public partial class PlayerController : CharacterBody3D
             }
             _seat = value;
             Velocity = Vector3.Zero;
-            _shape.SetDeferred(CollisionShape3D.PropertyName.Disabled, value is not null || _dead);
+            if (value is not null)
+                _shape.SetDeferred(CollisionShape3D.PropertyName.Disabled, true);
+            else
+                _shapeBackAfter = Engine.GetPhysicsFrames() + 1;
             // Sitting down glides from where it stood; standing up glides once the host puts it beside the seat (_Process).
             if (value is not null)
                 BeginTransition(ShownPosition);
@@ -509,6 +515,11 @@ public partial class PlayerController : CharacterBody3D
 
     public override void _PhysicsProcess(double delta)
     {
+        if (_shapeBackAfter != 0 && Engine.GetPhysicsFrames() > _shapeBackAfter)
+        {
+            _shapeBackAfter = 0;
+            _shape.SetDeferred(CollisionShape3D.PropertyName.Disabled, _dead || _seat is not null);
+        }
         if (!Simulated)
             return;
         var input = Step(CurrentInput with { Prop = ActionProp ?? HeldProp, Gesture = _gesture, GestureCount = _gestureCount, Guard = HeldGuard, Tint = HeldTint, Held = HeldItem }, (float)delta);

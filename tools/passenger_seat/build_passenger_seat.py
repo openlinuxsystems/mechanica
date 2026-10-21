@@ -17,5 +17,6 @@ import seat_kit as S  # noqa: E402
 if __name__ == "__main__":
     K.run("passenger_seat", lambda mats, level: S.build_seat(mats, level, driver=False), half=(0.5, 0.375, 0.5),
           ortho=1.4, icon_target=(0, 0, -0.07), title="Passenger Seat (4 x 4 x 3 blocks)", bake=K.bake_seat_clips,
-          lines=["The Driver's Seat's bucket seat without the wheel: its logic outputs are the passenger's hotbar.",
-                 "Hips 0.04 m behind centre, cushion 0.39 m above the plinth (the sit clip); the link box front left."])
+          lines=["The Driver's Seat's moulded bucket on its rails, without the wheel and pedals: its logic outputs are the",
+                 "passenger's hotbar. Hips at the centre, cushion 0.32 m above the plinth (sit eased toward sit_low); the link",
+                 "box front left."])

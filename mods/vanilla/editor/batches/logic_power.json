@@ -21,7 +21,7 @@
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.5, 0], "normal": [0, -1, 0] }],
         "logic": { "outputs": 6 },
         "sounds": { "enter": "seat_enter", "exit": "seat_exit" },
-        "seat": { "offset": [0, -0.44, 0.18], "cushion": [0, -0.05, 0.18], "hands": "wheel", "bounce": 1 },
+        "seat": { "offset": [0, -0.44, 0.14], "cushion": [0, -0.12, 0.14], "hands": "wheel", "bounce": 1 },
         "display": { "clips": { "readout": "clip" } },
         "properties": { "steer_angle": 27, "steer_speed": 2.5, "steer_torque": 1500 },
         "upgrades": [
@@ -141,7 +141,7 @@
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.5, 0], "normal": [0, -1, 0] }],
         "logic": { "outputs": 2 },
         "sounds": { "enter": "seat_enter", "exit": "seat_exit" },
-        "seat": { "offset": [0, -0.44, 0.04], "cushion": [0, -0.05, 0.04], "hands": "free", "bounce": 1 },
+        "seat": { "offset": [0, -0.44, 0], "cushion": [0, -0.12, 0], "hands": "free", "bounce": 1 },
         "display": { "clips": { "readout": "clip" } },
         "upgrades": [
           {
@@ -389,7 +389,7 @@
       "template": "seat",
       "set": {
         "name": "Toilet",
-        "description": "A patched-up outhouse toilet on a plank stand. Sit in it with E to ride along; it drives and steers nothing. Switches and buttons it is linked to go on your hotbar while you sit: 1 to 9 and 0 use them, Left and Right click the first two. It takes 10 links.",
+        "description": "A white porcelain toilet with its lid down. Sit in it with E to ride along; it drives and steers nothing. Switches and buttons it is linked to go on your hotbar while you sit: 1 to 9 and 0 use them, Left and Right click the first two. It takes 10 links.",
         "mass": 12,
         "durability": 3,
         "friction": 0.3,

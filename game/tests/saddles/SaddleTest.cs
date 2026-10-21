@@ -15,7 +15,8 @@ namespace Mechanica.Game.Tests;
 /// The parts map's batch 4 seats with a host and a client, all through the client's Action API: the client upgrades a
 /// Saddle in place (Creative: free) and both sides see Saddle 2 with its extra links; it sits astride the Driver's
 /// Saddle, and the host and the client both play the <c>sit_saddle</c> clip with the hands on the bars; on the Saddle
-/// the <c>sit_saddle_ride</c> clip (hands free); and in the Passenger Seat the chair's hands-free <c>sit_ride</c>.
+/// the <c>sit_saddle_ride</c> clip (hands free); and in the Passenger Seat the chair's hands-free <c>sit_ride</c>, eased
+/// toward <c>sit_ride_low</c> for its vehicle-height cushion.
 /// </summary>
 public partial class SaddleTest : StagedTest
 {
@@ -113,7 +114,9 @@ public partial class SaddleTest : StagedTest
                 if (player.Character is not CharacterModel model)
                     continue;
                 var body = model.Animator.Body;
-                Check(body.Any(c => c.Clip == clip && c.Weight > 0.9f),
+                // A chair lower than the sit clip's eases into the clip's _low partner; together they are the pose.
+                var weight = body.Where(c => c.Clip == clip || c.Clip == clip + "_low").Sum(c => c.Weight);
+                Check(body.Any(c => c.Clip == clip && c.Weight > 0.5f) && weight > 0.9f,
                     $"the {side} plays {clip} ({string.Join(", ", body.Select(c => $"{c.Clip} {c.Weight:0.00}"))})");
             }
             var feet = _host.Main.Logic.SeatPose(RigId, seat())!.Value.Feet;
