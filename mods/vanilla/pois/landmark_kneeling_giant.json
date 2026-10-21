@@ -1,0 +1,17 @@
+{
+  // A landmark (docs/world-generation.md, Landmarks): a hooded Old Stone figure kneeling on its plinth, its hands on a
+  // sword planted in the stone, crystals glowing at the pommel. Climb the plinth steps to the sword; land a flyer on
+  // the shoulders. Its model (tools/structures/landmarks.py) is moved so its footprint is centred on the POI;
+  // landmarks hold no loot and have no road.
+  "id": "landmark_kneeling_giant",
+  "name": "Kneeling Giant",
+  "radius": 51.0,
+  "size": [45.0, 47.5, 50.0],
+  "placement": { "spacing": [3000.0, 4400.0], "biomes": ["forest", "autumn_forest", "meadow"], "priority": 35, "clearance": 200.0 },
+  "terrain": [
+    { "op": "flatten", "radius": 33.0, "blend": 18.0 }
+  ],
+  "models": [
+    { "file": "meshes/structures/landmark_kneeling_giant.glb", "at": [2.5, -0.1, -0.9] }
+  ]
+}

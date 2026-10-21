@@ -1,0 +1,17 @@
+{
+  // A landmark (docs/world-generation.md, Landmarks): Five overgrown Old Stone tiers with a grand stair up the front
+  // to a broken sanctuary where crystals grow. Walk or drive up the stair or the rubble ramp at the slumped corner and
+  // round the terraces. Its model (tools/structures/landmarks.py) is moved so its footprint is centred on the POI;
+  // landmarks hold no loot and have no road.
+  "id": "landmark_ziggurat",
+  "name": "Green Ziggurat",
+  "radius": 74.0,
+  "size": [73.0, 37.3, 75.0],
+  "placement": { "spacing": [3700.0, 5300.0], "biomes": ["forest", "autumn_forest", "meadow"], "priority": 35, "clearance": 200.0 },
+  "terrain": [
+    { "op": "flatten", "radius": 53.5, "blend": 20.0 }
+  ],
+  "models": [
+    { "file": "meshes/structures/landmark_ziggurat.glb", "at": [-5.7, -0.1, -7.2] }
+  ]
+}

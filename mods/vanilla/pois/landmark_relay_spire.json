@@ -1,0 +1,17 @@
+{
+  // A landmark (docs/world-generation.md, Landmarks): a Colony relay mast that buckled at 40 m, its upper section
+  // lying in one long diagonal to its crown, still blinking. Walk up the bank the crown ploughed up, along the drum
+  // and up the catwalk to the break. Its model (tools/structures/landmarks.py) is moved so its footprint is centred on
+  // the POI; landmarks hold no loot and have no road.
+  "id": "landmark_relay_spire",
+  "name": "Relay Spire RS-7",
+  "radius": 77.0,
+  "size": [112.0, 43.5, 53.0],
+  "placement": { "spacing": [4000.0, 5800.0], "biomes": ["field", "meadow", "desert"], "priority": 35, "clearance": 200.0 },
+  "terrain": [
+    { "op": "flatten", "at": [-27.5, 0.0], "to": [27.5, 0.0], "radius": 29.0, "blend": 20.0 }
+  ],
+  "models": [
+    { "file": "meshes/structures/landmark_relay_spire.glb", "at": [-24.3, -0.1, 1.1] }
+  ]
+}

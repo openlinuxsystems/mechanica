@@ -1,0 +1,17 @@
+{
+  // A landmark (docs/world-generation.md, Landmarks): a Colony water tower the settlers took over and crowned with a
+  // windmill, shacks round its gallery and between its legs. Climb the switchback stair to the gallery. Its model
+  // (tools/structures/landmarks.py) is moved so its footprint is centred on the POI; landmarks hold no loot and need
+  // no road.
+  "id": "landmark_windmill_tower",
+  "name": "Windmill Tower",
+  "radius": 33.0,
+  "size": [27.0, 56.5, 27.0],
+  "placement": { "spacing": [3100.0, 4700.0], "biomes": ["field", "meadow"], "priority": 35, "clearance": 200.0 },
+  "terrain": [
+    { "op": "flatten", "radius": 19.0, "blend": 14.0 }
+  ],
+  "models": [
+    { "file": "meshes/structures/landmark_windmill_tower.glb", "at": [0.2, -0.1, 1.5] }
+  ]
+}

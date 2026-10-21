@@ -514,6 +514,26 @@ round them; crossing one is the player's problem.
 | `mesa` | desert, burned forest; 700 to 1100 m apart | A flat top 16 m up with cliff sides (a `raise` with a short blend); the perched Bloom Pods like its top |
 | `butte` | desert, meadow, field; 900 to 1500 m apart | A lone rock tower 24 m tall that shows from far off |
 
+### Landmarks
+
+Eight set pieces stand alone in open country, for steering by from the ground and the air, and for climbing, driving
+under and flying through. Each is a spaced POI (priority 35, 200 m clear of other POIs and the roads, each kind
+roughly 3 to 5 km from the next of its kind) with one model (`meshes/structures/<id>.glb`, built by
+`tools/structures/landmarks.py`) on a flattened pad; about 27 stand on the vanilla island, at least two of each. They
+are built, not `wild`, and hold no loot and have no road. Their colliders keep every way up the design promises
+walkable (flights of steps up to 40° collide as ramps); `game/tests/landmarks` walks each one.
+
+| POI | Where | What |
+|-----|-------|------|
+| `landmark_relay_spire` | field, meadow, desert | Colony Works: a 110 m relay mast buckled at 40 m, its upper section a long diagonal to the crown, still blinking. Walk up the bank the crown ploughed up, along the drum and up the catwalk to the break |
+| `landmark_cooling_towers` | field, meadow, desert | Colony Works: two cooling towers, one cracked open; a service stair climbs the whole one to its rim |
+| `landmark_aqueduct` | field, meadow, desert | Colony Works: an unfinished aqueduct on 26 m piers that stops in mid-air under its launching gantry; climb the intake tower's stair and walk or drive the deck |
+| `landmark_kneeling_giant` | forest, autumn forest, meadow | Old Stone: a hooded figure kneeling on its plinth over a planted sword, crystals at the pommel; steps up the plinth |
+| `landmark_sky_arch` | forest, autumn forest, meadow | Old Stone: a 115 m rock arch to fly through, a stair cut up its back to a gateway at the crest |
+| `landmark_ziggurat` | forest, autumn forest, meadow | Old Stone: five overgrown tiers, a grand stair to a broken sanctuary, and a rubble ramp to drive up at the slumped corner |
+| `landmark_windmill_tower` | field, meadow | Settler Patchwork: a colony water tower crowned with a windmill, shacks round its gallery; a switchback stair up to the gallery |
+| `landmark_freighter_wreck` | desert, burned forest, field, meadow | Salvager Tech: the CF-9 freighter broken over a ridge, beacon still lit; walk into either torn end, or over the nose and along the roof to the bridge |
+
 ## Roads
 
 ```json

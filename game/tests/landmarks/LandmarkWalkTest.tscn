@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/landmarks/LandmarkWalkTest.cs" id="1_walk"]
+
+[node name="LandmarkWalkTest" type="Node"]
+script = ExtResource("1_walk")
