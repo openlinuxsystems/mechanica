@@ -1,0 +1,24 @@
+{
+  "id": "plant_container_open",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_wood_block",
+      "count": 5
+    },
+    {
+      "item": "soil_bag",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "plant_container_open",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 3024
+}

@@ -692,6 +692,242 @@
           "order": 3044
         }
       ]
+    },
+    {
+      "file": "parts/decor/mannequin_hand.json",
+      "template": "decor",
+      "set": {
+        "name": "Mannequin Hand",
+        "description": "A jointed wooden mannequin hand, pointing up. It grips well.",
+        "icon": "textures/items/mannequin_hand_icon.png",
+        "mass": 3,
+        "durability": 7,
+        "friction": 0.7,
+        "buoyancy": 0.1,
+        "flammable": true,
+        "sound_material": "wood",
+        "stack_size": 20,
+        "size": [1, 2, 1],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/mannequin_hand.glb" }],
+      "recipes": [
+        {
+          "id": "mannequin_hand",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "wood_block", "count": 2 },
+            { "item": "paint_ammo", "count": 1 },
+            { "item": "beeswax", "count": 3 }
+          ],
+          "outputs": [{ "item": "mannequin_hand", "count": 1 }],
+          "time": 10,
+          "order": 3042
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/plant_container_open.json",
+      "template": "decor",
+      "set": {
+        "name": "Open Plant Container",
+        "description": "A card planter box, open, with soil and sprouts in it. It is for show; plant crops in soil on the ground.",
+        "icon": "textures/items/plant_container_open_icon.png",
+        "mass": 6,
+        "durability": 1,
+        "friction": 0.6,
+        "buoyancy": 0.1,
+        "flammable": true,
+        "sound_material": "cardboard",
+        "stack_size": 20,
+        "size": [3, 3, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/plant_container_open.glb" }],
+      "recipes": [
+        {
+          "id": "plant_container_open",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_wood_block", "count": 5 }, { "item": "soil_bag", "count": 1 }],
+          "outputs": [{ "item": "plant_container_open", "count": 1 }],
+          "time": 2,
+          "order": 3024
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/plant_container.json",
+      "template": "decor",
+      "set": {
+        "name": "Plant Container",
+        "description": "A card planter box, closed and taped.",
+        "icon": "textures/items/plant_container_icon.png",
+        "mass": 6,
+        "durability": 1,
+        "friction": 0.6,
+        "buoyancy": 0.1,
+        "flammable": true,
+        "sound_material": "cardboard",
+        "stack_size": 20,
+        "size": [3, 3, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/plant_container.glb" }],
+      "recipes": [
+        {
+          "id": "plant_container",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_wood_block", "count": 5 }, { "item": "soil_bag", "count": 1 }],
+          "outputs": [{ "item": "plant_container", "count": 1 }],
+          "time": 2,
+          "order": 3022
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/shack_awning.json",
+      "template": "decor",
+      "set": {
+        "name": "Awning",
+        "description": "A lean-to awning of corrugated sheet on a batten, as the farmers put over their doors.",
+        "icon": "textures/items/shack_awning_icon.png",
+        "mass": 3,
+        "durability": 1,
+        "friction": 0.5,
+        "buoyancy": 0.4,
+        "flammable": true,
+        "sound_material": "metal",
+        "stack_size": 1,
+        "size": [4, 2, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/shack_awning.glb" }],
+      "recipes": [
+        {
+          "id": "shack_awning",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_metal_block", "count": 3 }, { "item": "scrap_wood_block", "count": 2 }],
+          "outputs": [{ "item": "shack_awning", "count": 1 }],
+          "time": 2,
+          "order": 3050
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/stacked_crates.json",
+      "template": "decor",
+      "set": {
+        "name": "Stacked Crates",
+        "description": "Three plastic crates strapped together. They float well.",
+        "icon": "textures/items/stacked_crates_icon.png",
+        "mass": 6,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.7,
+        "flammable": false,
+        "sound_material": "plastic",
+        "stack_size": 20,
+        "size": [3, 4, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/stacked_crates.glb" }],
+      "recipes": [
+        {
+          "id": "stacked_crates",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "plastic_block", "count": 4 }],
+          "outputs": [{ "item": "stacked_crates", "count": 1 }],
+          "time": 2,
+          "order": 3018
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/vending_machine.json",
+      "template": "decor",
+      "set": {
+        "name": "Vending Machine",
+        "description": "A colony vending machine for Grazer milk, its screen still lit. It is empty.",
+        "icon": "textures/items/vending_machine_icon.png",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.4,
+        "buoyancy": 0.6,
+        "flammable": true,
+        "sound_material": "metal",
+        "stack_size": 1,
+        "size": [4, 7, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/vending_machine.glb" }],
+      "recipes": [
+        {
+          "id": "vending_machine",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 10 }, { "item": "glass_block", "count": 2 }],
+          "outputs": [{ "item": "vending_machine", "count": 1 }],
+          "time": 5,
+          "order": 3030
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/grazer_head_topper.json",
+      "template": "decor",
+      "set": {
+        "name": "Grazer Head Topper",
+        "description": "A Grazer's head on a mounting cap. The farmers put one on top of their vending machines.",
+        "icon": "textures/items/grazer_head_topper_icon.png",
+        "mass": 7.5,
+        "durability": 6,
+        "friction": 0.4,
+        "buoyancy": 0.6,
+        "flammable": false,
+        "sound_material": "fabric",
+        "stack_size": 1,
+        "size": [4, 3, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/grazer_head_topper.glb" }],
+      "recipes": [
+        {
+          "id": "grazer_head_topper",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "cotton", "count": 5 }, { "item": "paint_ammo", "count": 2 }],
+          "outputs": [{ "item": "grazer_head_topper", "count": 1 }],
+          "time": 5,
+          "order": 3032
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/produce_box_potato.json",
+      "template": "decor",
+      "set": {
+        "name": "Potato Box",
+        "description": "A slatted crate heaped with potatoes.",
+        "icon": "textures/items/produce_box_potato_icon.png",
+        "mass": 6,
+        "durability": 1,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": true,
+        "sound_material": "wood",
+        "stack_size": 20,
+        "size": [4, 4, 4],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/produce_box_potato.glb" }],
+      "recipes": [
+        {
+          "id": "produce_box_potato",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_wood_block", "count": 4 }],
+          "outputs": [{ "item": "produce_box_potato", "count": 1 }],
+          "time": 2,
+          "order": 3012
+        }
+      ]
     }
   ]
 }

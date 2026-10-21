@@ -1,0 +1,20 @@
+{
+  "id": "stacked_crates",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "plastic_block",
+      "count": 4
+    }
+  ],
+  "outputs": [
+    {
+      "item": "stacked_crates",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 3018
+}

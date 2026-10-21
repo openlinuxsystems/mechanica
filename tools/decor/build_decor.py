@@ -24,6 +24,7 @@ BATCHES = {
     "13a": (office.BATCH_13A, office.materials_13),
     "13b": (office.BATCH_13B, office.materials_13),
     "14a": (farm.BATCH_14A, farm.materials_14),
+    "14b": (farm.BATCH_14B, farm.materials_14),
 }
 
 if __name__ == "__main__":

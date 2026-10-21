@@ -1,0 +1,24 @@
+{
+  "id": "grazer_head_topper",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "cotton",
+      "count": 5
+    },
+    {
+      "item": "paint_ammo",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "grazer_head_topper",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 3032
+}

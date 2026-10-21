@@ -1,0 +1,28 @@
+{
+  "id": "mannequin_hand",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "wood_block",
+      "count": 2
+    },
+    {
+      "item": "paint_ammo",
+      "count": 1
+    },
+    {
+      "item": "beeswax",
+      "count": 3
+    }
+  ],
+  "outputs": [
+    {
+      "item": "mannequin_hand",
+      "count": 1
+    }
+  ],
+  "time": 10,
+  "order": 3042
+}
