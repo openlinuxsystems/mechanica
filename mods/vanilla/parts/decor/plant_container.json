@@ -1,0 +1,19 @@
+{
+  "id": "plant_container",
+  "name": "Plant Container",
+  "description": "A card planter box, closed and taped.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 1,
+  "friction": 0.6,
+  "buoyancy": 0.1,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "cardboard",
+  "size": [3, 3, 3],
+  "mesh": "meshes/parts/plant_container.glb",
+  "icon": "textures/items/plant_container_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

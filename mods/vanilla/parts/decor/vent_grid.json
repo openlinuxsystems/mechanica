@@ -1,0 +1,19 @@
+{
+  "id": "vent_grid",
+  "name": "Ventilation Grid",
+  "description": "A colony ventilation grille with angled louvres.",
+  "category": "decor",
+  "mass": 10.5,
+  "durability": 2,
+  "friction": 0.6,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [5, 3, 1],
+  "mesh": "meshes/parts/vent_grid.glb",
+  "icon": "textures/items/vent_grid_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

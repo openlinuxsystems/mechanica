@@ -1,0 +1,24 @@
+{
+  "id": "broken_concrete_large",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 6
+    },
+    {
+      "item": "concrete_block",
+      "count": 12
+    }
+  ],
+  "outputs": [
+    {
+      "item": "broken_concrete_large",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 3142
+}

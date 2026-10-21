@@ -1,0 +1,19 @@
+{
+  "id": "tank_medium",
+  "name": "Medium Tank",
+  "description": "A colony storage tank. It is empty, so it floats.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 3,
+  "friction": 0.4,
+  "buoyancy": 0.5,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [5, 4, 5],
+  "mesh": "meshes/parts/tank_medium.glb",
+  "icon": "textures/items/tank_medium_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

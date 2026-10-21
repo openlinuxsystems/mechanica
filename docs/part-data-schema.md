@@ -709,7 +709,8 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 | 2600 | Refined materials | `wood_rod`, `pine_rod`, `stone_rod`, `metal_rod` |
 | 2700 | Crafting materials | `glue` |
 | 2800 | Ducts, conduits and cables | `duct_short`, `duct_long`, `duct_corner`, `duct_tee`, `duct_end`, `duct_holder`, `metal_tube`, `tubes_short`, `tubes_long`, `tubes_corner`, `tubes_tee`, `wires_short`, `wires_long`, `wires_bend`, `wires_concave_bend`, `wires_convex_bend` |
-| 3000 | Farm and shack decor | `produce_box_carrot`, `produce_box_tomato`, `produce_box_mixed`, `grass_planter`, `duck_statuette`, `mannequin_boot` |
+| 3000 | Farm and shack decor | `produce_box_carrot`, `produce_box_potato`, `produce_box_tomato`, `produce_box_mixed`, `stacked_crates`, `grass_planter`, `plant_container`, `plant_container_open`, `vending_machine`, `grazer_head_topper`, `duck_statuette`, `mannequin_hand`, `mannequin_boot`, `shack_awning` |
+| 3100 | Industrial and site decor | `tank_small`, `tank_medium`, `tank_large`, `juice_drum`, `coil_segment`, `coil_corner`, `fuse_box`, `air_conditioner`, `vent_grid`, `crane_body`, `crane_hook`, `broken_concrete_medium`, `broken_concrete_large`, `hull_door`, `nut`, `screw`, `steel_pallet`, `dish_antenna`, `reflector_dish`, `reflector_antenna` |
 
 ## The editor source file
 

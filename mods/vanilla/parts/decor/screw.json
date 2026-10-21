@@ -1,0 +1,19 @@
+{
+  "id": "screw",
+  "name": "Screw",
+  "description": "A giant slotted screw from the SV-04's frame.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 3,
+  "friction": 0.6,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [3, 3, 3],
+  "mesh": "meshes/parts/screw.glb",
+  "icon": "textures/items/screw_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

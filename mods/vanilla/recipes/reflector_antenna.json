@@ -1,0 +1,20 @@
+{
+  "id": "reflector_antenna",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "reflector_antenna",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 3184
+}

@@ -1,0 +1,19 @@
+{
+  "id": "reflector_antenna",
+  "name": "Reflector Antenna",
+  "description": "A settler-built antenna mast with a wire-mesh reflector.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 2,
+  "friction": 0.3,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [3, 6, 2],
+  "mesh": "meshes/parts/reflector_antenna.glb",
+  "icon": "textures/items/reflector_antenna_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}
