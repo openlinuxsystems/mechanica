@@ -318,6 +318,18 @@ ferns, brambles, cacti, tumbleweed, driftwood, reeds) are also scattered one at 
 In the vanilla world about one stands every 6,000 m² of open land (about one per 64 m chunk), some 15,000 across
 the island, so there is nearly always one in sight.
 
+### Wild cotton, beehives and embers
+
+Three crafting resources the block recipes need come from the vanilla world:
+
+- **Cotton:** `wild_cotton` clumps (`tools/food/build_cotton.py`) stand in the Autumn Forest. Press Use on one to pick
+  1 or 2 Cotton and, now and then, a Cotton Seed; the bolls grow back after `regrow` seconds. Cotton Seed grows into a
+  cotton plant in soil like the other crops.
+- **Beeswax:** the `scene_rock_hive` scene sets a `rock_beehive` (`tools/beeswax/build_beeswax.py`) against the side of
+  a `hive_rock`, a large rock at one fixed size, in the Forest and the Autumn Forest. Breaking the hive drops 1 or 2
+  Beeswax and leaves the rock.
+- **Ember:** a `burnt_tree` in the Burned Forest drops 1 or 2 Embers when it falls, as well as its logs.
+
 ### Trees
 
 The vanilla trees (Tree Harvesting spec) are four objects, plus the Autumn Forest's `autumn_leafy_tree` and the

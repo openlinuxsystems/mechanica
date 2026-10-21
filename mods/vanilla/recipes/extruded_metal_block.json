@@ -1,0 +1,20 @@
+{
+  "id": "extruded_metal_block",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 5
+    }
+  ],
+  "outputs": [
+    {
+      "item": "extruded_metal_block",
+      "count": 10
+    }
+  ],
+  "time": 10,
+  "order": 129
+}

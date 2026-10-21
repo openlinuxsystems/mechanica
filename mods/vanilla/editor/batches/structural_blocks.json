@@ -142,7 +142,7 @@
           ],
           "outputs": [{ "item": "concrete_block", "count": 10 }],
           "time": 5,
-          "order": 145
+          "order": 161
         }
       ]
     },
@@ -163,7 +163,7 @@
           "inputs": [{ "item": "concrete_block", "count": 1 }],
           "outputs": [{ "item": "concrete_wedge", "count": 1 }],
           "time": 2,
-          "order": 146
+          "order": 162
         }
       ]
     },
@@ -242,7 +242,7 @@
           "inputs": [{ "item": "sand_block", "count": 10 }, { "item": "ember", "count": 1 }],
           "outputs": [{ "item": "glass_block", "count": 10 }],
           "time": 5,
-          "order": 153
+          "order": 171
         }
       ]
     },
@@ -263,7 +263,7 @@
           "inputs": [{ "item": "glass_block", "count": 1 }],
           "outputs": [{ "item": "glass_wedge", "count": 1 }],
           "time": 2,
-          "order": 154
+          "order": 172
         }
       ]
     },
@@ -440,7 +440,7 @@
           "inputs": [{ "item": "scrap_stone_block", "count": 10 }, { "item": "paint_ammo", "count": 1 }],
           "outputs": [{ "item": "tile_block", "count": 10 }],
           "time": 10,
-          "order": 143
+          "order": 157
         }
       ]
     },
@@ -461,7 +461,7 @@
           "inputs": [{ "item": "tile_block", "count": 1 }],
           "outputs": [{ "item": "tile_wedge", "count": 1 }],
           "time": 2,
-          "order": 144
+          "order": 158
         }
       ]
     },
@@ -494,7 +494,7 @@
           "inputs": [{ "item": "scrap_stone_block", "count": 10 }],
           "outputs": [{ "item": "brick_block", "count": 10 }],
           "time": 10,
-          "order": 141
+          "order": 155
         }
       ]
     },
@@ -515,7 +515,7 @@
           "inputs": [{ "item": "brick_block", "count": 1 }],
           "outputs": [{ "item": "brick_wedge", "count": 1 }],
           "time": 2,
-          "order": 142
+          "order": 156
         }
       ]
     },
@@ -602,7 +602,7 @@
           "inputs": [{ "item": "metal_block_2", "count": 10 }, { "item": "circuit_board", "count": 1 }],
           "outputs": [{ "item": "hull_plate_block", "count": 10 }],
           "time": 10,
-          "order": 139
+          "order": 151
         }
       ]
     },
@@ -623,7 +623,7 @@
           "inputs": [{ "item": "hull_plate_block", "count": 1 }],
           "outputs": [{ "item": "hull_plate_wedge", "count": 1 }],
           "time": 2,
-          "order": 140
+          "order": 152
         }
       ]
     },
@@ -660,7 +660,7 @@
           "inputs": [{ "item": "metal_block", "count": 10 }, { "item": "circuit_board", "count": 1 }],
           "outputs": [{ "item": "path_light_block", "count": 10 }],
           "time": 10,
-          "order": 137
+          "order": 149
         }
       ]
     },
@@ -681,7 +681,7 @@
           "inputs": [{ "item": "path_light_block", "count": 1 }],
           "outputs": [{ "item": "path_light_wedge", "count": 1 }],
           "time": 2,
-          "order": 138
+          "order": 150
         }
       ]
     },
@@ -719,7 +719,7 @@
           ],
           "outputs": [{ "item": "armored_glass_block", "count": 10 }],
           "time": 10,
-          "order": 157
+          "order": 175
         }
       ]
     },
@@ -740,7 +740,7 @@
           "inputs": [{ "item": "armored_glass_block", "count": 1 }],
           "outputs": [{ "item": "armored_glass_wedge", "count": 1 }],
           "time": 2,
-          "order": 158
+          "order": 176
         }
       ]
     },
@@ -773,7 +773,7 @@
           "inputs": [{ "item": "scrap_metal_block", "count": 10 }, { "item": "chemical", "count": 1 }],
           "outputs": [{ "item": "aluminum_block", "count": 10 }],
           "time": 10,
-          "order": 133
+          "order": 143
         }
       ]
     },
@@ -794,7 +794,7 @@
           "inputs": [{ "item": "aluminum_block", "count": 1 }],
           "outputs": [{ "item": "aluminum_wedge", "count": 1 }],
           "time": 2,
-          "order": 134
+          "order": 144
         }
       ]
     },
@@ -830,7 +830,7 @@
           ],
           "outputs": [{ "item": "rusted_metal_block", "count": 10 }],
           "time": 5,
-          "order": 135
+          "order": 145
         }
       ]
     },
@@ -851,7 +851,7 @@
           "inputs": [{ "item": "rusted_metal_block", "count": 1 }],
           "outputs": [{ "item": "rusted_metal_wedge", "count": 1 }],
           "time": 2,
-          "order": 136
+          "order": 146
         }
       ]
     },
@@ -938,7 +938,7 @@
           "inputs": [{ "item": "sand_block", "count": 10 }, { "item": "water_bucket_full", "count": 1 }],
           "outputs": [{ "item": "plaster_block", "count": 10 }],
           "time": 5,
-          "order": 151
+          "order": 167
         }
       ]
     },
@@ -959,7 +959,7 @@
           "inputs": [{ "item": "plaster_block", "count": 1 }],
           "outputs": [{ "item": "plaster_wedge", "count": 1 }],
           "time": 2,
-          "order": 152
+          "order": 168
         }
       ]
     },
@@ -984,7 +984,17 @@
           "metallic": 0
         }
       },
-      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }],
+      "recipes": [
+        {
+          "id": "carpet_block",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "cotton", "count": 5 }, { "item": "paint_ammo", "count": 1 }],
+          "outputs": [{ "item": "carpet_block", "count": 10 }],
+          "time": 10,
+          "order": 121
+        }
+      ]
     },
     {
       "file": "parts/blocks/carpet_wedge.json",
@@ -1036,7 +1046,7 @@
           "inputs": [{ "item": "metal_block", "count": 5 }],
           "outputs": [{ "item": "net_block", "count": 20 }],
           "time": 5,
-          "order": 129
+          "order": 133
         }
       ]
     },
@@ -1057,7 +1067,7 @@
           "inputs": [{ "item": "net_block", "count": 1 }],
           "outputs": [{ "item": "net_wedge", "count": 1 }],
           "time": 2,
-          "order": 130
+          "order": 134
         }
       ]
     },
@@ -1090,7 +1100,7 @@
           "inputs": [{ "item": "metal_block", "count": 10 }],
           "outputs": [{ "item": "diamond_plate_block", "count": 10 }],
           "time": 10,
-          "order": 131
+          "order": 141
         }
       ]
     },
@@ -1111,7 +1121,7 @@
           "inputs": [{ "item": "diamond_plate_block", "count": 1 }],
           "outputs": [{ "item": "diamond_plate_wedge", "count": 1 }],
           "time": 2,
-          "order": 132
+          "order": 142
         }
       ]
     },
@@ -1200,7 +1210,7 @@
           "inputs": [{ "item": "sand_block", "count": 10 }, { "item": "ember", "count": 1 }],
           "outputs": [{ "item": "glass_tile_block", "count": 10 }],
           "time": 10,
-          "order": 155
+          "order": 173
         }
       ]
     },
@@ -1221,7 +1231,7 @@
           "inputs": [{ "item": "glass_tile_block", "count": 1 }],
           "outputs": [{ "item": "glass_tile_wedge", "count": 1 }],
           "time": 2,
-          "order": 156
+          "order": 174
         }
       ]
     },
@@ -1483,7 +1493,7 @@
           "inputs": [{ "item": "concrete_block", "count": 10 }, { "item": "metal_block_2", "count": 2 }],
           "outputs": [{ "item": "concrete_block_2", "count": 10 }],
           "time": 10,
-          "order": 147
+          "order": 163
         }
       ]
     },
@@ -1504,7 +1514,7 @@
           "inputs": [{ "item": "concrete_block_2", "count": 1 }],
           "outputs": [{ "item": "concrete_wedge_2", "count": 1 }],
           "time": 2,
-          "order": 148
+          "order": 164
         }
       ]
     },
@@ -1540,7 +1550,7 @@
           "inputs": [{ "item": "concrete_block_2", "count": 10 }, { "item": "metal_block_3", "count": 2 }],
           "outputs": [{ "item": "concrete_block_3", "count": 10 }],
           "time": 15,
-          "order": 149
+          "order": 165
         }
       ]
     },
@@ -1561,7 +1571,7 @@
           "inputs": [{ "item": "concrete_block_3", "count": 1 }],
           "outputs": [{ "item": "concrete_wedge_3", "count": 1 }],
           "time": 2,
-          "order": 150
+          "order": 166
         }
       ]
     },
@@ -1594,7 +1604,7 @@
           "inputs": [{ "item": "crude_oil", "count": 5 }],
           "outputs": [{ "item": "plastic_block", "count": 10 }],
           "time": 5,
-          "order": 159
+          "order": 179
         }
       ]
     },
@@ -1615,7 +1625,7 @@
           "inputs": [{ "item": "plastic_block", "count": 1 }],
           "outputs": [{ "item": "plastic_wedge", "count": 1 }],
           "time": 2,
-          "order": 160
+          "order": 180
         }
       ]
     },
@@ -1648,7 +1658,7 @@
           "inputs": [{ "item": "crude_oil", "count": 5 }],
           "outputs": [{ "item": "bubble_plastic_block", "count": 10 }],
           "time": 10,
-          "order": 161
+          "order": 181
         }
       ]
     },
@@ -1669,7 +1679,554 @@
           "inputs": [{ "item": "bubble_plastic_block", "count": 1 }],
           "outputs": [{ "item": "bubble_plastic_wedge", "count": 1 }],
           "time": 2,
-          "order": 162
+          "order": 182
+        }
+      ]
+    },
+    {
+      "file": "parts/blocks/extruded_metal_block.json",
+      "template": "block",
+      "set": {
+        "name": "Extruded Metal Block",
+        "description": "Steel pressed into long profiles. Lighter and cheaper than Metal Block 1, and less tough.",
+        "mass": 4.5,
+        "durability": 4,
+        "friction": 0.4,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "stack_size": 256,
+        "sound_material": "metal",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#ffffff",
+          "texture": "textures/blocks/extruded_metal.png",
+          "texture_span": 2,
+          "roughness": 0.4,
+          "metallic": 0.8
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }],
+      "recipes": [
+        {
+          "id": "extruded_metal_block",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 5 }],
+          "outputs": [{ "item": "extruded_metal_block", "count": 10 }],
+          "time": 10,
+          "order": 129
+        }
+      ]
+    },
+    {
+      "file": "parts/blocks/extruded_metal_wedge.json",
+      "base": "extruded_metal_block",
+      "set": {
+        "name": "Extruded Metal Wedge",
+        "description": "Extruded Metal Block cut on the diagonal. Same material, half the mass.",
+        "mass": 2.25
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true,
+      "recipes": [
+        {
+          "id": "extruded_metal_wedge",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "extruded_metal_block", "count": 1 }],
+          "outputs": [{ "item": "extruded_metal_wedge", "count": 1 }],
+          "time": 2,
+          "order": 130
+        }
+      ]
+    },
+    {
+      "file": "parts/blocks/punched_steel_block.json",
+      "template": "block",
+      "set": {
+        "name": "Punched Steel Block",
+        "description": "A steel sheet punched full of holes. Light, and you can see through it.",
+        "mass": 4.5,
+        "durability": 4,
+        "friction": 0.4,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "stack_size": 256,
+        "sound_material": "metal",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#ffffff",
+          "texture": "textures/blocks/punched_steel.png",
+          "roughness": 0.45,
+          "metallic": 0.75
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }],
+      "recipes": [
+        {
+          "id": "punched_steel_block",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 10 }],
+          "outputs": [{ "item": "punched_steel_block", "count": 20 }],
+          "time": 5,
+          "order": 131
+        }
+      ]
+    },
+    {
+      "file": "parts/blocks/punched_steel_wedge.json",
+      "base": "punched_steel_block",
+      "set": {
+        "name": "Punched Steel Wedge",
+        "description": "Punched Steel Block cut on the diagonal. Same material, half the mass.",
+        "mass": 2.25
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true,
+      "recipes": [
+        {
+          "id": "punched_steel_wedge",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "punched_steel_block", "count": 1 }],
+          "outputs": [{ "item": "punched_steel_wedge", "count": 1 }],
+          "time": 2,
+          "order": 132
+        }
+      ]
+    },
+    {
+      "file": "parts/blocks/solid_net_block.json",
+      "template": "block",
+      "set": {
+        "name": "Solid Net Block",
+        "description": "Flat steel bands woven into a lattice. Tougher than the Net Block, and still see-through.",
+        "mass": 4.5,
+        "durability": 5,
+        "friction": 0.4,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "stack_size": 256,
+        "sound_material": "metal",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#ffffff",
+          "texture": "textures/blocks/solid_net.png",
+          "roughness": 0.45,
+          "metallic": 0.75
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }],
+      "recipes": [
+        {
+          "id": "solid_net_block",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block_2", "count": 5 }],
+          "outputs": [{ "item": "solid_net_block", "count": 20 }],
+          "time": 5,
+          "order": 135
+        }
+      ]
+    },
+    {
+      "file": "parts/blocks/solid_net_wedge.json",
+      "base": "solid_net_block",
+      "set": {
+        "name": "Solid Net Wedge",
+        "description": "Solid Net Block cut on the diagonal. Same material, half the mass.",
+        "mass": 2.25
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true,
+      "recipes": [
+        {
+          "id": "solid_net_wedge",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "solid_net_block", "count": 1 }],
+          "outputs": [{ "item": "solid_net_wedge", "count": 1 }],
+          "time": 2,
+          "order": 136
+        }
+      ]
+    },
+    {
+      "file": "parts/blocks/striped_net_block.json",
+      "template": "block",
+      "set": {
+        "name": "Striped Net Block",
+        "description": "Upright steel slats in two colours with gaps between. See-through.",
+        "mass": 4.5,
+        "durability": 4,
+        "friction": 0.4,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "stack_size": 256,
+        "sound_material": "metal",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#ffffff",
+          "texture": "textures/blocks/striped_net.png",
+          "roughness": 0.45,
+          "metallic": 0.75
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }],
+      "recipes": [
+        {
+          "id": "striped_net_block",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 5 }, { "item": "paint_ammo", "count": 1 }],
+          "outputs": [{ "item": "striped_net_block", "count": 20 }],
+          "time": 5,
+          "order": 137
+        }
+      ]
+    },
+    {
+      "file": "parts/blocks/striped_net_wedge.json",
+      "base": "striped_net_block",
+      "set": {
+        "name": "Striped Net Wedge",
+        "description": "Striped Net Block cut on the diagonal. Same material, half the mass.",
+        "mass": 2.25
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true,
+      "recipes": [
+        {
+          "id": "striped_net_wedge",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "striped_net_block", "count": 1 }],
+          "outputs": [{ "item": "striped_net_wedge", "count": 1 }],
+          "time": 2,
+          "order": 138
+        }
+      ]
+    },
+    {
+      "file": "parts/blocks/square_mesh_block.json",
+      "template": "block",
+      "set": {
+        "name": "Square Mesh Block",
+        "description": "An orange cast-steel frame. Very slippery: good for things that slide.",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.2,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 256,
+        "sound_material": "metal",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#ffffff",
+          "texture": "textures/blocks/square_mesh.png",
+          "roughness": 0.5,
+          "metallic": 0.4
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }],
+      "recipes": [
+        {
+          "id": "square_mesh_block",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "net_block", "count": 10 }],
+          "outputs": [{ "item": "square_mesh_block", "count": 10 }],
+          "time": 5,
+          "order": 139
+        }
+      ]
+    },
+    {
+      "file": "parts/blocks/square_mesh_wedge.json",
+      "base": "square_mesh_block",
+      "set": {
+        "name": "Square Mesh Wedge",
+        "description": "Square Mesh Block cut on the diagonal. Same material, half the mass.",
+        "mass": 1.5
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true,
+      "recipes": [
+        {
+          "id": "square_mesh_wedge",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "square_mesh_block", "count": 1 }],
+          "outputs": [{ "item": "square_mesh_wedge", "count": 1 }],
+          "time": 2,
+          "order": 140
+        }
+      ]
+    },
+    {
+      "file": "parts/blocks/worn_metal_block.json",
+      "template": "block",
+      "set": {
+        "name": "Worn Metal Block",
+        "description": "Old green-painted steel plating, scuffed and rusting at the seams.",
+        "mass": 6,
+        "durability": 3,
+        "friction": 0.5,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "stack_size": 256,
+        "sound_material": "metal",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#ffffff",
+          "texture": "textures/blocks/worn_metal.png",
+          "texture_span": 4,
+          "roughness": 0.6,
+          "metallic": 0.45
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }],
+      "recipes": [
+        {
+          "id": "worn_metal_block",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 10 }, { "item": "water_bucket_full", "count": 1 }],
+          "outputs": [{ "item": "worn_metal_block", "count": 10 }],
+          "time": 5,
+          "order": 147
+        }
+      ]
+    },
+    {
+      "file": "parts/blocks/worn_metal_wedge.json",
+      "base": "worn_metal_block",
+      "set": {
+        "name": "Worn Metal Wedge",
+        "description": "Worn Metal Block cut on the diagonal. Same material, half the mass.",
+        "mass": 3.0
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true,
+      "recipes": [
+        {
+          "id": "worn_metal_wedge",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "worn_metal_block", "count": 1 }],
+          "outputs": [{ "item": "worn_metal_wedge", "count": 1 }],
+          "time": 2,
+          "order": 148
+        }
+      ]
+    },
+    {
+      "file": "parts/blocks/hull_floor_block.json",
+      "template": "block",
+      "set": {
+        "name": "Hull Floor Block",
+        "description": "Deck plating with raised anti-slip bars, made to go with Hull Plate.",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.5,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "stack_size": 256,
+        "sound_material": "metal",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#ffffff",
+          "texture": "textures/blocks/hull_floor.png",
+          "texture_span": 2,
+          "roughness": 0.45,
+          "metallic": 0.75
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }],
+      "recipes": [
+        {
+          "id": "hull_floor_block",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block_2", "count": 10 }],
+          "outputs": [{ "item": "hull_floor_block", "count": 10 }],
+          "time": 10,
+          "order": 153
+        }
+      ]
+    },
+    {
+      "file": "parts/blocks/hull_floor_wedge.json",
+      "base": "hull_floor_block",
+      "set": {
+        "name": "Hull Floor Wedge",
+        "description": "Hull Floor Block cut on the diagonal. Same material, half the mass.",
+        "mass": 3.0
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true,
+      "recipes": [
+        {
+          "id": "hull_floor_wedge",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "hull_floor_block", "count": 1 }],
+          "outputs": [{ "item": "hull_floor_wedge", "count": 1 }],
+          "time": 2,
+          "order": 154
+        }
+      ]
+    },
+    {
+      "file": "parts/blocks/painted_wall_block.json",
+      "template": "block",
+      "set": {
+        "name": "Painted Wall Block",
+        "description": "Plaster painted white over a soft blue lower band. Build a wall two blocks high to see the trim.",
+        "mass": 7.5,
+        "durability": 4,
+        "friction": 0.6,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "stack_size": 256,
+        "sound_material": "concrete",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#ffffff",
+          "texture": "textures/blocks/painted_wall.png",
+          "texture_span": 4,
+          "roughness": 0.85,
+          "metallic": 0
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }],
+      "recipes": [
+        {
+          "id": "painted_wall_block",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "plaster_block", "count": 10 }, { "item": "paint_ammo", "count": 1 }],
+          "outputs": [{ "item": "painted_wall_block", "count": 10 }],
+          "time": 10,
+          "order": 169
+        }
+      ]
+    },
+    {
+      "file": "parts/blocks/painted_wall_wedge.json",
+      "base": "painted_wall_block",
+      "set": {
+        "name": "Painted Wall Wedge",
+        "description": "Painted Wall Block cut on the diagonal. Same material, half the mass.",
+        "mass": 3.75
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true,
+      "recipes": [
+        {
+          "id": "painted_wall_wedge",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "painted_wall_block", "count": 1 }],
+          "outputs": [{ "item": "painted_wall_wedge", "count": 1 }],
+          "time": 2,
+          "order": 170
+        }
+      ]
+    },
+    {
+      "file": "parts/blocks/worn_tile_block.json",
+      "template": "block",
+      "set": {
+        "name": "Worn Tile Block",
+        "description": "Old glazed floor tiles in octagons and squares, chipped and crazed. Set with beeswax.",
+        "mass": 10.5,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "stack_size": 256,
+        "sound_material": "tile",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#ffffff",
+          "texture": "textures/blocks/worn_tile.png",
+          "texture_span": 2,
+          "roughness": 0.35,
+          "metallic": 0
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }],
+      "recipes": [
+        {
+          "id": "worn_tile_block",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_stone_block", "count": 10 }, { "item": "beeswax", "count": 1 }],
+          "outputs": [{ "item": "worn_tile_block", "count": 10 }],
+          "time": 10,
+          "order": 159
+        }
+      ]
+    },
+    {
+      "file": "parts/blocks/worn_tile_wedge.json",
+      "base": "worn_tile_block",
+      "set": {
+        "name": "Worn Tile Wedge",
+        "description": "Worn Tile Block cut on the diagonal. Same material, half the mass.",
+        "mass": 5.25
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true,
+      "recipes": [
+        {
+          "id": "worn_tile_wedge",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "worn_tile_block", "count": 1 }],
+          "outputs": [{ "item": "worn_tile_wedge", "count": 1 }],
+          "time": 2,
+          "order": 160
+        }
+      ]
+    },
+    {
+      "file": "parts/blocks/ice_block.json",
+      "template": "block",
+      "set": {
+        "name": "Ice Block",
+        "description": "Clear blue ice. The most slippery block there is, and it breaks at a touch.",
+        "mass": 4.5,
+        "durability": 1,
+        "friction": 0.1,
+        "buoyancy": 0.5,
+        "flammable": false,
+        "stack_size": 500,
+        "sound_material": "glass",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#ffffff",
+          "texture": "textures/blocks/ice.png",
+          "texture_span": 2,
+          "roughness": 0.08,
+          "metallic": 0,
+          "opacity": 0.9
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }],
+      "recipes": [
+        {
+          "id": "ice_block",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "water_bucket_full", "count": 2 }],
+          "outputs": [{ "item": "ice_block", "count": 10 }],
+          "time": 5,
+          "order": 177
+        }
+      ]
+    },
+    {
+      "file": "parts/blocks/ice_wedge.json",
+      "base": "ice_block",
+      "set": {
+        "name": "Ice Wedge",
+        "description": "Ice Block cut on the diagonal. Same material, half the mass.",
+        "mass": 2.25
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true,
+      "recipes": [
+        {
+          "id": "ice_wedge",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "ice_block", "count": 1 }],
+          "outputs": [{ "item": "ice_wedge", "count": 1 }],
+          "time": 2,
+          "order": 178
         }
       ]
     }

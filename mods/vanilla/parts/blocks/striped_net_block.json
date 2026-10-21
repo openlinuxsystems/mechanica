@@ -1,0 +1,21 @@
+{
+  "id": "striped_net_block",
+  "name": "Striped Net Block",
+  "description": "Upright steel slats in two colours with gaps between. See-through.",
+  "category": "block",
+  "mass": 4.5,
+  "durability": 4,
+  "friction": 0.4,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 256,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/striped_net_block.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.45,
+    "metallic": 0.75,
+    "texture": "textures/blocks/striped_net.png"
+  }
+}

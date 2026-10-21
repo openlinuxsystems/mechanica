@@ -1,0 +1,26 @@
+{
+  "id": "worn_metal_wedge",
+  "name": "Worn Metal Wedge",
+  "description": "Worn Metal Block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 3,
+  "durability": 3,
+  "friction": 0.5,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 256,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/worn_metal_wedge.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.6,
+    "metallic": 0.45,
+    "texture": "textures/blocks/worn_metal.png",
+    "texture_span": 4
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/worn_metal_wedge.glb"
+  }
+}

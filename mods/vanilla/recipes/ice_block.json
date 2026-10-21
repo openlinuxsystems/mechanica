@@ -1,0 +1,20 @@
+{
+  "id": "ice_block",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "water_bucket_full",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "ice_block",
+      "count": 10
+    }
+  ],
+  "time": 5,
+  "order": 177
+}

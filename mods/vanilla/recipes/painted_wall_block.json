@@ -1,0 +1,24 @@
+{
+  "id": "painted_wall_block",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "plaster_block",
+      "count": 10
+    },
+    {
+      "item": "paint_ammo",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "painted_wall_block",
+      "count": 10
+    }
+  ],
+  "time": 10,
+  "order": 169
+}

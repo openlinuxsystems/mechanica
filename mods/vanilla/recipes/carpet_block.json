@@ -1,0 +1,24 @@
+{
+  "id": "carpet_block",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "cotton",
+      "count": 5
+    },
+    {
+      "item": "paint_ammo",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "carpet_block",
+      "count": 10
+    }
+  ],
+  "time": 10,
+  "order": 121
+}
