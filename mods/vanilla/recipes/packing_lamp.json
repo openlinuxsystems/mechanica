@@ -1,0 +1,24 @@
+{
+  "id": "packing_lamp",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 2
+    },
+    {
+      "item": "glass_block",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "packing_lamp",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 1617
+}

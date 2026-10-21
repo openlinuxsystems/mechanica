@@ -1,0 +1,28 @@
+{
+  "id": "neon_sign",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 2
+    },
+    {
+      "item": "glass_block",
+      "count": 2
+    },
+    {
+      "item": "paint_ammo",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "neon_sign",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 1690
+}

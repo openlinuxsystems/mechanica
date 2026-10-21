@@ -123,12 +123,56 @@ public sealed class ContentScriptTests : IDisposable
         var lamp = Place(creation, "vanilla:interior_light", new GridCell(0, -1, 0));
         Steps(1);
         Assert.Equal(1f, _runtime.Lights.Level(creation.Id, lamp));
+        Assert.Equal("on", Pose(creation, lamp));
         Activate(creation, lamp);
         Steps(1);
         Assert.Equal(0f, _runtime.Lights.Level(creation.Id, lamp));
+        Assert.Equal("off", Pose(creation, lamp));
         Activate(creation, lamp);
         Steps(1);
         Assert.Equal(1f, _runtime.Lights.Level(creation.Id, lamp));
+        Assert.Equal("on", Pose(creation, lamp));
+        NoErrors();
+    }
+
+    [Fact]
+    public void AShackLightShinesAtItsBrightnessSettingAndDimmingItMakesNoSound()
+    {
+        // Parts map batch 5: a "brightness" setting (1 to 10) dims a light to that many tenths of full.
+        var creation = Board();
+        var lamp = Place(creation, "vanilla:shack_light", new GridCell(0, -2, 0));
+        Steps(1);
+        Assert.Equal(1f, _runtime.Lights.Level(creation.Id, lamp));
+        Assert.Equal("on", Pose(creation, lamp));
+        var sounds = _sound.Played.Count;
+
+        Configure(creation, lamp, "brightness", 3);
+        Steps(1);
+        Assert.Equal(0.3f, _runtime.Lights.Level(creation.Id, lamp), 0.001f);
+        Assert.Equal("on", Pose(creation, lamp));
+        Assert.Equal(sounds, _sound.Played.Count);
+
+        Activate(creation, lamp);
+        Steps(1);
+        Assert.Equal(0f, _runtime.Lights.Level(creation.Id, lamp));
+        Assert.Equal("off", Pose(creation, lamp));
+        Assert.Equal("light_off", _sound.Played[^1].Sound);
+        NoErrors();
+    }
+
+    [Fact]
+    public void AWarningLightsModelFollowsItsBlink()
+    {
+        var creation = Board();
+        var lamp = Place(creation, "vanilla:warning_light", new GridCell(0, 1, 0));
+        var poses = new HashSet<string?>();
+        for (var i = 0; i < 120; i++)
+        {
+            Steps(1);
+            Assert.Equal(_runtime.Lights.Level(creation.Id, lamp) > 0 ? "on" : "off", Pose(creation, lamp));
+            poses.Add(Pose(creation, lamp));
+        }
+        Assert.Equal(2, poses.Count);
         NoErrors();
     }
 
@@ -526,6 +570,9 @@ public sealed class ContentScriptTests : IDisposable
         Assert.True(creation.TryPlacePart(part, cell, rotation, out var placed, out var error), $"{part} at {cell}: {error}");
         return placed.Id;
     }
+
+    // The clip a light's model plays (light.lua's "pose" readout).
+    private string? Pose(Creation creation, int part) => _runtime.Readouts.Text(creation.Id, part, "pose");
 
     private static void Link(Creation creation, int from, int to) =>
         Assert.True(creation.TryLink(from, to, out var error), error);

@@ -496,7 +496,7 @@ setting (`link`, `w_s`, `a_d` or `space_shift`) and the `invert` toggle.
 
 | Script | Property | Meaning |
 |--------|----------|---------|
-| `scripts/light.lua` | `blink` (s), `duty` | Blink period (0 or missing: steady) and the share of it spent lit. With no inputs linked it shines until E turns it off; linked, it shines while its input is above 0. |
+| `scripts/light.lua` | `blink` (s), `duty` (and a `brightness` setting) | Blink period (0 or missing: steady) and the share of it spent lit. With no inputs linked it shines until E turns it off; linked, it shines while its input is above 0. A part with a `brightness` number setting (1 to 10) shines at that many tenths of full. It shows `on` or `off` on its `pose` readout, so a model with those clips (`display.clips`) lights its lamp with it. |
 | `scripts/radio.lua` | (the `station` setting) | Plays the `station_N` sound loop; E turns it on and off. |
 | `scripts/beacon.lua` | `ping`, `flash` (s) | Seconds between pings, and how long each ping lights it fully. |
 | `scripts/horn.lua` | `honk` (s) | How long E sounds it; a linked input sounds it while above 0. |
@@ -513,7 +513,7 @@ host's level; it is dark until set.
 | Key | Type | Required | Meaning |
 |-----|------|----------|---------|
 | `kind` | `omni` or `spot` | no | Default `omni`. |
-| `color` | `"#rrggbb"` | no | Default white. |
+| `color` | `"#rrggbb"` | no | Default white. A painted part's light shines in its paint colour instead, and its model's glowing surfaces glow in it. |
 | `energy` | number ≥ 0 | no | Brightness at level 1. |
 | `range` | number > 0, m | yes | How far it reaches. |
 | `angle` | 0 < number < 90, ° | no | A spot's cone half-angle. |
@@ -678,7 +678,7 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 | 1300 | Working parts | `drill`, `saw_blade`, `water_cannon`, `potato_blaster_mounted` |
 | 1400 | Sound | `horn`, `radio` |
 | 1500 | Vehicle body | `bumper_front`, `bumper_rear`, `mud_flap`, `exhaust_pipe`, `license_plate`, `roof_rack`, `antenna`, `windshield`, `side_window` |
-| 1600 | Lights | `glowstick`, `interior_light`, `headlight`, `spotlight`, `construction_light`, `warning_light`, `beacon_scrap`, `beacon`, `warehouse_spotlight` |
+| 1600 | Lights | `shack_light`, `glowstick`, `fluorescent_light`, `packing_lamp`, `interior_light`, `headlight`, `spotlight`, `construction_light`, `warning_light`, `beacon_scrap`, `beacon`, `warehouse_spotlight`, `frame_beam_light`, `neon_sign`, `protector_sign` |
 | 1700 | Storage | `chest` (Scrap Chest), `small_chest`, `large_chest`, `cargo_chest`, `barrel`, `locker`, `tool_cabinet`, `file_cabinet`, `fridge`, `chemical_container`, `water_container`, `potato_ammo_container`, `dispenser`, `broken_microwave`, `ruin_chest` |
 | 1800 | Stations | `portable_fabricator`, `refiner`, `respawn_bed` |
 | 1900 | Farming | `soil_bag`, `water_bucket`, `feeding_trough`, `lead` |
