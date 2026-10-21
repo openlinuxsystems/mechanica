@@ -1,0 +1,24 @@
+{
+  "id": "worn_tile_block",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_stone_block",
+      "count": 10
+    },
+    {
+      "item": "beeswax",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "worn_tile_block",
+      "count": 10
+    }
+  ],
+  "time": 10,
+  "order": 159
+}

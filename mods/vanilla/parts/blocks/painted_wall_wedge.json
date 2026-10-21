@@ -1,0 +1,26 @@
+{
+  "id": "painted_wall_wedge",
+  "name": "Painted Wall Wedge",
+  "description": "Painted Wall Block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 3.75,
+  "durability": 4,
+  "friction": 0.6,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 256,
+  "sound_material": "concrete",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/painted_wall_wedge.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.85,
+    "metallic": 0,
+    "texture": "textures/blocks/painted_wall.png",
+    "texture_span": 4
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/painted_wall_wedge.glb"
+  }
+}

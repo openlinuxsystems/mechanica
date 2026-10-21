@@ -360,6 +360,323 @@ def concrete_3(size=1024):
     return rgb, glow
 
 
+# =====================================================================================================
+# Batch 2: sheet metal, nets and meshes, worn surfaces, ice
+# =====================================================================================================
+BEIGE = np.array([196, 186, 160])
+ORANGE_STEEL = np.array([226, 132, 40])
+
+
+def extruded_metal(size=1024):
+    """Extruded Metal over 2 x 2 blocks (texture_span 2): horizontal extruded profiles, ridges of different widths
+    in light and dark steel with a polished strip, running unbroken along a wall. Profile seams sit off the block
+    edges."""
+    y, x = grid(size)
+    B = size / 2
+    # one profile per block height, offset by a third of a block, each with a ridge, a groove and a bright strip
+    v = (y + B / 3) % B / B
+    height = np.select([v < 0.08, v < 0.38, v < 0.46, v < 0.58, v < 0.9], [2, 10 + 3 * np.sin(v * 30), 4, 14, 9], 2)
+    height = blur_wrap(height.astype(np.float64), 2.5)
+    tone = np.select([v < 0.08, v < 0.38, v < 0.46, v < 0.58, v < 0.9], [0.55, 0.95, 0.7, 1.22, 0.86], 0.55)
+    color = STEEL * (tone * (0.95 + 0.08 * value_noise(size, 12, 201, 3)))[..., None]
+    color = np.where(((v > 0.58) & (v < 0.9))[..., None], STEEL_BLUE * 1.25 * (0.95 + 0.08 * value_noise(size, 12, 202, 3))[..., None], color)
+    height = height + 0.5 * stretched_noise(size, 256, 4, 203, 2)
+    return finish(np.ascontiguousarray(color), height, 0.32)
+
+
+def punched_steel(size=512):
+    """Punched Steel, one block (texture_span 1): a pale steel sheet punched with a staggered grid of round holes,
+    four rows to a block, the holes see-through. Returns (colour, alpha)."""
+    y, x = grid(size)
+    n = 4
+    p = size / n
+    row = np.floor(y / p)
+    xs = x + (row % 2) * p / 2
+    u, v = xs % p - p / 2, y % p - p / 2
+    d = np.hypot(u, v)
+    r = p * 0.3
+    hole = d < r
+    height = 8 - 6 * np.clip(1 - (d - r) / 8, 0, 1)            # pressed lip round each hole
+    height += 0.6 * value_noise(size, 16, 211, 2)
+    color = BEIGE * (0.94 + 0.1 * value_noise(size, 10, 212, 3))[..., None]
+    rgb = finish(np.ascontiguousarray(color), height, 0.35)
+    return rgb, np.where(hole, 0.0, 1.0)
+
+
+def strips(u, period, half):
+    """Distance to the nearest of a set of parallel strips, and their coverage."""
+    d = np.abs(((u + period / 2) % period) - period / 2)
+    return d, np.clip(half + 0.5 - d, 0, 1)
+
+
+def solid_net(size=512):
+    """Solid Net, one block (texture_span 1, the lattice meets itself at the edges): flat pale-steel bands woven over
+    and under in two diagonals, steel-blue shadows where they cross, open gaps between. Returns (colour, alpha)."""
+    y, x = grid(size)
+    period = size / 3
+    half = period * 0.16
+    d1, a1 = strips(x + y, period * np.sqrt(2), half * np.sqrt(2))
+    d2, a2 = strips(x - y, period * np.sqrt(2), half * np.sqrt(2))
+    first_on_top = (np.floor((x + y) / (period * np.sqrt(2))) + np.floor((x - y) / (period * np.sqrt(2)))) % 2 == 0
+    h1 = 8 + 3 * np.sqrt(np.clip(1 - (d1 / (half * np.sqrt(2))) ** 2, 0, 1))
+    h2 = 8 + 3 * np.sqrt(np.clip(1 - (d2 / (half * np.sqrt(2))) ** 2, 0, 1))
+    both = (a1 > 0) & (a2 > 0)
+    height = np.where(both, np.where(first_on_top, h1 + 3, h2 + 3), np.maximum(h1 * a1, h2 * a2))
+    under = both & np.where(first_on_top, d2 < d1 + 1e9, False)
+    color = BEIGE * (0.94 + 0.1 * value_noise(size, 12, 221, 3))[..., None]
+    # the band underneath darkens to steel blue near a crossing
+    shade = both & ~np.where(first_on_top, a1 >= a2, a2 > a1)
+    color = np.where(shade[..., None], STEEL_BLUE * 1.2, color)
+    rgb = finish(np.ascontiguousarray(color), height, 0.3)
+    return rgb, np.maximum(a1, a2)
+
+
+def striped_net(size=512):
+    """Striped Net, one block (texture_span 1): upright slats, pale steel and steel blue in turn, with see-through
+    slots between, held by a pale rail across the middle of the block. Returns (colour, alpha)."""
+    y, x = grid(size)
+    n = 4
+    p = size / n
+    u = x % p
+    slat = (u > p * 0.12) & (u < p * 0.62)
+    k = np.floor(x / p)
+    rail = np.abs(y - size / 2) < p * 0.18
+    solid = slat | rail
+    du = np.minimum(u - p * 0.12, p * 0.62 - u)
+    height = np.where(rail, 12 + 3 * bevel(p * 0.18 - np.abs(y - size / 2), 5), 8 + 3 * bevel(du, 5))
+    noise = (0.94 + 0.1 * value_noise(size, 12, 231, 3))[..., None]
+    color = np.where(((k % 2 == 1) & ~rail)[..., None], STEEL_BLUE * 1.15, BEIGE) * noise
+    rgb = finish(np.ascontiguousarray(color), height, 0.3)
+    return rgb, np.where(solid, 1.0, 0.0)
+
+
+def square_mesh(size=512):
+    """Square Mesh, one block (texture_span 1): a cast frame in orange-painted steel, two square openings a side
+    with rounded corners, chipped to bare steel on the edges. Returns (colour, alpha)."""
+    y, x = grid(size)
+    p = size / 2
+    u, v = x % p, y % p
+    w = p * 0.13
+    c = p / 2
+    # the opening: a rounded square; distance from its outline
+    q = np.maximum(np.abs(u - c), np.abs(v - c))
+    rr = p * 0.12
+    ox, oy = np.maximum(np.abs(u - c) - (c - w - rr), 0), np.maximum(np.abs(v - c) - (c - w - rr), 0)
+    corner = np.hypot(ox, oy)
+    open_ = corner < rr
+    edge = rr - corner
+    height = 12 - 6 * np.clip(1 - (-edge) / 10, 0, 1)
+    color = ORANGE_STEEL * (0.92 + 0.12 * value_noise(size, 10, 241, 3))[..., None]
+    chips = (smoothstep(value_noise(size, 48, 242, 2), 0.72, 0.76) > 0.5) & (-edge < 8)
+    color = np.where(chips[..., None], STEEL * 0.9, color)
+    rgb = finish(np.ascontiguousarray(color), height, 0.32)
+    return rgb, np.where(open_, 0.0, 1.0)
+
+
+def worn_metal(size=1024):
+    """Worn Metal over 4 x 4 blocks (texture_span 4): sage-green painted steel plates, two blocks square and offset
+    half a block, joined by rusty brown seams with bolts at the corners; the paint is scuffed and chipped."""
+    y, x = grid(size)
+    B = size / 4
+    P = 2 * B
+    u, v = (x + B / 2) % P, (y + B / 2) % P
+    du, dv = np.minimum(u, P - u), np.minimum(v, P - v)
+    seam = np.minimum(du, dv) < B * 0.06
+    height = 10 * bevel(np.minimum(du, dv) - B * 0.06, 10) + 2
+    paint = np.array([116, 146, 122]) * (0.9 + 0.16 * value_noise(size, 6, 251, 4))[..., None]
+    rust = np.array([122, 84, 52]) * (0.85 + 0.25 * value_noise(size, 24, 252, 3))[..., None]
+    wear = smoothstep(value_noise(size, 20, 253, 4) + 0.35 * (1 - bevel(np.minimum(du, dv), B * 0.25)), 0.72, 0.8)
+    color = np.where(seam[..., None], rust, paint * (1 - wear[..., None]) + STEEL_DARK * 1.2 * wear[..., None])
+    height -= 1.5 * wear
+    # scratches: thin bright lines along the plates
+    scratch = smoothstep(stretched_noise(size, 96, 3, 254, 1), 0.86, 0.88) * (1 - seam)
+    color = color + 30 * scratch[..., None]
+    color = np.ascontiguousarray(color)
+    centers = [((i * P - B / 2 + s * B * 0.16) % size, (j * P - B / 2 + t * B * 0.16) % size)
+               for i in range(2) for j in range(2) for s in (-1, 1) for t in (-1, 1)]
+    height, color = bolts(height, color, size, centers, 7, STEEL * 0.95)
+    return finish(color, height, 0.3)
+
+
+def hull_floor(size=1024):
+    """Hull Floor over 2 x 2 blocks (texture_span 2): light steel deck plates offset half a block, each a field of
+    raised anti-slip bars turned a different way per plate, and a steel-blue plate in each repeat."""
+    y, x = grid(size)
+    B = size / 2
+    u, v = (x + B / 2) % B, (y + B / 2) % B
+    qi = np.floor(((x + B / 2) % size) / B).astype(int)
+    qj = np.floor(((y + B / 2) % size) / B).astype(int)
+    q = qi + 2 * qj
+    du, dv = np.minimum(u, B - u), np.minimum(v, B - v)
+    rim = np.minimum(du, dv)
+    angles = np.array([np.pi / 4, -np.pi / 4, 0.0, np.pi / 2])[q]
+    t = u * np.cos(angles) + v * np.sin(angles)
+    period = B / 9
+    bars = np.abs((t % period) - period / 2) < period * 0.22
+    inner = rim > B * 0.08
+    height = 4 + 6 * bevel(rim, 8) + np.where(bars & inner, 5, 0)
+    height = blur_wrap(height, 1.2)
+    noise = (0.94 + 0.1 * value_noise(size, 14, 261, 3))[..., None]
+    base = np.where((q == 1)[..., None], STEEL_BLUE * 1.15, STEEL * 1.02)
+    color = base * noise
+    color = np.where((bars & inner)[..., None], color * 0.62, color)
+    return finish(np.ascontiguousarray(color), height, 0.3)
+
+
+def painted_wall(size=1024):
+    """Painted Wall over 4 x 4 blocks (texture_span 4): off-white paint over plaster, a soft blue lower band two
+    blocks high under a thin trim line, speckled with wear and the odd chip."""
+    y, x = grid(size)
+    B = size / 4
+    height = 3 * value_noise(size, 10, 271, 4)
+    lower = y > 2 * B
+    trim = np.abs(y - 2 * B) < B * 0.035
+    white = np.array([232, 228, 216]) * (0.95 + 0.07 * value_noise(size, 8, 272, 3))[..., None]
+    blue = np.array([150, 176, 204]) * (0.94 + 0.08 * value_noise(size, 8, 273, 3))[..., None]
+    color = np.where(lower[..., None], blue, white)
+    color = np.where(trim[..., None], STEEL_BLUE * 1.2, color)
+    height = np.where(trim, 6, height)
+    speck = smoothstep(value_noise(size, 300, 274, 1), 0.86, 0.9)
+    color = color * (1 - 0.3 * speck[..., None])
+    chip = smoothstep(value_noise(size, 40, 275, 2), 0.82, 0.85)
+    color = color * (1 - chip[..., None]) + np.array([182, 172, 154]) * chip[..., None]
+    height -= 1.5 * chip
+    # the paint wraps the block in bands at 2 blocks; the top half of the next repeat is white again
+    return finish(np.ascontiguousarray(color), height, 0.25)
+
+
+def worn_tile(size=1024):
+    """Worn Tile over 2 x 2 blocks (texture_span 2): sage-green glazed tiles laid in an octagon and small-square
+    pattern, offset half a block, crazed and chipped down to the grey body here and there."""
+    y, x = grid(size)
+    B = size / 2
+    T = B / 2                                   # one octagon tile
+    u, v = (x + T / 2) % T - T / 2, (y + T / 2) % T - T / 2
+    c = T / (2 + np.sqrt(2))                    # the corner cut of a regular octagon T wide
+    gap = T * 0.025
+    oct_edge = np.minimum(T / 2 - np.maximum(np.abs(u), np.abs(v)), (T - c - np.abs(u) - np.abs(v)) / np.sqrt(2))
+    in_oct = oct_edge > gap
+    # the small squares fill the corners where four octagons meet
+    cu, cv = T / 2 - np.abs(u), T / 2 - np.abs(v)
+    sq_edge = (c - cu - cv) / np.sqrt(2)
+    in_sq = sq_edge > gap
+    tile = in_oct | in_sq
+    edge = np.where(in_oct, oct_edge, sq_edge) - gap
+    height = np.where(tile, 6 + 3 * bevel(edge, 6), 1.5)
+    glaze = np.array([128, 158, 136]) * (0.9 + 0.16 * value_noise(size, 6, 281, 4))[..., None]
+    glaze = np.where(in_sq[..., None], np.array([96, 120, 118]) * 1.0, glaze)
+    grout = np.array([88, 92, 84])
+    color = np.where(tile[..., None], glaze, grout)
+    chip = smoothstep(value_noise(size, 18, 282, 3), 0.76, 0.8) * tile
+    color = color * (1 - chip[..., None]) + np.array([150, 140, 120]) * chip[..., None]
+    height -= 3 * chip
+    craze = smoothstep(np.abs(value_noise(size, 40, 283, 2) - 0.5), 0.0, 0.012)
+    color = color * (0.85 + 0.15 * craze)[..., None]
+    return finish(np.ascontiguousarray(color), height, 0.3)
+
+
+def ice(size=1024):
+    """Ice over 2 x 2 blocks (texture_span 2): clear blue ice, cloudy deep down, with long pale cracks and frosted
+    patches near the surface. Returns (colour, alpha): mostly solid, a little see-through where it is clear."""
+    y, x = grid(size)
+    deep = value_noise(size, 4, 291, 4)
+    cloud = value_noise(size, 10, 292, 4)
+    color = (np.array([36, 92, 150]) * (1 - deep[..., None]) + np.array([96, 162, 210]) * deep[..., None])
+    color = color + 50 * smoothstep(cloud, 0.55, 0.85)[..., None]
+    cracks = np.zeros((size, size))
+    for k, seed in enumerate((293, 294, 295)):
+        n = value_noise(size, 6 + 3 * k, seed, 3)
+        cracks = np.maximum(cracks, 1 - smoothstep(np.abs(n - 0.5), 0.0, 0.006 + 0.002 * k))
+    color = color + 110 * cracks[..., None]
+    frost = smoothstep(value_noise(size, 16, 296, 3), 0.62, 0.8)
+    color = color * (1 - 0.5 * frost[..., None]) + np.array([210, 230, 240]) * 0.5 * frost[..., None]
+    height = 3 * cloud + 2 * cracks - 1.5 * frost
+    rgb = finish(np.clip(color, 0, 255), height, 0.2)
+    alpha = np.clip(0.82 + 0.1 * frost + 0.08 * cracks + 0.06 * cloud, 0, 1)
+    return rgb, alpha
+
+
+# =====================================================================================================
+# Cracked Concrete and Concrete Slab (batch 3)
+# =====================================================================================================
+def voronoi_wrap(size, count, seed):
+    """For a wrapping cell pattern of ``count`` random points: each pixel's distance to its cell's edge (the
+    bisector with the second-nearest point) and which point's cell it is in, for cracks and slabs."""
+    rng = np.random.default_rng(seed)
+    pts = rng.uniform(0, size, (count, 2))
+    y, x = grid(size)
+    d1 = np.full((size, size), np.inf)
+    d2 = np.full((size, size), np.inf)
+    i1 = np.zeros((size, size), int)
+    i2 = np.zeros((size, size), int)
+    offs = []
+    for k, (px, py) in enumerate(pts):
+        dx = (x - px + size / 2) % size - size / 2
+        dy = (y - py + size / 2) % size - size / 2
+        d = dx * dx + dy * dy
+        closer = d < d1
+        second = ~closer & (d < d2)
+        d2 = np.where(closer, d1, np.where(second, d, d2))
+        i2 = np.where(closer, i1, np.where(second, k, i2))
+        d1 = np.where(closer, d, d1)
+        i1 = np.where(closer, k, i1)
+        offs.append((dx, dy))
+    # distance to the bisector: (|p - b|^2 - |p - a|^2) / (2 |a - b|), with a and b wrapped
+    ab = pts[i2] - pts[i1]
+    ab = (ab + size / 2) % size - size / 2
+    edge = (d2 - d1) / (2 * np.maximum(np.sqrt((ab ** 2).sum(-1)), 1e-6))
+    return edge, i1
+
+
+def cracked_concrete(size=1024):
+    """Cracked Concrete over 2 x 2 blocks (texture_span 2): pale, sun-bleached concrete broken into irregular plates
+    by a web of dark cracks, the plates' edges chipped and a little raised, with pale dust in the cracks' lips."""
+    color, height = concrete_base(size, 301)
+    color = color * (np.array([206, 196, 168]) / np.array([170, 168, 160]))
+    wobble = 3 * (value_noise(size, 12, 302, 3) - 0.5)
+    edge, idx = voronoi_wrap(size, 26, 303)
+    edge = edge + wobble
+    crack = 1 - smoothstep(edge, 1.0, 3.5)
+    lip = smoothstep(edge, 2.5, 5.0) * (1 - smoothstep(edge, 5.0, 12.0))
+    fine = np.zeros((size, size))
+    for k, seed in enumerate((304, 305)):
+        n = value_noise(size, 5 + 3 * k, seed, 3)
+        fine = np.maximum(fine, (1 - smoothstep(np.abs(n - 0.5), 0.0, 0.004)) * smoothstep(value_noise(size, 6, seed + 9, 2), 0.45, 0.6))
+    rng = np.random.default_rng(306)
+    tilt = rng.uniform(-1.5, 1.5, 26)[idx]
+    height = height + 1.0 * lip - 3.5 * crack - 2 * fine
+    color = color * (1 + 0.05 * tilt / 1.5)[..., None]
+    color = color * (1 - 0.6 * crack - 0.35 * fine)[..., None] + np.array([226, 218, 196]) * (0.25 * lip)[..., None]
+    return finish(np.clip(color, 0, 255), height, 0.3)
+
+
+def concrete_slab(size=1024):
+    """Concrete Slab over 2 x 2 blocks (texture_span 2): tan cast slabs, two to a block side, set apart by deep
+    dark joints that wander a little, each slab its own shade with chipped corners and a few hairline cracks."""
+    y, x = grid(size)
+    color, height = concrete_base(size, 311)
+    color = color * (np.array([198, 150, 98]) / np.array([170, 168, 160]))
+    S = size / 4
+    jx = 5 * (value_noise(size, 6, 312, 2) - 0.5)
+    jy = 5 * (value_noise(size, 6, 313, 2) - 0.5)
+    u, v = (x + jx) % S, (y + jy) % S
+    du, dv = np.minimum(u, S - u), np.minimum(v, S - v)
+    d = np.minimum(du, dv)
+    r = S * 0.08                                   # rounded, chipped corners
+    near = (du < r) & (dv < r)
+    d = np.where(near, r - np.sqrt((r - du) ** 2 + (r - dv) ** 2), d)
+    d = d - 6 * value_noise(size, 48, 314, 2) * smoothstep(value_noise(size, 10, 318, 2), 0.55, 0.75)
+    joint = 1 - smoothstep(d, 4.0, 9.0)
+    cell = (np.floor((x + jx) / S) % 4 + 4 * (np.floor((y + jy) / S) % 4)).astype(int)
+    rng = np.random.default_rng(315)
+    shade = rng.uniform(0.9, 1.08, 16)[cell]
+    n = value_noise(size, 7, 316, 3)
+    hair = (1 - smoothstep(np.abs(n - 0.5), 0.0, 0.004)) * smoothstep(value_noise(size, 5, 317, 2), 0.5, 0.62)
+    height = height + 3 * bevel(d, 14) - 2.5 * joint - 1.5 * hair
+    color = color * shade[..., None] * (1 - 0.7 * joint - 0.4 * hair)[..., None]
+    return finish(np.clip(color, 0, 255), height, 0.32)
+
+
 # name: (drawing function, what it returns)
 TEXTURES = {
     "sand": sand,
@@ -372,7 +689,22 @@ TEXTURES = {
     "wood_3": wood_3,
     "concrete_2": concrete_2,
     "concrete_3": concrete_3,
+    "extruded_metal": extruded_metal,
+    "punched_steel": punched_steel,
+    "solid_net": solid_net,
+    "striped_net": striped_net,
+    "square_mesh": square_mesh,
+    "worn_metal": worn_metal,
+    "hull_floor": hull_floor,
+    "painted_wall": painted_wall,
+    "worn_tile": worn_tile,
+    "ice": ice,
+    "cracked_concrete": cracked_concrete,
+    "concrete_slab": concrete_slab,
 }
+
+# The textures with a see-through alpha channel.
+ALPHA = {"glass_tile", "punched_steel", "solid_net", "striped_net", "square_mesh", "ice"}
 
 
 def main():
@@ -383,7 +715,7 @@ def main():
     os.makedirs(out, exist_ok=True)
     for name in names:
         result = TEXTURES[name]()
-        if name == "glass_tile":
+        if name in ALPHA:
             save(os.path.join(out, f"{name}.png"), *result)
         elif name == "concrete_3":
             save(os.path.join(out, f"{name}.png"), result[0])

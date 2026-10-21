@@ -1,0 +1,26 @@
+{
+  "id": "cracked_concrete_wedge",
+  "name": "Cracked Concrete Wedge",
+  "description": "Cracked Concrete Block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 4.5,
+  "durability": 3,
+  "friction": 0.6,
+  "buoyancy": 0.4,
+  "flammable": false,
+  "stack_size": 256,
+  "sound_material": "concrete",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/cracked_concrete_wedge.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.9,
+    "metallic": 0,
+    "texture": "textures/blocks/cracked_concrete.png",
+    "texture_span": 2
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/cracked_concrete_wedge.glb"
+  }
+}

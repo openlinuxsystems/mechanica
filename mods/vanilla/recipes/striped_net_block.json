@@ -1,0 +1,24 @@
+{
+  "id": "striped_net_block",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 5
+    },
+    {
+      "item": "paint_ammo",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "striped_net_block",
+      "count": 20
+    }
+  ],
+  "time": 5,
+  "order": 137
+}

@@ -1,0 +1,21 @@
+{
+  "id": "solid_net_block",
+  "name": "Solid Net Block",
+  "description": "Flat steel bands woven into a lattice. Tougher than the Net Block, and still see-through.",
+  "category": "block",
+  "mass": 4.5,
+  "durability": 5,
+  "friction": 0.4,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 256,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/solid_net_block.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.45,
+    "metallic": 0.75,
+    "texture": "textures/blocks/solid_net.png"
+  }
+}

@@ -59,12 +59,12 @@ public partial class VanillaBlocksTest : StagedTest
             if (_batch is not { IsCompleted: true })
                 return false;
             var result = _batch.Result;
-            Check(result.Succeeded && result.Exports.Count == 120, $"the batch exports 62 parts and 58 recipes ({string.Join("; ", result.Diagnostics)})");
+            Check(result.Succeeded && result.Exports.Count == 169, $"the batch exports 86 parts and 83 recipes ({string.Join("; ", result.Diagnostics)})");
             var made = Directory.GetFiles(_scratchMod, "*", SearchOption.AllDirectories)
                 .Select(f => Path.GetRelativePath(_scratchMod, f).Replace('\\', '/'))
                 .Where(IsBatchOutput)
                 .Order(StringComparer.Ordinal).ToList();
-            Check(made.Count == 244, $"it writes a part, an editor source and a mesh for each, and the recipes ({made.Count} files)");
+            Check(made.Count == 341, $"it writes a part, an editor source and a mesh for each, and the recipes ({made.Count} files)");
             var differing = made.Where(f => !File.Exists(Path.Combine(VanillaDir, f))
                 || !File.ReadAllBytes(Path.Combine(VanillaDir, f)).AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(_scratchMod, f)))).ToList();
             Check(differing.Count == 0, $"every file matches mods/vanilla (differing: {string.Join(", ", differing)}); re-run tools/author-vanilla.sh");
@@ -78,7 +78,7 @@ public partial class VanillaBlocksTest : StagedTest
                 _content = ModLoader.LoadAll(ModPaths.ModsRoot);
                 Check(!_content.HasErrors, $"the mods load ({string.Join("; ", _content.Diagnostics)})");
                 _blocks = [.. _content.Parts.Values.Where(p => p.Definition.Category == PartCategory.Block).Select(p => p.QualifiedId).Order()];
-                Check(_blocks.Count == 62, $"vanilla has 62 blocks and wedges ({_blocks.Count})");
+                Check(_blocks.Count == 86, $"vanilla has 86 blocks and wedges ({_blocks.Count})");
                 _sandbox = new SandboxScreen { Name = "Sandbox", LoadContent = () => _content };
                 AddChild(_sandbox);
             }

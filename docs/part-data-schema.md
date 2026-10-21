@@ -660,7 +660,7 @@ one place. Vanilla's groups:
 
 | Order | Group | Vanilla recipes, in order |
 |-------|-------|---------------------------|
-| 100 | Blocks | Each block then its wedge, scrap first: scrap wood, scrap metal, scrap stone, sand, Wood Blocks 1-3, cardboard, barrier, insulation, carpet, Metal Blocks 1-3, net, diamond plate, aluminum, rusted metal, path light, hull plate, brick, tile, Concrete Blocks 1-3, plaster, glass, glass tile, armored glass, plastic, bubble plastic |
+| 100 | Blocks | Each block then its wedge, scrap first: scrap wood, scrap metal, scrap stone, sand, Wood Blocks 1-3, cardboard, barrier, insulation, carpet, Metal Blocks 1-3, extruded metal, punched steel, net, solid net, striped net, square mesh, diamond plate, aluminum, rusted metal, worn metal, path light, hull plate, hull floor, brick, tile, worn tile, Concrete Blocks 1-3, cracked concrete, concrete slab, plaster, painted wall, glass, glass tile, armored glass, ice, plastic, bubble plastic |
 | 200 | Ramps, stairs and railings | `ramp_block`, `stairs_block`, `ladder`, `metal_railing` |
 | 300 | Beams and frames | `support_pillar`, `support_bracket`, `metal_column`, `ibeam_short`, `ibeam_long`, `door_frame`, `window_frame` |
 | 400 | Pipes | `small_pipe_short`, `small_pipe_long`, `small_pipe_corner`, `small_pipe_tee`, `small_pipe_cross`, `large_pipe_short`, `large_pipe_long`, `large_pipe_corner`, `large_pipe_tee` |

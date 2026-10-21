@@ -1,0 +1,24 @@
+{
+  "id": "concrete_slab_block",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_stone_block",
+      "count": 10
+    },
+    {
+      "item": "water_bucket_full",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "concrete_slab_block",
+      "count": 10
+    }
+  ],
+  "time": 5,
+  "order": 169
+}

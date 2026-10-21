@@ -1,0 +1,20 @@
+{
+  "id": "punched_steel_block",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 10
+    }
+  ],
+  "outputs": [
+    {
+      "item": "punched_steel_block",
+      "count": 20
+    }
+  ],
+  "time": 5,
+  "order": 131
+}

@@ -47,6 +47,95 @@
       "model": [{ "kind": "mesh", "mesh": "meshes/items/crude_oil.glb" }]
     },
     {
+      "file": "parts/ember.json",
+      "template": "item",
+      "set": {
+        "name": "Ember",
+        "description": "A log of charcoal still glowing inside, held between two bolted caps. Found in the ashes of burnt trees; the Fabricator kindles more from wood. Glass, Glass Tile, Armored Glass and Metal Blocks 2 and 3 need it.",
+        "category": "resource",
+        "loose": true,
+        "mass": 6,
+        "durability": 2,
+        "friction": 0.5,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [1, 1, 1],
+        "icon": "textures/items/ember_icon.png",
+        "visual": { "color": "#ffffff", "roughness": 0.8, "metallic": 0 }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/ember.glb" }],
+      "recipes": [
+        {
+          "id": "ember",
+          "stations": ["fabricator"],
+          "inputs": [
+            {
+              "item": "scrap_wood_block",
+              "count": 50
+            },
+            {
+              "item": "ember",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "ember",
+              "count": 5
+            }
+          ],
+          "time": 10,
+          "order": 915
+        }
+      ]
+    },
+    {
+      "file": "parts/cotton.json",
+      "template": "item",
+      "set": {
+        "name": "Cotton",
+        "description": "Soft white fluff from cotton bolls, tied in a bundle. Wild cotton grows in the Autumn Forest; plant Cotton Seed to farm it. The Carpet Block is woven from it. Flammable.",
+        "category": "resource",
+        "loose": true,
+        "mass": 3,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.3,
+        "flammable": true,
+        "stack_size": 20,
+        "sound_material": "fabric",
+        "size": [1, 1, 1],
+        "icon": "textures/items/cotton_icon.png",
+        "visual": { "color": "#ffffff", "roughness": 0.95, "metallic": 0 },
+        "sounds": { "pickup": "pickup_produce" }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/cotton.glb" }]
+    },
+    {
+      "file": "parts/beeswax.json",
+      "template": "item",
+      "set": {
+        "name": "Beeswax",
+        "description": "A slab of golden comb cut from a wild beehive. Hives cling to the sides of large rocks: break one to collect it. Worn Tile is set with it. Flammable.",
+        "category": "resource",
+        "loose": true,
+        "mass": 6,
+        "durability": 2,
+        "friction": 0.6,
+        "buoyancy": 0.3,
+        "flammable": true,
+        "stack_size": 10,
+        "sound_material": "plastic",
+        "size": [1, 1, 1],
+        "icon": "textures/items/beeswax_icon.png",
+        "visual": { "color": "#ffffff", "roughness": 0.45, "metallic": 0 },
+        "sounds": { "pickup": "pickup_produce" }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/beeswax.glb" }]
+    },
+    {
       "file": "parts/component_kit.json",
       "template": "item",
       "set": {
@@ -192,6 +281,24 @@
         "script": "scripts/seed.lua"
       },
       "model": [{ "kind": "mesh", "mesh": "meshes/items/tomato_seed.glb" }]
+    },
+    {
+      "file": "parts/cotton_seed.json",
+      "template": "item",
+      "set": {
+        "name": "Cotton Seed",
+        "description": "Plant in watered soil. Grows into a cotton bush; pick its bolls for Cotton.",
+        "category": "consumable",
+        "mass": 0.05,
+        "stack_size": 50,
+        "icon": "textures/items/cotton_seed_icon.png",
+        "visual": { "color": "#ffffff" },
+        "held": { "mesh": "meshes/items/cotton_seed.glb", "offset": [-0.028, 0.062, -0.035], "rotation": [0, 90, 90] },
+        "sounds": { "pickup": "seed_pickup", "place": "seed_place" },
+        "seed": { "crop": "cotton", "grow_time": 300, "yield": 2, "seeds": 1, "seeds_max": 2, "value": 1, "plant": "meshes/crops/cotton_plant.glb" },
+        "script": "scripts/seed.lua"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/cotton_seed.glb" }]
     },
     {
       "file": "parts/carrot.json",

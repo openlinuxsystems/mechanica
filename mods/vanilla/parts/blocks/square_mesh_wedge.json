@@ -1,0 +1,25 @@
+{
+  "id": "square_mesh_wedge",
+  "name": "Square Mesh Wedge",
+  "description": "Square Mesh Block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 1.5,
+  "durability": 3,
+  "friction": 0.2,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 256,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/square_mesh_wedge.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.5,
+    "metallic": 0.4,
+    "texture": "textures/blocks/square_mesh.png"
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/square_mesh_wedge.glb"
+  }
+}

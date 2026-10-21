@@ -1,0 +1,20 @@
+{
+  "id": "solid_net_block",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block_2",
+      "count": 5
+    }
+  ],
+  "outputs": [
+    {
+      "item": "solid_net_block",
+      "count": 20
+    }
+  ],
+  "time": 5,
+  "order": 135
+}

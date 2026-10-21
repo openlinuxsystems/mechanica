@@ -1514,13 +1514,10 @@ public partial class CaptureScene : Node
         "metal", "scrap_metal", "rusted_metal", "aluminum", "diamond_plate", "hull_plate", "glass", "armored_glass", "net", "path_light",
     ];
 
-    // The first batch of blocks matched to the full block list, with their wedges, in a row behind the others.
+    // The latest batch of blocks matched to the full block list (batch 3), with their wedges, in a row behind the others.
     private static readonly (string Block, string Wedge)[] NewBlocks =
     [
-        ("sand_block", "sand_wedge"), ("wood_block_2", "wood_wedge_2"), ("wood_block_3", "wood_wedge_3"),
-        ("metal_block_2", "metal_wedge_2"), ("metal_block_3", "metal_wedge_3"), ("concrete_block_2", "concrete_wedge_2"),
-        ("concrete_block_3", "concrete_wedge_3"), ("glass_tile_block", "glass_tile_wedge"), ("plastic_block", "plastic_wedge"),
-        ("bubble_plastic_block", "bubble_plastic_wedge"),
+        ("cracked_concrete_block", "cracked_concrete_wedge"), ("concrete_slab_block", "concrete_slab_wedge"),
     ];
 
     // A 3 by 3 panel of each block material with wedges in front, in two rows of ten, built through the Action API.

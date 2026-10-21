@@ -1,0 +1,25 @@
+{
+  "id": "cotton",
+  "name": "Cotton",
+  "description": "Soft white fluff from cotton bolls, tied in a bundle. Wild cotton grows in the Autumn Forest; plant Cotton Seed to farm it. The Carpet Block is woven from it. Flammable.",
+  "category": "resource",
+  "mass": 3,
+  "durability": 2,
+  "friction": 0.4,
+  "buoyancy": 0.3,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "fabric",
+  "size": [1, 1, 1],
+  "mesh": "meshes/items/cotton.glb",
+  "icon": "textures/items/cotton_icon.png",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.95,
+    "metallic": 0
+  },
+  "sounds": {
+    "pickup": "pickup_produce"
+  },
+  "loose": true
+}
