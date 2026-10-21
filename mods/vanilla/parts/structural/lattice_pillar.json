@@ -1,0 +1,19 @@
+{
+  "id": "lattice_pillar",
+  "name": "Lattice Pillar",
+  "description": "A 5 by 5 by 5 block lattice tower section with a deck on top. Stack them on a Pillar Stand.",
+  "category": "decor",
+  "mass": 10.5,
+  "durability": 6,
+  "friction": 0.7,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [5, 5, 5],
+  "mesh": "meshes/parts/lattice_pillar.glb",
+  "icon": "textures/items/lattice_pillar_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

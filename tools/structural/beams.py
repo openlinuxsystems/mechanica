@@ -284,7 +284,7 @@ def lattice_pillar():
         S.bolt(g, d * (p + 0.016), d, 0.01)
     top = h - 0.014
     plate(g, (0, 0, top - 0.025), (h, h, 0.025), "blue_dark", bevel=0.008)
-    box(g, (0, 0, top - 0.004), (h - 0.06, h - 0.06, 0.004), "bone", bevel=0.003)
+    box(g, (0, 0, top - 0.002), (h - 0.06, h - 0.06, 0.005), "bone", bevel=0.003)
     for x in (-h + 0.03, h - 0.03):
         for y in (-h + 0.03, h - 0.03):
             S.bolt(g, (x, y, top), (0, 0, 1), 0.014)
