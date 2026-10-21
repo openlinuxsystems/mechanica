@@ -12,12 +12,10 @@
   "stack_size": 50,
   "sound_material": "plastic",
   "size": [1, 1, 1],
-  "mesh": "meshes/glowstick.glb",
+  "mesh": "meshes/parts/glowstick.glb",
+  "icon": "textures/items/glowstick_icon.png",
   "visual": {
-    "color": "#6aff6a",
-    "roughness": 0.3,
-    "metallic": 0,
-    "emission": "#40ff40"
+    "color": "#ffffff"
   },
   "script": "scripts/light.lua",
   "light": {

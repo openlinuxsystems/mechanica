@@ -1,7 +1,7 @@
 """Review renders for the batch 4 part models (run through ``tools/<part>/build_<part>.py --render OUT_DIR``).
 
 For a part it renders the three-quarter, front and side views of every level (all five in a row for a part with
-levels), and lays them out with the level icons and each level's triangles and size on one labelled sheet:
+levels; a lamp's off and on states in a row, labelled, from ``light_kit.review``), and lays them out with the level icons and each level's triangles and size on one labelled sheet:
 
 * ``OUT_DIR/<part>_three_quarter.png``, ``<part>_front.png``, ``<part>_side.png`` - one view, every level in a row;
 * ``OUT_DIR/<part>_sheet.png`` - the part's review sheet.
@@ -93,7 +93,7 @@ def row(paths, title, label_levels):
     for i, (level, p) in enumerate(paths):
         im.paste(Image.open(p).convert("RGB"), (i * W, head))
         if label_levels:
-            d.text((i * W + 14, 10), f"LEVEL {level}", fill=rl.INK, font=rl.font(24, True))
+            d.text((i * W + 14, 10), level if isinstance(level, str) else f"LEVEL {level}", fill=rl.INK, font=rl.font(24, True))
     return im
 
 
@@ -124,7 +124,8 @@ def sheet(name, title, lines, paths, icons, stats, out: Path):
         bg.alpha_composite(ic)
         sh.paste(bg.convert("RGB"), (40 + i * (W if leveled else 300), y + 40))
     y += icon_h
-    d.text((40, y), "MODEL" if not leveled else "MODELS BY LEVEL", fill=rl.INK, font=rl.font(26, True))
+    states = isinstance(paths["front"][0][0], str)
+    d.text((40, y), "MODEL" if not leveled or states else "MODELS BY LEVEL", fill=rl.INK, font=rl.font(26, True))
     for i, s in enumerate(stats):
         d.text((40, y + 40 + 36 * i), s, fill=rl.INK, font=rl.font(22))
     sh.save(out / f"{name}_sheet.png")

@@ -1,0 +1,48 @@
+{
+  "id": "protector_sign",
+  "name": "Protector Sign",
+  "description": "A colony lightbox for a wall, a shield on its face: it marks what is guarded. It glows while lit. Use it to switch it off and on; a linked switch also works.",
+  "category": "light",
+  "mass": 7.5,
+  "durability": 3,
+  "friction": 0.7,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [3, 2, 1],
+  "mesh": "meshes/parts/protector_sign.glb",
+  "icon": "textures/items/protector_sign_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, 0, 0.125],
+      "normal": [0, 0, 1]
+    }
+  ],
+  "script": "scripts/light.lua",
+  "sounds": {
+    "on": "light_on",
+    "off": "light_off"
+  },
+  "logic": {
+    "inputs": 1,
+    "use": "toggle"
+  },
+  "light": {
+    "kind": "omni",
+    "color": "#fff4dd",
+    "energy": 1.5,
+    "range": 6,
+    "offset": [0, 0, -0.12]
+  },
+  "display": {
+    "clips": {
+      "readout": "pose"
+    }
+  }
+}

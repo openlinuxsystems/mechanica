@@ -27,7 +27,7 @@ public class VanillaCatalogTests
         "gas_container", "battery", "chemical_container", "fridge", "locker", "file_cabinet", "tool_cabinet",
         "wooden_crate", "metal_crate", "barrel", "fabricator", "portable_fabricator", "refiner", "dispenser", "respawn_bed",
         "radio", "beacon", "headlight", "spotlight", "warehouse_spotlight", "construction_light", "interior_light",
-        "warning_light",
+        "warning_light", "shack_light", "fluorescent_light", "packing_lamp", "frame_beam_light", "neon_sign", "protector_sign",
         // Resources, consumables, handheld weapons (produce_crate is left out for now)
         "component_kit", "circuit_board", "glue", "gasoline", "crude_oil", "battery_pack",
         "master_battery", "warehouse_key", "explosive_remnant", "scuttler_head", "carrot_seed", "potato_seed", "tomato_seed",
@@ -469,14 +469,132 @@ public class VanillaCatalogTests
     }
 
     [Theory]
+    // Parts map batch 5 (lights): the wiki's bars. The Frame Beam Light, Neon Sign, Packing Lamp, Protector Sign, Shack
+    // Light and Fluorescent Light are new; the Construction and Warning Lights are ours and keep their numbers.
+    [InlineData("headlight", 3, 3, 0.4, 0.4, false, 1)]
+    [InlineData("warehouse_spotlight", 6, 2, 0.4, 0.4, true, 20)]
+    [InlineData("interior_light", 7.5, 2, 0.5, 0.3, false, 20)]
+    [InlineData("spotlight", 7.5, 4, 0.4, 0.2, false, 20)]
+    [InlineData("frame_beam_light", 7.5, 4, 0.4, 0.1, false, 20)]
+    [InlineData("neon_sign", 3, 1, 0.5, 0.4, true, 20)]
+    [InlineData("packing_lamp", 6, 4, 0.5, 0.4, false, 1)]
+    [InlineData("protector_sign", 7.5, 3, 0.7, 0.1, false, 20)]
+    [InlineData("shack_light", 3, 2, 0.5, 0.4, true, 1)]
+    [InlineData("fluorescent_light", 7.5, 4, 0.4, 0.3, false, 20)]
+    public void LightsTakeTheWikiStats(string id, double mass, int durability, double friction, double buoyancy,
+        bool flammable, int stack) => VehiclePartsTakeTheWikiStats(id, mass, durability, friction, buoyancy, flammable, stack);
+
+    [Theory]
+    // Parts map batch 5: the Headlight takes the wiki's Craftbot recipe. SM cannot craft the warehouse and shack lights,
+    // so the Spotlight, Warehouse Spotlight and Interior Light keep ours and the new ones get a cheap recipe.
+    [InlineData("headlight", 5, "metal_block:1", "glass_block:1", "circuit_board:1", "glue:1")]
+    [InlineData("spotlight", 5, "scrap_metal_block:8", "component_kit:1", "circuit_board:1")]
+    [InlineData("warehouse_spotlight", 8, "scrap_metal_block:16", "component_kit:2", "circuit_board:1")]
+    [InlineData("interior_light", 3, "scrap_metal_block:4", "component_kit:1")]
+    [InlineData("frame_beam_light", 5, "metal_block:2", "glass_block:1")]
+    [InlineData("neon_sign", 5, "metal_block:2", "glass_block:2", "paint_ammo:1")]
+    [InlineData("packing_lamp", 5, "metal_block:2", "glass_block:1")]
+    [InlineData("protector_sign", 5, "metal_block:2", "circuit_board:1")]
+    [InlineData("fluorescent_light", 5, "metal_block:2", "glass_block:1")]
+    public void LightsTakeTheWikiRecipes(string id, float time, params string[] inputs) =>
+        VehiclePartsTakeTheWikiRecipes(id, time, inputs);
+
+    [Fact]
+    public void TheShackLightIsMadeFromScrapAtEitherFabricator()
+    {
+        // Scrap metal is the scrap tier, so the Portable Fabricator makes it as well as the Fabricator: one recipe at both.
+        var book = RecipeBook.Load(Vanilla.Value);
+        var recipe = book.Find("shack_light")!;
+
+        Assert.Equal(["vanilla:fabricator", "vanilla:portable_fabricator"], recipe.Stations);
+        Assert.Equal(["vanilla:scrap_metal_block:2", "vanilla:glass_block:1"], recipe.Inputs.Select(i => $"{i.Item}:{i.Count}"));
+        Assert.Equal(5f, recipe.Time);
+        Assert.Single(book.All, r => r.Outputs.Any(o => o.Item == "vanilla:shack_light"));
+    }
+
+    public static TheoryData<string> Lights => [.. Items.Where(id => Part(id).Category == PartCategory.Light && id != "beacon")];
+
+    [Theory]
+    [MemberData(nameof(Lights))]
+    public void EachLightHasItsOwnModelIconAndOnAndOffClips(string id)
+    {
+        // Parts map batch 5: a real model per light (tools/<id>/build_<id>.py) and its icon. A light that can go out
+        // plays its model's on and off clips from light.lua's "pose" readout; the glowstick is always lit.
+        var part = Part(id);
+        var mod = Path.Combine(TestMods.RepoRoot, "mods", "vanilla");
+
+        Assert.Equal($"meshes/parts/{id}.glb", part.Mesh);
+        Assert.Equal($"textures/items/{id}_icon.png", part.Icon);
+        Assert.True(File.Exists(Path.Combine(mod, part.Mesh!)), $"{id} has a model");
+        Assert.True(File.Exists(Path.Combine(mod, part.Icon!)), $"{id} has an icon");
+        Assert.True(File.Exists(Path.Combine(TestMods.RepoRoot, "tools", id, $"build_{id}.py")), $"{id} has its build script");
+        var clips = GlbAnimations(Path.Combine(mod, part.Mesh!));
+        if (id == "glowstick")
+        {
+            Assert.Null(part.Display);
+            Assert.Empty(clips);
+            return;
+        }
+        Assert.Equal("pose", part.Display?.Clips?.Readout);
+        Assert.Equal(["off", "on"], clips.Order(StringComparer.Ordinal));
+        Assert.Contains("part.display(\"pose\"", File.ReadAllText(Path.Combine(mod, part.Script!)), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("shack_light")]
+    [InlineData("neon_sign")]
+    public void TheShackLampsHaveABrightnessSetting(string id)
+    {
+        var brightness = Part(id).Settings!.Single(s => s.Id == "brightness");
+
+        Assert.Equal((1.0, 10.0, 10.0), ((double)brightness.Min!.Value, (double)brightness.Max!.Value, brightness.Default!.Value.GetDouble()));
+    }
+
+    [Fact]
+    public void LampsShineWarmWhiteAndNeverOrange()
+    {
+        // docs/art-direction.md: lamp light is warm white; the Warning Light is signal red, the Neon Sign mint, the Glowstick
+        // green and the Beacon cyan. No light is orange (Scrap Mechanic's signature, banned).
+        var coloured = new Dictionary<string, string>
+        {
+            ["warning_light"] = "#ff3d2e", ["neon_sign"] = "#7dffc4", ["glowstick"] = "#60ff70", ["beacon"] = "#38c8ff",
+        };
+        foreach (var id in Items.Where(id => Part(id).Category == PartCategory.Light))
+        {
+            var color = Part(id).Light!.Color!;
+            if (coloured.TryGetValue(id, out var expected))
+            {
+                Assert.Equal(expected, color);
+                continue;
+            }
+            var (r, g, b) = (Convert.ToInt32(color[1..3], 16), Convert.ToInt32(color[3..5], 16), Convert.ToInt32(color[5..7], 16));
+            Assert.True(r == 255 && g >= 240 && b >= 200 && b < g, $"{id} shines warm white ({color})");
+        }
+    }
+
+    // The clip names in a .glb's glTF JSON chunk.
+    private static List<string> GlbAnimations(string path)
+    {
+        var bytes = File.ReadAllBytes(path);
+        var length = BitConverter.ToInt32(bytes, 12);
+        using var doc = System.Text.Json.JsonDocument.Parse(bytes.AsMemory(20, length));
+        return doc.RootElement.TryGetProperty("animations", out var animations)
+            ? [.. animations.EnumerateArray().Select(a => a.GetProperty("name").GetString()!)]
+            : [];
+    }
+
+    [Theory]
     [InlineData("fabricator", "vanilla:wheel", "vanilla:big_wheel")]
     [InlineData("fabricator", "vanilla:gas_engine", "vanilla:electric_engine")]
     [InlineData("fabricator", "vanilla:switch", "vanilla:button")]
     [InlineData("fabricator", "vanilla:passenger_seat", "vanilla:saddle", "vanilla:drivers_seat", "vanilla:drivers_saddle", "vanilla:controller")]
     [InlineData("fabricator", "vanilla:toilet", "vanilla:bathtub")]
+    [InlineData("fabricator", "vanilla:shack_light", "vanilla:glowstick", "vanilla:fluorescent_light", "vanilla:packing_lamp",
+        "vanilla:interior_light", "vanilla:headlight", "vanilla:spotlight", "vanilla:construction_light", "vanilla:warning_light",
+        "vanilla:beacon", "vanilla:warehouse_spotlight", "vanilla:frame_beam_light", "vanilla:neon_sign", "vanilla:protector_sign")]
     [InlineData("portable_fabricator", "vanilla:scrap_wood_wedge", "vanilla:scrap_metal_wedge", "vanilla:scrap_seat",
         "vanilla:scrap_drivers_seat", "vanilla:scrap_wheel", "vanilla:scrap_gas_engine", "vanilla:gasoline", "vanilla:bearing_scrap",
-        "vanilla:switch_scrap", "vanilla:beacon_scrap", "vanilla:connect_tool")]
+        "vanilla:switch_scrap", "vanilla:shack_light", "vanilla:beacon_scrap", "vanilla:connect_tool")]
     public void RelatedRecipesSitTogetherScrapTierFirst(string station, params string[] ids)
     {
         var listed = RecipeBrowser.Ordered(RecipeBook.Load(Vanilla.Value).ForStation(station)).Select(r => r.QualifiedId).ToList();

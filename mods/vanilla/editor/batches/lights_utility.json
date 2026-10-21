@@ -1,7 +1,9 @@
 {
-  // Lights and utility parts (chunk 23): six lights, the glowstick, radio, beacon, horn, dispenser, saw blade,
+  // Lights and utility parts (chunk 23): twelve lights, the glowstick, radio, beacon, horn, dispenser, saw blade,
   // drill, water cannon and the mounted potato blaster. Their behaviour is in Lua (D2); a light's look is its
-  // light section. The numbers are placeholders until balance tuning. Re-run with tools/author-vanilla.sh.
+  // light section. Parts map batch 5 gave the lights the wiki's stats and recipes, six new lights (shack, fluorescent,
+  // packing, frame beam, neon, protector) and real models with on and off clips (tools/<part>/build_<part>.py).
+  // Re-run with tools/author-vanilla.sh.
   "format_version": 1,
   "parts": [
     {
@@ -9,36 +11,33 @@
       "template": "interactive",
       "set": {
         "name": "Headlight",
-        "description": "A small lamp for the front of a vehicle. It shines out of its face while its input is on, or all the time with nothing linked.",
+        "description": "A small lamp for the front of a vehicle. It shines out of its face while its input is on, or all the time with nothing linked. Paint it to change the colour of its light.",
         "category": "light",
-        "mass": 1,
-        "durability": 2,
-        "stack_size": 20,
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.4,
+        "flammable": false,
+        "stack_size": 1,
         "size": [1, 1, 1],
         "sockets": [{ "id": "base", "type": "structural", "position": [0, 0, 0.125], "normal": [0, 0, 1] }],
         "script": "scripts/light.lua",
-        "visual": { "color": "#d8d8d0", "roughness": 0.4, "metallic": 0.5, "emission": "#fff4dd" },
+        "icon": "textures/items/headlight_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "sounds": { "on": "light_on", "off": "light_off" },
         "logic": { "inputs": 1 },
-        "light": { "kind": "spot", "color": "#fff4dd", "energy": 4, "range": 30, "angle": 25, "offset": [0, 0, -0.1] }
+        "light": { "kind": "spot", "color": "#fff4dd", "energy": 4, "range": 30, "angle": 25, "offset": [0, 0, -0.12] },
+        "display": { "clips": { "readout": "pose" } },
+        "sound_material": "metal"
       },
-      "model": [
-        { "kind": "box", "size": [0.22, 0.22, 0.12], "position": [0, 0, 0.06] },
-        {
-          "kind": "cylinder",
-          "radius": 0.09,
-          "height": 0.06,
-          "position": [0, 0, -0.03],
-          "rotation": [90, 0, 0]
-        }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/headlight.glb" }],
       "recipes": [
         {
           "id": "headlight",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 4 }, { "item": "component_kit", "count": 1 }],
+          "inputs": [{ "item": "metal_block", "count": 1 }, { "item": "glass_block", "count": 1 }, { "item": "circuit_board", "count": 1 }, { "item": "glue", "count": 1 }],
           "outputs": [{ "item": "headlight", "count": 1 }],
-          "time": 3,
+          "time": 5,
           "order": 1630
         }
       ]
@@ -50,13 +49,17 @@
         "name": "Spotlight",
         "description": "A bright narrow beam on a swivel base. It shines toward its front while its input is on, or all the time with nothing linked.",
         "category": "light",
-        "mass": 4,
-        "durability": 3,
+        "mass": 7.5,
+        "durability": 4,
+        "friction": 0.4,
+        "buoyancy": 0.2,
+        "flammable": false,
         "stack_size": 20,
         "size": [2, 2, 2],
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.25, 0], "normal": [0, -1, 0] }],
         "script": "scripts/light.lua",
-        "visual": { "color": "#3f4448", "roughness": 0.4, "metallic": 0.5, "emission": "#fffbe8" },
+        "icon": "textures/items/spotlight_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "sounds": { "on": "light_on", "off": "light_off" },
         "logic": { "inputs": 1 },
         "light": {
@@ -65,29 +68,17 @@
           "energy": 6,
           "range": 40,
           "angle": 15,
-          "offset": [0, 0.07, -0.2]
-        }
+          "offset": [0, 0.07, -0.24]
+        },
+        "display": { "clips": { "readout": "pose" } },
+        "sound_material": "metal"
       },
-      "model": [
-        { "kind": "box", "size": [0.4, 0.06, 0.4], "position": [0, -0.22, 0] },
-        { "kind": "box", "size": [0.08, 0.16, 0.08], "position": [0, -0.11, 0] },
-        {
-          "kind": "cylinder",
-          "radius": 0.14,
-          "height": 0.3,
-          "position": [0, 0.07, -0.05],
-          "rotation": [90, 0, 0]
-        }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/spotlight.glb" }],
       "recipes": [
         {
           "id": "spotlight",
           "stations": ["fabricator"],
-          "inputs": [
-            { "item": "scrap_metal_block", "count": 8 },
-            { "item": "component_kit", "count": 1 },
-            { "item": "circuit_board", "count": 1 }
-          ],
+          "inputs": [{ "item": "scrap_metal_block", "count": 8 }, { "item": "component_kit", "count": 1 }, { "item": "circuit_board", "count": 1 }],
           "outputs": [{ "item": "spotlight", "count": 1 }],
           "time": 5,
           "order": 1640
@@ -101,13 +92,17 @@
         "name": "Warehouse Spotlight",
         "description": "A big floodlight that lights a whole yard. It shines toward its front while its input is on, or all the time with nothing linked.",
         "category": "light",
-        "mass": 10,
-        "durability": 5,
+        "mass": 6,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.4,
+        "flammable": true,
         "stack_size": 20,
         "size": [3, 3, 3],
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "script": "scripts/light.lua",
-        "visual": { "color": "#2f3438", "roughness": 0.4, "metallic": 0.5, "emission": "#fff8e0" },
+        "icon": "textures/items/warehouse_spotlight_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "sounds": { "on": "light_on", "off": "light_off" },
         "logic": { "inputs": 1 },
         "light": {
@@ -116,37 +111,17 @@
           "energy": 10,
           "range": 60,
           "angle": 20,
-          "offset": [0, 0.1, -0.33]
-        }
-      },
-      "model": [
-        { "kind": "box", "size": [0.6, 0.08, 0.6], "position": [0, -0.335, 0] },
-        { "kind": "box", "size": [0.12, 0.25, 0.12], "position": [0, -0.17, 0] },
-        {
-          "kind": "cylinder",
-          "radius": 0.25,
-          "height": 0.42,
-          "position": [0, 0.1, -0.1],
-          "rotation": [90, 0, 0]
+          "offset": [0, 0.1, -0.36]
         },
-        {
-          "kind": "cylinder",
-          "radius": 0.22,
-          "height": 0.02,
-          "operation": "subtract",
-          "position": [0, 0.1, -0.32],
-          "rotation": [90, 0, 0]
-        }
-      ],
+        "display": { "clips": { "readout": "pose" } },
+        "sound_material": "metal"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/warehouse_spotlight.glb" }],
       "recipes": [
         {
           "id": "warehouse_spotlight",
           "stations": ["fabricator"],
-          "inputs": [
-            { "item": "scrap_metal_block", "count": 16 },
-            { "item": "component_kit", "count": 2 },
-            { "item": "circuit_board", "count": 1 }
-          ],
+          "inputs": [{ "item": "scrap_metal_block", "count": 16 }, { "item": "component_kit", "count": 2 }, { "item": "circuit_board", "count": 1 }],
           "outputs": [{ "item": "warehouse_spotlight", "count": 1 }],
           "time": 8,
           "order": 1680
@@ -158,15 +133,19 @@
       "template": "interactive",
       "set": {
         "name": "Construction Light",
-        "description": "A work lamp on a tripod stand, tilted down to light the ground in front of it. Shines while its input is on, or all the time with nothing linked.",
+        "description": "A work lamp on a tripod mast, tilted down to light the ground in front of it. Shines while its input is on, or all the time with nothing linked.",
         "category": "light",
         "mass": 6,
         "durability": 3,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
         "stack_size": 20,
         "size": [2, 4, 2],
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.5, 0], "normal": [0, -1, 0] }],
         "script": "scripts/light.lua",
-        "visual": { "color": "#d9a520", "roughness": 0.4, "metallic": 0.5, "emission": "#fff2d0" },
+        "icon": "textures/items/construction_light_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "sounds": { "on": "light_on", "off": "light_off" },
         "logic": { "inputs": 1 },
         "light": {
@@ -175,15 +154,13 @@
           "energy": 5,
           "range": 25,
           "angle": 45,
-          "offset": [0, 0.38, -0.12],
+          "offset": [0, 0.29, -0.09],
           "direction": [0, -0.4, -1]
-        }
+        },
+        "display": { "clips": { "readout": "pose" } },
+        "sound_material": "metal"
       },
-      "model": [
-        { "kind": "cylinder", "radius": 0.03, "height": 0.8, "position": [0, -0.06, 0] },
-        { "kind": "box", "size": [0.42, 0.04, 0.42], "position": [0, -0.48, 0] },
-        { "kind": "box", "size": [0.36, 0.24, 0.14], "position": [0, 0.38, -0.03], "rotation": [-20, 0, 0] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/construction_light.glb" }],
       "recipes": [
         {
           "id": "construction_light",
@@ -200,23 +177,26 @@
       "template": "interactive",
       "set": {
         "name": "Interior Light",
-        "description": "A ceiling lamp for cabins and bases. Build it under a roof; it lights the room around it. Use it to switch it off and on; a linked switch also works.",
+        "description": "A square ceiling lamp for cabins and bases. Build it under a roof; it lights the room around it. Use it to switch it off and on; a linked switch also works.",
         "category": "light",
-        "mass": 1.5,
+        "mass": 7.5,
         "durability": 2,
+        "friction": 0.5,
+        "buoyancy": 0.3,
+        "flammable": false,
         "stack_size": 20,
         "size": [2, 1, 2],
         "sockets": [{ "id": "base", "type": "structural", "position": [0, 0.125, 0], "normal": [0, 1, 0] }],
         "script": "scripts/light.lua",
-        "visual": { "color": "#e8e4d8", "roughness": 0.4, "metallic": 0.5, "emission": "#fff0c8" },
+        "icon": "textures/items/interior_light_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "sounds": { "on": "light_on", "off": "light_off" },
         "logic": { "inputs": 1, "use": "toggle" },
-        "light": { "kind": "omni", "color": "#fff0c8", "energy": 1.5, "range": 8, "offset": [0, -0.06, 0] }
+        "light": { "kind": "omni", "color": "#fff0c8", "energy": 1.5, "range": 8, "offset": [0, -0.06, 0] },
+        "display": { "clips": { "readout": "pose" } },
+        "sound_material": "metal"
       },
-      "model": [
-        { "kind": "box", "size": [0.4, 0.04, 0.4], "position": [0, 0.105, 0] },
-        { "kind": "cylinder", "radius": 0.16, "height": 0.1, "position": [0, 0.03, 0] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/interior_light.glb" }],
       "recipes": [
         {
           "id": "interior_light",
@@ -233,24 +213,26 @@
       "template": "interactive",
       "set": {
         "name": "Warning Light",
-        "description": "An orange flashing lamp. It blinks while its input is on, or all the time with nothing linked.",
+        "description": "A red flashing lamp in a cage. It blinks while its input is on, or all the time with nothing linked.",
         "category": "light",
         "mass": 1,
         "durability": 2,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
         "stack_size": 20,
         "size": [1, 2, 1],
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.25, 0], "normal": [0, -1, 0] }],
         "script": "scripts/light.lua",
-        "visual": { "color": "#e06a10", "roughness": 0.4, "metallic": 0.5, "emission": "#ff8a20" },
+        "icon": "textures/items/warning_light_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "logic": { "inputs": 1 },
-        "light": { "kind": "omni", "color": "#ff8a20", "energy": 2, "range": 6, "offset": [0, 0.08, 0] },
-        "properties": { "blink": 1.0, "duty": 0.5 }
+        "light": { "kind": "omni", "color": "#ff3d2e", "energy": 2, "range": 6, "offset": [0, 0.08, 0] },
+        "display": { "clips": { "readout": "pose" } },
+        "properties": { "blink": 1.0, "duty": 0.5 },
+        "sound_material": "metal"
       },
-      "model": [
-        { "kind": "cylinder", "radius": 0.1, "height": 0.1, "position": [0, -0.2, 0] },
-        { "kind": "cylinder", "radius": 0.08, "height": 0.2 },
-        { "kind": "sphere", "radius": 0.08, "position": [0, 0.1, 0] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/warning_light.glb" }],
       "recipes": [
         {
           "id": "warning_light",
@@ -259,6 +241,236 @@
           "outputs": [{ "item": "warning_light", "count": 1 }],
           "time": 3,
           "order": 1660
+        }
+      ]
+    },
+    {
+      "file": "parts/shack_light.json",
+      "template": "interactive",
+      "set": {
+        "name": "Shack Light",
+        "description": "A bare bulb under a zinc shade, as the settlers hang in their shacks. Build it under a roof; it lights the room around it. Set its brightness with the Connect Tool. Use it to switch it off and on; a linked switch also works.",
+        "category": "light",
+        "mass": 3,
+        "durability": 2,
+        "friction": 0.5,
+        "buoyancy": 0.4,
+        "flammable": true,
+        "stack_size": 1,
+        "size": [2, 2, 2],
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, 0.25, 0], "normal": [0, 1, 0] }],
+        "script": "scripts/light.lua",
+        "icon": "textures/items/shack_light_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sounds": { "on": "light_on", "off": "light_off" },
+        "logic": { "inputs": 1, "use": "toggle" },
+        "settings": [
+          { "id": "brightness", "name": "Brightness", "type": "number", "min": 1, "max": 10, "step": 1, "default": 10 }
+        ],
+        "light": { "kind": "omni", "color": "#fff1cc", "energy": 2, "range": 8, "offset": [0, -0.1, 0] },
+        "display": { "clips": { "readout": "pose" } },
+        "sound_material": "metal"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/shack_light.glb" }],
+      "recipes": [
+        {
+          "id": "shack_light",
+          "stations": ["fabricator", "portable_fabricator"],
+          "inputs": [{ "item": "scrap_metal_block", "count": 2 }, { "item": "glass_block", "count": 1 }],
+          "outputs": [{ "item": "shack_light", "count": 1 }],
+          "time": 5,
+          "order": 1605
+        }
+      ]
+    },
+    {
+      "file": "parts/fluorescent_light.json",
+      "template": "interactive",
+      "set": {
+        "name": "Fluorescent Light",
+        "description": "A long ceiling batten with two tubes, from the colony's warehouses. Build it under a roof; it lights the room around it. Use it to switch it off and on; a linked switch also works.",
+        "category": "light",
+        "mass": 7.5,
+        "durability": 4,
+        "friction": 0.4,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "stack_size": 20,
+        "size": [4, 1, 2],
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, 0.125, 0], "normal": [0, 1, 0] }],
+        "script": "scripts/light.lua",
+        "icon": "textures/items/fluorescent_light_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sounds": { "on": "light_on", "off": "light_off" },
+        "logic": { "inputs": 1, "use": "toggle" },
+        "light": { "kind": "omni", "color": "#fff4dd", "energy": 3, "range": 12, "offset": [0, -0.06, 0] },
+        "display": { "clips": { "readout": "pose" } },
+        "sound_material": "metal"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/fluorescent_light.glb" }],
+      "recipes": [
+        {
+          "id": "fluorescent_light",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 2 }, { "item": "glass_block", "count": 1 }],
+          "outputs": [{ "item": "fluorescent_light", "count": 1 }],
+          "time": 5,
+          "order": 1615
+        }
+      ]
+    },
+    {
+      "file": "parts/packing_lamp.json",
+      "template": "interactive",
+      "set": {
+        "name": "Packing Lamp",
+        "description": "A caged tube lamp on two clip feet. It shines in the colour it is painted (warm white unpainted). Use it to switch it off and on; a linked switch also works.",
+        "category": "light",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.5,
+        "buoyancy": 0.4,
+        "flammable": false,
+        "stack_size": 1,
+        "size": [4, 1, 1],
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.125, 0], "normal": [0, -1, 0] }],
+        "script": "scripts/light.lua",
+        "icon": "textures/items/packing_lamp_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sounds": { "on": "light_on", "off": "light_off" },
+        "logic": { "inputs": 1, "use": "toggle" },
+        "light": { "kind": "omni", "color": "#fff4dd", "energy": 2.5, "range": 10 },
+        "display": { "clips": { "readout": "pose" } },
+        "sound_material": "metal"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/packing_lamp.glb" }],
+      "recipes": [
+        {
+          "id": "packing_lamp",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 2 }, { "item": "glass_block", "count": 1 }],
+          "outputs": [{ "item": "packing_lamp", "count": 1 }],
+          "time": 5,
+          "order": 1617
+        }
+      ]
+    },
+    {
+      "file": "parts/frame_beam_light.json",
+      "template": "interactive",
+      "set": {
+        "name": "Frame Beam Light",
+        "description": "A steel channel beam with a light strip in its underside, for warehouse ceilings and gantries. It shines down. Use it to switch it off and on; a linked switch also works.",
+        "category": "light",
+        "mass": 7.5,
+        "durability": 4,
+        "friction": 0.4,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "stack_size": 20,
+        "size": [4, 1, 1],
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, 0.125, 0], "normal": [0, 1, 0] }],
+        "script": "scripts/light.lua",
+        "icon": "textures/items/frame_beam_light_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sounds": { "on": "light_on", "off": "light_off" },
+        "logic": { "inputs": 1, "use": "toggle" },
+        "light": {
+          "kind": "spot",
+          "color": "#fff4dd",
+          "energy": 4,
+          "range": 15,
+          "angle": 60,
+          "offset": [0, -0.05, 0],
+          "direction": [0, -1, 0]
+        },
+        "display": { "clips": { "readout": "pose" } },
+        "sound_material": "metal"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/frame_beam_light.glb" }],
+      "recipes": [
+        {
+          "id": "frame_beam_light",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 2 }, { "item": "glass_block", "count": 1 }],
+          "outputs": [{ "item": "frame_beam_light", "count": 1 }],
+          "time": 5,
+          "order": 1685
+        }
+      ]
+    },
+    {
+      "file": "parts/neon_sign.json",
+      "template": "interactive",
+      "set": {
+        "name": "Neon Sign",
+        "description": "A settler shop sign for a wall: neon tubes bent into a sprout in a ring, on a plank board. It glows mint; paint it to change the colour. Set its brightness with the Connect Tool. Use it to switch it off and on; a linked switch also works.",
+        "category": "light",
+        "mass": 3,
+        "durability": 1,
+        "friction": 0.5,
+        "buoyancy": 0.4,
+        "flammable": true,
+        "stack_size": 20,
+        "size": [3, 3, 1],
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, 0, 0.125], "normal": [0, 0, 1] }],
+        "script": "scripts/light.lua",
+        "icon": "textures/items/neon_sign_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sounds": { "on": "light_on", "off": "light_off" },
+        "logic": { "inputs": 1, "use": "toggle" },
+        "settings": [
+          { "id": "brightness", "name": "Brightness", "type": "number", "min": 1, "max": 10, "step": 1, "default": 10 }
+        ],
+        "light": { "kind": "omni", "color": "#7dffc4", "energy": 1.5, "range": 6, "offset": [0, 0.03, -0.06] },
+        "display": { "clips": { "readout": "pose" } },
+        "sound_material": "wood"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/neon_sign.glb" }],
+      "recipes": [
+        {
+          "id": "neon_sign",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 2 }, { "item": "glass_block", "count": 2 }, { "item": "paint_ammo", "count": 1 }],
+          "outputs": [{ "item": "neon_sign", "count": 1 }],
+          "time": 5,
+          "order": 1690
+        }
+      ]
+    },
+    {
+      "file": "parts/protector_sign.json",
+      "template": "interactive",
+      "set": {
+        "name": "Protector Sign",
+        "description": "A colony lightbox for a wall, a shield on its face: it marks what is guarded. It glows while lit. Use it to switch it off and on; a linked switch also works.",
+        "category": "light",
+        "mass": 7.5,
+        "durability": 3,
+        "friction": 0.7,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "stack_size": 20,
+        "size": [3, 2, 1],
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, 0, 0.125], "normal": [0, 0, 1] }],
+        "script": "scripts/light.lua",
+        "icon": "textures/items/protector_sign_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sounds": { "on": "light_on", "off": "light_off" },
+        "logic": { "inputs": 1, "use": "toggle" },
+        "light": { "kind": "omni", "color": "#fff4dd", "energy": 1.5, "range": 6, "offset": [0, 0, -0.12] },
+        "display": { "clips": { "readout": "pose" } },
+        "sound_material": "metal"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/protector_sign.glb" }],
+      "recipes": [
+        {
+          "id": "protector_sign",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 2 }, { "item": "circuit_board", "count": 1 }],
+          "outputs": [{ "item": "protector_sign", "count": 1 }],
+          "time": 5,
+          "order": 1695
         }
       ]
     },
@@ -278,10 +490,11 @@
         "size": [1, 1, 1],
         "sockets": null,
         "script": "scripts/light.lua",
-        "visual": { "color": "#6aff6a", "roughness": 0.3, "metallic": 0, "emission": "#40ff40" },
+        "icon": "textures/items/glowstick_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "light": { "kind": "omni", "color": "#60ff70", "energy": 0.8, "range": 4 }
       },
-      "model": [{ "kind": "cylinder", "radius": 0.025, "height": 0.2, "rotation": [90, 0, 0] }],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/glowstick.glb" }],
       "recipes": [
         {
           "id": "glowstick",

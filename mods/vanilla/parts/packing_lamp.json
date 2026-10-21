@@ -1,0 +1,47 @@
+{
+  "id": "packing_lamp",
+  "name": "Packing Lamp",
+  "description": "A caged tube lamp on two clip feet. It shines in the colour it is painted (warm white unpainted). Use it to switch it off and on; a linked switch also works.",
+  "category": "light",
+  "mass": 6,
+  "durability": 4,
+  "friction": 0.5,
+  "buoyancy": 0.4,
+  "flammable": false,
+  "stack_size": 1,
+  "sound_material": "metal",
+  "size": [4, 1, 1],
+  "mesh": "meshes/parts/packing_lamp.glb",
+  "icon": "textures/items/packing_lamp_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.125, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/light.lua",
+  "sounds": {
+    "on": "light_on",
+    "off": "light_off"
+  },
+  "logic": {
+    "inputs": 1,
+    "use": "toggle"
+  },
+  "light": {
+    "kind": "omni",
+    "color": "#fff4dd",
+    "energy": 2.5,
+    "range": 10
+  },
+  "display": {
+    "clips": {
+      "readout": "pose"
+    }
+  }
+}

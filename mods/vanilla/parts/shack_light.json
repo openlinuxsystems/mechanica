@@ -1,0 +1,59 @@
+{
+  "id": "shack_light",
+  "name": "Shack Light",
+  "description": "A bare bulb under a zinc shade, as the settlers hang in their shacks. Build it under a roof; it lights the room around it. Set its brightness with the Connect Tool. Use it to switch it off and on; a linked switch also works.",
+  "category": "light",
+  "mass": 3,
+  "durability": 2,
+  "friction": 0.5,
+  "buoyancy": 0.4,
+  "flammable": true,
+  "stack_size": 1,
+  "sound_material": "metal",
+  "size": [2, 2, 2],
+  "mesh": "meshes/parts/shack_light.glb",
+  "icon": "textures/items/shack_light_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, 0.25, 0],
+      "normal": [0, 1, 0]
+    }
+  ],
+  "script": "scripts/light.lua",
+  "sounds": {
+    "on": "light_on",
+    "off": "light_off"
+  },
+  "logic": {
+    "inputs": 1,
+    "use": "toggle"
+  },
+  "settings": [
+    {
+      "id": "brightness",
+      "name": "Brightness",
+      "type": "number",
+      "min": 1,
+      "max": 10,
+      "step": 1,
+      "default": 10
+    }
+  ],
+  "light": {
+    "kind": "omni",
+    "color": "#fff1cc",
+    "energy": 2,
+    "range": 8,
+    "offset": [0, -0.1, 0]
+  },
+  "display": {
+    "clips": {
+      "readout": "pose"
+    }
+  }
+}

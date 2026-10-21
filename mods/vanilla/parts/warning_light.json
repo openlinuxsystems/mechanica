@@ -1,7 +1,7 @@
 {
   "id": "warning_light",
   "name": "Warning Light",
-  "description": "An orange flashing lamp. It blinks while its input is on, or all the time with nothing linked.",
+  "description": "A red flashing lamp in a cage. It blinks while its input is on, or all the time with nothing linked.",
   "category": "light",
   "mass": 1,
   "durability": 2,
@@ -11,12 +11,10 @@
   "stack_size": 20,
   "sound_material": "metal",
   "size": [1, 2, 1],
-  "mesh": "meshes/warning_light.glb",
+  "mesh": "meshes/parts/warning_light.glb",
+  "icon": "textures/items/warning_light_icon.png",
   "visual": {
-    "color": "#e06a10",
-    "roughness": 0.4,
-    "metallic": 0.5,
-    "emission": "#ff8a20"
+    "color": "#ffffff"
   },
   "sockets": [
     {
@@ -32,10 +30,15 @@
   },
   "light": {
     "kind": "omni",
-    "color": "#ff8a20",
+    "color": "#ff3d2e",
     "energy": 2,
     "range": 6,
     "offset": [0, 0.08, 0]
+  },
+  "display": {
+    "clips": {
+      "readout": "pose"
+    }
   },
   "properties": {
     "blink": 1.0,
