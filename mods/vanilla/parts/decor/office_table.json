@@ -1,0 +1,19 @@
+{
+  "id": "office_table",
+  "name": "Office Table",
+  "description": "A long colony office table top with mounting plates underneath. Stand it on Table Supports.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 5,
+  "friction": 0.4,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [8, 1, 4],
+  "mesh": "meshes/parts/office_table.glb",
+  "icon": "textures/items/office_table_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

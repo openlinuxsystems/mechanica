@@ -21,6 +21,7 @@ import office  # noqa: E402
 
 BATCHES = {
     "13a": (office.BATCH_13A, office.materials_13),
+    "13b": (office.BATCH_13B, office.materials_13),
 }
 
 if __name__ == "__main__":

@@ -1,0 +1,19 @@
+{
+  "id": "shelf_support",
+  "name": "Shelf Support",
+  "description": "A one-block shelf frame: four posts between two plates.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 4,
+  "friction": 0.4,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/parts/shelf_support.glb",
+  "icon": "textures/items/shelf_support_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}
