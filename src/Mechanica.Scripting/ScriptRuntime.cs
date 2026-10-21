@@ -70,6 +70,9 @@ public sealed partial class ScriptRuntime
         // Sound loops the part started; they end with the part or when its script stops.
         public HashSet<int> Loops { get; } = [];
 
+        // The part's sounds as it started, for part.sound once the part is gone (it broke and hears on_damage).
+        public IReadOnlyDictionary<string, string>? Sounds { get; set; }
+
         // Held items (chunk 20b): the peer holding the item, the slot it was last used from and who acts.
         public int? Holder { get; init; }
         public int Slot { get; set; }
@@ -167,6 +170,9 @@ public sealed partial class ScriptRuntime
 
         /// <summary><c>on_event(topic, data)</c>: an event the script listens to (<c>events.listen</c>) happened. Mod and part scripts.</summary>
         public const string OnEvent = "on_event";
+
+        /// <summary>A placed part took damage: <c>on_damage(amount, kind, broken, at)</c> (see <c>docs/lua-api.md</c>).</summary>
+        public const string OnDamage = "on_damage";
     }
 
     /// <summary>Creates a runtime over the host's world.</summary>
@@ -392,6 +398,7 @@ public sealed partial class ScriptRuntime
 
     private void Reconcile()
     {
+        DeliverDamage();
         var present = new HashSet<int>();
         foreach (var creation in _creations())
         {
@@ -515,6 +522,8 @@ public sealed partial class ScriptRuntime
         instance.State ??= new Table(context.Script);
         env.Set("state", DynValue.NewTable(instance.State));
         env.Set("properties", Properties(instance, instance.IsItem ? null : _motion.FindCreation(instance.Creation)));
+        if (instance.IsPart && _motion.FindCreation(instance.Creation) is { } home && home.FindPart(instance.Part) is not null)
+            instance.Sounds = home.DefinitionOf(instance.Part).Sounds;
         instance.Env = env;
         instance.Fault = null;
         // A fresh start hears its input again as on_power, even if it has not changed.

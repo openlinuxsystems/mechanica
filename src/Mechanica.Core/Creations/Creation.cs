@@ -465,7 +465,7 @@ public sealed class Creation
 
     /// <summary>
     /// Sets a part's upgrade level (UI spec §4): its definition becomes the part's at that level
-    /// (<see cref="PartUpgrades.At"/>) and its inventory grows to the new slot count. The caller checks the level and
+    /// (<see cref="PartUpgrades.At"/>), its Body takes the level's mass and its inventory grows to the new slot count. The caller checks the level and
     /// takes the cost. Bumps <see cref="Revision"/>.
     /// </summary>
     /// <returns>True when the level changed.</returns>
@@ -481,7 +481,8 @@ public sealed class Creation
         var definition = _definitions[partId] = PartUpgrades.At(written, level);
         if (_inventories.TryGetValue(partId, out var inventory) && definition.Inventory?.Slots is { } slots)
             inventory.Grow(slots);
-        Revision++;
+        // A level may change the part's mass, so the Bodies' masses are worked out again.
+        Changed();
         return true;
     }
 

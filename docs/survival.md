@@ -53,6 +53,12 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
 - **Breaking things:** a part breaks off at 0 health. A container that breaks spills what it held.
   Trees, rocks and bushes with `health` break into resources (`drops` in `world/worldgen.json`).
   Crashes and falls never damage a Creation: only the Sledgehammer, weapons, bots, explosions and fire do.
+- **Explosions:** an Explosive Canister (Small: 1.75 m, Large: 3.75 m) goes off at once when it breaks, when another
+  blast reaches it (canisters set each other off in the same moment) or when it hits something at 8 m/s or more. Any
+  other blow (a shot, a Sledgehammer, a saw, fire) lights its fuse: it hisses, its lamp blinks red and three seconds
+  later it goes off. A blast hurts players, bots, parts and world objects in its reach, most at its middle, pushes
+  parts away and sets flammable parts near it burning; every player sees and hears it. A blast that breaks a
+  creation apart still reaches the pieces.
 - **Piles** of items on the ground last `drop_lifetime` seconds (15 minutes). Drag a stack out of any item window
   (the inventory, a container, the hotbar) and let go over the world to toss it: it flies from your hand and lands
   `toss_distance` ahead as a pile anyone can pick up with E.
@@ -83,7 +89,8 @@ Fire (D13) burns in Survival and Creative alike, on the host, and every player s
 - **Putting it out.** Throw a full water bucket at a fire: the water flies in a lob, and every fire within
   its `splash` of where it lands loses its `douse` strength (vanilla's bucket puts a fire out in one go). The
   bucket comes back empty. A water cannon's jet takes its own `douse` off every fire along it, so a few shots
-  put one out. Fill empty buckets at any water, such as the pond by the crash site.
+  put one out; it fires the full buckets in the Water Containers linked to it, ten jets a bucket (the empty
+  buckets stay in the container for now). Fill empty buckets at any water, such as the pond by the crash site.
 - **Saved** with the world: fires at POI markers by marker (an out one stays out), and a burning part's
   strength on the part.
 

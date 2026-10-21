@@ -912,10 +912,53 @@ for tree, pitch in TREES.items():
     rev("trees", f"{tree}_fall", [tree_fall(pitch, n) for n in range(2)], pitch_variation=0.04, max_distance=80.0)
 
 
+# Working parts (parts map batch 6): the Alarm Clock, Scuttler Head, Cash Register, Explosive Canisters, Plasma Drill
+# and Sticky Wheel. The Scuttler Head's notes are recorded at C4 (261.6 Hz); its script bends them with sound.play's pitch.
+def bell(freq, dur, tau):
+    return (tone(freq, dur) + 0.5 * tone(freq * 2.76, dur) + 0.25 * tone(freq * 5.4, dur)) * decay(dur, tau)
+
+
+def alarm_bell(rng):
+    t = t_of(1.0)
+    hammer = 0.55 + 0.45 * np.sign(np.sin(2 * np.pi * 15.0 * t))
+    x = (tone(1760, 1.0) * 0.5 + tone(2637, 1.0) * 0.35 + tone(4400, 1.0) * 0.1) * hammer
+    x = x + band(noise(rng, 1.0), 2500, 7000) * hammer * 0.08
+    return edges(peak(x * np.minimum(1, t / 0.005) * np.minimum(1, (1.0 - t) / 0.08), 0.8))
+
+
+C4 = 261.63
+ev("working", "alarm_clock_bell", alarm_bell, max_distance=60.0)
+ev("working", "alarm_clock_beep", lambda rng: beeps([2093, 0, 2093, 0, 2093, 0, 2093], 0.11, wave_fn=square, level=0.55), max_distance=40.0)
+ev("working", "alarm_clock_chime", lambda rng: edges(peak(mix(1.4, (bell(1568, 1.0, 0.35), 0), (bell(1319, 1.0, 0.35), 0.3), (bell(1047, 1.0, 0.45), 0.6)), 0.7)),
+   max_distance=50.0)
+ev("working", "alarm_clock_set", lambda rng: click(rng, 2200, 0.05), **QUIET)
+ev("working", "scuttler_head_blip", lambda rng: edges(peak(square(C4 * 2, 0.3) * decay(0.3, 0.09, 0.003), 0.6)), max_distance=40.0, max_instances=8)
+ev("working", "scuttler_head_bass", lambda rng: edges(peak(band(saw(C4 / 2, 0.6), 40, 900) * decay(0.6, 0.22, 0.004), 0.7)), max_distance=40.0, max_instances=8)
+ev("working", "scuttler_head_drum", lambda rng: edges(peak(mix(0.4, (thud(rng, 0.35, 40, 400, 0.07), 0), (glide(C4, C4 / 2, 0.25) * decay(0.25, 0.06), 0),
+                                                              (band(noise(rng, 0.12), 2000, 7000) * decay(0.12, 0.02) * 0.3, 0)), 0.75)),
+   max_distance=40.0, max_instances=8)
+ev("working", "scuttler_head_voice", lambda rng: voice(C4, 0.45, (1.0, 1.0), rng, buzz=0.15, level=0.6), max_distance=40.0, max_instances=8)
+ev("working", "cash_register_open", lambda rng: edges(peak(mix(0.9, (bell(2093, 0.8, 0.25), 0), (band(noise(rng, 0.3), 300, 2500) * decay(0.3, 0.12), 0.08),
+                                                               (thud(rng, 0.3, 60, 900, 0.04), 0.3)), 0.75)), max_distance=30.0)
+ev("working", "cash_register_close", lambda rng: edges(peak(mix(0.4, (band(noise(rng, 0.2), 300, 2000) * decay(0.2, 0.06), 0), (thud(rng, 0.3, 60, 1200, 0.03), 0.1),
+                                                                (click(rng, 1600, 0.05), 0.12)), 0.7)), **TOOL)
+ev("working", "canister_fuse", lambda rng: edges(peak(hiss(rng, 1.6, 2000, 9000, 0.05, 0.1, 0.5) + crackle(rng, 1.6, 50, 0.5), 0.6)), max_distance=30.0)
+ev("working", "canister_explode", lambda rng: edges(peak(mix(2.0, (boom(rng, 2.0), 0), (mat_break("metal")(rng) * 0.5, 0.02)), 0.95)), variants=2,
+   pitch_variation=0.05, max_distance=160.0, rolloff="linear")
+ev("working", "plasma_drill_start", lambda rng: edges(peak(glide(120, 880, 0.6) * np.linspace(0.2, 1, n_of(0.6)) + band(noise(rng, 0.6), 1500, 6000) * 0.2, 0.6)),
+   max_distance=40.0)
+ev("working", "plasma_drill_loop", tonal_loop([(220, 0.4), (440, 0.3), (880, 0.12), (1320, 0.06)], 0.25, 30.0, 0.25, 1200, 7000), loop=1.5,
+   max_distance=40.0, parameters=[dict(name="load", pitch=[1.0, 0.85], volume_db=[0.0, 3.0])])
+ev("working", "plasma_drill_stop", lambda rng: edges(peak(glide(880, 90, 0.5) * np.linspace(1, 0, n_of(0.5)), 0.55)), max_distance=40.0)
+ev("working", "sticky_wheel_pump", lambda rng: edges(peak(mix(0.5, (band(noise(rng, 0.4), 150, 1500) * decay(0.4, 0.12), 0), (glide(300, 120, 0.3) * decay(0.3, 0.1) * 0.5, 0.02)), 0.6)),
+   **QUIET)
+ev("working", "sticky_wheel_loop", noise_loop(200, 1600, 9.0, 0.7, ((160, 0.08),)), loop=1.0, max_distance=25.0)
+
+
 # ---- Output ------------------------------------------------------------------------------------
 
 GROUP_ORDER = ["materials", "building", "engines", "joints", "flight", "logic", "part_tools", "stations", "items", "bots", "player", "ui", "ambient", "music",
-               "trees"]
+               "trees", "working"]
 KEY_ORDER = ["id", "description", "clips", "bus", "loop", "volume_db", "pitch", "volume_variation_db", "pitch_variation", "spatial",
              "min_distance", "max_distance", "rolloff", "parameters", "max_instances", "cooldown"]
 PARAM_ORDER = ["name", "min", "max", "default", "pitch", "volume_db"]

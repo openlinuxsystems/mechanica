@@ -129,7 +129,7 @@ public static class PartUpgrades
 
     /// <summary>
     /// What changes from <paramref name="from"/> to <paramref name="to"/> (two levels of one part), for the upgrade dialog:
-    /// crafting speed, queue and link range, slots, durability, spring stiffness and damping, the top of each number setting
+    /// crafting speed, queue and link range, slots, mass, durability, spring stiffness and damping, the top of each number setting
     /// (a piston's Length and Speed), logic inputs and outputs, then
     /// each changed script property. Labels
     /// are English UI text; values are as shown (<c>1.25×</c>, <c>12</c>, <c>1 m</c>).
@@ -147,6 +147,7 @@ public static class PartUpgrades
         Add("Queue", from.Crafting is null ? null : from.Crafting.QueueSize ?? 1, to.Crafting is null ? null : to.Crafting.QueueSize ?? 1);
         Add("Link range", from.Crafting?.LinkRange, to.Crafting?.LinkRange, " m");
         Add("Slots", from.Inventory?.Slots, to.Inventory?.Slots);
+        Add("Mass", from.Mass, to.Mass, " kg");
         Add("Durability", from.Durability, to.Durability);
         foreach (var socket in to.Sockets ?? [])
         {

@@ -459,6 +459,27 @@ public class SurvivalActionsTests
     }
 
     [Fact]
+    public void SplashStillHurtsThePiecesABreakSplitsOff()
+    {
+        // A row of five blocks whose middle one (part 1) is hit first: it breaks and splits the row in two, and the
+        // half that becomes its own Creation still takes the blast, reported against its new Creation.
+        var creation = new Creation(_f.World.NextCreationId(), _f.Catalog);
+        foreach (var x in new[] { 2, 1, 0, 3, 4 })
+            Assert.True(creation.TryPlacePart(Block, new GridCell(x, 0, 0), default, out _, out var error), error);
+        creation.SetAllBodyPoses(Pose.Identity);
+        _f.World.Added(creation);
+        var damaged = new List<PartDamage>();
+        _f.Survival.PartDamaged += damaged.Add;
+
+        var hits = _f.Survival.Splash(Me, new Vector3(0.625f, 0.125f, 0.125f), 2, 1000, 0);
+
+        Assert.Equal([1, 2, 3, 4, 5], hits.Where(h => h.Kind == "part").Select(h => h.Part!.Value).Order());
+        Assert.Equal(5, damaged.Count);
+        Assert.NotEmpty(damaged[0].SplitOff!);
+        Assert.Contains(damaged, d => d.Creation != creation.Id);
+    }
+
+    [Fact]
     public void SplashHurtsEverythingNearbyLessFurtherOut()
     {
         _f.World.Feet[3] = new Vector3(0, 0, -6f); // centre at (0, 0.8, -6): 2 m from the blast

@@ -345,7 +345,7 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     public void PlaySound(string sound, string ownerModId, System.Numerics.Vector3 position) => Build.PlaySound(sound, ownerModId, position);
 
     /// <inheritdoc/>
-    public SledgeResult DamagePart(Creation creation, int partId, float damage) => Build.Tools!.DamagePart(creation, partId, damage);
+    public SledgeResult DamagePart(Creation creation, int partId, float damage, string kind) => Build.Tools!.DamagePart(creation, partId, damage, kind);
 
     /// <inheritdoc/>
     public void Push(Creation creation, int bodyIndex, System.Numerics.Vector3 point, System.Numerics.Vector3 impulse) =>
@@ -366,6 +366,9 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
 
     /// <inheritdoc/>
     public void Impact(System.Numerics.Vector3 at, string material) => World.Impact(at.ToGodot(), material);
+
+    /// <inheritdoc/>
+    public void Blast(System.Numerics.Vector3 at, float radius) => World.Blast(at.ToGodot(), radius);
 
     // Slowed players move slower: the host from its own state, a client from the vitals it was sent.
     private void UpdateSpeedScales()

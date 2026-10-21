@@ -204,9 +204,9 @@ public sealed partial class ScriptRuntime : ILogicHost
         Fn(part, "sound", args =>
         {
             var key = args.AsType(0, "part.sound", DataType.String).String;
-            return Here() is { } h && h.Creation.DefinitionOf(h.Instance.Part).Sounds?.GetValueOrDefault(key) is { } id
-                ? DynValue.NewString(id)
-                : DynValue.Nil;
+            // Once the part is gone (a part that broke, hearing on_damage), the sounds it started with.
+            var sounds = Here() is { } h ? h.Creation.DefinitionOf(h.Instance.Part).Sounds : PartInstance().Sounds;
+            return sounds?.GetValueOrDefault(key) is { } id ? DynValue.NewString(id) : DynValue.Nil;
         });
         Fn(part, "set_light", args =>
         {

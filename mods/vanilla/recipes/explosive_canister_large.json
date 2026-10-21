@@ -1,0 +1,28 @@
+{
+  "id": "explosive_canister_large",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 10
+    },
+    {
+      "item": "explosive_remnant",
+      "count": 4
+    },
+    {
+      "item": "gasoline",
+      "count": 3
+    }
+  ],
+  "outputs": [
+    {
+      "item": "explosive_canister_large",
+      "count": 1
+    }
+  ],
+  "time": 15,
+  "order": 1355
+}

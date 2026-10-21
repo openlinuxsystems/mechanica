@@ -1,7 +1,7 @@
 {
   "id": "chemical_container",
   "name": "Chemical Container",
-  "description": "Holds five stacks of chemicals.",
+  "description": "Holds five stacks of chemicals. Link it to Sticky Wheels with the Connect Tool and they burn its chemicals.",
   "category": "container",
   "mass": 7.5,
   "durability": 6,
@@ -32,5 +32,9 @@
     "accepts": [
       "chemical"
     ]
+  },
+  "logic": {
+    "outputs": 16,
+    "kind": "power"
   }
 }

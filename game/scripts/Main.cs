@@ -553,6 +553,7 @@ public partial class Main : Node3D
         };
         Fire.RegisterActions(Actions.Dispatcher);
         Scripts.Runtime.Fire = Fire.Actions;
+        Scripts.Runtime.DayLength = () => Streamer.Generator?.Data.Definition.DayLength ?? Mechanica.Core.World.WorldGenDefinition.DefaultDayLength;
         AddChild(Fire);
         Logic = new LogicSync
         {

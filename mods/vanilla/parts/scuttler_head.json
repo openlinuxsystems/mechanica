@@ -1,12 +1,67 @@
 {
   "id": "scuttler_head",
   "name": "Scuttler Head",
-  "description": "Dropped by a Scuttler.",
-  "category": "resource",
-  "mass": 2,
-  "stack_size": 10,
+  "description": "A Scuttler's head, pried off its body and wired up. It plays a note each time its input turns on: set the note and the voice (blip, bass, drum or voice) in its menu (E) and line a few up on a sequence of switches or a controller to play a tune.",
+  "category": "interactive",
+  "mass": 6,
+  "durability": 4,
+  "friction": 0.4,
+  "buoyancy": 0.6,
+  "flammable": false,
+  "stack_size": 5,
+  "sound_material": "metal",
+  "size": [2, 2, 2],
+  "mesh": "meshes/parts/scuttler_head.glb",
+  "icon": "textures/items/scuttler_head_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.25, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/scuttler_head.lua",
   "sounds": {
+    "blip": "scuttler_head_blip",
+    "bass": "scuttler_head_bass",
+    "drum": "scuttler_head_drum",
+    "voice": "scuttler_head_voice",
     "pickup": "pickup_metal",
     "drop": "drop_metal"
+  },
+  "logic": {
+    "inputs": 1
+  },
+  "settings": [
+    {
+      "id": "note",
+      "name": "Note",
+      "type": "number",
+      "min": 0,
+      "max": 24,
+      "step": 1,
+      "default": 12
+    },
+    {
+      "id": "voice",
+      "name": "Voice",
+      "type": "choice",
+      "options": [
+        "blip",
+        "bass",
+        "drum",
+        "voice"
+      ],
+      "default": "blip"
+    }
+  ],
+  "display": {
+    "clips": {
+      "readout": "pose"
+    }
   }
 }

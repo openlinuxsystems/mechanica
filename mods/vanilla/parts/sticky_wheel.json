@@ -1,0 +1,79 @@
+{
+  "id": "sticky_wheel",
+  "name": "Sticky Wheel",
+  "description": "A wheel whose tread oozes a chemical gel that holds it to whatever it rolls on, so a creation can climb walls and drive across ceilings. Put its hub on a bearing's rotor and link Chemical Containers to it with the Connect Tool; set how hard it sticks (E). Link a switch to it to stick only while the switch is on.",
+  "category": "interactive",
+  "mass": 6,
+  "durability": 7,
+  "friction": 1.1,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "plastic",
+  "size": [3, 1, 3],
+  "mesh": "meshes/parts/sticky_wheel.glb",
+  "icon": "textures/items/sticky_wheel_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "collision": {
+    "shape": "cylinder",
+    "radius": 0.375,
+    "height": 0.25,
+    "climb": 0.25
+  },
+  "sockets": [
+    {
+      "id": "hub",
+      "type": "structural",
+      "position": [0, -0.125, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/sticky_wheel.lua",
+  "sounds": {
+    "pump": "sticky_wheel_pump",
+    "loop": "sticky_wheel_loop"
+  },
+  "logic": {
+    "inputs": 5
+  },
+  "settings": [
+    {
+      "id": "stickiness",
+      "name": "Stickiness",
+      "type": "number",
+      "min": 1,
+      "max": 10,
+      "step": 1,
+      "default": 5
+    }
+  ],
+  "menu": {
+    "readouts": [
+      {
+        "id": "gel",
+        "name": "Gel",
+        "kind": "bar"
+      },
+      {
+        "id": "chemicals",
+        "name": "Chemicals",
+        "kind": "number"
+      }
+    ]
+  },
+  "display": {
+    "clips": {
+      "readout": "pose"
+    }
+  },
+  "properties": {
+    "radius": 0.375,
+    "reach": 0.15,
+    "rays": 8,
+    "force": 3000,
+    "chemical": "chemical",
+    "chemical_time": 120
+  }
+}

@@ -1,5 +1,6 @@
 {
-  // Logic and power parts (chunk 10): seats, engines, wheels and logic parts. Re-run with tools/author-vanilla.sh.
+  // Logic and power parts (chunk 10): seats, engines, wheels and logic parts. Parts map batch 6 added the Sticky
+  // Wheel (tools/sticky_wheel/build_sticky_wheel.py). Re-run with tools/author-vanilla.sh.
   "format_version": 1,
   "parts": [
     {
@@ -929,6 +930,53 @@
           "outputs": [{ "item": "big_wheel", "count": 1 }],
           "time": 30,
           "order": 630
+        }
+      ],
+      "template": "wheel"
+    },
+    {
+      "file": "parts/sticky_wheel.json",
+      "set": {
+        "name": "Sticky Wheel",
+        "description": "A wheel whose tread oozes a chemical gel that holds it to whatever it rolls on, so a creation can climb walls and drive across ceilings. Put its hub on a bearing's rotor and link Chemical Containers to it with the Connect Tool; set how hard it sticks (E). Link a switch to it to stick only while the switch is on.",
+        "mass": 6,
+        "durability": 7,
+        "stack_size": 20,
+        "friction": 1.1,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "sound_material": "plastic",
+        "size": [3, 1, 3],
+        "icon": "textures/items/sticky_wheel_icon.png",
+        "sockets": [{ "id": "hub", "type": "structural", "position": [0, -0.125, 0], "normal": [0, -1, 0] }],
+        "collision": { "shape": "cylinder", "radius": 0.375, "height": 0.25, "climb": 0.25 },
+        "script": "scripts/sticky_wheel.lua",
+        "visual": { "color": "#ffffff" },
+        "sounds": { "pump": "sticky_wheel_pump", "loop": "sticky_wheel_loop" },
+        "logic": { "inputs": 5 },
+        "settings": [{ "id": "stickiness", "name": "Stickiness", "type": "number", "min": 1, "max": 10, "step": 1, "default": 5 }],
+        "menu": {
+          "readouts": [
+            { "id": "gel", "name": "Gel", "kind": "bar" },
+            { "id": "chemicals", "name": "Chemicals", "kind": "number" }
+          ]
+        },
+        "display": { "clips": { "readout": "pose" } },
+        "properties": { "radius": 0.375, "reach": 0.15, "rays": 8, "force": 3000, "chemical": "chemical", "chemical_time": 120 }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/sticky_wheel.glb" }],
+      "recipes": [
+        {
+          "id": "sticky_wheel",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "metal_block_2", "count": 20 },
+            { "item": "beeswax", "count": 10 },
+            { "item": "chemical", "count": 5 }
+          ],
+          "outputs": [{ "item": "sticky_wheel", "count": 1 }],
+          "time": 30,
+          "order": 640
         }
       ],
       "template": "wheel"

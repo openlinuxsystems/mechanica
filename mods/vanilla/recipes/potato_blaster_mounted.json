@@ -5,16 +5,16 @@
   ],
   "inputs": [
     {
-      "item": "potato_blaster",
-      "count": 1
-    },
-    {
-      "item": "scrap_metal_block",
-      "count": 16
+      "item": "metal_block_2",
+      "count": 20
     },
     {
       "item": "component_kit",
-      "count": 2
+      "count": 1
+    },
+    {
+      "item": "circuit_board",
+      "count": 4
     }
   ],
   "outputs": [
@@ -23,6 +23,6 @@
       "count": 1
     }
   ],
-  "time": 8,
+  "time": 15,
   "order": 1340
 }
