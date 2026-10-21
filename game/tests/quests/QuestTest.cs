@@ -12,8 +12,8 @@ namespace Mechanica.Game.Tests;
 
 /// <summary>
 /// Quests with a host plus a client (chunk 24, D10), on the vanilla story. The client gets the story's state
-/// on join, puts out the crash site's three fires with buckets of water and restores power through
-/// <c>QuestInteract</c>; the host counts each one, both players get the rewards and the
+/// on join, puts out the crash site's three fires with buckets of water, recovers the master battery and seats it
+/// through <c>QuestInteract</c>; the host counts each one, both players get the rewards and the
 /// client hears the outro. With the story moved on to the faction envoy, the client talks to the envoy and
 /// picks a side in the quest log, which sets the flag on every peer. A save keeps the story's state.
 /// </summary>
@@ -87,6 +87,12 @@ public partial class QuestTest : StagedTest
                 return ClientQuests.State.Of(GettingStarted) is { } p && (fire < 2 ? p.Count == fire + 1 : p.Step == 1);
             });
         }
+        Add("the client recovers the master battery", frame =>
+        {
+            if (frame == 0)
+                _host.Main.Inventory.Items!.PlayerInventory(_client.Peer).Add("vanilla:master_battery", 1);
+            return ClientQuests.State.Of(GettingStarted) is { Step: 2 };
+        });
         Add("the client restores power and both players are rewarded", frame =>
         {
             var battery = HostQuests.SitesOf("vanilla:crash_site")[0].Markers.First(m => m.Ref == "master_battery").Position;
@@ -103,6 +109,7 @@ public partial class QuestTest : StagedTest
                 || _host.Main.Inventory.Own?.Count("vanilla:component_kit") != 2)
                 return false;
             Check(_client.Main.Inventory.Own.Count("vanilla:battery_pack") == 1, "the client got the battery pack");
+            Check(_client.Main.Inventory.Own.Count("vanilla:master_battery") == 0, "the master battery went into the Power Core");
             Check(ClientQuests.State.Of("vanilla:workshop_outpost") is { Status: QuestStatus.Active }, "the next quest started");
             return true;
         });
