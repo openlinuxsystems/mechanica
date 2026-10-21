@@ -2,18 +2,8 @@
   "format_version": 1,
   "model": [
     {
-      "kind": "box",
-      "size": [1, 0.5, 0.5]
-    },
-    {
-      "kind": "box",
-      "size": [0.02, 0.51, 0.51],
-      "position": [0.25, 0, 0]
-    },
-    {
-      "kind": "box",
-      "size": [0.02, 0.51, 0.51],
-      "position": [-0.25, 0, 0]
+      "kind": "mesh",
+      "mesh": "meshes/parts/hay_bale.glb"
     }
   ]
 }

@@ -1,0 +1,19 @@
+{
+  "id": "mannequin_boot",
+  "name": "Mannequin Boot",
+  "description": "A mannequin's work boot. Its long flat rubber sole grips well, so it makes a good foot for a walker.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 7,
+  "friction": 0.7,
+  "buoyancy": 0.1,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "fabric",
+  "size": [2, 2, 3],
+  "mesh": "meshes/parts/mannequin_boot.glb",
+  "icon": "textures/items/mannequin_boot_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

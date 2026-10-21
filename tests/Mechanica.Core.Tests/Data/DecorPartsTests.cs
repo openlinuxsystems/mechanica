@@ -32,6 +32,14 @@ public class DecorPartsTests
     [InlineData("table_support", 3, 3, 0.3, 0.3, false, 20, 1, 3, 1)]
     [InlineData("shelf_support_tall", 6, 4, 0.4, 0.1, false, 20, 1, 4, 1)]
     [InlineData("toilet_paper", 1.5, 1, 0.3, 0.2, true, 1, 1, 1, 1)]
+    [InlineData("hay_bale", 3, 1, 0.4, 0.2, true, 20, 4, 2, 2)]
+    [InlineData("wooden_crate", 6, 2, 0.6, 0.5, true, -1, 3, 3, 3)]
+    [InlineData("duck_statuette", 3, 4, 0.5, 0.8, true, 1, 2, 2, 2)]
+    [InlineData("produce_box_mixed", 6, 1, 0.5, 0.2, true, 20, 4, 4, 4)]
+    [InlineData("produce_box_carrot", 6, 1, 0.5, 0.2, true, 20, 4, 4, 4)]
+    [InlineData("produce_box_tomato", 6, 1, 0.5, 0.2, true, 20, 4, 4, 4)]
+    [InlineData("grass_planter", 6, 2, 0.4, 0.2, true, 20, 4, 1, 4)]
+    [InlineData("mannequin_boot", 3, 7, 0.7, 0.1, true, 20, 2, 2, 3)]
     public void DecorPartsTakeTheWikiStatsAndTheirSize(string id, double mass, int durability, double friction, double buoyancy,
         bool flammable, int stack, int x, int y, int z)
     {
@@ -65,6 +73,12 @@ public class DecorPartsTests
     [InlineData("table_support", 2, 2044, "metal_block:1")]
     [InlineData("shelf_support_tall", 2, 2056, "metal_block:1")]
     [InlineData("toilet_paper", 2, 2084, "scrap_wood_block:1")]
+    [InlineData("duck_statuette", 10, 3040, "wood_block:1", "paint_ammo:1", "beeswax:3", "glue:1")]
+    [InlineData("produce_box_mixed", 2, 3016, "scrap_wood_block:4")]
+    [InlineData("produce_box_carrot", 2, 3010, "scrap_wood_block:4")]
+    [InlineData("produce_box_tomato", 2, 3014, "scrap_wood_block:4")]
+    [InlineData("grass_planter", 2, 3020, "scrap_wood_block:5", "soil_bag:1")]
+    [InlineData("mannequin_boot", 10, 3044, "cotton:1", "wood_block:2", "paint_ammo:1", "beeswax:1")]
     public void DecorPartsAreMadeAtTheFabricatorInTheirGroup(string id, float time, int order, params string[] inputs)
     {
         var book = RecipeBook.Load(Vanilla.Value);
@@ -78,7 +92,15 @@ public class DecorPartsTests
         Assert.Single(book.All, r => r.Outputs.Any(o => o.Item == $"vanilla:{id}"));
     }
 
+    [Theory]
+    [InlineData("hay_bale", "wooden_crate")]
+    public void WorldOnlyDecorHasNoRecipe(params string[] ids)
+    {
+        var book = RecipeBook.Load(Vanilla.Value);
+        Assert.All(ids, id => Assert.DoesNotContain(book.All, r => r.Outputs.Any(o => o.Item == $"vanilla:{id}")));
+    }
+
     [Fact]
     public void ThePartFilesAreTheBatchOutput() =>
-        new VanillaBlocksTests().PartFilesAreThePartEditorBatchOutput("parts_decor.json", 16);
+        new VanillaBlocksTests().PartFilesAreThePartEditorBatchOutput("parts_decor.json", 24);
 }

@@ -531,27 +531,6 @@
       ]
     },
     {
-      "file": "parts/wooden_crate.json",
-      "template": "interactive",
-      "set": {
-        "name": "Wooden Crate",
-        "icon": "textures/items/wooden_crate_icon.png",
-        "category": "container",
-        "mass": 10,
-        "durability": 5,
-        "friction": 0.5,
-        "buoyancy": 0.6,
-        "flammable": true,
-        "sound_material": "wood",
-        "size": [3, 3, 3],
-        "visual": { "color": "#ffffff" },
-        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
-        "sounds": { "open": "container_open", "place": "place_wood" },
-        "inventory": { "slots": 10 }
-      },
-      "model": [{ "kind": "mesh", "mesh": "meshes/parts/wooden_crate.glb" }]
-    },
-    {
       "file": "parts/metal_crate.json",
       "template": "interactive",
       "set": {

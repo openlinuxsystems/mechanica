@@ -783,27 +783,6 @@
       ]
     },
     {
-      "file": "parts/decor/hay_bale.json",
-      "template": "decor",
-      "set": {
-        "name": "Hay Bale",
-        "description": "A tightly bound bale of hay. It burns well.",
-        "mass": 25,
-        "durability": 2,
-        "flammable": true,
-        "sound_material": "fabric",
-        "stack_size": 20,
-        "size": [4, 2, 2],
-        "visual": { "color": "#d8c060", "roughness": 1.0, "metallic": 0.0 },
-        "buoyancy": 0.6
-      },
-      "model": [
-        { "kind": "box", "size": [1, 0.5, 0.5] },
-        { "kind": "box", "size": [0.02, 0.51, 0.51], "position": [0.25, 0, 0] },
-        { "kind": "box", "size": [0.02, 0.51, 0.51], "position": [-0.25, 0, 0] }
-      ]
-    },
-    {
       "file": "parts/decor/grass_tuft.json",
       "template": "decor",
       "set": {
