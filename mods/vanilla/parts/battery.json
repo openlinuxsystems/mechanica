@@ -32,7 +32,8 @@
     "slots": 5,
     "accepts": [
       "battery_pack"
-    ]
+    ],
+    "gauge": "electric"
   },
   "logic": {
     "outputs": 16,

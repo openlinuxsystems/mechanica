@@ -1,0 +1,19 @@
+{
+  "id": "broken_concrete_large",
+  "name": "Broken Concrete (Large)",
+  "description": "A broken slab of cast concrete with rusted rebar sticking out of the break.",
+  "category": "decor",
+  "mass": 7.5,
+  "durability": 4,
+  "friction": 0.2,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "concrete",
+  "size": [4, 3, 2],
+  "mesh": "meshes/parts/broken_concrete_large.glb",
+  "icon": "textures/items/broken_concrete_large_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

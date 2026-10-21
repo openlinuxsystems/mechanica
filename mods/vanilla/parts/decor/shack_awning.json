@@ -1,0 +1,19 @@
+{
+  "id": "shack_awning",
+  "name": "Awning",
+  "description": "A lean-to awning of corrugated sheet on a batten, as the farmers put over their doors.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 1,
+  "friction": 0.5,
+  "buoyancy": 0.4,
+  "flammable": true,
+  "stack_size": 1,
+  "sound_material": "metal",
+  "size": [4, 2, 3],
+  "mesh": "meshes/parts/shack_awning.glb",
+  "icon": "textures/items/shack_awning_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

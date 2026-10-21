@@ -1,0 +1,19 @@
+{
+  "id": "produce_box_potato",
+  "name": "Potato Box",
+  "description": "A slatted crate heaped with potatoes.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 1,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "wood",
+  "size": [4, 4, 4],
+  "mesh": "meshes/parts/produce_box_potato.glb",
+  "icon": "textures/items/produce_box_potato_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

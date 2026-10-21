@@ -466,6 +466,11 @@ public partial class OptionsScreen : ToolWindow
             "The small map in the bottom right corner, with your mission goals and your own pins. M opens the full map either way.");
         Toggle(page, "Show player names", _draft.Interface.ShowPlayerNames, v => Live(_draft with { Interface = _draft.Interface with { ShowPlayerNames = v } }),
             "Other players' names over their heads.");
+        var gauges = Enum.GetValues<VehicleGaugeMode>();
+        string[] gaugeNames = ["Off", "One row per container", "One row per type"];
+        Option(page, "Vehicle gauges", gaugeNames, Array.IndexOf(gauges, _draft.Interface.VehicleGauges),
+            i => Live(_draft with { Interface = _draft.Interface with { VehicleGauges = gauges[i] } }),
+            "While you sit in a seat, the fuel, charge, chemicals, water and ammo in the creation's containers, bottom left: one row per container with its name, or one row per type with its containers added up.");
         var modes = Enum.GetValues<ColorBlindMode>();
         Option(page, "Colour-blind filter", [.. modes.Select(m => m == ColorBlindMode.Off ? "Off" : m.ToString())], Array.IndexOf(modes, _draft.Interface.ColorBlind),
             i => Live(_draft with { Interface = _draft.Interface with { ColorBlind = modes[i] } }),

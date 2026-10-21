@@ -1,0 +1,24 @@
+{
+  "id": "grass_planter",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_wood_block",
+      "count": 5
+    },
+    {
+      "item": "soil_bag",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "grass_planter",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 3020
+}

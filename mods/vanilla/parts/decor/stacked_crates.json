@@ -1,0 +1,19 @@
+{
+  "id": "stacked_crates",
+  "name": "Stacked Crates",
+  "description": "Three plastic crates strapped together. They float well.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 2,
+  "friction": 0.4,
+  "buoyancy": 0.7,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "plastic",
+  "size": [3, 4, 3],
+  "mesh": "meshes/parts/stacked_crates.glb",
+  "icon": "textures/items/stacked_crates_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

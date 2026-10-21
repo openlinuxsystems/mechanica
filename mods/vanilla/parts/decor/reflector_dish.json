@@ -1,0 +1,19 @@
+{
+  "id": "reflector_dish",
+  "name": "Reflector Dish",
+  "description": "A colony dish on a pedestal, fed from a boom under its rim.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 4,
+  "friction": 0.4,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [4, 4, 3],
+  "mesh": "meshes/parts/reflector_dish.glb",
+  "icon": "textures/items/reflector_dish_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "id": "mannequin_boot",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "cotton",
+      "count": 1
+    },
+    {
+      "item": "wood_block",
+      "count": 2
+    },
+    {
+      "item": "paint_ammo",
+      "count": 1
+    },
+    {
+      "item": "beeswax",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "mannequin_boot",
+      "count": 1
+    }
+  ],
+  "time": 10,
+  "order": 3044
+}

@@ -34,7 +34,8 @@
     "accepts": [
       "gasoline"
     ],
-    "carry_contents": true
+    "carry_contents": true,
+    "gauge": "gas"
   },
   "logic": {
     "outputs": 16,

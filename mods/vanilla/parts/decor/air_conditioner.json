@@ -1,0 +1,19 @@
+{
+  "id": "air_conditioner",
+  "name": "Air Conditioner",
+  "description": "A colony condenser unit with a round fan grille. Its power light is still on.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 6,
+  "friction": 0.6,
+  "buoyancy": 0.6,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [4, 3, 3],
+  "mesh": "meshes/parts/air_conditioner.glb",
+  "icon": "textures/items/air_conditioner_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

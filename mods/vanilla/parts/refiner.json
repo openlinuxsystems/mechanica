@@ -1,19 +1,19 @@
 {
   "id": "refiner",
   "name": "Refiner",
-  "description": "Refines raw materials such as crude oil.",
+  "description": "Refines raw materials such as crude oil, rods and logs. Input port on the left, output port on the right.",
   "category": "station",
-  "mass": 20,
-  "durability": 10,
-  "friction": 0.5,
-  "buoyancy": 0.2,
+  "mass": 10.5,
+  "durability": 7,
+  "friction": 0.6,
+  "buoyancy": 0.1,
   "flammable": false,
   "sound_material": "metal",
   "size": [4, 6, 4],
-  "mesh": "meshes/refiner.glb",
+  "mesh": "meshes/parts/refiner.glb",
+  "icon": "textures/items/refiner_icon.png",
   "visual": {
-    "color": "#5a7a8c",
-    "paintable": true
+    "color": "#ffffff"
   },
   "sockets": [
     {
@@ -35,6 +35,17 @@
   "crafting": {
     "speed": 1,
     "queue_size": 8,
-    "link_range": 1
+    "link_range": 1,
+    "clips": {
+      "start": "start",
+      "work": "work_loop",
+      "complete": "complete"
+    }
+  },
+  "display": {
+    "clips": {
+      "readout": "station",
+      "idle": "idle_loop"
+    }
   }
 }

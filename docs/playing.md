@@ -58,6 +58,14 @@ While you sit, the switches and buttons the seat is linked to take the hotbar's 
 one at once, Left click uses the first and Right click the second, wherever the part is on the creation. A
 button stays pressed while you hold its key, like E on it. A slot glows and pulses while its part is on.
 
+While you sit (driver's seat or passenger seat), the bottom left of the screen shows the creation's
+containers: red bars with a fuel can for Gas Containers on top, blue bars with a battery for Batteries
+under them, then green for Chemical Containers, aqua for Water Containers and mustard for Potato Ammo
+Containers. Each bar shows what the container holds of what it can hold and follows it live. A container
+is named in its window (E on it): press the pencil next to its name, type, and press Enter (Esc cancels;
+an empty name goes back to the default, "Gas 1", "Battery 2" and so on). Options, Interface, Vehicle
+gauges shows one row per container (the default), one row per type with the containers summed, or none.
+
 E on a part with settings opens its menu: sliders with a field for numbers, drop-downs for choices, and
 what the part reports. An engine's menu is a power lever: drag it from Off up to the top step its level
 allows, with its fuel and speed beside it and its next upgrade (and the Component Kits it costs) under
@@ -212,7 +220,7 @@ cost Component Kits in Survival and are free in Creative.
   the screen the first time you start, pick up each tool or open each screen; **Show tips again** brings
   back the ones you have seen; the tips are in `game/data/tutorial.json`), auto-save (off, or every 5, 10 or 15
   minutes while you host), the most players a world you host takes, the server password for worlds you host, and your player name.
-- **Interface**: show or hide the tool bar and key hints, the compass, the minimap, other players' names over their heads, how opaque the chat background is, and a
+- **Interface**: show or hide the tool bar and key hints, the compass, the minimap, the vehicle gauges (or one row per type), other players' names over their heads, how opaque the chat background is, and a
   colour-blind filter (Protanopia, Deuteranopia or Tritanopia) that corrects colours on the whole screen
   so ones that look alike stay apart, and the **Language** of menus and the HUD. The game ships in English; a
   language file dropped into your `lang` folder (Options shows where) adds that language to the list. See

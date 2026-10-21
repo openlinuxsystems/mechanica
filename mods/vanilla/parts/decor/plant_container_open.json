@@ -1,0 +1,19 @@
+{
+  "id": "plant_container_open",
+  "name": "Open Plant Container",
+  "description": "A card planter box, open, with soil and sprouts in it. It is for show; plant crops in soil on the ground.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 1,
+  "friction": 0.6,
+  "buoyancy": 0.1,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "cardboard",
+  "size": [3, 3, 3],
+  "mesh": "meshes/parts/plant_container_open.glb",
+  "icon": "textures/items/plant_container_open_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

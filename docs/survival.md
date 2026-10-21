@@ -39,6 +39,10 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
   `fall.min_speed`. It comes back by eating. At 0 you die: everything you carry falls where
   you stood in the knockout bag, a yellow canvas drawstring bag that your compass (with a bag icon, not a waypoint diamond)
   and maps point to until you pick it up or it expires (tools you crafted, like the Connect Tool and the Weld Tool, stay with you), and you respawn at your bed, or at the world spawn if you have none (or it was broken).
+  Any part with `respawn_point` is a bed: vanilla has the wooden Respawn Bed (it burns) and the steel Fancy Bed (it
+  does not, and is tougher).
+- **Ice:** the Freezer is a crafting station with one recipe: a full Water Bucket becomes 20 Ice Blocks in a minute,
+  and the empty bucket comes back into the Freezer's slots with the ice.
 - **Farming:** aim a Soil Bag at the ground (no steeper than 17°) to spill out a 3×3 soil mound (with Force build held,
   or aimed anywhere but the terrain, the bag itself is set down; picking a mound up gives the bag back). Plant a seed
   and water it. Soil looks dry, lightly watered, fully wet or drying, and empty soil dries out in about a game day. A crop grows only while its soil holds water,

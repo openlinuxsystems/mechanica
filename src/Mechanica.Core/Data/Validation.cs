@@ -365,6 +365,8 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
                 else if (!seen.Add(Identifiers.Qualify(item)))
                     sink.Error(Code, $"{p}.accepts[{i}]", $"'{item}' is listed twice.");
             }
+            if (inventory.Gauge is not null && inventory.Accepts is not { Count: > 0 })
+                sink.Error(Code, $"{p}.gauge", "a gauge needs accepts: it shows how much of the first accepted item the container holds.");
             KnownKeys.WarnUnknown(inventory.Extra, p, sink, typeof(InventoryDefinition));
         }
         if (part.Crafting is { } crafting)

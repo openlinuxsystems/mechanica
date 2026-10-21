@@ -1,0 +1,24 @@
+{
+  "id": "shack_awning",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal_block",
+      "count": 3
+    },
+    {
+      "item": "scrap_wood_block",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "shack_awning",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 3050
+}

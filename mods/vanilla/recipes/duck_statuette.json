@@ -1,0 +1,32 @@
+{
+  "id": "duck_statuette",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "wood_block",
+      "count": 1
+    },
+    {
+      "item": "paint_ammo",
+      "count": 1
+    },
+    {
+      "item": "beeswax",
+      "count": 3
+    },
+    {
+      "item": "glue",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "duck_statuette",
+      "count": 1
+    }
+  ],
+  "time": 10,
+  "order": 3040
+}

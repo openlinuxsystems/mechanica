@@ -468,6 +468,1046 @@
           "order": 2084
         }
       ]
+    },
+    {
+      "file": "parts/decor/hay_bale.json",
+      "template": "decor",
+      "set": {
+        "name": "Hay Bale",
+        "description": "A bale of straw tied with twine. It burns well.",
+        "icon": "textures/items/hay_bale_icon.png",
+        "mass": 3,
+        "durability": 1,
+        "friction": 0.4,
+        "buoyancy": 0.2,
+        "flammable": true,
+        "sound_material": "fabric",
+        "stack_size": 20,
+        "size": [4, 2, 2],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/hay_bale.glb" }]
+    },
+    {
+      "file": "parts/wooden_crate.json",
+      "template": "interactive",
+      "set": {
+        "name": "Wooden Crate",
+        "icon": "textures/items/wooden_crate_icon.png",
+        "mass": 6,
+        "durability": 2,
+        "friction": 0.6,
+        "buoyancy": 0.5,
+        "flammable": true,
+        "sound_material": "wood",
+        "size": [3, 3, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "category": "container",
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "container_open", "place": "place_wood" },
+        "inventory": { "slots": 10 }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/wooden_crate.glb" }]
+    },
+    {
+      "file": "parts/decor/duck_statuette.json",
+      "template": "decor",
+      "set": {
+        "name": "Duck Statuette",
+        "description": "A carved wooden duckling, painted yellow, on a log slice. A perfect addition to any home.",
+        "icon": "textures/items/duck_statuette_icon.png",
+        "mass": 3,
+        "durability": 4,
+        "friction": 0.5,
+        "buoyancy": 0.8,
+        "flammable": true,
+        "sound_material": "wood",
+        "stack_size": 1,
+        "size": [2, 2, 2],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/duck_statuette.glb" }],
+      "recipes": [
+        {
+          "id": "duck_statuette",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "wood_block", "count": 1 },
+            { "item": "paint_ammo", "count": 1 },
+            { "item": "beeswax", "count": 3 },
+            { "item": "glue", "count": 1 }
+          ],
+          "outputs": [{ "item": "duck_statuette", "count": 1 }],
+          "time": 10,
+          "order": 3040
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/produce_box_mixed.json",
+      "template": "decor",
+      "set": {
+        "name": "Produce Box",
+        "description": "A crate of produce packed under a tied burlap cover.",
+        "icon": "textures/items/produce_box_mixed_icon.png",
+        "mass": 6,
+        "durability": 1,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": true,
+        "sound_material": "wood",
+        "stack_size": 20,
+        "size": [4, 4, 4],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/produce_box_mixed.glb" }],
+      "recipes": [
+        {
+          "id": "produce_box_mixed",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_wood_block", "count": 4 }],
+          "outputs": [{ "item": "produce_box_mixed", "count": 1 }],
+          "time": 2,
+          "order": 3016
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/produce_box_carrot.json",
+      "template": "decor",
+      "set": {
+        "name": "Carrot Box",
+        "description": "A slatted crate heaped with carrots.",
+        "icon": "textures/items/produce_box_carrot_icon.png",
+        "mass": 6,
+        "durability": 1,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": true,
+        "sound_material": "wood",
+        "stack_size": 20,
+        "size": [4, 4, 4],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/produce_box_carrot.glb" }],
+      "recipes": [
+        {
+          "id": "produce_box_carrot",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_wood_block", "count": 4 }],
+          "outputs": [{ "item": "produce_box_carrot", "count": 1 }],
+          "time": 2,
+          "order": 3010
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/produce_box_tomato.json",
+      "template": "decor",
+      "set": {
+        "name": "Tomato Box",
+        "description": "A slatted crate heaped with tomatoes.",
+        "icon": "textures/items/produce_box_tomato_icon.png",
+        "mass": 6,
+        "durability": 1,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": true,
+        "sound_material": "wood",
+        "stack_size": 20,
+        "size": [4, 4, 4],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/produce_box_tomato.glb" }],
+      "recipes": [
+        {
+          "id": "produce_box_tomato",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_wood_block", "count": 4 }],
+          "outputs": [{ "item": "produce_box_tomato", "count": 1 }],
+          "time": 2,
+          "order": 3014
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/grass_planter.json",
+      "template": "decor",
+      "set": {
+        "name": "Grass Planter",
+        "description": "A plank tray of soil with grass growing in it.",
+        "icon": "textures/items/grass_planter_icon.png",
+        "mass": 6,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.2,
+        "flammable": true,
+        "sound_material": "wood",
+        "stack_size": 20,
+        "size": [4, 1, 4],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/grass_planter.glb" }],
+      "recipes": [
+        {
+          "id": "grass_planter",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_wood_block", "count": 5 }, { "item": "soil_bag", "count": 1 }],
+          "outputs": [{ "item": "grass_planter", "count": 1 }],
+          "time": 2,
+          "order": 3020
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/mannequin_boot.json",
+      "template": "decor",
+      "set": {
+        "name": "Mannequin Boot",
+        "description": "A mannequin's work boot. Its long flat rubber sole grips well, so it makes a good foot for a walker.",
+        "icon": "textures/items/mannequin_boot_icon.png",
+        "mass": 3,
+        "durability": 7,
+        "friction": 0.7,
+        "buoyancy": 0.1,
+        "flammable": true,
+        "sound_material": "fabric",
+        "stack_size": 20,
+        "size": [2, 2, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/mannequin_boot.glb" }],
+      "recipes": [
+        {
+          "id": "mannequin_boot",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "cotton", "count": 1 },
+            { "item": "wood_block", "count": 2 },
+            { "item": "paint_ammo", "count": 1 },
+            { "item": "beeswax", "count": 1 }
+          ],
+          "outputs": [{ "item": "mannequin_boot", "count": 1 }],
+          "time": 10,
+          "order": 3044
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/mannequin_hand.json",
+      "template": "decor",
+      "set": {
+        "name": "Mannequin Hand",
+        "description": "A jointed wooden mannequin hand, pointing up. It grips well.",
+        "icon": "textures/items/mannequin_hand_icon.png",
+        "mass": 3,
+        "durability": 7,
+        "friction": 0.7,
+        "buoyancy": 0.1,
+        "flammable": true,
+        "sound_material": "wood",
+        "stack_size": 20,
+        "size": [1, 2, 1],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/mannequin_hand.glb" }],
+      "recipes": [
+        {
+          "id": "mannequin_hand",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "wood_block", "count": 2 },
+            { "item": "paint_ammo", "count": 1 },
+            { "item": "beeswax", "count": 3 }
+          ],
+          "outputs": [{ "item": "mannequin_hand", "count": 1 }],
+          "time": 10,
+          "order": 3042
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/plant_container_open.json",
+      "template": "decor",
+      "set": {
+        "name": "Open Plant Container",
+        "description": "A card planter box, open, with soil and sprouts in it. It is for show; plant crops in soil on the ground.",
+        "icon": "textures/items/plant_container_open_icon.png",
+        "mass": 6,
+        "durability": 1,
+        "friction": 0.6,
+        "buoyancy": 0.1,
+        "flammable": true,
+        "sound_material": "cardboard",
+        "stack_size": 20,
+        "size": [3, 3, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/plant_container_open.glb" }],
+      "recipes": [
+        {
+          "id": "plant_container_open",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_wood_block", "count": 5 }, { "item": "soil_bag", "count": 1 }],
+          "outputs": [{ "item": "plant_container_open", "count": 1 }],
+          "time": 2,
+          "order": 3024
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/plant_container.json",
+      "template": "decor",
+      "set": {
+        "name": "Plant Container",
+        "description": "A card planter box, closed and taped.",
+        "icon": "textures/items/plant_container_icon.png",
+        "mass": 6,
+        "durability": 1,
+        "friction": 0.6,
+        "buoyancy": 0.1,
+        "flammable": true,
+        "sound_material": "cardboard",
+        "stack_size": 20,
+        "size": [3, 3, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/plant_container.glb" }],
+      "recipes": [
+        {
+          "id": "plant_container",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_wood_block", "count": 5 }, { "item": "soil_bag", "count": 1 }],
+          "outputs": [{ "item": "plant_container", "count": 1 }],
+          "time": 2,
+          "order": 3022
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/shack_awning.json",
+      "template": "decor",
+      "set": {
+        "name": "Awning",
+        "description": "A lean-to awning of corrugated sheet on a batten, as the farmers put over their doors.",
+        "icon": "textures/items/shack_awning_icon.png",
+        "mass": 3,
+        "durability": 1,
+        "friction": 0.5,
+        "buoyancy": 0.4,
+        "flammable": true,
+        "sound_material": "metal",
+        "stack_size": 1,
+        "size": [4, 2, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/shack_awning.glb" }],
+      "recipes": [
+        {
+          "id": "shack_awning",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_metal_block", "count": 3 }, { "item": "scrap_wood_block", "count": 2 }],
+          "outputs": [{ "item": "shack_awning", "count": 1 }],
+          "time": 2,
+          "order": 3050
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/stacked_crates.json",
+      "template": "decor",
+      "set": {
+        "name": "Stacked Crates",
+        "description": "Three plastic crates strapped together. They float well.",
+        "icon": "textures/items/stacked_crates_icon.png",
+        "mass": 6,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.7,
+        "flammable": false,
+        "sound_material": "plastic",
+        "stack_size": 20,
+        "size": [3, 4, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/stacked_crates.glb" }],
+      "recipes": [
+        {
+          "id": "stacked_crates",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "plastic_block", "count": 4 }],
+          "outputs": [{ "item": "stacked_crates", "count": 1 }],
+          "time": 2,
+          "order": 3018
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/vending_machine.json",
+      "template": "decor",
+      "set": {
+        "name": "Vending Machine",
+        "description": "A colony vending machine for Grazer milk, its screen still lit. It is empty.",
+        "icon": "textures/items/vending_machine_icon.png",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.4,
+        "buoyancy": 0.6,
+        "flammable": true,
+        "sound_material": "metal",
+        "stack_size": 1,
+        "size": [4, 7, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/vending_machine.glb" }],
+      "recipes": [
+        {
+          "id": "vending_machine",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 10 }, { "item": "glass_block", "count": 2 }],
+          "outputs": [{ "item": "vending_machine", "count": 1 }],
+          "time": 5,
+          "order": 3030
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/grazer_head_topper.json",
+      "template": "decor",
+      "set": {
+        "name": "Grazer Head Topper",
+        "description": "A Grazer's head on a mounting cap. The farmers put one on top of their vending machines.",
+        "icon": "textures/items/grazer_head_topper_icon.png",
+        "mass": 7.5,
+        "durability": 6,
+        "friction": 0.4,
+        "buoyancy": 0.6,
+        "flammable": false,
+        "sound_material": "fabric",
+        "stack_size": 1,
+        "size": [4, 3, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/grazer_head_topper.glb" }],
+      "recipes": [
+        {
+          "id": "grazer_head_topper",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "cotton", "count": 5 }, { "item": "paint_ammo", "count": 2 }],
+          "outputs": [{ "item": "grazer_head_topper", "count": 1 }],
+          "time": 5,
+          "order": 3032
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/produce_box_potato.json",
+      "template": "decor",
+      "set": {
+        "name": "Potato Box",
+        "description": "A slatted crate heaped with potatoes.",
+        "icon": "textures/items/produce_box_potato_icon.png",
+        "mass": 6,
+        "durability": 1,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": true,
+        "sound_material": "wood",
+        "stack_size": 20,
+        "size": [4, 4, 4],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/produce_box_potato.glb" }],
+      "recipes": [
+        {
+          "id": "produce_box_potato",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_wood_block", "count": 4 }],
+          "outputs": [{ "item": "produce_box_potato", "count": 1 }],
+          "time": 2,
+          "order": 3012
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/air_conditioner.json",
+      "template": "decor",
+      "set": {
+        "name": "Air Conditioner",
+        "description": "A colony condenser unit with a round fan grille. Its power light is still on.",
+        "icon": "textures/items/air_conditioner_icon.png",
+        "mass": 6,
+        "durability": 6,
+        "friction": 0.6,
+        "buoyancy": 0.6,
+        "flammable": true,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [4, 3, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/air_conditioner.glb" }],
+      "recipes": [
+        {
+          "id": "air_conditioner",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 10 }, { "item": "circuit_board", "count": 3 }],
+          "outputs": [{ "item": "air_conditioner", "count": 1 }],
+          "time": 5,
+          "order": 3126
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/juice_drum.json",
+      "template": "decor",
+      "set": {
+        "name": "Juice Drum",
+        "description": "A 200 litre colony drum of berry juice concentrate, sealed.",
+        "icon": "textures/items/juice_drum_icon.png",
+        "mass": 7.5,
+        "durability": 3,
+        "friction": 0.3,
+        "buoyancy": 0.6,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [2, 3, 2],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/juice_drum.glb" }],
+      "recipes": [
+        {
+          "id": "juice_drum",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 4 }],
+          "outputs": [{ "item": "juice_drum", "count": 1 }],
+          "time": 5,
+          "order": 3116
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/broken_concrete_large.json",
+      "template": "decor",
+      "set": {
+        "name": "Broken Concrete (Large)",
+        "description": "A broken slab of cast concrete with rusted rebar sticking out of the break.",
+        "icon": "textures/items/broken_concrete_large_icon.png",
+        "mass": 7.5,
+        "durability": 4,
+        "friction": 0.2,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "concrete",
+        "stack_size": 20,
+        "size": [4, 3, 2],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/broken_concrete_large.glb" }],
+      "recipes": [
+        {
+          "id": "broken_concrete_large",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 6 }, { "item": "concrete_block", "count": 12 }],
+          "outputs": [{ "item": "broken_concrete_large", "count": 1 }],
+          "time": 5,
+          "order": 3142
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/broken_concrete_medium.json",
+      "template": "decor",
+      "set": {
+        "name": "Broken Concrete (Medium)",
+        "description": "A smaller broken slab of cast concrete with two rebar ends.",
+        "icon": "textures/items/broken_concrete_medium_icon.png",
+        "mass": 7.5,
+        "durability": 4,
+        "friction": 0.2,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "concrete",
+        "stack_size": 20,
+        "size": [3, 3, 2],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/broken_concrete_medium.glb" }],
+      "recipes": [
+        {
+          "id": "broken_concrete_medium",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 4 }, { "item": "concrete_block", "count": 8 }],
+          "outputs": [{ "item": "broken_concrete_medium", "count": 1 }],
+          "time": 5,
+          "order": 3140
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/crane_body.json",
+      "template": "decor",
+      "set": {
+        "name": "Crane Body",
+        "description": "A colony hoist with its cable drum and motor. Hang a Crane Hook under it.",
+        "icon": "textures/items/crane_body_icon.png",
+        "mass": 10.5,
+        "durability": 6,
+        "friction": 0.5,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [4, 4, 4],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/crane_body.glb" }],
+      "recipes": [
+        {
+          "id": "crane_body",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 20 }],
+          "outputs": [{ "item": "crane_body", "count": 1 }],
+          "time": 10,
+          "order": 3130
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/crane_hook.json",
+      "template": "decor",
+      "set": {
+        "name": "Crane Hook",
+        "description": "The hoist's hook block, the hook painted for safety.",
+        "icon": "textures/items/crane_hook_icon.png",
+        "mass": 10.5,
+        "durability": 6,
+        "friction": 0.5,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [2, 4, 2],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/crane_hook.glb" }],
+      "recipes": [
+        {
+          "id": "crane_hook",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 5 }],
+          "outputs": [{ "item": "crane_hook", "count": 1 }],
+          "time": 5,
+          "order": 3132
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/fuse_box.json",
+      "template": "decor",
+      "set": {
+        "name": "Fuse Box",
+        "description": "A colony wall fuse box. Its power light is still on.",
+        "icon": "textures/items/fuse_box_icon.png",
+        "mass": 6,
+        "durability": 6,
+        "friction": 0.4,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [2, 3, 1],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/fuse_box.glb" }],
+      "recipes": [
+        {
+          "id": "fuse_box",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 2 }, { "item": "circuit_board", "count": 1 }],
+          "outputs": [{ "item": "fuse_box", "count": 1 }],
+          "time": 5,
+          "order": 3124
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/coil_corner.json",
+      "template": "decor",
+      "set": {
+        "name": "Coil Corner",
+        "description": "A generator coil turning a quarter round. It lines up with the Coil Segment.",
+        "icon": "textures/items/coil_corner_icon.png",
+        "mass": 9,
+        "durability": 6,
+        "friction": 0.6,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [3, 3, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/coil_corner.glb" }],
+      "recipes": [
+        {
+          "id": "coil_corner",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 6 }, { "item": "circuit_board", "count": 1 }],
+          "outputs": [{ "item": "coil_corner", "count": 1 }],
+          "time": 5,
+          "order": 3122
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/coil_segment.json",
+      "template": "decor",
+      "set": {
+        "name": "Coil Segment",
+        "description": "A straight run of generator coil, copper windings on a plinth.",
+        "icon": "textures/items/coil_segment_icon.png",
+        "mass": 9,
+        "durability": 6,
+        "friction": 0.6,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [3, 3, 2],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/coil_segment.glb" }],
+      "recipes": [
+        {
+          "id": "coil_segment",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 6 }, { "item": "circuit_board", "count": 1 }],
+          "outputs": [{ "item": "coil_segment", "count": 1 }],
+          "time": 5,
+          "order": 3120
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/tank_large.json",
+      "template": "decor",
+      "set": {
+        "name": "Large Tank",
+        "description": "A colony storage tank with a ladder up the side. It is empty, so it floats.",
+        "icon": "textures/items/tank_large_icon.png",
+        "mass": 3,
+        "durability": 4,
+        "friction": 0.4,
+        "buoyancy": 0.4,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [7, 5, 7],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/tank_large.glb" }],
+      "recipes": [
+        {
+          "id": "tank_large",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 12 }],
+          "outputs": [{ "item": "tank_large", "count": 1 }],
+          "time": 5,
+          "order": 3114
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/hull_door.json",
+      "template": "decor",
+      "set": {
+        "name": "Hull Door",
+        "description": "A maintenance hatch from the SV-04, its status light still on. It is a panel: it does not open.",
+        "icon": "textures/items/hull_door_icon.png",
+        "mass": 10.5,
+        "durability": 5,
+        "friction": 0.6,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [5, 10, 1],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/hull_door.glb" }],
+      "recipes": [
+        {
+          "id": "hull_door",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block_2", "count": 10 }],
+          "outputs": [{ "item": "hull_door", "count": 1 }],
+          "time": 10,
+          "order": 3150
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/tank_medium.json",
+      "template": "decor",
+      "set": {
+        "name": "Medium Tank",
+        "description": "A colony storage tank. It is empty, so it floats.",
+        "icon": "textures/items/tank_medium_icon.png",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.5,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [5, 4, 5],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/tank_medium.glb" }],
+      "recipes": [
+        {
+          "id": "tank_medium",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 8 }],
+          "outputs": [{ "item": "tank_medium", "count": 1 }],
+          "time": 5,
+          "order": 3112
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/nut.json",
+      "template": "decor",
+      "set": {
+        "name": "Nut",
+        "description": "A giant hex nut on a threaded bolt end, from the SV-04's frame.",
+        "icon": "textures/items/nut_icon.png",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.6,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [3, 3, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/nut.glb" }],
+      "recipes": [
+        {
+          "id": "nut",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_metal_block", "count": 1 }],
+          "outputs": [{ "item": "nut", "count": 1 }],
+          "time": 2,
+          "order": 3160
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/reflector_antenna.json",
+      "template": "decor",
+      "set": {
+        "name": "Reflector Antenna",
+        "description": "A settler-built antenna mast with a wire-mesh reflector.",
+        "icon": "textures/items/reflector_antenna_icon.png",
+        "mass": 3,
+        "durability": 2,
+        "friction": 0.3,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [3, 6, 2],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/reflector_antenna.glb" }],
+      "recipes": [
+        {
+          "id": "reflector_antenna",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 2 }],
+          "outputs": [{ "item": "reflector_antenna", "count": 1 }],
+          "time": 5,
+          "order": 3184
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/dish_antenna.json",
+      "template": "decor",
+      "set": {
+        "name": "Satellite Dish",
+        "description": "A colony satellite dish on a wall bracket. Its link light is still on.",
+        "icon": "textures/items/dish_antenna_icon.png",
+        "mass": 3,
+        "durability": 4,
+        "friction": 0.4,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [4, 4, 2],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/dish_antenna.glb" }],
+      "recipes": [
+        {
+          "id": "dish_antenna",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 4 }, { "item": "circuit_board", "count": 1 }],
+          "outputs": [{ "item": "dish_antenna", "count": 1 }],
+          "time": 5,
+          "order": 3180
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/reflector_dish.json",
+      "template": "decor",
+      "set": {
+        "name": "Reflector Dish",
+        "description": "A colony dish on a pedestal, fed from a boom under its rim.",
+        "icon": "textures/items/reflector_dish_icon.png",
+        "mass": 3,
+        "durability": 4,
+        "friction": 0.4,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [4, 4, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/reflector_dish.glb" }],
+      "recipes": [
+        {
+          "id": "reflector_dish",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 4 }],
+          "outputs": [{ "item": "reflector_dish", "count": 1 }],
+          "time": 5,
+          "order": 3182
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/screw.json",
+      "template": "decor",
+      "set": {
+        "name": "Screw",
+        "description": "A giant slotted screw from the SV-04's frame.",
+        "icon": "textures/items/screw_icon.png",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.6,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [3, 3, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/screw.glb" }],
+      "recipes": [
+        {
+          "id": "screw",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_metal_block", "count": 1 }],
+          "outputs": [{ "item": "screw", "count": 1 }],
+          "time": 2,
+          "order": 3162
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/tank_small.json",
+      "template": "decor",
+      "set": {
+        "name": "Small Tank",
+        "description": "A small colony storage tank. It is empty and floats very well: a good float for a boat.",
+        "icon": "textures/items/tank_small_icon.png",
+        "mass": 3,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.6,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [3, 4, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/tank_small.glb" }],
+      "recipes": [
+        {
+          "id": "tank_small",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 4 }],
+          "outputs": [{ "item": "tank_small", "count": 1 }],
+          "time": 5,
+          "order": 3110
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/steel_pallet.json",
+      "template": "decor",
+      "set": {
+        "name": "Steel Pallet",
+        "description": "A colony steel pallet with fork pockets.",
+        "icon": "textures/items/steel_pallet_icon.png",
+        "mass": 6,
+        "durability": 5,
+        "friction": 0.6,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [5, 1, 5],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/steel_pallet.glb" }],
+      "recipes": [
+        {
+          "id": "steel_pallet",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 4 }],
+          "outputs": [{ "item": "steel_pallet", "count": 1 }],
+          "time": 5,
+          "order": 3170
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/vent_grid.json",
+      "template": "decor",
+      "set": {
+        "name": "Ventilation Grid",
+        "description": "A colony ventilation grille with angled louvres.",
+        "icon": "textures/items/vent_grid_icon.png",
+        "mass": 10.5,
+        "durability": 2,
+        "friction": 0.6,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [5, 3, 1],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/vent_grid.glb" }],
+      "recipes": [
+        {
+          "id": "vent_grid",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 3 }],
+          "outputs": [{ "item": "vent_grid", "count": 1 }],
+          "time": 5,
+          "order": 3128
+        }
+      ]
     }
   ]
 }

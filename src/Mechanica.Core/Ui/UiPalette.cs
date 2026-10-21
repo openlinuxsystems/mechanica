@@ -51,6 +51,21 @@ public static class UiPalette
     /// <summary>The health bar's fill: a green to go with <see cref="Blue"/>, drawn with a faint top-to-bottom shade.</summary>
     public const string Health = "#36B36B";
 
+    /// <summary>A Gas vehicle gauge's fill (red), shaded like <see cref="Health"/>.</summary>
+    public const string GaugeGas = "#DB4A41";
+
+    /// <summary>An Electric (battery) vehicle gauge's fill: the interface <see cref="Blue"/>.</summary>
+    public const string GaugeElectric = Blue;
+
+    /// <summary>A Chemical vehicle gauge's fill (green, yellower than <see cref="Health"/>).</summary>
+    public const string GaugeChemical = "#8CCB3A";
+
+    /// <summary>A Water vehicle gauge's fill (aqua).</summary>
+    public const string GaugeWater = "#4FC3DE";
+
+    /// <summary>An Ammo vehicle gauge's fill (mustard, kept clear of orange).</summary>
+    public const string GaugeAmmo = "#CBBF3A";
+
     /// <summary>Behind a full-screen station window, dims the world (UI spec §0); drawn at <see cref="ScrimOpacity"/>.</summary>
     public const string Scrim = "#0A1220";
 
@@ -250,6 +265,11 @@ public static class UiPalette
         [nameof(Warning)] = Warning,
         [nameof(Success)] = Success,
         [nameof(Health)] = Health,
+        [nameof(GaugeGas)] = GaugeGas,
+        [nameof(GaugeElectric)] = GaugeElectric,
+        [nameof(GaugeChemical)] = GaugeChemical,
+        [nameof(GaugeWater)] = GaugeWater,
+        [nameof(GaugeAmmo)] = GaugeAmmo,
         [nameof(Scrim)] = Scrim,
         [nameof(Chrome)] = Chrome,
         [nameof(Chrome2)] = Chrome2,

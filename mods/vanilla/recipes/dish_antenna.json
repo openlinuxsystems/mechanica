@@ -1,0 +1,24 @@
+{
+  "id": "dish_antenna",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 4
+    },
+    {
+      "item": "circuit_board",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "dish_antenna",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 3180
+}

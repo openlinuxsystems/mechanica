@@ -1,21 +1,20 @@
 {
   "id": "respawn_bed",
   "name": "Respawn Bed",
-  "description": "Sleep here (Use) and you respawn here when you die.",
+  "description": "The colony's wooden bunk. Sleep here (Use) and you respawn here when you die. Wood and cotton: it burns.",
   "category": "interactive",
-  "mass": 30,
-  "durability": 6,
-  "friction": 0.6,
-  "buoyancy": 0.4,
+  "mass": 4.5,
+  "durability": 3,
+  "friction": 0.4,
+  "buoyancy": 0.6,
   "flammable": true,
-  "stack_size": 5,
+  "stack_size": 1,
   "sound_material": "wood",
   "size": [4, 2, 8],
-  "mesh": "meshes/respawn_bed.glb",
+  "mesh": "meshes/parts/respawn_bed.glb",
+  "icon": "textures/items/respawn_bed_icon.png",
   "visual": {
-    "color": "#7a5a3a",
-    "roughness": 0.8,
-    "metallic": 0
+    "color": "#ffffff"
   },
   "sockets": [
     {

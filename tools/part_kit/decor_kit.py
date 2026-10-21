@@ -264,6 +264,20 @@ def foot(g, p, r, h, mat="rubber"):
     cylinder(g, p - Vector((0, 0, h)), p, r, mat, segs=12)
 
 
+# Letters the containers' stencil font lacks, in its 5 x 7 cells (added, never replacing one of its own).
+for _ch, _rows in {
+    "E": ["11111", "10000", "10000", "11110", "10000", "10000", "11111"],
+    "I": ["01110", "00100", "00100", "00100", "00100", "00100", "01110"],
+    "L": ["10000", "10000", "10000", "10000", "10000", "10000", "11111"],
+    "N": ["10001", "11001", "10101", "10011", "10001", "10001", "10001"],
+    "R": ["11110", "10001", "10001", "11110", "10100", "10010", "10001"],
+    "T": ["11111", "00100", "00100", "00100", "00100", "00100", "00100"],
+    "U": ["10001", "10001", "10001", "10001", "10001", "10001", "01110"],
+    "5": ["11111", "10000", "11110", "00001", "00001", "10001", "01110"],
+}.items():
+    fm.GLYPHS.setdefault(_ch, _rows)
+
+
 def pixel_text(g, text, origin, u, v, px, mat, t=0.0008, gap=1):
     """The containers' stencil pixel font on a flat face, `origin` the text's centre, reading along `u` with `v` up."""
     o, u, v = Vector(origin), Vector(u).normalized(), Vector(v).normalized()

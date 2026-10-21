@@ -29,7 +29,7 @@ public class VanillaCatalogTests
         "wooden_crate", "metal_crate", "barrel", "fabricator", "portable_fabricator", "refiner", "dispenser", "respawn_bed",
         "radio", "beacon", "headlight", "spotlight", "warehouse_spotlight", "construction_light", "interior_light",
         "warning_light", "shack_light", "fluorescent_light", "packing_lamp", "frame_beam_light", "neon_sign", "protector_sign",
-        "alarm_clock", "cash_register",
+        "alarm_clock", "cash_register", "fancy_bed", "freezer", "anvil",
         // Resources, consumables, handheld weapons (produce_crate is left out for now)
         "component_kit", "circuit_board", "glue", "gasoline", "crude_oil", "battery_pack",
         "master_battery", "warehouse_key", "explosive_remnant", "scuttler_head", "carrot_seed", "potato_seed", "tomato_seed",
@@ -589,6 +589,100 @@ public class VanillaCatalogTests
         Assert.Contains($"part.display(\"{readout}\"", File.ReadAllText(Path.Combine(mod, part.Script!)), StringComparison.Ordinal);
     }
 
+    [Theory]
+    // Parts map batch 7 (beds and stations): the wiki's bars. The Fabricator and Refiner have no stack size (-1).
+    [InlineData("respawn_bed", 4.5, 3, 0.4, 0.6, true, 1)]
+    [InlineData("fancy_bed", 4.5, 7, 0.4, 0.6, false, 5)]
+    [InlineData("freezer", 4.5, 7, 0.6, 0.2, false, 5)]
+    [InlineData("anvil", 15, 5, 0.8, 0.1, false, 20)]
+    [InlineData("fabricator", 10.5, 7, 0.6, 0.1, false, -1)]
+    [InlineData("refiner", 10.5, 7, 0.6, 0.1, false, -1)]
+    public void BedsAndStationsTakeTheWikiStats(string id, double mass, int durability, double friction, double buoyancy,
+        bool flammable, int stack)
+    {
+        var part = Part(id);
+
+        Assert.Equal((mass, durability, friction, buoyancy, flammable, stack),
+            (Math.Round((double)part.Mass!.Value, 3), (int)part.Durability!.Value, Math.Round((double)part.Friction!.Value, 3),
+                Math.Round((double)part.Buoyancy!.Value, 3), part.Flammable!.Value, part.StackSize ?? -1));
+    }
+
+    [Theory]
+    // Parts map batch 7: the wiki's Craftbot recipes. The Refiner keeps ours (our early path to Gasoline) and the
+    // Fabricator has none (it is picked up at the Workshop).
+    [InlineData("respawn_bed", 30, "wood_block:50", "cotton:20", "paint_ammo:10")]
+    [InlineData("fancy_bed", 30, "metal_block_2:25", "cotton:20", "paint_ammo:10")]
+    [InlineData("freezer", 30, "metal_block_2:20", "component_kit:2", "circuit_board:4", "chemical:20")]
+    [InlineData("anvil", 10, "metal_block_2:100")]
+    [InlineData("refiner", 15, "scrap_metal_block:40", "component_kit:4", "circuit_board:2")]
+    public void BedsAndStationsTakeTheWikiRecipes(string id, float time, params string[] inputs) =>
+        VehiclePartsTakeTheWikiRecipes(id, time, inputs);
+
+    [Fact]
+    public void TheFabricatorKeepsItsFiveLevelsAndNoRecipe()
+    {
+        var book = RecipeBook.Load(Vanilla.Value);
+        var written = Part("fabricator");
+
+        Assert.DoesNotContain(book.All, r => r.Outputs.Any(o => o.Item.StartsWith("vanilla:fabricator", StringComparison.Ordinal)));
+        Assert.Equal(4, PartUpgrades.MaxLevel(written));
+        for (var level = 0; level <= 4; level++)
+            Assert.Equal($"meshes/parts/fabricator_{level + 1}.glb", PartUpgrades.At(written, level).Mesh);
+    }
+
+    [Theory]
+    // Parts map batch 7: a real model per part (tools/<part>/build_<part>.py) and icon; the stations play their clips
+    // from the crafting queue's readout (no script), the beds and the Anvil have none.
+    [InlineData("respawn_bed")]
+    [InlineData("fancy_bed")]
+    [InlineData("anvil")]
+    [InlineData("freezer", "complete", "idle_loop", "start", "work_loop")]
+    [InlineData("refiner", "complete", "idle_loop", "start", "work_loop")]
+    public void EachBedAndStationHasItsOwnModelIconAndClips(string id, params string[] clips)
+    {
+        var part = Part(id);
+        var mod = Path.Combine(TestMods.RepoRoot, "mods", "vanilla");
+
+        Assert.Equal($"meshes/parts/{id}.glb", part.Mesh);
+        Assert.Equal($"textures/items/{id}_icon.png", part.Icon);
+        Assert.True(File.Exists(Path.Combine(mod, part.Mesh!)), $"{id} has a model");
+        Assert.True(File.Exists(Path.Combine(mod, part.Icon!)), $"{id} has an icon");
+        Assert.True(File.Exists(Path.Combine(TestMods.RepoRoot, "tools", id, $"build_{id}.py")), $"{id} has its build script");
+        Assert.Equal(clips, GlbAnimations(Path.Combine(mod, part.Mesh!)).Order(StringComparer.Ordinal));
+        if (clips.Length == 0)
+            return;
+        Assert.Equal(("station", "idle_loop"), (part.Display?.Clips?.Readout, part.Display?.Clips?.Idle));
+        Assert.Equal(("start", "work_loop", "complete"), (part.Crafting?.Clips?.Start, part.Crafting?.Clips?.Work, part.Crafting?.Clips?.Complete));
+    }
+
+    [Theory]
+    [InlineData("respawn_bed", true)]
+    [InlineData("fancy_bed", false)]
+    public void BothBedsAreRespawnPointsAndOnlyTheWoodenOneBurns(string id, bool flammable)
+    {
+        var part = Part(id);
+
+        Assert.True(part.RespawnPoint);
+        Assert.Equal(flammable, part.Flammable);
+        Assert.Equal(("bed_use", "bed_set"), (part.Sounds!["use"], part.Sounds!["set"]));
+    }
+
+    [Fact]
+    public void TheFreezerTurnsAFullBucketInto20IceBlocksAndGivesTheBucketBack()
+    {
+        // Parts map batch 7: the wiki's Freezer makes 20 Ice Blocks from a Water in about a minute; our Water is the full bucket.
+        var book = RecipeBook.Load(Vanilla.Value);
+        var freezer = Part("freezer");
+
+        var recipe = Assert.Single(book.ForStation("freezer"));
+        Assert.Equal(["vanilla:water_bucket_full:1"], recipe.Inputs.Select(i => $"{i.Item}:{i.Count}"));
+        Assert.Equal(["vanilla:ice_block:20", "vanilla:water_bucket:1"], recipe.Outputs.Select(o => $"{o.Item}:{o.Count}"));
+        Assert.Equal(60f, recipe.Time);
+        Assert.Equal(PartCategory.Station, freezer.Category);
+        Assert.True(freezer.Inventory!.Slots >= 2, "room for the ice and the bucket");
+        Assert.DoesNotContain(book.ForStation("fabricator"), r => r.QualifiedId == recipe.QualifiedId);
+    }
+
     [Fact]
     public void TheScuttlerHeadIsTheScuttlersDropAndCannotBeCrafted()
     {
@@ -695,6 +789,8 @@ public class VanillaCatalogTests
     [InlineData("fabricator", "vanilla:shack_light", "vanilla:glowstick", "vanilla:fluorescent_light", "vanilla:packing_lamp",
         "vanilla:interior_light", "vanilla:headlight", "vanilla:spotlight", "vanilla:construction_light", "vanilla:warning_light",
         "vanilla:beacon", "vanilla:warehouse_spotlight", "vanilla:frame_beam_light", "vanilla:neon_sign", "vanilla:protector_sign")]
+    [InlineData("fabricator", "vanilla:portable_fabricator", "vanilla:refiner", "vanilla:respawn_bed", "vanilla:fancy_bed", "vanilla:freezer")]
+    [InlineData("fabricator", "vanilla:bathtub", "vanilla:anvil", "vanilla:cash_register")]
     [InlineData("portable_fabricator", "vanilla:scrap_wood_wedge", "vanilla:scrap_metal_wedge", "vanilla:scrap_seat",
         "vanilla:scrap_drivers_seat", "vanilla:scrap_wheel", "vanilla:scrap_gas_engine", "vanilla:gasoline", "vanilla:bearing_scrap",
         "vanilla:switch_scrap", "vanilla:shack_light", "vanilla:beacon_scrap", "vanilla:connect_tool")]

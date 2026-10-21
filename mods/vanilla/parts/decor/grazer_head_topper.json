@@ -1,0 +1,19 @@
+{
+  "id": "grazer_head_topper",
+  "name": "Grazer Head Topper",
+  "description": "A Grazer's head on a mounting cap. The farmers put one on top of their vending machines.",
+  "category": "decor",
+  "mass": 7.5,
+  "durability": 6,
+  "friction": 0.4,
+  "buoyancy": 0.6,
+  "flammable": false,
+  "stack_size": 1,
+  "sound_material": "fabric",
+  "size": [4, 3, 3],
+  "mesh": "meshes/parts/grazer_head_topper.glb",
+  "icon": "textures/items/grazer_head_topper_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

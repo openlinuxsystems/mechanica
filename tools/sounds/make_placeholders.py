@@ -766,6 +766,11 @@ ev("stations", "refiner_start", lambda rng: beeps([262, 330, 392], 0.12, wave_fn
 ev("stations", "refiner_work", pattern_loop(lambda rng: [(band(noise(rng, 0.6), 100, 900) * decay(0.6, 0.3) * 0.5, 0.0), (thud(rng, 0.3, 50, 600, 0.06, 0.8), 0.4)], 1.0),
    loop=2.0, volume_db=-3.0, max_distance=30.0)
 ev("stations", "refiner_complete", lambda rng: beeps([523, 659, 784, 1046], 0.1), **TOOL)
+# The Freezer (parts map batch 7): a compressor kicking in, its hum and fan, and a cold chime with a hiss of frost.
+ev("stations", "freezer_start", lambda rng: edges(peak(mix(0.7, (thud(rng, 0.3, 40, 500, 0.08), 0), (glide(60, 120, 0.6) * 0.3, 0.05)), 0.6)), **TOOL)
+ev("stations", "freezer_work", noise_loop(150, 1200, 2.0, 0.3, ((120, 0.12), (240, 0.05))), loop=2.0, volume_db=-6.0, max_distance=25.0)
+ev("stations", "freezer_complete", lambda rng: edges(peak(mix(0.8, (beeps([1568, 1319, 1047], 0.1), 0), (hiss(rng, 0.5, 3000, 9000, 0.02, 0.3, 0.25), 0.2)), 0.6)),
+   **TOOL)
 ev("stations", "bed_use", lambda rng: edges(peak(whoosh(rng, 0.4, 100, 1200) + tone(660, 0.4) * decay(0.4, 0.2) * 0.2, 0.5)), **QUIET)
 ev("stations", "bed_set", lambda rng: beeps([523, 784, 1046], 0.12), **QUIET)
 ev("stations", "radio_on", lambda rng: edges(peak(click(rng, 1200, 0.4) * 0.6 + band(noise(rng, 0.4), 500, 6000) * decay(0.4, 0.15) * 0.4, 0.6)), **QUIET)
