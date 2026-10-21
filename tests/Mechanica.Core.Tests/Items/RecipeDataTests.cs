@@ -43,6 +43,8 @@ public class RecipeDataTests : IDisposable
     [InlineData("""{ "inventory": { "slots": 0 } }""", "$.inventory.slots", "slots must be 1 to 256 (got 0).")]
     [InlineData("""{ "inventory": { "slots": 2, "accepts": ["Bad Id"] } }""", "$.inventory.accepts[0]", "'Bad Id' must be an item id or 'mod_id:item_id'.")]
     [InlineData("""{ "inventory": { "slots": 2, "accepts": ["gas", "vanilla:gas"] } }""", "$.inventory.accepts[1]", "'vanilla:gas' is listed twice.")]
+    [InlineData("""{ "inventory": { "slots": 2, "gauge": "water" } }""", "$.inventory.gauge", "a gauge needs accepts: it shows how much of the first accepted item the container holds.")]
+    [InlineData("""{ "inventory": { "slots": 2, "accepts": ["gas"], "gauge": "fuel" } }""", "$.inventory.gauge", null)]
     [InlineData("""{ "crafting": { } }""", "$.crafting", "a crafting station needs an inventory for what it makes.")]
     [InlineData("""{ "inventory": { "slots": 1 }, "crafting": { "speed": 0 } }""", "$.crafting.speed", "speed must be greater than 0.")]
     [InlineData("""{ "inventory": { "slots": 1 }, "crafting": { "queue_size": 0 } }""", "$.crafting.queue_size", "queue_size must be 1 to 64.")]
@@ -55,11 +57,11 @@ public class RecipeDataTests : IDisposable
     [InlineData("""{ "inventory": { "slots": 4 }, "upgrades": [ { "set": { "inventory": { "slots": 2 } } } ] }""", "$.upgrades[0].set.inventory", "an upgrade cannot take inventory slots away.")]
     [InlineData("""{ "inventory": { "slots": 4 }, "upgrades": [ { "set": { "inventory": { "slots": 0 } } } ] }""", "$.upgrades[0].set.inventory.slots", "slots must be 1 to 256 (got 0).")]
     [InlineData("""{ "inventory": { "slots": 1 }, "crafting": { }, "upgrades": [ { "set": { "crafting": { "speed": -1 } } } ] }""", "$.upgrades[0].set.crafting.speed", "speed must be greater than 0.")]
-    public void BadStorageFieldsAreReported(string overrides, string path, string message)
+    public void BadStorageFieldsAreReported(string overrides, string path, string? message)
     {
         var content = _mods.Mod("vanilla").Part("vanilla", "box.json", TestMods.Block("box", overrides)).Load();
 
-        Assert.Contains(content.Diagnostics, d => d.JsonPath == path && d.Message == message);
+        Assert.Contains(content.Diagnostics, d => d.JsonPath == path && (message is null || d.Message == message));
     }
 
     [Fact]

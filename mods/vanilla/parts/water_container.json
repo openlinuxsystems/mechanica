@@ -31,7 +31,8 @@
     "slots": 5,
     "accepts": [
       "water_bucket_full"
-    ]
+    ],
+    "gauge": "water"
   },
   "logic": {
     "outputs": 16,

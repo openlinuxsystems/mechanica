@@ -34,6 +34,12 @@ public sealed record HudSettings
     /// <summary>What fills all ten pips of each stat in a detail card (UI spec §0 "Stat pips").</summary>
     public StatPipScale StatPips { get; init; } = new();
 
+    /// <summary>A vehicle gauge whose container holds less than this share of what it can hold pulses red (0 to 1).</summary>
+    public float GaugeLow { get; init; } = 0.1f;
+
+    /// <summary>Pulses per second of a low vehicle gauge's track.</summary>
+    public double GaugePulseHz { get; init; } = 1.0;
+
     /// <summary>Reads <paramref name="json"/>; throws <see cref="FormatException"/> on bad data.</summary>
     public static HudSettings Parse(string json)
     {
@@ -48,12 +54,16 @@ public sealed record HudSettings
         }
         settings ??= new HudSettings();
         if (settings.TooltipDelaySeconds < 0 || settings.TooltipFadeSeconds < 0 || settings.WindowFadeSeconds < 0 || settings.HintDismissSeconds <= 0
-            || settings.CrosshairPulseHz <= 0 || settings.TooltipOffset < 0 || settings.SafeArea is < 0 or >= 0.25f)
-            throw new FormatException("HUD times and offsets must not be negative, hint_dismiss_seconds and crosshair_pulse_hz must be above zero, and safe_area must be below 0.25.");
+            || settings.CrosshairPulseHz <= 0 || settings.TooltipOffset < 0 || settings.SafeArea is < 0 or >= 0.25f
+            || settings.GaugeLow is < 0 or > 1 || settings.GaugePulseHz <= 0)
+            throw new FormatException("HUD times and offsets must not be negative, hint_dismiss_seconds, crosshair_pulse_hz and gauge_pulse_hz must be above zero, safe_area must be below 0.25 and gauge_low 0 to 1.");
         if (settings.StatPips is not { MassKg: > 0, Durability: > 0, Friction: > 0, Buoyancy: > 0 })
             throw new FormatException("Every stat_pips scale must be above zero.");
         return settings;
     }
+
+    /// <summary>True when <paramref name="row"/>'s container is low enough that its gauge pulses (<see cref="GaugeLow"/>).</summary>
+    public bool IsLow(Items.GaugeRow row) => row.Capacity > 0 && row.Held < row.Capacity * GaugeLow;
 
     /// <summary>The safe margin in pixels for a screen of <paramref name="screen"/> size: a share of each side.</summary>
     public Vector2 Margin(Vector2 screen) => screen * SafeArea;

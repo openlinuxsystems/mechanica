@@ -375,7 +375,7 @@
         "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
-        "inventory": { "slots": 5, "accepts": ["chemical"] },
+        "inventory": { "slots": 5, "accepts": ["chemical"], "gauge": "chemical" },
         "logic": { "outputs": 16, "kind": "power" }
       },
       "model": [{ "kind": "mesh", "mesh": "meshes/parts/chemical_container.glb" }],
@@ -413,7 +413,7 @@
         "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
-        "inventory": { "slots": 5, "accepts": ["water_bucket_full"] },
+        "inventory": { "slots": 5, "accepts": ["water_bucket_full"], "gauge": "water" },
         "logic": { "outputs": 16, "kind": "power" }
       },
       "model": [{ "kind": "mesh", "mesh": "meshes/parts/water_container.glb" }],
@@ -450,7 +450,7 @@
         "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
-        "inventory": { "slots": 5, "accepts": ["potato"] },
+        "inventory": { "slots": 5, "accepts": ["potato"], "gauge": "ammo" },
         "logic": { "outputs": 16, "kind": "power" }
       },
       "model": [{ "kind": "mesh", "mesh": "meshes/parts/potato_ammo_container.glb" }],
@@ -575,7 +575,7 @@
         "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
-        "inventory": { "slots": 5, "accepts": ["gasoline"], "carry_contents": true },
+        "inventory": { "slots": 5, "accepts": ["gasoline"], "carry_contents": true, "gauge": "gas" },
         "logic": { "outputs": 16, "kind": "power" },
         "script": "scripts/gas_container.lua",
         "display": {
@@ -618,7 +618,7 @@
         "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
-        "inventory": { "slots": 5, "accepts": ["battery_pack"] },
+        "inventory": { "slots": 5, "accepts": ["battery_pack"], "gauge": "electric" },
         "logic": { "outputs": 16, "kind": "power" },
         "script": "scripts/battery.lua",
         "display": {

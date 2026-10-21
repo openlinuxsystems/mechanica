@@ -240,6 +240,7 @@ rather than in Lua.
 | `inventory.slots` | integer 1–256 | Number of item slots. Required when `inventory` is present. |
 | `inventory.accepts` | list of item ids | Only these items go in (`["gasoline"]` for a gas container). Omitted means any item. |
 | `inventory.carry_contents` | boolean | `true` lets a player pick the part up while it holds items (a gas container full of fuel): they go into the player's inventory with it, and what doesn't fit drops where it stood. A Lift may also carry a Creation whose only stored items are in such parts. Default `false`. |
+| `inventory.gauge` | `gas`, `electric`, `chemical`, `water` or `ammo` | Shows the container on the vehicle gauges: while a player sits in any seat of its Creation, the bottom left of their screen shows how much of its first `accepts` item it holds (red fuel can, blue battery, green flask, aqua drop, mustard potato, stacked in that order). Needs `accepts`. Players can name such a container in its window ("Main tank"); its default name is the kind and a number, "Gas 1". Omitted shows no gauge. |
 | `crafting.speed` | number > 0 | Multiplier on recipe times: 2 crafts twice as fast. Default 1. |
 | `crafting.queue_size` | integer 1–64 | Most orders waiting at once. Default 1. |
 | `crafting.link_range` | number 0–8 (m) | Containers on the same Creation within this distance of the station (surface to surface) are its linked storage. Omitted or 0 links none. |

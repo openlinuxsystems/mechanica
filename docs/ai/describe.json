@@ -1858,6 +1858,44 @@
       }
     },
     {
+      "name": "NameContainer",
+      "kind": "action",
+      "group": "items",
+      "scope": "play",
+      "description": "Naming a container. Arguments of NameContainer: name a container that feeds a vehicle gauge (VehicleGauges).",
+      "params": {
+        "description": "Arguments of NameContainer: name a container that feeds a vehicle gauge (VehicleGauges).",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "Creation holding the container.",
+            "type": "integer"
+          },
+          "part": {
+            "description": "The container.",
+            "type": "integer"
+          },
+          "name": {
+            "description": "Its new name, at most 20 characters; null or blank gives it back its default (\"Gas 1\").",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "creation",
+          "part",
+          "name"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "Paint",
       "kind": "action",
       "group": "building",

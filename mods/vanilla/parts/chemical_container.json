@@ -31,7 +31,8 @@
     "slots": 5,
     "accepts": [
       "chemical"
-    ]
+    ],
+    "gauge": "chemical"
   },
   "logic": {
     "outputs": 16,

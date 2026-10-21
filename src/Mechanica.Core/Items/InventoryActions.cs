@@ -56,6 +56,12 @@ public sealed record CancelCraftArgs(int Creation, int Part, int Job);
 /// <param name="Part">The part.</param>
 public sealed record UpgradePartArgs(int Creation, int Part);
 
+/// <summary>Arguments of <c>NameContainer</c>: name a container that feeds a vehicle gauge (<see cref="VehicleGauges"/>).</summary>
+/// <param name="Creation">Creation holding the container.</param>
+/// <param name="Part">The container.</param>
+/// <param name="Name">Its new name, at most 20 characters; null or blank gives it back its default ("Gas 1").</param>
+public sealed record NameContainerArgs(int Creation, int Part, string? Name);
+
 /// <summary>Value of a successful <c>UpgradePart</c>.</summary>
 /// <param name="Level">The part's level now.</param>
 public sealed record UpgradePartResult(int Level);
@@ -202,6 +208,8 @@ public interface IInventoryWorld
 /// linked storage.</item>
 /// <item><c>UpgradePart</c>: raises a part one upgrade level (<see cref="PartUpgrades"/>), taking the level's cost from
 /// the caller's inventory unless <see cref="InventorySettings.FreeUpgrades"/> (Creative).</item>
+/// <item><c>NameContainer</c>: names a container in reach that feeds a vehicle gauge (a Gas Container's "Main tank"), as
+/// the seated players' gauges and its window show it.</item>
 /// <item><c>SortInventory</c>: auto-organizes the caller's own inventory or a container in reach: merges stacks and sorts
 /// them by inventory tab, then name (<see cref="Inventory.Sort"/>).</item>
 /// <item><c>GiveItems</c>: makes items from nothing, only while <see cref="InventorySettings.AllowGive"/> (Creative).</item>
@@ -231,6 +239,9 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
     /// <summary>Action name for upgrading a part.</summary>
     public const string UpgradePart = "UpgradePart";
 
+    /// <summary>Action name for naming a container.</summary>
+    public const string NameContainer = "NameContainer";
+
     /// <summary>Action name for auto-organizing an inventory.</summary>
     public const string SortInventory = "SortInventory";
 
@@ -257,6 +268,7 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
         dispatcher.Register<SortInventoryArgs>(SortInventory, (c, a) => CheckAccess(c, a.Inventory, out _), ApplySort);
         dispatcher.Register<GiveItemsArgs>(GiveItems, ValidateGive, ApplyGive);
         dispatcher.Register<UpgradePartArgs>(UpgradePart, ValidateUpgrade, ApplyUpgrade);
+        dispatcher.Register<NameContainerArgs>(NameContainer, ValidateName, ApplyName);
         dispatcher.Register<GetInventoryArgs>(GetInventory, (c, a) => CheckAccess(c, a.Inventory, out _), (c, a) => Value(View(a.Inventory)), readOnly: true);
     }
 
@@ -552,6 +564,28 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
         creation.SetLevel(args.Part, creation.LevelOf(args.Part) + 1);
         world.Changed(creation);
         return Value(new UpgradePartResult(creation.LevelOf(args.Part)));
+    }
+
+    // ---- NameContainer ----
+
+    private string? ValidateName(ActionCaller caller, NameContainerArgs args)
+    {
+        if (CheckAccess(caller, InventoryRef.OfPart(args.Creation, args.Part), out _) is { } bad)
+            return bad;
+        var creation = world.FindCreation(args.Creation)!;
+        if (WorldOwned.Refusal(creation, "renamed") is { } owned)
+            return owned;
+        if (creation.DefinitionOf(args.Part).Inventory?.Gauge is null)
+            return $"The {creation.DefinitionOf(args.Part).Name ?? creation.FindPart(args.Part)!.Part} has no gauge to name.";
+        return args.Name is { } name ? VehicleGauges.CheckName(name.Trim()) : null;
+    }
+
+    private JsonElement? ApplyName(ActionCaller caller, NameContainerArgs args)
+    {
+        var creation = world.FindCreation(args.Creation)!;
+        if (creation.SetPartName(args.Part, args.Name))
+            world.Changed(creation);
+        return null;
     }
 
     // ---- GiveItems ----
