@@ -123,7 +123,13 @@
         { "object": "roadside_billboard_small", "spacing": 90.0, "chance": 0.04, "roadside": { "road": "road", "gap": 3.0 } },
         { "object": "scene_roadside_wreck", "spacing": 90.0, "chance": 0.04, "roadside": { "road": "road", "gap": 3.6 } },
         { "object": "roadside_shrine", "spacing": 90.0, "chance": 0.04, "roadside": { "road": "track", "gap": 1.8 } },
-        { "object": "roadside_tire_pile", "spacing": 90.0, "chance": 0.03, "roadside": { "road": "track", "gap": 2.6 } }
+        { "object": "roadside_tire_pile", "spacing": 90.0, "chance": 0.03, "roadside": { "road": "track", "gap": 2.6 } },
+        { "object": "scene_scuttler_nest", "spacing": 170.0, "chance": 0.15, "near": { "objects": ["scene_junk_pile", "scene_scrap_outpost", "scene_salvager_crash", "scene_harvester_wreck", "scene_escape_pod", "scene_salvager_wreck", "scene_squatter_camp", "scene_rover_wreck", "scene_breakdown"], "within": 300.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "scene_rakehand_shrine", "spacing": 170.0, "chance": 0.2, "near": { "objects": ["scene_farmstead", "scene_hay_field", "scene_farmyard", "scene_field_edge", "scene_farm_wreck", "scene_kitchen_garden"], "within": 300.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "scene_spooler_tower", "spacing": 200.0, "chance": 0.3, "near": { "objects": ["scene_plant", "scene_container_yard", "scene_workyard", "scene_crane_site"], "pois": ["poi_03", "poi_08", "poi_15", "poi_19", "poi_21", "poi_24", "poi_27", "poi_28", "poi_31", "poi_35", "warehouse", "warehouse_small", "warehouse_large"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "scene_scuttler_marks", "spacing": 360.0, "chance": 0.3, "near": { "objects": ["scene_junk_pile", "scene_scrap_outpost", "scene_salvager_crash", "scene_harvester_wreck", "scene_escape_pod", "scene_salvager_wreck", "scene_squatter_camp", "scene_rover_wreck", "scene_breakdown"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "scene_rakehand_marks", "spacing": 360.0, "chance": 0.3, "near": { "objects": ["scene_farmstead", "scene_hay_field", "scene_farmyard", "scene_field_edge", "scene_farm_wreck", "scene_kitchen_garden"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "scene_spooler_marks", "spacing": 360.0, "chance": 0.3, "near": { "objects": ["scene_plant", "scene_container_yard", "scene_workyard", "scene_crane_site"], "pois": ["poi_03", "poi_08", "poi_15", "poi_19", "poi_21", "poi_24", "poi_27", "poi_28", "poi_31", "poi_35", "warehouse", "warehouse_small", "warehouse_large"], "within": 150.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } }
       ],
       "flora": [
         { "kind": "grass", "density": 2.4, "coverage": 0.85, "patch_size": 16.0, "scale": [0.8, 1.35], "colors": ["#7cc63a", "#8fd043", "#a8d23c", "#6cbd36"] },
@@ -186,7 +192,10 @@
         { "object": "road_sign_warning_curve", "spacing": 70.0, "chance": 0.6, "roadside": { "road": "road", "gap": 2.2, "side": "outside", "bend": 12.0 } },
         { "object": "road_sign_junction", "spacing": 60.0, "chance": 0.8, "roadside": { "road": "road", "gap": 2.0, "junction": 45.0 } },
         { "object": "road_sign_animal", "spacing": 90.0, "chance": 0.05, "roadside": { "road": "road", "gap": 2.0 } },
-        { "object": "roadside_shrine", "spacing": 90.0, "chance": 0.04, "roadside": { "road": "track", "gap": 1.8 } }
+        { "object": "roadside_shrine", "spacing": 90.0, "chance": 0.04, "roadside": { "road": "track", "gap": 1.8 } },
+        { "object": "scene_scuttler_nest", "spacing": 150.0, "chance": 1.0, "near": { "objects": ["scene_junk_pile", "scene_scrap_outpost", "scene_salvager_crash", "scene_harvester_wreck", "scene_escape_pod", "scene_salvager_wreck", "scene_squatter_camp", "scene_rover_wreck", "scene_breakdown"], "within": 300.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "scene_spooler_tower", "spacing": 200.0, "chance": 0.3, "near": { "pois": ["poi_03", "poi_08", "poi_15", "poi_19", "poi_21", "poi_24", "poi_27", "poi_28", "poi_31", "poi_35", "warehouse", "warehouse_small", "warehouse_large"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "scene_scuttler_marks", "spacing": 320.0, "chance": 0.3, "near": { "objects": ["scene_junk_pile", "scene_scrap_outpost", "scene_salvager_crash", "scene_harvester_wreck", "scene_escape_pod", "scene_salvager_wreck", "scene_squatter_camp", "scene_rover_wreck", "scene_breakdown"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } }
       ],
       "flora": [
         { "kind": "grass", "density": 1.2, "coverage": 0.6, "patch_size": 10.0, "scale": [0.8, 1.4], "colors": ["#5fae36", "#6fba3c", "#53a13a"] },
@@ -264,7 +273,15 @@
         { "object": "roadside_billboard_small", "spacing": 90.0, "chance": 0.04, "roadside": { "road": "road", "gap": 3.0 } },
         { "object": "scene_roadside_wreck", "spacing": 90.0, "chance": 0.04, "roadside": { "road": "road", "gap": 3.6 } },
         { "object": "roadside_shrine", "spacing": 90.0, "chance": 0.04, "roadside": { "road": "track", "gap": 1.8 } },
-        { "object": "roadside_tire_pile", "spacing": 90.0, "chance": 0.03, "roadside": { "road": "track", "gap": 2.6 } }
+        { "object": "roadside_tire_pile", "spacing": 90.0, "chance": 0.03, "roadside": { "road": "track", "gap": 2.6 } },
+        { "object": "scene_scuttler_nest", "spacing": 170.0, "chance": 0.15, "near": { "objects": ["scene_junk_pile", "scene_scrap_outpost", "scene_salvager_crash", "scene_harvester_wreck", "scene_escape_pod", "scene_salvager_wreck", "scene_squatter_camp", "scene_rover_wreck", "scene_breakdown"], "within": 300.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "scene_rakehand_shrine", "spacing": 160.0, "chance": 0.15, "near": { "objects": ["scene_farmstead", "scene_hay_field", "scene_farmyard", "scene_field_edge", "scene_farm_wreck", "scene_kitchen_garden"], "within": 300.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "scene_spooler_tower", "spacing": 200.0, "chance": 0.3, "near": { "objects": ["scene_plant", "scene_container_yard", "scene_workyard", "scene_crane_site"], "pois": ["poi_03", "poi_08", "poi_15", "poi_19", "poi_21", "poi_24", "poi_27", "poi_28", "poi_31", "poi_35", "warehouse", "warehouse_small", "warehouse_large"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "scene_thresher_den", "spacing": 150.0, "chance": 0.7, "near": { "objects": ["scene_harvest_wreck", "scene_farm_wreck", "scene_harvester_wreck"], "pois": ["farmbot_scrapyard", "poi_32", "poi_41"], "within": 350.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "scene_scuttler_marks", "spacing": 360.0, "chance": 0.3, "near": { "objects": ["scene_junk_pile", "scene_scrap_outpost", "scene_salvager_crash", "scene_harvester_wreck", "scene_escape_pod", "scene_salvager_wreck", "scene_squatter_camp", "scene_rover_wreck", "scene_breakdown"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "scene_rakehand_marks", "spacing": 320.0, "chance": 0.3, "near": { "objects": ["scene_farmstead", "scene_hay_field", "scene_farmyard", "scene_field_edge", "scene_farm_wreck", "scene_kitchen_garden"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "scene_spooler_marks", "spacing": 360.0, "chance": 0.3, "near": { "objects": ["scene_plant", "scene_container_yard", "scene_workyard", "scene_crane_site"], "pois": ["poi_03", "poi_08", "poi_15", "poi_19", "poi_21", "poi_24", "poi_27", "poi_28", "poi_31", "poi_35", "warehouse", "warehouse_small", "warehouse_large"], "within": 150.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "scene_thresher_marks", "spacing": 300.0, "chance": 0.3, "near": { "objects": ["scene_harvest_wreck", "scene_farm_wreck", "scene_harvester_wreck"], "pois": ["farmbot_scrapyard", "poi_32", "poi_41"], "within": 250.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } }
       ],
       "flora": [
         { "kind": "grass", "density": 2.6, "coverage": 0.9, "patch_size": 24.0, "scale": [1.0, 1.5], "models": ["grass_tall", "grass_tipped"], "colors": ["#e0c04a", "#d4b03e", "#e8cc5a", "#c9a83a"] },
@@ -324,7 +341,10 @@
         { "object": "roadside_billboard_small", "spacing": 90.0, "chance": 0.04, "roadside": { "road": "road", "gap": 3.0 } },
         { "object": "scene_roadside_wreck", "spacing": 90.0, "chance": 0.04, "roadside": { "road": "road", "gap": 3.6 } },
         { "object": "roadside_tire_pile", "spacing": 90.0, "chance": 0.03, "roadside": { "road": "track", "gap": 2.6 } },
-        { "object": "balanced_rock", "spacing": 300.0, "chance": 0.5 }
+        { "object": "balanced_rock", "spacing": 300.0, "chance": 0.5 },
+        { "object": "scene_spooler_tower", "spacing": 200.0, "chance": 0.3, "near": { "objects": ["scene_plant", "scene_container_yard", "scene_workyard", "scene_crane_site"], "pois": ["poi_03", "poi_08", "poi_15", "poi_19", "poi_21", "poi_24", "poi_27", "poi_28", "poi_31", "poi_35", "warehouse", "warehouse_small", "warehouse_large"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "scene_thresher_den", "spacing": 140.0, "chance": 1.0, "near": { "pois": ["farmbot_scrapyard", "poi_32", "poi_41"], "within": 400.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "scene_thresher_marks", "spacing": 300.0, "chance": 0.3, "near": { "pois": ["farmbot_scrapyard", "poi_32", "poi_41"], "within": 300.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } }
       ],
       "flora": [
         { "kind": "grass", "density": 0.25, "coverage": 0.25, "patch_size": 10.0, "scale": [0.6, 1.0], "models": ["grass_short", "grass_tipped"], "colors": ["#c4b45a", "#b0a64e"] },
@@ -425,7 +445,12 @@
         { "object": "road_sign_warning_curve", "spacing": 70.0, "chance": 0.6, "roadside": { "road": "road", "gap": 2.2, "side": "outside", "bend": 12.0 } },
         { "object": "road_sign_junction", "spacing": 60.0, "chance": 0.8, "roadside": { "road": "road", "gap": 2.0, "junction": 45.0 } },
         { "object": "scene_roadside_wreck", "spacing": 90.0, "chance": 0.04, "roadside": { "road": "road", "gap": 3.6 } },
-        { "object": "roadside_tire_pile", "spacing": 90.0, "chance": 0.03, "roadside": { "road": "track", "gap": 2.6 } }
+        { "object": "roadside_tire_pile", "spacing": 90.0, "chance": 0.03, "roadside": { "road": "track", "gap": 2.6 } },
+        { "object": "scene_scuttler_nest", "spacing": 160.0, "chance": 1.0, "near": { "objects": ["scene_junk_pile", "scene_scrap_outpost", "scene_salvager_crash", "scene_harvester_wreck", "scene_escape_pod", "scene_salvager_wreck", "scene_squatter_camp", "scene_rover_wreck", "scene_breakdown"], "within": 300.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "scene_spooler_tower", "spacing": 200.0, "chance": 0.3, "near": { "pois": ["poi_03", "poi_08", "poi_15", "poi_19", "poi_21", "poi_24", "poi_27", "poi_28", "poi_31", "poi_35", "warehouse", "warehouse_small", "warehouse_large"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "scene_thresher_den", "spacing": 140.0, "chance": 1.0, "near": { "pois": ["farmbot_scrapyard", "poi_32", "poi_41"], "within": 400.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "scene_scuttler_marks", "spacing": 320.0, "chance": 0.3, "near": { "objects": ["scene_junk_pile", "scene_scrap_outpost", "scene_salvager_crash", "scene_harvester_wreck", "scene_escape_pod", "scene_salvager_wreck", "scene_squatter_camp", "scene_rover_wreck", "scene_breakdown"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "scene_thresher_marks", "spacing": 300.0, "chance": 0.3, "near": { "pois": ["farmbot_scrapyard", "poi_32", "poi_41"], "within": 300.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } }
       ],
       "flora": [
         { "kind": "grass", "density": 0.3, "coverage": 0.3, "patch_size": 10.0, "scale": [0.6, 1.0], "models": ["grass_short", "grass_tipped"], "colors": ["#6a5a2c", "#5c4d24"] }
@@ -8386,6 +8411,507 @@
             { "object": "guard_rail", "at": [4.0, 0.0] },
             { "object": "guard_rail", "at": [8.0, 0.0] },
             { "object": "road_reflector_post", "at": [-10.6, 0.2], "chance": 0.8 }
+          ] }
+        ]
+      }
+    },
+    // The bot factions' marks (docs/world-generation.md, Faction sites; tools/structures/factions_bots_a.py and _b.py).
+    {
+      "id": "scuttler_nest",
+      "collider": {"shape": "cylinder", "radius": 6.8, "height": 5.8, "at": [0.0, 2.9, 0.0]},
+      "mesh": { "file": "meshes/world/props/scuttler_nest.glb", "collide": true },
+      "footprint": 9.5,
+      "sink": 0.06,
+      "max_slope": 0.25,
+      "clear_flora": true,
+      "damage_from": []
+    },
+    {
+      "id": "scuttler_cradle",
+      "collider": {"shape": "box", "size": [4.6, 1.1, 4.4], "at": [0.0, 0.55, -0.1]},
+      "mesh": { "file": "meshes/world/props/scuttler_cradle.glb", "collide": true },
+      "footprint": 3.0,
+      "sink": 0.03,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "scuttler_totem",
+      "collider": {"shape": "cylinder", "radius": 0.9, "height": 6.0, "at": [0.0, 3.0, 0.0]},
+      "mesh": { "file": "meshes/world/props/scuttler_totem.glb" },
+      "footprint": 2.8,
+      "sink": 0.03,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 6, "count_max": 10 }]
+    },
+    {
+      "id": "scuttler_bore",
+      "collider": {"shape": "box", "size": [5.0, 2.7, 2.2], "at": [0.1, 1.35, -0.6]},
+      "mesh": { "file": "meshes/world/props/scuttler_bore.glb" },
+      "footprint": 3.2,
+      "sink": 0.03,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "scuttler_stomp_ring",
+      "collider": {"shape": "cylinder", "radius": 1.7, "height": 0.3, "at": [0.0, 0.15, 0.0]},
+      "mesh": { "file": "meshes/world/props/scuttler_stomp_ring.glb" },
+      "footprint": 2.0,
+      "sink": 0.03,
+      "max_slope": 0.35,
+      "solid": false,
+      "damage_from": []
+    },
+    {
+      "id": "scuttler_blast_pit",
+      "collider": {"shape": "cylinder", "radius": 1.6, "height": 0.3, "at": [0.0, 0.15, 0.0]},
+      "mesh": { "file": "meshes/world/props/scuttler_blast_pit.glb" },
+      "footprint": 2.1,
+      "sink": 0.03,
+      "max_slope": 0.35,
+      "solid": false,
+      "damage_from": []
+    },
+    {
+      "id": "scuttler_seed_cache",
+      "collider": {"shape": "cylinder", "radius": 0.65, "height": 0.9, "at": [-0.15, 0.45, -0.25]},
+      "mesh": { "file": "meshes/world/props/scuttler_seed_cache.glb" },
+      "footprint": 1.3,
+      "sink": 0.03,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 2, "count_max": 4 }]
+    },
+    {
+      "id": "rakehand_shrine",
+      "collider": {"shape": "box", "size": [7.4, 10.0, 7.4], "at": [0.0, 5.0, 0.0]},
+      "mesh": { "file": "meshes/world/props/rakehand_shrine.glb", "collide": true },
+      "footprint": 8.5,
+      "sink": 0.06,
+      "max_slope": 0.25,
+      "damage_from": []
+    },
+    {
+      "id": "rakehand_palisade",
+      "collider": {"shape": "box", "size": [6.4, 2.6, 1.2], "at": [0.0, 1.3, -0.25]},
+      "mesh": { "file": "meshes/world/props/rakehand_palisade.glb" },
+      "footprint": 3.3,
+      "sink": 0.03,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "rakehand_bale_fort",
+      "collider": {"shape": "box", "size": [5.8, 1.65, 3.8], "at": [0.0, 0.83, -0.3]},
+      "mesh": { "file": "meshes/world/props/rakehand_bale_fort.glb", "collide": true },
+      "footprint": 3.6,
+      "sink": 0.03,
+      "max_slope": 0.35,
+      "health": 20.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" }
+    },
+    {
+      "id": "rakehand_perch",
+      "collider": {"shape": "cylinder", "radius": 0.6, "height": 5.0, "at": [0.0, 2.5, -0.3]},
+      "mesh": { "file": "meshes/world/props/rakehand_perch.glb" },
+      "footprint": 2.5,
+      "sink": 0.03,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 6, "count_max": 8 }]
+    },
+    {
+      "id": "rakehand_rake_ring",
+      "collider": {"shape": "cylinder", "radius": 1.5, "height": 1.8, "at": [0.0, 0.9, 0.0]},
+      "mesh": { "file": "meshes/world/props/rakehand_rake_ring.glb" },
+      "footprint": 1.9,
+      "sink": 0.03,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 6, "count_max": 10 }]
+    },
+    {
+      "id": "rakehand_tool_hoard",
+      "collider": {"shape": "box", "size": [1.3, 0.8, 0.85], "at": [0.0, 0.4, 0.0]},
+      "mesh": { "file": "meshes/world/props/rakehand_tool_hoard.glb" },
+      "footprint": 1.3,
+      "sink": 0.03,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 4, "count_max": 8 }]
+    },
+    {
+      "id": "rakehand_trample",
+      "collider": {"shape": "cylinder", "radius": 2.3, "height": 0.8, "at": [0.0, 0.4, 0.0]},
+      "mesh": { "file": "meshes/world/props/rakehand_trample.glb" },
+      "footprint": 2.5,
+      "sink": 0.03,
+      "max_slope": 0.35,
+      "solid": false,
+      "damage_from": []
+    },
+    {
+      "id": "spooler_reel_tower",
+      "collider": {"shape": "box", "size": [4.6, 18.0, 4.6], "at": [0.0, 9.0, 0.0]},
+      "mesh": { "file": "meshes/world/props/spooler_reel_tower.glb", "collide": true },
+      "footprint": 9.5,
+      "sink": 0.06,
+      "max_slope": 0.25,
+      "damage_from": []
+    },
+    {
+      "id": "spooler_tape_web",
+      "collider": {"shape": "box", "size": [6.6, 3.6, 0.4], "at": [0.0, 1.8, 0.0]},
+      "mesh": { "file": "meshes/world/props/spooler_tape_web.glb" },
+      "footprint": 4.4,
+      "sink": 0.03,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }]
+    },
+    {
+      "id": "spooler_crate_bunker",
+      "collider": {"shape": "box", "size": [6.4, 2.2, 4.6], "at": [0.0, 1.1, 0.0]},
+      "mesh": { "file": "meshes/world/props/spooler_crate_bunker.glb", "collide": true },
+      "footprint": 3.4,
+      "sink": 0.03,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "spooler_sniper_gantry",
+      "collider": {"shape": "box", "size": [6.6, 4.7, 1.3], "at": [0.0, 2.35, 0.0]},
+      "mesh": { "file": "meshes/world/props/spooler_sniper_gantry.glb" },
+      "footprint": 3.4,
+      "sink": 0.03,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "spooler_cocoon",
+      "collider": {"shape": "cylinder", "radius": 0.5, "height": 2.0, "at": [0.0, 1.4, 0.0]},
+      "mesh": { "file": "meshes/world/props/spooler_cocoon.glb" },
+      "footprint": 1.2,
+      "sink": 0.03,
+      "max_slope": 0.35,
+      "health": 20.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" }
+    },
+    {
+      "id": "spooler_sentinel",
+      "collider": {"shape": "cylinder", "radius": 0.35, "height": 2.0, "at": [0.0, 1.0, 0.0]},
+      "mesh": { "file": "meshes/world/props/spooler_sentinel.glb" },
+      "footprint": 0.7,
+      "sink": 0.03,
+      "max_slope": 0.35,
+      "health": 20.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" }
+    },
+    {
+      "id": "spooler_reel_barricade",
+      "collider": {"shape": "box", "size": [3.5, 1.8, 1.8], "at": [0.0, 0.9, 0.0]},
+      "mesh": { "file": "meshes/world/props/spooler_reel_barricade.glb" },
+      "footprint": 2.0,
+      "sink": 0.03,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "thresher_den",
+      "collider": {"shape": "cylinder", "radius": 10.5, "height": 3.0, "at": [0.0, 1.5, 0.0]},
+      "mesh": { "file": "meshes/world/props/thresher_den.glb", "collide": true },
+      "footprint": 13.0,
+      "sink": 0.06,
+      "max_slope": 0.25,
+      "clear_flora": true,
+      "damage_from": []
+    },
+    {
+      "id": "thresher_pesticide_shrine",
+      "collider": {"shape": "cylinder", "radius": 1.3, "height": 3.6, "at": [0.0, 1.8, 0.0]},
+      "mesh": { "file": "meshes/world/props/thresher_pesticide_shrine.glb" },
+      "footprint": 3.0,
+      "sink": 0.03,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "thresher_spray_mast",
+      "collider": {"shape": "cylinder", "radius": 2.3, "height": 6.4, "at": [0.0, 3.2, 0.0]},
+      "mesh": { "file": "meshes/world/props/thresher_spray_mast.glb" },
+      "footprint": 4.8,
+      "sink": 0.03,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "thresher_tractor_graveyard",
+      "collider": {"shape": "box", "size": [5.0, 1.9, 2.5], "at": [-0.6, 0.95, 0.4]},
+      "mesh": { "file": "meshes/world/props/thresher_tractor_graveyard.glb" },
+      "footprint": 4.6,
+      "sink": 0.03,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "thresher_warning_stake",
+      "collider": {"shape": "cylinder", "radius": 0.15, "height": 2.2, "at": [0.0, 1.1, 0.0]},
+      "mesh": { "file": "meshes/world/props/thresher_warning_stake.glb" },
+      "footprint": 0.8,
+      "sink": 0.03,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 2, "count_max": 4 }]
+    },
+    {
+      "id": "thresher_tyre_cairn",
+      "collider": {"shape": "cylinder", "radius": 0.85, "height": 1.3, "at": [0.0, 0.65, 0.0]},
+      "mesh": { "file": "meshes/world/props/thresher_tyre_cairn.glb" },
+      "footprint": 1.3,
+      "sink": 0.03,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 6 }]
+    },
+    {
+      "id": "thresher_tilled_scar",
+      "collider": {"shape": "box", "size": [3.8, 0.2, 1.8], "at": [0.0, 0.1, 0.0]},
+      "mesh": { "file": "meshes/world/props/thresher_tilled_scar.glb" },
+      "footprint": 2.2,
+      "sink": 0.03,
+      "max_slope": 0.35,
+      "solid": false,
+      "damage_from": []
+    },
+    {
+      "id": "scene_scuttler_nest",
+      "footprint": 16.0,
+      "max_slope": 0.3,
+      "scene": {
+        "level": 3.0,
+        "layouts": [
+          { "weight": 2, "pieces": [
+            { "object": "scuttler_nest", "at": [0.0, 0.0] },
+            { "object": "scuttler_cradle", "at": [10.5, 3.8], "yaw": 25.0 },
+            { "object": "scuttler_totem", "at": [-9.0, -6.8] },
+            { "object": "scuttler_stomp_ring", "at": [4.5, -11.2], "chance": 0.7 },
+            { "object": "scuttler_seed_cache", "at": [-10.5, 5.2], "yaw": 40.0, "chance": 0.6 },
+            { "object": "scuttler_blast_pit", "at": [12.8, -6.0], "chance": 0.5 },
+            { "object": "scuttler_bore", "at": [-2.2, 12.8], "yaw": 180.0, "chance": 0.5 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "scuttler_nest", "at": [0.0, 0.0], "yaw": 120.0 },
+            { "object": "scuttler_bore", "at": [-11.2, -1.5], "yaw": 90.0 },
+            { "object": "scuttler_cradle", "at": [8.2, -9.0], "yaw": 200.0 },
+            { "object": "scuttler_totem", "at": [9.8, 7.5], "chance": 0.8 },
+            { "object": "scuttler_stomp_ring", "at": [-5.2, 11.2], "chance": 0.6 },
+            { "object": "scuttler_seed_cache", "at": [1.5, -12.8], "chance": 0.6 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "scuttler_nest", "at": [0.0, 0.0], "yaw": 240.0 },
+            { "object": "scuttler_totem", "at": [0.0, -11.2] },
+            { "object": "scuttler_cradle", "at": [-9.8, 6.0], "yaw": 60.0 },
+            { "object": "scuttler_blast_pit", "at": [9.8, 6.8], "chance": 0.7 },
+            { "object": "scuttler_stomp_ring", "at": [11.2, -3.8], "chance": 0.6 },
+            { "object": "scuttler_seed_cache", "at": [-6.8, -9.8], "yaw": 160.0, "chance": 0.7 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_rakehand_shrine",
+      "footprint": 16.0,
+      "max_slope": 0.3,
+      "scene": {
+        "level": 3.0,
+        "layouts": [
+          { "weight": 2, "pieces": [
+            { "object": "rakehand_shrine", "at": [0.0, 0.0] },
+            { "object": "rakehand_palisade", "at": [0.0, -10.5] },
+            { "object": "rakehand_bale_fort", "at": [9.8, 4.5], "yaw": -30.0 },
+            { "object": "rakehand_perch", "at": [-9.0, 6.0], "yaw": 20.0 },
+            { "object": "rakehand_rake_ring", "at": [-7.5, -7.5] },
+            { "object": "rakehand_tool_hoard", "at": [8.2, -6.8], "yaw": 15.0, "chance": 0.7 },
+            { "object": "rakehand_trample", "at": [2.2, 12.0], "chance": 0.6 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "rakehand_shrine", "at": [0.0, 0.0], "yaw": 90.0 },
+            { "object": "rakehand_palisade", "at": [-9.8, -3.0], "yaw": 90.0 },
+            { "object": "rakehand_palisade", "at": [-8.2, 6.8], "yaw": 60.0, "chance": 0.6 },
+            { "object": "rakehand_bale_fort", "at": [9.0, -6.0], "yaw": 200.0 },
+            { "object": "rakehand_perch", "at": [6.0, 9.0] },
+            { "object": "rakehand_rake_ring", "at": [11.2, 2.2], "chance": 0.7 },
+            { "object": "rakehand_trample", "at": [-1.5, -12.0], "chance": 0.7 },
+            { "object": "rakehand_tool_hoard", "at": [-4.5, -9.8], "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_spooler_tower",
+      "footprint": 17.0,
+      "max_slope": 0.3,
+      "scene": {
+        "level": 3.0,
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "spooler_reel_tower", "at": [0.0, 0.0] },
+            { "object": "spooler_crate_bunker", "at": [10.9, -4.7], "yaw": -20.0 },
+            { "object": "spooler_tape_web", "at": [-3.1, -11.7], "yaw": 10.0 },
+            { "object": "spooler_sniper_gantry", "at": [-10.9, 3.9], "yaw": 90.0 },
+            { "object": "spooler_cocoon", "at": [6.2, 10.1], "chance": 0.7 },
+            { "object": "spooler_sentinel", "at": [11.7, 6.2], "yaw": 30.0, "chance": 0.7 },
+            { "object": "spooler_reel_barricade", "at": [-10.1, -7.8], "yaw": 40.0, "chance": 0.7 },
+            { "object": "spooler_sentinel", "at": [-1.6, 11.7], "yaw": 200.0, "chance": 0.5 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "spooler_reel_tower", "at": [0.0, 0.0], "yaw": 45.0 },
+            { "object": "spooler_sniper_gantry", "at": [10.1, 6.2], "yaw": 200.0 },
+            { "object": "spooler_crate_bunker", "at": [-10.1, -5.5], "yaw": 160.0 },
+            { "object": "spooler_tape_web", "at": [9.4, -9.4], "yaw": -40.0 },
+            { "object": "spooler_reel_barricade", "at": [-10.9, 6.2], "yaw": 10.0, "chance": 0.7 },
+            { "object": "spooler_cocoon", "at": [-3.1, 11.7], "chance": 0.6 },
+            { "object": "spooler_sentinel", "at": [2.3, -11.7], "yaw": 180.0, "chance": 0.7 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_thresher_den",
+      "footprint": 21.0,
+      "max_slope": 0.25,
+      "scene": {
+        "level": 3.0,
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "thresher_den", "at": [0.0, 0.0] },
+            { "object": "thresher_warning_stake", "at": [-3.2, -13.6] },
+            { "object": "thresher_warning_stake", "at": [3.2, -13.6] },
+            { "object": "thresher_spray_mast", "at": [14.4, -6.4] },
+            { "object": "thresher_pesticide_shrine", "at": [-14.4, 4.8] },
+            { "object": "thresher_tractor_graveyard", "at": [11.2, 12.0], "yaw": 30.0 },
+            { "object": "thresher_tyre_cairn", "at": [-12.0, -10.4], "chance": 0.8 },
+            { "object": "thresher_tilled_scar", "at": [0.0, -16.8], "yaw": 90.0, "chance": 0.7 },
+            { "object": "thresher_warning_stake", "at": [15.2, 4.8], "chance": 0.6 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "thresher_den", "at": [0.0, 0.0], "yaw": 180.0 },
+            { "object": "thresher_warning_stake", "at": [-3.2, 13.6] },
+            { "object": "thresher_warning_stake", "at": [3.2, 13.6] },
+            { "object": "thresher_spray_mast", "at": [-14.4, -4.8] },
+            { "object": "thresher_tractor_graveyard", "at": [13.6, -8.0], "yaw": -20.0 },
+            { "object": "thresher_pesticide_shrine", "at": [12.8, 8.0], "chance": 0.8 },
+            { "object": "thresher_tyre_cairn", "at": [-9.6, 12.0] },
+            { "object": "thresher_tilled_scar", "at": [0.0, 16.8], "yaw": 90.0, "chance": 0.7 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_scuttler_marks",
+      "footprint": 6.0,
+      "max_slope": 0.35,
+      "scene": {
+        "layouts": [
+          { "weight": 2, "pieces": [
+            { "object": "scuttler_totem", "at": [0.0, 0.0] }
+          ] },
+          { "weight": 2, "pieces": [
+            { "object": "scuttler_stomp_ring", "at": [0.0, 0.0] },
+            { "object": "scuttler_seed_cache", "at": [3.5, 1.5], "yaw": 30.0, "chance": 0.7 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "scuttler_blast_pit", "at": [0.0, 0.0] }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "scuttler_bore", "at": [0.0, 0.0] }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_rakehand_marks",
+      "footprint": 6.0,
+      "max_slope": 0.35,
+      "scene": {
+        "layouts": [
+          { "weight": 2, "pieces": [
+            { "object": "rakehand_rake_ring", "at": [0.0, 0.0] }
+          ] },
+          { "weight": 2, "pieces": [
+            { "object": "rakehand_trample", "at": [0.0, 0.0] },
+            { "object": "rakehand_tool_hoard", "at": [3.5, -2.0], "yaw": 20.0, "chance": 0.7 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "rakehand_perch", "at": [0.0, 0.0] }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "rakehand_palisade", "at": [0.0, 0.0] }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_spooler_marks",
+      "footprint": 6.0,
+      "max_slope": 0.35,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "spooler_cocoon", "at": [0.0, 0.0] }
+          ] },
+          { "weight": 2, "pieces": [
+            { "object": "spooler_sentinel", "at": [0.0, 0.0] },
+            { "object": "spooler_reel_barricade", "at": [3.5, -3.0], "yaw": 30.0, "chance": 0.7 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "spooler_tape_web", "at": [0.0, 0.0] }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_thresher_marks",
+      "footprint": 6.0,
+      "max_slope": 0.35,
+      "scene": {
+        "layouts": [
+          { "weight": 2, "pieces": [
+            { "object": "thresher_warning_stake", "at": [0.0, 0.0] },
+            { "object": "thresher_tilled_scar", "at": [0.0, -3.0], "yaw": 90.0, "chance": 0.7 }
+          ] },
+          { "weight": 2, "pieces": [
+            { "object": "thresher_tyre_cairn", "at": [0.0, 0.0] }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "thresher_spray_mast", "at": [0.0, 0.0] }
           ] }
         ]
       }

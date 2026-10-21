@@ -426,7 +426,18 @@ public partial class TerrainChunk : Node3D
         foreach (var o in LiveObjects)
         {
             var placed = new Transform3D(new Basis(Vector3.Up, o.Yaw).Scaled(new Vector3(o.Scale, o.Scale, o.Scale)), o.Position.ToGodot() - origin);
-            if (!Scenery)
+            if (!Scenery && ModelColliders(o.Definition) is { } model)
+            {
+                // A piece you walk into or onto (a burrow, a pen) collides with its model's collider mesh, scaled with it.
+                var at = placed * new Transform3D(Basis.Identity, o.Definition.Mesh!.At.ToGodot());
+                foreach (var (meshShape, local) in model)
+                {
+                    var shape = new CollisionShape3D { Shape = meshShape, Transform = at * local };
+                    (o.Definition.Solid ? (Node)Objects : Brush).AddChild(shape);
+                    _objectShapes[shape.GetInstanceId()] = o.Id;
+                }
+            }
+            else if (!Scenery)
             {
                 var collider = o.Definition.Collider!;
                 // Colliders are sized rather than scaled: physics engines handle unscaled shapes best.
@@ -639,9 +650,20 @@ public partial class TerrainChunk : Node3D
     {
         if (WorldGen?.MeshFileOf(definition, variant) is not { } file)
             return null;
+        // A model's collider mesh (see ModelColliders) is never drawn.
         if (!ObjectMeshes.TryGetValue(file, out var mesh))
-            ObjectMeshes[file] = mesh = Creations.PartAssets.ReadGltf(file, WorldGenData.ModelOf(definition, variant)!)?.FirstOrDefault();
+            ObjectMeshes[file] = mesh = Creations.PartAssets.ReadGltf(file, WorldGenData.ModelOf(definition, variant)!)?
+                .FirstOrDefault(m => m.Name?.StartsWith("collider", StringComparison.Ordinal) != true);
         return mesh;
+    }
+
+    // The collider mesh shapes of an object whose model collides (MeshDefinition.Collide), read once per file; null when
+    // it does not collide by its model or the model has no collider mesh (it then falls back to its primitive collider).
+    private IReadOnlyList<(Shape3D Shape, Transform3D Transform)>? ModelColliders(WorldObjectDefinition definition)
+    {
+        if (definition.Mesh is not { Collide: true } || WorldGen?.MeshFileOf(definition) is not { } file)
+            return null;
+        return StructureModel.Of(file, definition.Mesh.File!) is { } model && model.HasColliderMesh ? model.Colliders : null;
     }
 
     // The far model an object is drawn with past its LOD distance, loaded once per file; null when it has none.

@@ -175,6 +175,8 @@ internal static class WorldGenValidator
                 if (o.Mesh.Variants is { Count: > 0 } || o.Mesh.Lod is not null)
                     sink.Warning(Code, $"{path}.mesh.clips", "an animated model draws only its file: variants and lod are not used.");
             }
+            if (o.Mesh is { Collide: true } collides && (collides.Clips is not null || o.Scene is not null || o.Outcrop is not null))
+                sink.Error(Code, $"{path}.mesh.collide", "only a still model of a plain object collides with its own collider mesh (not with clips, a scene or an outcrop).");
             if (o.Harvest && o.Drops is not { Count: > 0 })
                 sink.Warning(Code, $"{path}.harvest", "harvesting gives nothing: the object has no drops.");
             if (o.Harvest && o.Refine)
@@ -299,8 +301,8 @@ internal static class WorldGenValidator
                 if (rule.Near is { } near)
                 {
                     KnownKeys.WarnUnknown(near.Extra, $"{rulePath}.near", sink, typeof(NearDefinition));
-                    if (near.Objects is not { Count: > 0 })
-                        sink.Error(Code, $"{rulePath}.near.objects", "near needs the objects to stand near.");
+                    if (near.Objects is not { Count: > 0 } && near.Pois is not { Count: > 0 })
+                        sink.Error(Code, $"{rulePath}.near.objects", "near needs the objects or POIs to stand near.");
                     for (var k = 0; k < (near.Objects?.Count ?? 0); k++)
                     {
                         if (!objectIds.Contains(near.Objects![k]))
@@ -310,6 +312,14 @@ internal static class WorldGenValidator
                     }
                     if (!(near.Within is > 0f and <= 400f))
                         sink.Error(Code, $"{rulePath}.near.within", $"within must be above 0 and at most 400 m (got {near.Within}).");
+                }
+                if (rule.Away is { } away)
+                {
+                    KnownKeys.WarnUnknown(away.Extra, $"{rulePath}.away", sink, typeof(AwayDefinition));
+                    if (away.Pois is not { Count: > 0 })
+                        sink.Error(Code, $"{rulePath}.away.pois", "away needs the POIs to keep away from.");
+                    if (!(away.Distance is >= 0f and <= 1000f))
+                        sink.Error(Code, $"{rulePath}.away.distance", $"distance must be from 0 to 1000 m (got {away.Distance}).");
                 }
                 if (rule.Water is not null && rule.Object is { } wet && objects.GetValueOrDefault(wet) is { } floating
                     && (floating.Scene is not null || floating.Outcrop is not null || rule.Perch is not null || rule.Roadside is not null))

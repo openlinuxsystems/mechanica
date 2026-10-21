@@ -37,7 +37,9 @@
         "scene_salvager_wreck",
         "scene_beacon_site",
         "scene_junk_pile",
-        "scene_scrap_outpost"
+        "scene_scrap_outpost",
+        "scene_scuttler_nest",
+        "scene_scuttler_marks"
       ],
       "radius": 30,
       "share": 0.5

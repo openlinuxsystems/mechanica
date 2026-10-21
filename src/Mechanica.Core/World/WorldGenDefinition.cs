@@ -277,8 +277,11 @@ public sealed record ScatterRule
     /// <summary>Gathers the rule's objects into patches (groves, rock fields) with open ground between. Omitted: spread evenly.</summary>
     public ClusterDefinition? Cluster { get; init; }
 
-    /// <summary>Keeps the rule's spots near other scattered objects or scenes (fields round farms). Omitted: anywhere.</summary>
+    /// <summary>Keeps the rule's spots near other scattered objects or scenes (fields round farms), or near POIs. Omitted: anywhere.</summary>
     public NearDefinition? Near { get; init; }
+
+    /// <summary>Keeps the rule's objects a distance from some POIs (hostile bots' sites from Workshops). Omitted: no such limit.</summary>
+    public AwayDefinition? Away { get; init; }
 
     /// <summary>
     /// Keeps the rule's objects to water (<see cref="ScatterWater"/>): floating on its surface (lily pads) or standing in
@@ -355,8 +358,28 @@ public sealed record NearDefinition
     /// <summary>Ids of the objects or scenes to stand near.</summary>
     public List<string>? Objects { get; init; }
 
-    /// <summary>Metres from one of their spots (at most 400).</summary>
+    /// <summary>
+    /// Ids of POI prefabs to stand near (<c>mod_id:poi_id</c>, or the world file's own mod's id): a spot within
+    /// <see cref="Within"/> metres of one's footprint counts, as well as one near <see cref="Objects"/>.
+    /// </summary>
+    public List<string>? Pois { get; init; }
+
+    /// <summary>Metres from one of their spots, or from a POI's footprint (at most 400).</summary>
     public float Within { get; init; } = 150f;
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>POIs a scatter rule keeps away from (<see cref="ScatterRule.Away"/>).</summary>
+public sealed record AwayDefinition
+{
+    /// <summary>Ids of the POI prefabs (<c>mod_id:poi_id</c>, or the world file's own mod's id).</summary>
+    public List<string>? Pois { get; init; }
+
+    /// <summary>Metres the rule's objects keep from each one's footprint (a scene's whole footprint keeps it).</summary>
+    public float Distance { get; init; } = 100f;
 
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
@@ -641,6 +664,13 @@ public sealed record MeshDefinition
 
     /// <summary>Metres from the camera past which <see cref="Lod"/> is drawn instead of the full model.</summary>
     public float LodDistance { get; init; } = 60f;
+
+    /// <summary>
+    /// True when the object collides with its model's <c>collider</c> mesh (a burrow, a walled pen, a plinth with a step:
+    /// things you walk into or onto) instead of its <see cref="WorldObjectDefinition.Collider"/>, which then only sizes it
+    /// for bots and hit effects. Never with <see cref="Clips"/>. Default false.
+    /// </summary>
+    public bool Collide { get; init; }
 
     /// <summary>
     /// The model's animation clips. A model with clips is drawn as its own scene rather than batched with its

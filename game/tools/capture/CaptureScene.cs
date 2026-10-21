@@ -111,7 +111,8 @@ public partial class CaptureScene : Node
         var husbandry = args.Length > 1 && args[1] == "husbandry";
         var fields = args.Length > 1 && args[1] == "fields";
         var formations = args.Length > 1 && args[1] == "formations";
-        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !connectLines && !husbandry && !fields && args[1] != "survey" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        var factions = args.Length > 1 && args[1] == "factions";
+        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !factions && !connectLines && !husbandry && !fields && args[1] != "survey" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
@@ -256,6 +257,11 @@ public partial class CaptureScene : Node
         if (formations)
         {
             FormationShots();
+            return;
+        }
+        if (factions)
+        {
+            FactionShots();
             return;
         }
         if (borders)

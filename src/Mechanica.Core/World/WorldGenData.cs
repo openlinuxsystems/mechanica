@@ -37,7 +37,17 @@ public sealed record LoadedPool(string Id, IReadOnlyList<LoadedPoi> Entries);
 
 /// <summary>A scatter rule ready for generation. <see cref="Index"/> is its place among every biome's rules, and part of each object's id.</summary>
 public sealed record Scatter(int Index, int Biome, WorldObjectDefinition Object, float Spacing, float Chance, PerchDefinition? Perch = null,
-    ClusterDefinition? Cluster = null, ScatterWater? Water = null, RoadsideDefinition? Roadside = null, NearDefinition? Near = null);
+    ClusterDefinition? Cluster = null, ScatterWater? Water = null, RoadsideDefinition? Roadside = null, NearDefinition? Near = null)
+{
+    /// <summary>Qualified ids (<c>mod_id:poi_id</c>) of the POIs <see cref="NearDefinition.Pois"/> names, or null.</summary>
+    public IReadOnlySet<string>? NearPois { get; init; }
+
+    /// <summary>The rule's <see cref="ScatterRule.Away"/>, or null.</summary>
+    public AwayDefinition? Away { get; init; }
+
+    /// <summary>Qualified ids of the POIs <see cref="Away"/> keeps clear of, or null.</summary>
+    public IReadOnlySet<string>? AwayPois { get; init; }
+}
 
 /// <summary>A biome's flora rule ready for growing. <see cref="Index"/> is its place among every biome's flora rules.</summary>
 /// <param name="Index">Place among every biome's flora rules; salts its random numbers.</param>
@@ -104,7 +114,12 @@ public sealed class WorldGenData
         var scatter = new List<Scatter>();
         foreach (var biome in definition.Biomes ?? [])
             foreach (var rule in biome.Scatter ?? [])
-                scatter.Add(new Scatter(scatter.Count, Biomes.First(b => b.Id == biome.Id).Index, Objects[rule.Object!], rule.Spacing, rule.Chance, rule.Perch, rule.Cluster, rule.Water, rule.Roadside, rule.Near));
+                scatter.Add(new Scatter(scatter.Count, Biomes.First(b => b.Id == biome.Id).Index, Objects[rule.Object!], rule.Spacing, rule.Chance, rule.Perch, rule.Cluster, rule.Water, rule.Roadside, rule.Near)
+                {
+                    NearPois = rule.Near?.Pois is { } near ? near.Select(QualifyPoi).ToHashSet(StringComparer.Ordinal) : null,
+                    Away = rule.Away,
+                    AwayPois = rule.Away?.Pois is { } away ? away.Select(QualifyPoi).ToHashSet(StringComparer.Ordinal) : null,
+                });
         ScatterRules = scatter;
         var flora = new List<Flora>();
         foreach (var biome in definition.Biomes ?? [])
@@ -142,6 +157,9 @@ public sealed class WorldGenData
     // Full path of a mod path, read relative to a mod (the second argument), or null.
     private readonly Func<string, string, AssetKind, string?>? _assetFile;
     private readonly string _definitionMod;
+
+    // A POI id as scatter rules give it, qualified with the world file's mod when it names none.
+    private string QualifyPoi(string id) => id.Contains(':') ? id : $"{_definitionMod}:{id}";
 
     /// <summary>
     /// Full path of the model a world object is drawn with (<see cref="WorldObjectDefinition.Mesh"/>), or null when it has
@@ -312,6 +330,22 @@ public sealed class WorldGenData
                     sink.Error(DiagnosticCodes.WorldGenInvalid, $"$.pools[{i}].fill[{e}].poi", $"'{entry.Poi}' is not a POI that loaded.");
             }
             pools[pool.Id!] = new LoadedPool(pool.Id!, entries);
+        }
+        // Scatter rules that stand near POIs or keep away from them name prefabs too.
+        for (var b = 0; b < (definition.Biomes?.Count ?? 0); b++)
+        {
+            for (var r = 0; r < (definition.Biomes![b].Scatter?.Count ?? 0); r++)
+            {
+                var rule = definition.Biomes[b].Scatter![r];
+                foreach (var (key, ids) in new[] { ("near", rule.Near?.Pois), ("away", rule.Away?.Pois) })
+                {
+                    for (var k = 0; k < (ids?.Count ?? 0); k++)
+                    {
+                        if (Find(ids![k]) is null)
+                            sink.Error(DiagnosticCodes.WorldGenInvalid, $"$.biomes[{b}].scatter[{r}].{key}.pois[{k}]", $"'{ids[k]}' is not a POI that loaded.");
+                    }
+                }
+            }
         }
         var biomeIds = (definition.Biomes ?? []).Select(b => b.Id).ToList();
         var sites = new List<LoadedSite>();
