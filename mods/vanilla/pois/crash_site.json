@@ -159,6 +159,13 @@
     { "type": "object", "ref": "large_rock", "at": [-59.75, 0.0, -50.14] },
     { "type": "object", "ref": "large_rock", "at": [-73.3, 0.0, 26.68] },
     { "type": "object", "ref": "large_rock", "at": [-26.68, 0.0, 73.3] },
-    { "type": "object", "ref": "large_rock", "at": [59.75, 0.0, 50.14] }
+    { "type": "object", "ref": "large_rock", "at": [59.75, 0.0, 50.14] },
+    // The crew's things, as in Scrap Mechanic's crashed ship: a Locker in each bunk room (by the built-in one, facing
+    // the room's door), a Broken Microwave on the port room's floor and a File Cabinet on the bridge. Each stands on the
+    // tilted deck (heights from the model's collider) and comes filled once from its loot table.
+    { "type": "part", "ref": "locker", "at": [1.25, 0.075, -5.35], "yaw": 110.0, "loot": "locker", "loot_rolls": [1, 4] },
+    { "type": "part", "ref": "locker", "at": [-4.39, 0.285, -3.3], "yaw": -70.0, "loot": "locker", "loot_rolls": [1, 4] },
+    { "type": "part", "ref": "broken_microwave", "at": [-4.56, 0.186, -6.11], "yaw": -70.0, "loot": "microwave", "loot_rolls": [1, 1] },
+    { "type": "part", "ref": "file_cabinet", "at": [-6.76, 0.135, -8.93], "yaw": -70.0, "loot": "file_cabinet", "loot_rolls": [1, 3] }
   ]
 }

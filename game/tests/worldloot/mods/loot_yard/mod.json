@@ -1,0 +1,13 @@
+{
+  "format_version": 1,
+  "id": "loot_yard",
+  "name": "Loot Yard",
+  "version": "0.1.0",
+  "description": "Fixture mod for the headless world loot test: a flat world with one POI holding a Locker and a refilling Ruin Chest.",
+  "authors": [
+    "Mechanica"
+  ],
+  "dependencies": [
+    { "id": "vanilla", "version": ">=0.1.0" }
+  ]
+}

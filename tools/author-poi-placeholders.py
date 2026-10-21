@@ -81,11 +81,33 @@ def warehouse(floors, w, d):
     for f in range(floors):
         markers.append({"type": "bot", "ref": bots[f], "at": [(-4.0 if f % 2 else 0.0), 4 * f + 0.3, -hd / 2]})
     markers.append({"type": "item", "ref": "warehouse_key", "at": [hw - 4, 4 * (floors - 1) + 0.3, -hd + 4]})
+    # A loot crate on every floor: metal crates, a wooden one on the top floor.
     for f in range(floors):
-        markers.append({"type": "item", "ref": "metal_crate" if f < floors - 1 else "wooden_crate",
-                        "at": [(-hw + 4) if f % 2 == 0 else (hw - 4), 4 * f + 0.3, -hd + 4]})
+        crate = "metal_crate" if f < floors - 1 else "wooden_crate"
+        markers.append(loot_part(crate, [(-hw + 4) if f % 2 == 0 else (hw - 4), 4 * f + 0.3, -hd + 4],
+                                 "warehouse_crate" if f < floors - 1 else "crate", [2, 5] if f < floors - 1 else [2, 4]))
     markers.append({"type": "item", "ref": "warehouse_key_sign", "at": [0.0, 0.0, hd + 4]})
+    # Staff lockers and a file cabinet against the back wall (its inner face is 0.2 m in) of the ground floor and of the
+    # top floor's office corner, facing into the hall (+z).
+    for f in (0, floors - 1):
+        y = 4 * f + 0.3
+        side = 1 if f % 2 == 0 else -1
+        markers.append(loot_part("locker", [side * (hw - 10), y, -hd + 0.5], "locker", [1, 4], yaw=180.0))
+        markers.append(loot_part("locker", [side * (hw - 10.75), y, -hd + 0.5], "locker", [1, 4], yaw=180.0))
+        markers.append(loot_part("file_cabinet", [side * (hw - 12), y, -hd + 0.65], "file_cabinet", [1, 3], yaw=180.0))
     return pieces, markers, h
+
+
+def loot_part(part, at, loot, rolls, yaw=None, refill_days=None):
+    """A container the world places (a part marker, at the middle of its bottom face) filled from a worldgen.json loot table."""
+    marker = {"type": "part", "ref": part, "at": [float(v) for v in at]}
+    if yaw is not None:
+        marker["yaw"] = float(yaw)
+    marker["loot"] = loot
+    marker["loot_rolls"] = rolls
+    if refill_days is not None:
+        marker["refill_days"] = float(refill_days)
+    return marker
 
 
 def silos(count, radius, height, spread):
@@ -185,21 +207,22 @@ CANVAS = "#b8a47a"
 CROP = "#6aa84f"
 add("camp", "Camp", [14, 3, 14], "track",
     [box([3, 2.2, 4], [-4, 1.1, -3], TENT, 20), box([3, 2.0, 3.5], [4, 1.0, -2], CANVAS, -25), cylinder(0.8, 0.3, [0, 0.15, 2], BURNT),
-     box([2.2, 0.4, 0.5], [-1.8, 0.2, 3.6], WOOD, 70), box([1.2, 0.9, 0.8], [5, 0.45, 4], WOOD)],
-    [{"type": "item", "ref": "wooden_crate", "at": [5.0, 0.0, 4.0]},
-     {"type": "item", "ref": "wooden_crate", "at": [-4.0, 0.0, -1.0]}],
+     box([2.2, 0.4, 0.5], [-1.8, 0.2, 3.6], WOOD, 70)],
+    [loot_part("wooden_crate", [5.0, 0.0, 4.0], "crate", [2, 4]), loot_part("wooden_crate", [-4.0, 0.0, 0.0], "crate", [2, 4])],
     ground="dirt", margin=12,
     spacing={"spacing": [570.0, 820.0], "biomes": ["forest", "autumn_forest", "burned_forest"], "priority": 20, "clearance": 48.0})
 add("forest_ruin", "Forest Ruin", [16, 5, 16], "track",
     [box([7, 4, 0.6], [-4, 2, -7.5], RUIN), box([3, 2, 0.6], [5, 1, -7.5], RUIN), box([0.6, 4.5, 9], [-7.5, 2.25, -2], RUIN),
      box([0.6, 1.5, 5], [7.5, 0.75, 3], RUIN), box([2, 0.8, 1.5], [2, 0.4, 2], RUIN, 30), cylinder(0.5, 5, [-7.5, 2.5, 7.5], RUIN)],
-    [{"type": "item", "ref": "wooden_crate", "at": [-5.0, 0.0, -5.0]}, {"type": "item", "ref": "wooden_crate", "at": [4.0, 0.0, 5.0]}],
+    # Loot crates, and a Ruin Chest against the west wall that fills again 5 days after it is emptied (as Scrap Mechanic's).
+    [loot_part("wooden_crate", [-5.0, 0.0, -5.0], "crate", [2, 4]), loot_part("wooden_crate", [4.0, 0.0, 5.0], "crate", [2, 4]),
+     loot_part("ruin_chest", [-6.4, 0.0, 0.0], "ruin_chest", [1, 6], yaw=-90.0, refill_days=5)],
     flora="forest", ground=None, margin=12,
     spacing={"spacing": [710.0, 1020.0], "biomes": ["forest", "autumn_forest"], "priority": 21, "clearance": 48.0})
 add("roadside_kiosk", "Roadside Kiosk", [6, 3.5, 5], "none",
     [box([10, 0.2, 8], [0, 0.1, 0], PAD), box([5, 2.6, 3.5], [0, 1.5, 0.5], WOOD), box([6, 0.2, 2], [0, 2.9, -1.8], CANVAS, 0),
      box([5, 1, 0.3], [0, 1.0, -1.4], WOOD), box([0.2, 2.2, 0.2], [3.8, 1.1, -3.2], METAL), box([1.6, 1, 0.1], [3.8, 2.6, -3.2], YELLOW)],
-    [{"type": "item", "ref": "wooden_crate", "at": [0.0, 1.5, -1.4]}, {"type": "item", "ref": "wooden_crate", "at": [-3.5, 0.2, 2.0]}],
+    [loot_part("wooden_crate", [0.0, 0.2, -2.4], "crate", [2, 4]), loot_part("wooden_crate", [-3.5, 0.2, 2.0], "crate", [2, 4])],
     margin=6,
     spacing={"spacing": [520.0, 900.0], "biomes": ["meadow", "forest", "field", "desert", "autumn_forest", "burned_forest"],
              "priority": 40, "clearance": 0.0, "roadside": 8.0})
@@ -207,19 +230,19 @@ add("farming_patch", "Farming Patch", [24, 1, 20], "track",
     [*[box([22, 0.35, 1.6], [0, 0.17, z], "#6b4a2e") for z in (-7.5, -4.5, -1.5, 1.5, 4.5, 7.5)],
      *[box([20, 0.6, 0.8], [0, 0.6, z], CROP) for z in (-7.5, -1.5, 4.5)],
      box([0.2, 1.2, 20], [-12, 0.6, 0], WOOD), box([0.2, 1.2, 20], [12, 0.6, 0], WOOD), box([2, 2, 2], [14, 1, -8], HAY)],
-    [{"type": "item", "ref": "wooden_crate", "at": [14.0, 0.0, -5.0]}],
+    [loot_part("wooden_crate", [14.0, 0.0, -5.0], "crate", [2, 4])],
     ground="dirt", margin=12,
     spacing={"spacing": [1300.0, 1800.0], "biomes": ["field", "meadow"], "priority": 22, "clearance": 64.0})
 add("build_area", "Build Area", [40, 1, 40], "track",
     [box([40, 0.3, 40], [0, 0.15, 0], CONCRETE), *[cylinder(0.25, 6, [x, 3.3, z], METAL) for x in (-19, 19) for z in (-19, 19)],
      box([4, 2.5, 3], [-16, 1.55, -16], METAL), box([1, 1, 1], [-13, 0.8, -16], YELLOW)],
-    [{"type": "item", "ref": "wooden_crate", "at": [-16.0, 0.3, -13.0]}],
+    [loot_part("wooden_crate", [-16.0, 0.3, -13.0], "crate", [2, 4])],
     ground=None, margin=14,
     spacing={"spacing": [1750.0, 2400.0], "biomes": ["meadow", "field", "desert"], "priority": 24, "clearance": 96.0})
 add("shore_wreck", "Shore Wreck", [12, 3, 8], "none",
     [box([8, 1.6, 3], [0, 0.6, 0], "#7a6450", 15), box([3, 1.2, 2.6], [-4.5, 1.2, 0.8], WOOD, 15), box([0.3, 3, 0.3], [1, 2, 0], WOOD),
      box([6, 0.3, 1.5], [6, 0.35, -3], WOOD, -20), box([1, 0.8, 1], [-5, 0.4, -3], METAL)],
-    [{"type": "item", "ref": "wooden_crate", "at": [0.0, 1.4, 0.0]}],
+    [loot_part("wooden_crate", [0.0, 1.4, 0.0], "crate", [2, 4])],
     ground="sand", margin=10,
     spacing={"spacing": [480.0, 760.0], "biomes": ["meadow", "forest", "field", "desert", "autumn_forest", "burned_forest", "coastal"],
              "priority": 31, "clearance": 32.0, "shore": 24.0})

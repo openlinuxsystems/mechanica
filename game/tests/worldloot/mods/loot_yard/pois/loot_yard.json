@@ -1,0 +1,12 @@
+{
+  // Players start here, by a Locker filled once (2 to 4 draws) and a Ruin Chest that refills a day after it is emptied.
+  "id": "loot_yard",
+  "name": "Loot Yard",
+  "radius": 12.0,
+  "placement": { "fixed": [0.0, 0.0], "pad_height": 0.0 },
+  "markers": [
+    { "type": "spawn", "at": [0.0, 0.0, 3.0] },
+    { "type": "part", "ref": "vanilla:locker", "at": [-1.0, 0.0, 0.0], "loot": "locker", "loot_rolls": [2, 4] },
+    { "type": "part", "ref": "vanilla:ruin_chest", "at": [1.5, 0.0, 0.0], "loot": "ruin_chest", "loot_rolls": [2, 4], "refill_days": 1.0 }
+  ]
+}

@@ -24,7 +24,8 @@
           { "type": "npc", "ref": "faction_envoy", "at": [0.0, 0.3, -3.0] },
           { "type": "bot", "ref": "scuttler_green", "at": [-4.0, 0.3, 3.0] },
           { "type": "bot", "ref": "scuttler_green", "at": [4.0, 0.3, 3.0] },
-          { "type": "item", "ref": "chest", "at": [-5.0, 0.3, -5.0] }
+          // The outpost's chest, filled once from the crate loot table.
+          { "type": "part", "ref": "chest", "at": [-5.0, 0.3, -5.0], "loot": "crate", "loot_rolls": [2, 4] }
         ]
       }
     },

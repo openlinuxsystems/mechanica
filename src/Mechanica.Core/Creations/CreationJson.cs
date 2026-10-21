@@ -30,7 +30,8 @@ namespace Mechanica.Core.Creations;
 /// and <c>angular_velocity</c> (rad/s), both in world space and both optional (missing means at rest),
 /// so a late joiner or a reloaded save picks it up mid-motion (<see cref="BodyVelocity"/>).
 /// <c>on_lift</c> (written only when true) marks a Creation a Lift holds, and <c>world_part</c> (written only when set) the POI
-/// <c>part</c> marker a world-owned Creation stands at (<see cref="Creation.WorldPart"/>); a part's <c>color</c> is its
+/// <c>part</c> marker a world-owned Creation stands at (<see cref="Creation.WorldPart"/>), and <c>world_loot</c> a world-owned
+/// container's loot fills (<c>{ "fills": 1, "emptied_at": 5310.5 }</c>, <see cref="Creation.WorldLoot"/>); a part's <c>color</c> is its
 /// Paint Tool colour, <c>settings</c> the settings changed from its defaults (<c>{ "mode": "xor" }</c>) and
 /// <c>damage</c> the health it has lost and <c>anchored</c> (true) that it rests on the ground and holds its Body still,
 /// each written only when set. <c>links</c> are the Connect Tool's logic
@@ -56,6 +57,7 @@ public static class CreationJson
             AuthorityPeer = creation.AuthorityPeer,
             OnLift = creation.OnLift ? true : null,
             WorldPart = creation.WorldPart,
+            WorldLoot = creation.WorldLoot is { } loot ? new WorldLootData { Fills = loot.Fills, EmptiedAt = loot.EmptiedAt } : null,
             Parts = [.. creation.Parts.Select(p => new PartInstanceData
             {
                 Id = p.Id,
@@ -130,10 +132,26 @@ public static class CreationJson
             sink.Error(invalid, "$.parts", "a creation needs at least one part.");
         if (data.WorldPart is { } worldPart && string.IsNullOrWhiteSpace(worldPart))
             sink.Error(invalid, "$.world_part", "world_part must name the marker the creation stands at.");
+        if (data.WorldLoot is { } worldLoot)
+        {
+            KnownKeys.WarnUnknown(worldLoot.Extra, "$.world_loot", sink, typeof(WorldLootData));
+            if (data.WorldPart is null)
+                sink.Error(invalid, "$.world_loot", "world_loot is only for a world-owned creation (world_part).");
+            if (worldLoot.Fills is not >= 0)
+                sink.Error(invalid, "$.world_loot.fills", "fills must be 0 or more.");
+            if (worldLoot.EmptiedAt is { } emptiedAt && !double.IsFinite(emptiedAt))
+                sink.Error(invalid, "$.world_loot.emptied_at", "emptied_at must be a number.");
+        }
         if (sink.ErrorCount > 0)
             return null;
 
-        var creation = new Creation(id, catalog, peer) { Extra = data.Extra, OnLift = data.OnLift == true, WorldPart = data.WorldPart };
+        var creation = new Creation(id, catalog, peer)
+        {
+            Extra = data.Extra,
+            OnLift = data.OnLift == true,
+            WorldPart = data.WorldPart,
+            WorldLoot = data.WorldLoot is { } loot ? new World.WorldLootState { Fills = loot.Fills ?? 0, EmptiedAt = loot.EmptiedAt } : null,
+        };
         var owner = new Dictionary<GridCell, int>();
         for (var i = 0; i < data.Parts!.Count; i++)
         {
@@ -422,6 +440,8 @@ public static class CreationJson
 
         public string? WorldPart { get; init; }
 
+        public WorldLootData? WorldLoot { get; init; }
+
         public List<PartInstanceData>? Parts { get; init; }
 
         public List<ConnectionData>? Connections { get; init; }
@@ -482,6 +502,16 @@ public static class CreationJson
         public int? Count { get; init; }
 
         public float? Progress { get; init; }
+    }
+
+    internal sealed record WorldLootData
+    {
+        public int? Fills { get; init; }
+
+        public double? EmptiedAt { get; init; }
+
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? Extra { get; init; }
     }
 
     internal sealed record SoilData

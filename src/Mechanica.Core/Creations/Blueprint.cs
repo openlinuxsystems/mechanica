@@ -31,7 +31,7 @@ public static class Blueprint
     /// <summary>Longest name, in characters.</summary>
     public const int MaxNameLength = 48;
 
-    private static readonly string[] WorldKeys = ["authority_peer", "on_lift", "world_part"];
+    private static readonly string[] WorldKeys = ["authority_peer", "on_lift", "world_part", "world_loot"];
     private static readonly string[] PartWorldKeys = ["level", "damage", "fire", "anchored", "inventory", "crafting", "soil"];
     private static readonly string[] BodyWorldKeys = ["linear_velocity", "angular_velocity"];
 
