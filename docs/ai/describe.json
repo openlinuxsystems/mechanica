@@ -1377,6 +1377,32 @@
       }
     },
     {
+      "name": "KeepBot",
+      "kind": "action",
+      "group": "bots",
+      "scope": "admin",
+      "description": "Keeping a bot (or letting it go wild again). Arguments of KeepBot.",
+      "params": {
+        "description": "Arguments of KeepBot.",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "The bot.",
+            "type": "integer"
+          },
+          "kept": {
+            "description": "True to keep it (saved with the world, never taken away), false to let it go wild again.",
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "bot"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "LeaveSeat",
       "kind": "action",
       "group": "logic",

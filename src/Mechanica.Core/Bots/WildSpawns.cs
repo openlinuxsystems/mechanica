@@ -8,10 +8,11 @@ namespace Mechanica.Core.Bots;
 /// <see cref="BotWild.Interval"/> the host tops up each living player's neighbourhood to <see cref="BotWild.Count"/> of
 /// that type, at a random spot between <see cref="BotWild.MinDistance"/> and <see cref="BotWild.MaxDistance"/> away in its
 /// habitat (open water at least <see cref="BotWild.MinDepth"/> deep, or dry land), with its habitat all round it out to
-/// <see cref="BotWild.ClearRadius"/>, and in one of its <see cref="BotWild.Biomes"/> when it names any. A herd
+/// <see cref="BotWild.ClearRadius"/>, and in one of its <see cref="BotWild.Biomes"/> when it names any, never in a
+/// <see cref="BotActions.BotFree"/> zone. A herd
 /// (<see cref="BotWild.HerdMin"/> to <see cref="BotWild.HerdMax"/>) appears together a few metres apart, and a share of
 /// them appear round one of its <see cref="BotWild.Near"/> objects in reach. A wild bot every player has left farther than <see cref="BotWild.DespawnDistance"/>
-/// behind, and that is not fighting, goes away. Wild bots count towards <see cref="BotSettings.MaxBots"/>.
+/// behind, and that is not fighting, goes away; a kept one (<see cref="BotState.Kept"/>) is no longer wild and stays. Wild bots count towards <see cref="BotSettings.MaxBots"/>.
 /// </summary>
 public sealed class WildSpawns
 {
@@ -59,7 +60,8 @@ public sealed class WildSpawns
     /// <summary>Spawns and clears wild bots. The host calls it every physics tick.</summary>
     public void Tick()
     {
-        _wild.RemoveWhere(id => _bots.Find(id) is not { Dead: false });
+        // A wild bot that died, went or was kept (tamed) is no longer this one's to count or take away.
+        _wild.RemoveWhere(id => _bots.Find(id) is not { Dead: false, Kept: false });
         var survival = _survival.Mode == GameMode.Survival;
         var players = survival ? _bots.LivingPlayers().Select(p => p.Centre).ToList() : [];
         var now = _bots.Now;
@@ -79,11 +81,18 @@ public sealed class WildSpawns
                 var near = _wild.Select(_bots.Find).OfType<BotState>().Count(b => b.Type == type && Flat(player, b.Position) <= wild.DespawnDistance);
                 while (near < wild.Count && _bots.Bots.Count < _bots.Settings.MaxBots)
                 {
+                    // no herd smaller than its least to fill the count up, so none is left alone
+                    if (near > 0 && wild.Count - near < wild.HerdMin)
+                        break;
                     var first = (wild.Near is { } objects && _random.NextDouble() < objects.Share ? NearSpot(player, wild, objects) : null)
                         ?? Spot(player, wild);
                     if (first is not { } feet)
                         break;
-                    var herd = Math.Min(_random.Next(wild.HerdMin, wild.HerdMax + 1), wild.Count - near);
+                    var room = wild.Count - near;
+                    var herd = Math.Min(_random.Next(wild.HerdMin, wild.HerdMax + 1), room);
+                    // nor leave less room than a herd: this one takes it, or leaves room for the least herd
+                    if (room - herd is var left && left > 0 && left < wild.HerdMin)
+                        herd = room <= wild.HerdMax ? room : Math.Max(wild.HerdMin, room - wild.HerdMin);
                     for (var k = 0; k < herd && _bots.Bots.Count < _bots.Settings.MaxBots; k++)
                     {
                         var at = k == 0 ? feet : Around(new Vector2(feet.X, feet.Z), HerdGap, HerdSpread, wild) ?? feet;
@@ -144,6 +153,8 @@ public sealed class WildSpawns
 
     private bool Fits(float x, float z, BotWild wild)
     {
+        if (_bots.BotFree.Contains(x, z))
+            return false;
         var ground = _heightAt(x, z);
         if (!(wild.Water ? _seaLevel - ground >= wild.MinDepth : ground > _seaLevel + 0.2f))
             return false;

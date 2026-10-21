@@ -29,6 +29,7 @@ asks first.
 | `scripts` | Each scripted part's Lua `state` table, by creation and part id |
 | `mod_scripts` | Each mod script's `state` table (the scripts in `mod.json` `scripts`), by qualified script path |
 | `players` | Every player the host has seen, by profile id: name, inventory, health, respawn bed, position and facing, chosen character, hotbar, map markers, and `item_scripts`, their item scripts' `state` tables by item id |
+| `bots` | Kept bots (a tamed animal): `type`, `position`, `yaw`, `home` (the spot its `wander` stays round) and `health`. Wild bots, guards and raiders are not saved: they come back on their own or not at all. Left out when there are none |
 | `quests` | The story: each started quest's progress, story flags and revealed POIs (see [Quests](quests.md)) |
 | `fires` | Fires at POI markers, `[{site, marker, strength}]` by POI index and marker index; a put-out one has strength 0 and stays out. Missing in older saves, whose POI fires are lit again (see [Fire](survival.md#fire)) |
 
@@ -43,6 +44,7 @@ Unknown keys are kept as they are, so later chunks can add their own.
 - An inventory slot that no longer fits (an unknown item, a slot past the end) is dropped with a warning.
 - A part script's saved `state` replaces the fresh one after the script starts. A player's item script `state`
   is there before their item's script first runs (its setup already sees it).
+- A kept bot whose type no mod has any more is dropped with a warning; the rest come back where they were, kept.
 - A player who was dead when the world was saved comes back at full health at their spawn or bed.
 
 ## Player profiles

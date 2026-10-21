@@ -32,7 +32,7 @@ public sealed class BotState
     public Vector3 Position { get; internal set; }
 
     /// <summary>Where it spawned (where it wanders).</summary>
-    public Vector3 Home { get; }
+    public Vector3 Home { get; internal set; }
 
     /// <summary>Which way it faces, in degrees about the vertical (0 faces -Z, like players).</summary>
     public float Yaw { get; internal set; }
@@ -75,6 +75,12 @@ public sealed class BotState
     /// <summary>The raid it belongs to, or null.</summary>
     public int? Raid { get; internal set; }
 
+    /// <summary>
+    /// Whether it is kept (a domesticated animal): saved with the world and never taken away for being far from every
+    /// player (<see cref="BotActions.Keep"/>).
+    /// </summary>
+    public bool Kept { get; internal set; }
+
     /// <summary>Whether it is fighting (see <see cref="BotActions.Engage"/>).</summary>
     public bool Engaged { get; internal set; }
 
@@ -98,7 +104,7 @@ public sealed class BotState
         LastUse.TryGetValue(attack.Id, out var last) ? (float)Math.Max(0, last + attack.Interval - now) : 0f;
 
     /// <summary>The view clients are sent.</summary>
-    public BotView View => new(Id, Type.QualifiedId, Position.ToVec3(), Yaw, Health, Type.Health, Dead, Raid, Engaged, Swimming);
+    public BotView View => new(Id, Type.QualifiedId, Position.ToVec3(), Yaw, Health, Type.Health, Dead, Raid, Engaged, Swimming, Kept);
 
     /// <summary>Whether it is swimming: a swimmer (<see cref="Bot.SwimDepth"/>) in water.</summary>
     public bool Swimming => InWater && Type.SwimDepth is not null;
@@ -132,6 +138,9 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
     /// <summary>Action name for a bot's attack.</summary>
     public const string BotAttack = "BotAttack";
 
+    /// <summary>Action name for keeping a bot (or letting it go wild again).</summary>
+    public const string KeepBot = "KeepBot";
+
     /// <summary>Action name for listing every bot.</summary>
     public const string GetBots = "GetBots";
 
@@ -161,6 +170,9 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
     /// <summary>Seed for drop rolls (the world seed), so a replay drops the same.</summary>
     public int Seed { get; set; }
 
+    /// <summary>Where wild spawns, guards and raiders never appear (the host sets it once the world is placed).</summary>
+    public BotFreeZones BotFree { get; set; } = BotFreeZones.None;
+
     /// <summary>A bot appeared.</summary>
     public event Action<BotState>? Spawned;
 
@@ -187,6 +199,11 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
         });
         dispatcher.Register<MoveBotArgs>(MoveBot, ValidateMove, ApplyMove);
         dispatcher.Register<BotAttackArgs>(BotAttack, ValidateAttack, ApplyAttack);
+        dispatcher.Register<KeepBotArgs>(KeepBot, ValidateKeep, (_, a) =>
+        {
+            Keep(a.Bot, a.Kept);
+            return null;
+        });
         dispatcher.Register<NoArgs>(GetBots, (_, _) => null, (_, _) => BotValues.Value(_bots.Values.Select(b => b.View).ToList()), readOnly: true);
         dispatcher.Register<BotArgs>(GetBot, (_, a) => _bots.ContainsKey(a.Bot) ? null : $"There is no bot {a.Bot}.",
             (_, a) => BotValues.Value(_bots[a.Bot].View), readOnly: true);
@@ -234,6 +251,42 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
     {
         if (_bots.Remove(id))
             Removed?.Invoke(id);
+    }
+
+    private string? ValidateKeep(ActionCaller caller, KeepBotArgs args) =>
+        CheckDebug(caller, "keep")
+        ?? (!_bots.TryGetValue(args.Bot, out var bot) ? $"There is no bot {args.Bot}." : bot.Dead ? $"Bot {args.Bot} is dead." : null);
+
+    /// <summary>Keeps a bot (<see cref="BotState.Kept"/>), or lets it go wild again with <paramref name="kept"/> false.</summary>
+    public void Keep(int id, bool kept = true)
+    {
+        if (_bots.TryGetValue(id, out var bot) && !bot.Dead && bot.Kept != kept)
+        {
+            bot.Kept = kept;
+            Changed?.Invoke(bot);
+        }
+    }
+
+    // ---- Saves ----
+
+    /// <summary>Every living kept bot, for the save, by id. Other bots come back on their own (wild ones, guards) or not at all (raiders).</summary>
+    public IReadOnlyList<SavedBot> SaveKept() =>
+        [.. _bots.Values.Where(b => b.Kept && !b.Dead).Select(b => new SavedBot(b.Type.QualifiedId, b.Position.ToVec3(), b.Yaw, b.Home.ToVec3(), b.Health))];
+
+    /// <summary>Puts a saved kept bot back in the world; false when its type is gone (its mod is no longer loaded).</summary>
+    public bool Restore(SavedBot saved)
+    {
+        if (bots.FindBot(saved.Type) is not { } type)
+            return false;
+        var bot = new BotState(_nextId++, type, new Vector3(saved.Position.X, saved.Position.Y, saved.Position.Z), saved.Yaw)
+        {
+            Home = new Vector3(saved.Home.X, saved.Home.Y, saved.Home.Z),
+            Health = Math.Clamp(saved.Health, 1f, type.Health),
+            Kept = true,
+        };
+        _bots[bot.Id] = bot;
+        Spawned?.Invoke(bot);
+        return true;
     }
 
     /// <summary>Puts a bot in a raid (or takes it out with null).</summary>

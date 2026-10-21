@@ -67,6 +67,8 @@ public partial class OpeningCinematic : Node3D
     private int _nextSound;
     private int _hiddenRevision = -1;
     private SoundPlayer.Voice? _engine;
+    // Loops from the sound list (the camera's air whoosh): they never end by themselves, so they stop at the hand-off.
+    private readonly List<SoundPlayer.Voice> _loops = [];
 
     /// <summary>The streamed world, for the crash site and its models. Set before adding to the tree.</summary>
     public WorldStreamer World { get; init; } = null!;
@@ -180,8 +182,8 @@ public partial class OpeningCinematic : Node3D
         HudRoot.Hidden = _wasHidden;
         if (IsInstanceValid(Player))
             Player.Visible = true;
-        if (_engine is not null && Sounds is not null && IsInstanceValid(Sounds))
-            Sounds.Player.Stop(_engine);
+        if (Sounds is not null && IsInstanceValid(Sounds))
+            StopSounds();
     }
 
     public override void _Process(double delta)
@@ -294,7 +296,8 @@ public partial class OpeningCinematic : Node3D
             "camera" => () => HandedOff ? null : _camera.GlobalPosition,
             _ => () => HandedOff ? null : _scene.Ship(_t).Position.ToGodot(),
         };
-        Sounds.Player.Play(e, track() ?? Vector3.Zero, track);
+        if (Sounds.Player.Play(e, track() ?? Vector3.Zero, track) is { Event.Loop: true } loop)
+            _loops.Add(loop);
     }
 
     private void StopEngine()
@@ -302,6 +305,14 @@ public partial class OpeningCinematic : Node3D
         if (_engine is not null && Sounds is not null)
             Sounds.Player.Stop(_engine);
         _engine = null;
+    }
+
+    private void StopSounds()
+    {
+        StopEngine();
+        foreach (var loop in _loops)
+            Sounds?.Player.Stop(loop);
+        _loops.Clear();
     }
 
     // Keeps the wreck's models, the cargo it spills and the site's fires out of sight (or shows them again). Chunks are
@@ -340,7 +351,7 @@ public partial class OpeningCinematic : Node3D
     private void HandOff()
     {
         HandedOff = true;
-        StopEngine();
+        StopSounds();
         Hide(false);
         foreach (var node in new Node?[] { _fore, _aft, _nacelle, _nacelleFire, _stub, _burst, _flash, _dust, _camera })
             node?.QueueFree();

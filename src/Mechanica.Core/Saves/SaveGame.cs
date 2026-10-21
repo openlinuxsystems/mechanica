@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Mechanica.Core.Bots;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
 using Mechanica.Core.Fire;
@@ -49,7 +50,7 @@ public sealed record SavedScriptState(int Creation, int Part, JsonObject State);
 /// <summary>
 /// A saved world (D8: JSON): the seed and game mode it was made with, the mods it ran, destroyed world
 /// objects, every Creation in <see cref="CreationJson"/> form (parts, pose, velocity, settings, inventories,
-/// crafting, soil and fire), part script state, fires at POI markers, the story, and every player the host
+/// crafting, soil and fire), part script state, fires at POI markers, kept bots, the story, and every player the host
 /// has seen by profile id. The host writes it; clients get the loaded world through normal late-join sync.
 /// </summary>
 public sealed record SaveGame
@@ -113,6 +114,9 @@ public sealed record SaveGame
     /// sites are lit afresh. Burning parts are saved on their parts in <see cref="Creations"/>.
     /// </summary>
     public IReadOnlyList<SavedSiteFire>? Fires { get; init; }
+
+    /// <summary>Kept bots (domesticated animals), in the order they were saved. Wild bots, guards and raiders are not saved.</summary>
+    public IReadOnlyList<SavedBot> Bots { get; init; } = [];
 
     /// <summary>Keys this build does not know, kept as they are.</summary>
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -180,6 +184,7 @@ public sealed record SaveGame
             Quests = Quests?.ToElement(),
             Fires = Fires is null ? null : [.. Fires.OrderBy(f => f.Site).ThenBy(f => f.Marker)
                 .Select(f => new FireData { Site = f.Site, Marker = f.Marker, Strength = f.Strength })],
+            Bots = Bots.Count == 0 ? null : [.. Bots.Select(b => new BotData { Type = b.Type, Position = b.Position, Yaw = b.Yaw, Home = b.Home, Health = b.Health })],
             Extra = Extra?.OrderBy(kv => kv.Key, StringComparer.Ordinal).ToDictionary(kv => kv.Key, kv => kv.Value),
         };
         return JsonSerializer.Serialize(data, DataJson.WriteOptions) + "\n";
@@ -342,6 +347,17 @@ public sealed record SaveGame
             }
         }
 
+        var bots = new List<SavedBot>();
+        foreach (var (b, i) in (data.Bots ?? []).Select((b, i) => (b, i)))
+        {
+            if (b is not { Type: { } type, Position: { } at, Health: { } health } || !IsQualifiedId(type))
+                sink.Error(invalid, $"$.bots[{i}]", "a bot needs a type (mod_id:bot_id), a position and health.");
+            else if (!Finite(at) || b.Home is { } home && !Finite(home) || !float.IsFinite(b.Yaw ?? 0) || !(health > 0 && float.IsFinite(health)))
+                sink.Error(invalid, $"$.bots[{i}]", "a bot's position, home and yaw must be finite and its health above 0.");
+            else
+                bots.Add(new SavedBot(type, at, b.Yaw ?? 0, b.Home ?? at, health));
+        }
+
         if (sink.ErrorCount > 0)
             return null;
         return new SaveGame
@@ -363,9 +379,12 @@ public sealed record SaveGame
             Players = players,
             Quests = quests,
             Fires = fires,
+            Bots = bots,
             Extra = data.Extra,
         };
     }
+
+    private static bool Finite(Vec3 v) => float.IsFinite(v.X) && float.IsFinite(v.Y) && float.IsFinite(v.Z);
 
     private static bool IsQualifiedId(string id)
     {
@@ -393,6 +412,7 @@ public sealed record SaveGame
         public List<PlayerData>? Players { get; init; }
         public JsonElement? Quests { get; init; }
         public List<FireData>? Fires { get; init; }
+        public List<BotData>? Bots { get; init; }
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -446,6 +466,15 @@ public sealed record SaveGame
         public int? Site { get; init; }
         public int? Marker { get; init; }
         public float? Strength { get; init; }
+    }
+
+    private sealed record BotData
+    {
+        public string? Type { get; init; }
+        public Vec3? Position { get; init; }
+        public float? Yaw { get; init; }
+        public Vec3? Home { get; init; }
+        public float? Health { get; init; }
     }
 
     private sealed record SlotData
