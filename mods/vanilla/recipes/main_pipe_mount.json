@@ -1,0 +1,20 @@
+{
+  "id": "main_pipe_mount",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 4
+    }
+  ],
+  "outputs": [
+    {
+      "item": "main_pipe_mount",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 445
+}

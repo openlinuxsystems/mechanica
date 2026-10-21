@@ -1,0 +1,19 @@
+{
+  "id": "main_pipe_extension",
+  "name": "Main Pipe (Extension)",
+  "description": "A flanged expansion joint for main pipe.",
+  "category": "decor",
+  "mass": 7.5,
+  "durability": 5,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [3, 3, 3],
+  "mesh": "meshes/parts/main_pipe_extension.glb",
+  "icon": "textures/items/main_pipe_extension_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

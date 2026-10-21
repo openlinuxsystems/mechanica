@@ -1623,6 +1623,658 @@
           "order": 415
         }
       ]
+    },
+    {
+      "file": "parts/structural/large_pipe_short.json",
+      "template": "decor",
+      "set": {
+        "name": "Large Pipe (Short)",
+        "description": "Bone-painted pipe, 2 blocks across, with a bolted half flange at each end.",
+        "mass": 6,
+        "durability": 5,
+        "friction": 0.3,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          2,
+          2,
+          2
+        ],
+        "icon": "textures/items/large_pipe_short_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/large_pipe_short.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "large_pipe_short",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "large_pipe_short",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 420
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/large_pipe_long.json",
+      "template": "decor",
+      "set": {
+        "name": "Large Pipe (Long)",
+        "description": "Bone-painted pipe, 2 blocks across and 4 long, with a mustard band.",
+        "mass": 12,
+        "durability": 5,
+        "friction": 0.3,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          2,
+          2,
+          4
+        ],
+        "icon": "textures/items/large_pipe_long_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/large_pipe_long.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "large_pipe_long",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 3
+            }
+          ],
+          "outputs": [
+            {
+              "item": "large_pipe_long",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 421
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/large_pipe_corner.json",
+      "template": "decor",
+      "set": {
+        "name": "Large Pipe (Corner)",
+        "description": "A swept 90-degree bend of large pipe.",
+        "mass": 6,
+        "durability": 5,
+        "friction": 0.3,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          2,
+          2,
+          2
+        ],
+        "icon": "textures/items/large_pipe_corner_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/large_pipe_corner.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "large_pipe_corner",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "large_pipe_corner",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 422
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/large_pipe_tee.json",
+      "template": "decor",
+      "set": {
+        "name": "Large Pipe (Tee)",
+        "description": "A large pipe tee with a branch to the side.",
+        "mass": 6,
+        "durability": 5,
+        "friction": 0.3,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          2,
+          2,
+          2
+        ],
+        "icon": "textures/items/large_pipe_tee_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/large_pipe_tee.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "large_pipe_tee",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "large_pipe_tee",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 423
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/main_pipe_short.json",
+      "template": "decor",
+      "set": {
+        "name": "Main Pipe (Short)",
+        "description": "Bone-painted main pipe, 3 blocks across, with a steel-blue band and a bolted half flange at each end.",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.5,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          3,
+          3,
+          3
+        ],
+        "icon": "textures/items/main_pipe_short_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/main_pipe_short.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "main_pipe_short",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "main_pipe_short",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 440
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/main_pipe_long.json",
+      "template": "decor",
+      "set": {
+        "name": "Main Pipe (Long)",
+        "description": "Main pipe, 3 blocks across and 6 long.",
+        "mass": 12,
+        "durability": 4,
+        "friction": 0.5,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          3,
+          3,
+          6
+        ],
+        "icon": "textures/items/main_pipe_long_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/main_pipe_long.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "main_pipe_long",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 2
+            }
+          ],
+          "outputs": [
+            {
+              "item": "main_pipe_long",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 441
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/main_pipe_corner.json",
+      "template": "decor",
+      "set": {
+        "name": "Main Pipe (Corner)",
+        "description": "A swept 90-degree bend of main pipe.",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.5,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          3,
+          3,
+          3
+        ],
+        "icon": "textures/items/main_pipe_corner_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/main_pipe_corner.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "main_pipe_corner",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "main_pipe_corner",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 442
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/main_pipe_tee.json",
+      "template": "decor",
+      "set": {
+        "name": "Main Pipe (Tee)",
+        "description": "A main pipe tee with a branch to the side.",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.5,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          3,
+          3,
+          3
+        ],
+        "icon": "textures/items/main_pipe_tee_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/main_pipe_tee.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "main_pipe_tee",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "main_pipe_tee",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 443
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/main_pipe_extension.json",
+      "template": "decor",
+      "set": {
+        "name": "Main Pipe (Extension)",
+        "description": "A flanged expansion joint for main pipe.",
+        "mass": 7.5,
+        "durability": 5,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          3,
+          3,
+          3
+        ],
+        "icon": "textures/items/main_pipe_extension_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/main_pipe_extension.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "main_pipe_extension",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 6
+            }
+          ],
+          "outputs": [
+            {
+              "item": "main_pipe_extension",
+              "count": 1
+            }
+          ],
+          "time": 5,
+          "order": 444
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/main_pipe_mount.json",
+      "template": "decor",
+      "set": {
+        "name": "Main Pipe (Mount)",
+        "description": "A bolted saddle that holds a main pipe to the floor or a wall.",
+        "mass": 7.5,
+        "durability": 5,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          3,
+          3,
+          1
+        ],
+        "icon": "textures/items/main_pipe_mount_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/main_pipe_mount.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "main_pipe_mount",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 4
+            }
+          ],
+          "outputs": [
+            {
+              "item": "main_pipe_mount",
+              "count": 1
+            }
+          ],
+          "time": 5,
+          "order": 445
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/main_pipe_cap.json",
+      "template": "decor",
+      "set": {
+        "name": "Main Pipe (Cap)",
+        "description": "A blind flange that closes off the end of a main pipe.",
+        "mass": 7.5,
+        "durability": 5,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          3,
+          3,
+          1
+        ],
+        "icon": "textures/items/main_pipe_cap_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/main_pipe_cap.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "main_pipe_cap",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 4
+            }
+          ],
+          "outputs": [
+            {
+              "item": "main_pipe_cap",
+              "count": 1
+            }
+          ],
+          "time": 5,
+          "order": 446
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/main_pipe_compressor.json",
+      "template": "decor",
+      "set": {
+        "name": "Pipe Compressor",
+        "description": "A finned compressor drum with its motor, inline on a main pipe.",
+        "mass": 7.5,
+        "durability": 5,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          5,
+          5,
+          8
+        ],
+        "icon": "textures/items/main_pipe_compressor_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/main_pipe_compressor.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "main_pipe_compressor",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 20
+            },
+            {
+              "item": "component_kit",
+              "count": 2
+            }
+          ],
+          "outputs": [
+            {
+              "item": "main_pipe_compressor",
+              "count": 1
+            }
+          ],
+          "time": 10,
+          "order": 450
+        }
+      ]
     }
   ]
 }
