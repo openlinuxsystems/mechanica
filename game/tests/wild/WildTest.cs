@@ -155,6 +155,8 @@ public partial class WildTest : StagedTest
         });
         var led = new List<ActionResult>();
         var walkedTo = Vector3.Zero;
+        var gap = 0f;
+        static float Flat(Vector3 v) => new Vector2(v.X, v.Z).Length();
         Add("the client leads the tame Grazer on a Lead and it follows, rope and all", frame =>
         {
             var host = _host.Main.Bots.Bots!;
@@ -170,15 +172,29 @@ public partial class WildTest : StagedTest
             if (walkedTo == Vector3.Zero)
             {
                 Check(led[0].Ok && peer == _client.Peer, $"the client leads it ({led[0]})");
-                // walk off eight metres: it comes after the client
+                // walk off seven metres, the flattest way (the herd and so the ground differ from run to run): it
+                // comes after the client
                 var gen = _host.Main.Streamer.Generator;
-                var at = host.Find(_kept)!.Position.ToGodot() + new Vector3(8, 0, 0);
+                var from = host.Find(_kept)!.Position.ToGodot();
+                var space = _host.Main.GetWorld3D().DirectSpaceState;
+                bool Clear(Vector3 to)
+                {
+                    var start = from + (to - from).Normalized() * 1.2f + Vector3.Up * 0.6f;
+                    var end = to with { Y = gen.HeightAt(to.X, to.Z) + 0.6f };
+                    return space.IntersectRay(PhysicsRayQueryParameters3D.Create(start, end)).Count == 0;
+                }
+                var at = Enumerable.Range(0, 8).Select(i => from + new Vector3(Mathf.Cos(i * Mathf.Pi / 4), 0, Mathf.Sin(i * Mathf.Pi / 4)) * 7f)
+                    .OrderBy(p => Clear(p) ? 0 : 1).ThenBy(p => Mathf.Abs(gen.HeightAt(p.X, p.Z) - gen.HeightAt(from.X, from.Z))).First();
                 walkedTo = at with { Y = gen.HeightAt(at.X, at.Z) + 0.5f };
+                gap = Flat(from - walkedTo);
                 _host.Main.PlayerSync.HostTeleport(_client.Peer, walkedTo);
                 return false;
             }
             var feet = _host.Main.PlayerSync.Players[_client.Peer].GlobalPosition;
-            if ((host.Find(_kept)!.Position.ToGodot() - feet).Length() > 4f)
+            var now = Flat(host.Find(_kept)!.Position.ToGodot() - feet);
+            if (frame % 120 == 0)
+                GD.Print($"[wild] following: {now:0.0} m of {gap:0.0} m to go (bot at {host.Find(_kept)!.Position}, led by {host.Find(_kept)!.LedBy})");
+            if (now > 4f && now > gap - 2f)
                 return false;
             Check(_client.Main.Bots.GetNode<Bots.BotLeads>("Leads").Drawn.Contains(_kept), "the client draws the rope");
             Check(_host.Main.Bots.GetNode<Bots.BotLeads>("Leads").Drawn.Contains(_kept), "the host draws the rope");
