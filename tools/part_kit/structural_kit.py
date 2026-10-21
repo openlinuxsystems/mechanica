@@ -61,10 +61,10 @@ def materials():
         "bone": tex("s_bone", half(colony_paint(503, "#d9d1bc", 0.35)), normal_strength=1.2),
         "mustard": tex("s_mustard", half(colony_paint(505, "#e0b530", 0.4)), normal_strength=1.2),
         "signal": tex("s_signal", half(colony_paint(507, "#c8423a", 0.4)), normal_strength=1.2),
-        "graphite": tex("s_graphite", half(metal(509, "#2b2f35", 0.5, 0.6, wear=0.5, edge_light=0.25))),
-        "zinc": tex("s_zinc", half(metal(511, "#9aa3ab", 0.42, 0.8, wear=0.6, edge_light=0.25)), normal_strength=2.0),
-        "zinc_dark": tex("s_zinc_dark", half(metal(512, "#7d868e", 0.46, 0.8, wear=0.5, edge_light=0.25)), normal_strength=2.0),
-        "steel": tex("s_steel", half(metal(513, "#8d9196", 0.32, 0.9, wear=0.5, edge_light=0.25)), normal_strength=2.0),
+        "graphite": tex("s_graphite", half(metal(509, "#2b2f35", 0.5, 0.6, wear=0.3, edge_light=0.2)), normal_strength=0.6),
+        "zinc": tex("s_zinc", half(metal(511, "#9aa3ab", 0.42, 0.8, wear=0.3, edge_light=0.2)), normal_strength=0.4),
+        "zinc_dark": tex("s_zinc_dark", half(metal(512, "#7d868e", 0.46, 0.8, wear=0.3, edge_light=0.2)), normal_strength=0.4),
+        "steel": tex("s_steel", half(metal(513, "#8d9196", 0.32, 0.9, wear=0.3, edge_light=0.2)), normal_strength=0.4),
         "rubber": tex("s_rubber", half(lt.rubber_surface(515)), normal_strength=2.0),
         "hole": pt.plain("s_hole", "#0c0d0f", 0.9, 0.2),
         "lens": pt.plain("s_lens", "#6a1712", 0.15, 0.0),
@@ -82,6 +82,18 @@ def frame(t, up):
     v = Vector(up) - t * Vector(up).dot(t)
     v.normalize()
     return v.cross(t), v
+
+
+def hexagon(r, per_side=2):
+    """A hexagon (across corners 2r) as 6 * per_side points, so it can pair with a circle of as many points."""
+    pts = []
+    for k in range(6):
+        a0, a1 = k * math.pi / 3, (k + 1) * math.pi / 3
+        p0, p1 = (r * math.cos(a0), r * math.sin(a0)), (r * math.cos(a1), r * math.sin(a1))
+        for j in range(per_side):
+            t = j / per_side
+            pts.append((p0[0] + (p1[0] - p0[0]) * t, p0[1] + (p1[1] - p0[1]) * t))
+    return pts
 
 
 def circle(r, n=24, phase=0.0):

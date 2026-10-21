@@ -45,6 +45,17 @@ public class StructuralPartsTests
         new("support_truss", new GridSize(8, 4, 1), 6, 6, 0.4, 0.1, false, 20, 5, 341, ["metal_block:4"]),
         new("tower_pole", new GridSize(2, 8, 2), 3, 4, 0.3, 0.3, false, 20, 5, 350, ["metal_block:2"]),
         new("tower_pole_top", new GridSize(2, 4, 2), 3, 4, 0.3, 0.3, false, 20, 5, 351, ["metal_block:2"]),
+        // Batch 9a: small pipes (Scrap Mechanic's Small Pipe family and the Pipe fittings) and the valve.
+        new("small_pipe_short", new GridSize(1, 1, 2), 3, 4, 0.3, 0.3, false, 20, 2, 401, ["metal_block:1"]),
+        new("small_pipe_long", new GridSize(1, 1, 4), 6, 4, 0.3, 0.3, false, 20, 2, 402, ["metal_block:2"]),
+        new("small_pipe_bend", new GridSize(1, 1, 1), 3, 4, 0.3, 0.3, false, 20, 2, 403, ["metal_block:1"]),
+        new("small_pipe_corner", new GridSize(1, 1, 1), 3, 4, 0.3, 0.3, false, 20, 2, 404, ["metal_block:1"]),
+        new("small_pipe_tee", new GridSize(1, 1, 1), 3, 4, 0.3, 0.3, false, 20, 2, 405, ["metal_block:1"]),
+        new("small_pipe_cross", new GridSize(1, 1, 1), 3, 4, 0.3, 0.3, false, 20, 2, 406, ["metal_block:1"]),
+        new("small_pipe_four_way_tee", new GridSize(1, 1, 1), 3, 4, 0.3, 0.3, false, 20, 2, 407, ["metal_block:1"]),
+        new("small_pipe_five_way", new GridSize(1, 1, 1), 3, 4, 0.3, 0.3, false, 20, 2, 408, ["metal_block:1"]),
+        new("small_pipe_six_way", new GridSize(1, 1, 1), 3, 4, 0.3, 0.3, false, 20, 2, 409, ["metal_block:1"]),
+        new("valve", new GridSize(1, 1, 1), 7.5, 4, 0.4, 0.1, false, 20, 2, 415, ["metal_block:1"]),
     ];
 
     public static TheoryData<string> Ids => [.. All.Select(r => r.Id)];

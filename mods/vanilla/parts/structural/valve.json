@@ -1,0 +1,19 @@
+{
+  "id": "valve",
+  "name": "Valve",
+  "description": "A small gate valve with a red handwheel, inline on small pipe.",
+  "category": "decor",
+  "mass": 7.5,
+  "durability": 4,
+  "friction": 0.4,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/parts/valve.glb",
+  "icon": "textures/items/valve_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

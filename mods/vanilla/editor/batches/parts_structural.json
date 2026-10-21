@@ -1083,6 +1083,546 @@
           "order": 351
         }
       ]
+    },
+    {
+      "file": "parts/structural/small_pipe_short.json",
+      "template": "decor",
+      "set": {
+        "name": "Small Pipe (Short)",
+        "description": "Galvanised pipe, 2 blocks long, with a half coupling at each end.",
+        "mass": 3,
+        "durability": 4,
+        "friction": 0.3,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          1,
+          2
+        ],
+        "icon": "textures/items/small_pipe_short_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/small_pipe_short.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "small_pipe_short",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "small_pipe_short",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 401
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/small_pipe_long.json",
+      "template": "decor",
+      "set": {
+        "name": "Small Pipe (Long)",
+        "description": "Galvanised pipe, 4 blocks long, with a mustard flow band.",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.3,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          1,
+          4
+        ],
+        "icon": "textures/items/small_pipe_long_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/small_pipe_long.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "small_pipe_long",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 2
+            }
+          ],
+          "outputs": [
+            {
+              "item": "small_pipe_long",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 402
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/small_pipe_bend.json",
+      "template": "decor",
+      "set": {
+        "name": "Small Pipe (Bend)",
+        "description": "A swept 90-degree bend of small pipe.",
+        "mass": 3,
+        "durability": 4,
+        "friction": 0.3,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          1,
+          1
+        ],
+        "icon": "textures/items/small_pipe_bend_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/small_pipe_bend.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "small_pipe_bend",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "small_pipe_bend",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 403
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/small_pipe_corner.json",
+      "template": "decor",
+      "set": {
+        "name": "Small Pipe (Corner)",
+        "description": "A cast-steel corner fitting with three outlets on three axes.",
+        "mass": 3,
+        "durability": 4,
+        "friction": 0.3,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          1,
+          1
+        ],
+        "icon": "textures/items/small_pipe_corner_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/small_pipe_corner.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "small_pipe_corner",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "small_pipe_corner",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 404
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/small_pipe_tee.json",
+      "template": "decor",
+      "set": {
+        "name": "Small Pipe (Tee)",
+        "description": "A cast-steel tee fitting.",
+        "mass": 3,
+        "durability": 4,
+        "friction": 0.3,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          1,
+          1
+        ],
+        "icon": "textures/items/small_pipe_tee_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/small_pipe_tee.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "small_pipe_tee",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "small_pipe_tee",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 405
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/small_pipe_cross.json",
+      "template": "decor",
+      "set": {
+        "name": "Small Pipe (Cross)",
+        "description": "A cast-steel cross fitting with four outlets.",
+        "mass": 3,
+        "durability": 4,
+        "friction": 0.3,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          1,
+          1
+        ],
+        "icon": "textures/items/small_pipe_cross_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/small_pipe_cross.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "small_pipe_cross",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "small_pipe_cross",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 406
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/small_pipe_four_way_tee.json",
+      "template": "decor",
+      "set": {
+        "name": "Small Pipe (Four Way Tee)",
+        "description": "A tee fitting with a fourth outlet pointing up.",
+        "mass": 3,
+        "durability": 4,
+        "friction": 0.3,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          1,
+          1
+        ],
+        "icon": "textures/items/small_pipe_four_way_tee_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/small_pipe_four_way_tee.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "small_pipe_four_way_tee",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "small_pipe_four_way_tee",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 407
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/small_pipe_five_way.json",
+      "template": "decor",
+      "set": {
+        "name": "Small Pipe (Five Way)",
+        "description": "A cross fitting with a fifth outlet pointing up.",
+        "mass": 3,
+        "durability": 4,
+        "friction": 0.3,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          1,
+          1
+        ],
+        "icon": "textures/items/small_pipe_five_way_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/small_pipe_five_way.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "small_pipe_five_way",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "small_pipe_five_way",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 408
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/small_pipe_six_way.json",
+      "template": "decor",
+      "set": {
+        "name": "Small Pipe (Six Way)",
+        "description": "A fitting with an outlet on every face.",
+        "mass": 3,
+        "durability": 4,
+        "friction": 0.3,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          1,
+          1
+        ],
+        "icon": "textures/items/small_pipe_six_way_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/small_pipe_six_way.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "small_pipe_six_way",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "small_pipe_six_way",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 409
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/valve.json",
+      "template": "decor",
+      "set": {
+        "name": "Valve",
+        "description": "A small gate valve with a red handwheel, inline on small pipe.",
+        "mass": 7.5,
+        "durability": 4,
+        "friction": 0.4,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          1,
+          1
+        ],
+        "icon": "textures/items/valve_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/valve.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "valve",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "valve",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 415
+        }
+      ]
     }
   ]
 }
