@@ -1,22 +1,20 @@
 {
   "id": "interior_light",
   "name": "Interior Light",
-  "description": "A ceiling lamp for cabins and bases. Build it under a roof; it lights the room around it. Use it to switch it off and on; a linked switch also works.",
+  "description": "A square ceiling lamp for cabins and bases. Build it under a roof; it lights the room around it. Use it to switch it off and on; a linked switch also works.",
   "category": "light",
-  "mass": 1.5,
+  "mass": 7.5,
   "durability": 2,
   "friction": 0.5,
-  "buoyancy": 0.2,
+  "buoyancy": 0.3,
   "flammable": false,
   "stack_size": 20,
   "sound_material": "metal",
   "size": [2, 1, 2],
-  "mesh": "meshes/interior_light.glb",
+  "mesh": "meshes/parts/interior_light.glb",
+  "icon": "textures/items/interior_light_icon.png",
   "visual": {
-    "color": "#e8e4d8",
-    "roughness": 0.4,
-    "metallic": 0.5,
-    "emission": "#fff0c8"
+    "color": "#ffffff"
   },
   "sockets": [
     {
@@ -41,5 +39,10 @@
     "energy": 1.5,
     "range": 8,
     "offset": [0, -0.06, 0]
+  },
+  "display": {
+    "clips": {
+      "readout": "pose"
+    }
   }
 }

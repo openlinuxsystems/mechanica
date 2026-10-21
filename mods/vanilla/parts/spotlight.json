@@ -3,20 +3,18 @@
   "name": "Spotlight",
   "description": "A bright narrow beam on a swivel base. It shines toward its front while its input is on, or all the time with nothing linked.",
   "category": "light",
-  "mass": 4,
-  "durability": 3,
-  "friction": 0.5,
+  "mass": 7.5,
+  "durability": 4,
+  "friction": 0.4,
   "buoyancy": 0.2,
   "flammable": false,
   "stack_size": 20,
   "sound_material": "metal",
   "size": [2, 2, 2],
-  "mesh": "meshes/spotlight.glb",
+  "mesh": "meshes/parts/spotlight.glb",
+  "icon": "textures/items/spotlight_icon.png",
   "visual": {
-    "color": "#3f4448",
-    "roughness": 0.4,
-    "metallic": 0.5,
-    "emission": "#fffbe8"
+    "color": "#ffffff"
   },
   "sockets": [
     {
@@ -40,6 +38,11 @@
     "energy": 6,
     "range": 40,
     "angle": 15,
-    "offset": [0, 0.07, -0.2]
+    "offset": [0, 0.07, -0.24]
+  },
+  "display": {
+    "clips": {
+      "readout": "pose"
+    }
   }
 }

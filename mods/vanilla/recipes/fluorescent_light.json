@@ -1,0 +1,24 @@
+{
+  "id": "fluorescent_light",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 2
+    },
+    {
+      "item": "glass_block",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "fluorescent_light",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 1615
+}

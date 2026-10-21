@@ -1,0 +1,50 @@
+{
+  "id": "frame_beam_light",
+  "name": "Frame Beam Light",
+  "description": "A steel channel beam with a light strip in its underside, for warehouse ceilings and gantries. It shines down. Use it to switch it off and on; a linked switch also works.",
+  "category": "light",
+  "mass": 7.5,
+  "durability": 4,
+  "friction": 0.4,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [4, 1, 1],
+  "mesh": "meshes/parts/frame_beam_light.glb",
+  "icon": "textures/items/frame_beam_light_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, 0.125, 0],
+      "normal": [0, 1, 0]
+    }
+  ],
+  "script": "scripts/light.lua",
+  "sounds": {
+    "on": "light_on",
+    "off": "light_off"
+  },
+  "logic": {
+    "inputs": 1,
+    "use": "toggle"
+  },
+  "light": {
+    "kind": "spot",
+    "color": "#fff4dd",
+    "energy": 4,
+    "range": 15,
+    "angle": 60,
+    "offset": [0, -0.05, 0],
+    "direction": [0, -1, 0]
+  },
+  "display": {
+    "clips": {
+      "readout": "pose"
+    }
+  }
+}

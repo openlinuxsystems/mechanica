@@ -2275,6 +2275,442 @@
           "order": 450
         }
       ]
+    },
+    {
+      "file": "parts/structural/duct_short.json",
+      "template": "decor",
+      "set": {
+        "name": "Duct (Short)",
+        "description": "One block of galvanised square duct with a seam collar at each end.",
+        "mass": 3,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.5,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          1,
+          1
+        ],
+        "icon": "textures/items/duct_short_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/duct_short.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "duct_short",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "duct_short",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 2810
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/duct_long.json",
+      "template": "decor",
+      "set": {
+        "name": "Duct (Long)",
+        "description": "Two blocks of galvanised square duct.",
+        "mass": 3,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.5,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          1,
+          2
+        ],
+        "icon": "textures/items/duct_long_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/duct_long.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "duct_long",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 2
+            }
+          ],
+          "outputs": [
+            {
+              "item": "duct_long",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 2811
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/duct_corner.json",
+      "template": "decor",
+      "set": {
+        "name": "Duct (Corner)",
+        "description": "A square duct bend that turns a run through a right angle.",
+        "mass": 3,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.5,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          1,
+          1
+        ],
+        "icon": "textures/items/duct_corner_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/duct_corner.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "duct_corner",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "duct_corner",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 2812
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/duct_tee.json",
+      "template": "decor",
+      "set": {
+        "name": "Duct (Tee)",
+        "description": "A square duct with a branch to the side.",
+        "mass": 3,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.5,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          1,
+          1
+        ],
+        "icon": "textures/items/duct_tee_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/duct_tee.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "duct_tee",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "duct_tee",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 2813
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/duct_end.json",
+      "template": "decor",
+      "set": {
+        "name": "Duct (End)",
+        "description": "A louvred vent that closes the end of a duct run.",
+        "mass": 3,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          1,
+          1
+        ],
+        "icon": "textures/items/duct_end_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/duct_end.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "duct_end",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "duct_end",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 2814
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/duct_holder.json",
+      "template": "decor",
+      "set": {
+        "name": "Duct (Holder)",
+        "description": "A block of duct hung from a ceiling plate on two threaded rods.",
+        "mass": 3,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          1,
+          1
+        ],
+        "icon": "textures/items/duct_holder_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/duct_holder.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "duct_holder",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "duct_holder",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 2815
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/metal_tube.json",
+      "template": "decor",
+      "set": {
+        "name": "Metal Tube",
+        "description": "A round galvanised tube, 2 blocks long, with bolted end rings.",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.5,
+        "buoyancy": 0.7,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          1,
+          2
+        ],
+        "icon": "textures/items/metal_tube_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/metal_tube.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "metal_tube",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 2
+            }
+          ],
+          "outputs": [
+            {
+              "item": "metal_tube",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 2820
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/tubes_short.json",
+      "template": "decor",
+      "set": {
+        "name": "Conduit (Short)",
+        "description": "Four mustard conduit tubes strapped into a steel-blue channel tray.",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.3,
+        "buoyancy": 0.4,
+        "flammable": true,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          2,
+          1,
+          2
+        ],
+        "icon": "textures/items/tubes_short_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/tubes_short.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "tubes_short",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            },
+            {
+              "item": "scrap_wood_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "tubes_short",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 2830
+        }
+      ]
     }
   ]
 }

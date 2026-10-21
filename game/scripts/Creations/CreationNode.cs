@@ -404,7 +404,7 @@ public partial class CreationNode : Node3D
             }
             if (definition.Light is { } light)
             {
-                var lamp = BuildLight(light);
+                var lamp = BuildLight(light, part.Color);
                 shown.AddChild(lamp);
                 _lights.Add((id, lamp, light.Energy ?? 1f));
             }
@@ -470,7 +470,8 @@ public partial class CreationNode : Node3D
     }
 
     // A part's light, dark until its script turns it up. Spots shine along local -Z, so they are turned to the light's direction.
-    private static Light3D BuildLight(LightDefinition light)
+    // A painted light shines in its paint colour (parts map E5), as Scrap Mechanic's do.
+    private static Light3D BuildLight(LightDefinition light, string? paint)
     {
         Light3D lamp;
         var range = light.Range ?? 1f;
@@ -481,7 +482,7 @@ public partial class CreationNode : Node3D
         lamp.Name = "Light";
         lamp.Visible = false;
         lamp.LightEnergy = 0f;
-        if (HexColor.TryParse(light.Color, out var color))
+        if (HexColor.TryParse(paint ?? light.Color, out var color))
             lamp.LightColor = new Color(color.R, color.G, color.B);
         var at = (light.Offset ?? Vec3.Zero).ToGodot();
         var forward = (light.Direction ?? new Vec3(0, 0, -1)).ToGodot().Normalized();

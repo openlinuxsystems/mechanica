@@ -1,0 +1,24 @@
+{
+  "id": "protector_sign",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 2
+    },
+    {
+      "item": "circuit_board",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "protector_sign",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 1695
+}

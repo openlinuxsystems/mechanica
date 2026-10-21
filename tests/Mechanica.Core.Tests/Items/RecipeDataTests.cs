@@ -237,10 +237,10 @@ public class RecipeDataTests : IDisposable
         var book = RecipeBook.Load(content);
 
         var made = book.All.Where(r => r.RunsAt("portable_fabricator")).Select(r => r.QualifiedId[8..]).Order(StringComparer.Ordinal);
-        // Scrap Mechanic's Mini Craftbot list (the scrap tier) plus our gasoline, wedges and Connect Tool. Parts SM makes at
-        // both stations have a scrap recipe here (`_scrap`) and a Metal Block one at the Fabricator.
+        // Scrap Mechanic's Mini Craftbot list (the scrap tier) plus our gasoline, wedges, Connect Tool and Shack Light. Parts
+        // SM makes at both stations have a scrap recipe here (`_scrap`) and a Metal Block one at the Fabricator.
         Assert.Equal(["beacon_scrap", "bearing_scrap", "connect_tool", "gasoline", "scrap_drivers_seat", "scrap_gas_engine",
-            "scrap_metal_wedge", "scrap_seat", "scrap_wheel", "scrap_wood_wedge", "switch_scrap"], made);
+            "scrap_metal_wedge", "scrap_seat", "scrap_wheel", "scrap_wood_wedge", "shack_light", "switch_scrap"], made);
         foreach (var scrap in new[] { "scrap_seat", "scrap_drivers_seat", "scrap_gas_engine", "scrap_wheel" })
             Assert.False(book.Find(scrap)!.RunsAt("fabricator"), $"{scrap} is made only at the Portable Fabricator");
         foreach (var both in new[] { "bearing", "switch", "beacon" })

@@ -1,0 +1,24 @@
+{
+  "id": "frame_beam_light",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 2
+    },
+    {
+      "item": "glass_block",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "frame_beam_light",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 1685
+}
