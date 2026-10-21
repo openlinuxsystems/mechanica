@@ -1,0 +1,19 @@
+{
+  "id": "ibeam_end",
+  "name": "I-Beam (End)",
+  "description": "A block of I-beam closed off by a bolted end plate.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 4,
+  "friction": 0.3,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/parts/ibeam_end.glb",
+  "icon": "textures/items/ibeam_end_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

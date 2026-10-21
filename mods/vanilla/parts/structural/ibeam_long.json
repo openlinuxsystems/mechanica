@@ -1,0 +1,19 @@
+{
+  "id": "ibeam_long",
+  "name": "I-Beam (Long)",
+  "description": "A steel I-beam, 2 m (8 blocks) long, stiffened in the middle.",
+  "category": "decor",
+  "mass": 12,
+  "durability": 4,
+  "friction": 0.3,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 8],
+  "mesh": "meshes/parts/ibeam_long.glb",
+  "icon": "textures/items/ibeam_long_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

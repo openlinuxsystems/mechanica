@@ -1,0 +1,20 @@
+{
+  "id": "ibeam_stub",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "ibeam_stub",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 301
+}

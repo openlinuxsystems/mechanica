@@ -1,0 +1,548 @@
+{
+  // Parts map batches 8 to 10 (beams, frames and supports; pipes and valves; ducts, conduits and cables):
+  // Colony Works decor with Scrap Mechanic's stats (1.5 kg per weight bar) and recipes, the uncraftable ones given
+  // cheap Fabricator recipes. Models: tools/structural/build_structural.py. Re-run with tools/author-vanilla.sh.
+  "format_version": 1,
+  "parts": [
+    {
+      "file": "parts/structural/ibeam_stub.json",
+      "template": "decor",
+      "set": {
+        "name": "I-Beam (Stub)",
+        "description": "One block of steel I-beam in steel-blue primer, bolted through both flanges.",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.3,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          1,
+          1
+        ],
+        "icon": "textures/items/ibeam_stub_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/ibeam_stub.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "ibeam_stub",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "ibeam_stub",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 301
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/ibeam_short.json",
+      "template": "decor",
+      "set": {
+        "name": "I-Beam (Short)",
+        "description": "A steel I-beam, 1 m (4 blocks) long.",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.3,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          1,
+          4
+        ],
+        "icon": "textures/items/ibeam_short_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/ibeam_short.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "ibeam_short",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 3
+            }
+          ],
+          "outputs": [
+            {
+              "item": "ibeam_short",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 302
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/ibeam_long.json",
+      "template": "decor",
+      "set": {
+        "name": "I-Beam (Long)",
+        "description": "A steel I-beam, 2 m (8 blocks) long, stiffened in the middle.",
+        "mass": 12,
+        "durability": 4,
+        "friction": 0.3,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          1,
+          8
+        ],
+        "icon": "textures/items/ibeam_long_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/ibeam_long.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "ibeam_long",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 6
+            }
+          ],
+          "outputs": [
+            {
+              "item": "ibeam_long",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 303
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/ibeam_corner.json",
+      "template": "decor",
+      "set": {
+        "name": "I-Beam (Corner)",
+        "description": "A curved block of I-beam that turns a beam run through a right angle.",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.3,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          1,
+          1
+        ],
+        "icon": "textures/items/ibeam_corner_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/ibeam_corner.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "ibeam_corner",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "ibeam_corner",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 304
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/ibeam_end.json",
+      "template": "decor",
+      "set": {
+        "name": "I-Beam (End)",
+        "description": "A block of I-beam closed off by a bolted end plate.",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.3,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          1,
+          1
+        ],
+        "icon": "textures/items/ibeam_end_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/ibeam_end.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "ibeam_end",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "ibeam_end",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 305
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/ibeam_holder.json",
+      "template": "decor",
+      "set": {
+        "name": "I-Beam (Holder)",
+        "description": "A post on a bolted foot plate, with a cap plate for a beam to sit on.",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.3,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          2,
+          1
+        ],
+        "icon": "textures/items/ibeam_holder_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/ibeam_holder.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "ibeam_holder",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "ibeam_holder",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 306
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/metal_column.json",
+      "template": "decor",
+      "set": {
+        "name": "Metal Column",
+        "description": "A square steel box column, 2 m (8 blocks) tall, with bolted end plates.",
+        "mass": 9.6,
+        "durability": 5,
+        "friction": 0.4,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          8,
+          1
+        ],
+        "icon": "textures/items/metal_column_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/metal_column.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "metal_column",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 3
+            }
+          ],
+          "outputs": [
+            {
+              "item": "metal_column",
+              "count": 1
+            }
+          ],
+          "time": 5,
+          "order": 316
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/support_bracket.json",
+      "template": "decor",
+      "set": {
+        "name": "Support Bracket",
+        "description": "A wall bracket: a back plate, an arm and a diagonal strut.",
+        "mass": 4.5,
+        "durability": 5,
+        "friction": 0.4,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          2,
+          2
+        ],
+        "icon": "textures/items/support_bracket_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/support_bracket.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "support_bracket",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "support_bracket",
+              "count": 1
+            }
+          ],
+          "time": 5,
+          "order": 325
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/support_pillar.json",
+      "template": "decor",
+      "set": {
+        "name": "Support Pillar",
+        "description": "A heavy box post, 2 m tall, on a gusseted foot plate. It also stands on a Pillar Stand.",
+        "mass": 10.5,
+        "durability": 6,
+        "friction": 0.7,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          2,
+          8,
+          2
+        ],
+        "icon": "textures/items/support_pillar_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/support_pillar.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "support_pillar",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 4
+            }
+          ],
+          "outputs": [
+            {
+              "item": "support_pillar",
+              "count": 1
+            }
+          ],
+          "time": 5,
+          "order": 335
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/support_truss_large.json",
+      "template": "decor",
+      "set": {
+        "name": "Large Truss",
+        "description": "An 8 by 8 block lattice frame of square steel tube, cross-braced.",
+        "mass": 6,
+        "durability": 6,
+        "friction": 0.4,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          8,
+          8,
+          1
+        ],
+        "icon": "textures/items/support_truss_large_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/support_truss_large.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "support_truss_large",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 8
+            }
+          ],
+          "outputs": [
+            {
+              "item": "support_truss_large",
+              "count": 1
+            }
+          ],
+          "time": 5,
+          "order": 342
+        }
+      ]
+    }
+  ]
+}
