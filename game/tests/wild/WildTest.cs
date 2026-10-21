@@ -177,12 +177,13 @@ public partial class WildTest : StagedTest
                 var gen = _host.Main.Streamer.Generator;
                 var from = host.Find(_kept)!.Position.ToGodot();
                 var space = _host.Main.GetWorld3D().DirectSpaceState;
-                bool Clear(Vector3 to)
+                var self = new Godot.Collections.Array<Rid> { _host.Main.Bots.Bodies[_kept].GetRid() };
+                // nothing in the way from the bot itself, at its knees and its back
+                bool Clear(Vector3 to) => new[] { 0.3f, 0.8f }.All(h =>
                 {
-                    var start = from + (to - from).Normalized() * 1.2f + Vector3.Up * 0.6f;
-                    var end = to with { Y = gen.HeightAt(to.X, to.Z) + 0.6f };
-                    return space.IntersectRay(PhysicsRayQueryParameters3D.Create(start, end)).Count == 0;
-                }
+                    var ray = PhysicsRayQueryParameters3D.Create(from + Vector3.Up * h, to with { Y = gen.HeightAt(to.X, to.Z) + h }, uint.MaxValue, self);
+                    return space.IntersectRay(ray).Count == 0;
+                });
                 var at = Enumerable.Range(0, 8).Select(i => from + new Vector3(Mathf.Cos(i * Mathf.Pi / 4), 0, Mathf.Sin(i * Mathf.Pi / 4)) * 7f)
                     .OrderBy(p => Clear(p) ? 0 : 1).ThenBy(p => Mathf.Abs(gen.HeightAt(p.X, p.Z) - gen.HeightAt(from.X, from.Z))).First();
                 walkedTo = at with { Y = gen.HeightAt(at.X, at.Z) + 0.5f };
