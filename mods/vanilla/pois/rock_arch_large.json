@@ -1,0 +1,17 @@
+{
+  // A great natural arch about 22 m across and 15 m high under its span: fly through it.
+  // A rock formation (docs/world-generation.md, Rock formations): wild ground, so the biome's plants grow round it,
+  // but its model keeps the scattered objects off its footprint. The model collides, so the openings stay open.
+  "id": "rock_arch_large",
+  "name": "Great Rock Arch",
+  "wild": true,
+  "radius": 40.0,
+  "size": [53.6, 20.2, 19.6],
+  "placement": { "spacing": [1100.0, 1700.0], "biomes": ["desert", "mountain"], "priority": 5, "clearance": 12.0, "level": 5.0 },
+  "terrain": [
+    { "op": "flatten", "at": [-20.0, 0.0], "to": [20.0, 0.0], "radius": 10.0, "blend": 10.0 }
+  ],
+  "models": [
+    { "file": "meshes/world/formations/rock_arch_large.glb", "at": [0.0, 0.0, 0.0] }
+  ]
+}

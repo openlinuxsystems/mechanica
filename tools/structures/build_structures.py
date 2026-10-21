@@ -26,10 +26,16 @@ structure's centre (glTF +Y up, front towards +Z):
   (Colony Works), props_salvager.py (Salvager Tech wreckage), props_stone.py, props_ruins_a.py and props_ruins_b.py
   (Old Stone ruins), props_nature.py (rocks, wood, plants and bones), props_coast.py (shore and harbour), props_fields.py (crop fields
   and orchards, Settler Patchwork) and props_roadside.py (cable poles, guard rails, road signs and roadside litter).
+* ``meshes/world/formations/*.glb`` - natural rock formations (rock_formations.py): arches, a window, hoodoos (POI
+  models, with a collider so their openings stay open), a sea stack and a balanced rock (world objects).
+  factions_bots_a.py (Scuttlers and Rakehands) and factions_bots_b.py (Spoolers and Threshers) are the bot factions'
+  marks: their lairs and the smaller pieces of their faction sites.
 
 A structure model is one mesh of every part with a few shared detail textures (textures.py), a ``collider`` mesh of
 its larger parts (the game collides with that and does not draw it), and its point lights. World object models have
-no collider (the object's own collider is used).
+no collider (the object's own collider is used), except the pieces you walk into or onto (a faction's lair, a bunker, a
+fort): their kit.collider_box shapes make a ``collider`` mesh, which the object uses when its data says
+``"mesh": { "collide": true }``.
 
 How to run (Blender as a Python module, no Blender UI needed):
 
@@ -38,9 +44,10 @@ How to run (Blender as a Python module, no Blender UI needed):
     python tools/structures/build_structures.py props    # only the scene props
     python tools/structures/build_structures.py props props_fields    # only the props of the modules named
     python tools/structures/build_structures.py landmarks [landmark_ziggurat ...]   # only the landmarks
+    python tools/structures/build_structures.py formations            # only the rock formations (or the ones named)
 
 The outputs are committed; re-run this script after changing it (or kit.py, frame.py, families.py, ship.py,
-workshop.py, landmarks.py, props*.py, textures.py) and commit the result. The build is deterministic (seeded noise only).
+workshop.py, landmarks.py, props*.py, rock_formations.py, textures.py) and commit the result. The build is deterministic (seeded noise only).
 """
 
 from __future__ import annotations
@@ -78,6 +85,9 @@ import props_nature  # noqa: E402
 import props_coast  # noqa: E402
 import props_fields  # noqa: E402
 import props_roadside  # noqa: E402
+import rock_formations  # noqa: E402
+import factions_bots_a  # noqa: E402
+import factions_bots_b  # noqa: E402
 import ship as S  # noqa: E402
 import workshop as W  # noqa: E402
 import landmarks as LM  # noqa: E402
@@ -139,7 +149,7 @@ def props(only=()):
     for module in (PR, props_settler_a, props_settler_b, props_colony_a, props_colony_b, props_stone,
                    props_farm, props_camp, props_salvage, props_street, props_industry, props_utility,
                    props_vehicles, props_ruins_a, props_ruins_b, props_salvager, props_nature, props_coast,
-                   props_fields, props_roadside):
+                   props_fields, props_roadside, factions_bots_a, factions_bots_b):
         if only and module.__name__ not in only:
             continue
         for name, build in module.PROPS.items():
@@ -152,12 +162,21 @@ def landmarks(only=()):
             single(name, build)
 
 
+def formations(only=()):
+    for name, build in rock_formations.PROPS.items():
+        if not only or name in only:
+            single(name, build, WORLD / "formations", collider=name in rock_formations.COLLIDE)
+
+
 def main():
     if sys.argv[1:2] == ["props"]:
         props(sys.argv[2:])
         return
     if sys.argv[1:2] == ["landmarks"]:
         landmarks(sys.argv[2:])
+        return
+    if sys.argv[1:2] == ["formations"]:
+        formations(sys.argv[2:])
         return
     ship()
     single("relay_beacon_dead", lambda: F.dead_beacon())
@@ -173,6 +192,7 @@ def main():
     single("scrap_pile_metal", pile("metal"), WORLD, collider=False)
     single("scrap_pile_wood", pile("wood"), WORLD, collider=False)
     props()
+    formations()
 
 
 if __name__ == "__main__":

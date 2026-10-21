@@ -31,7 +31,8 @@
       "objects": [
         "scene_field_edge",
         "scene_kitchen_garden",
-        "scene_hay_field"
+        "scene_hay_field",
+        "scene_rakehand_shrine"
       ],
       "radius": 15,
       "share": 0.8

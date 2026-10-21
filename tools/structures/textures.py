@@ -20,9 +20,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "lift"))
 import lift_textures as lt  # noqa: E402
 
 SIZE = lt.SIZE
-FINISHES = ("paint", "metal", "stone", "wood", "concrete", "worn_concrete")
+FINISHES = ("paint", "metal", "stone", "wood", "concrete", "worn_concrete", "chevron", "hazard_tape", "bubble")
 # metres of surface one image covers
-TILE = {"paint": 1.5, "metal": 1.5, "stone": 2.5, "wood": 1.2, "concrete": 3.0, "worn_concrete": 4.0}
+TILE = {"paint": 1.5, "metal": 1.5, "stone": 2.5, "wood": 1.2, "concrete": 3.0, "worn_concrete": 4.0,
+        "chevron": 0.48, "hazard_tape": 0.56, "bubble": 0.32}
+# Printed finishes carry their own colours: the material colour multiplies them (white for the chevron tape, the tape's
+# yellow for the hazard print).
+NAVY = (0x1D / 255, 0x3F / 255, 0x9A / 255)
 
 
 def voronoi_edges(seed, cells):
@@ -111,8 +115,50 @@ def worn_concrete():
     return v, height
 
 
+def _printed(stripe):
+    """A printed tape: a stripe mask (1 where the print is) with a little wear, as linear RGB factors (ink, base)."""
+    wear = np.clip(lt.fbm(601, 6.0) * 1.8 - 0.55, 0, 1) * 0.5
+    return stripe * (1 - wear), 0.95 + 0.04 * lt.fbm(602, 3.0)
+
+
+def chevron():
+    """The Blue Spooler's tape: navy chevrons on the white tape, two to a tile, the V across the image's v axis."""
+    yy, xx = np.mgrid[0:SIZE, 0:SIZE] / SIZE
+    f = (xx * 2 + np.abs(yy - 0.5) * 2) % 1.0
+    ink, base = _printed(np.clip((0.42 - f) * 60, 0, 1) * np.clip(f * 60, 0, 1))
+    rgb = np.stack([base * (1 - ink) + base * ink * c ** 2.2 for c in NAVY], -1)
+    return rgb, 0.1 * lt.fbm(603, 4.0)
+
+
+def hazard_tape():
+    """The Red Spooler's heavy tape: black diagonals on the (yellow) tape colour."""
+    yy, xx = np.mgrid[0:SIZE, 0:SIZE] / SIZE
+    f = ((xx + yy) * 2) % 1.0
+    ink, base = _printed(np.clip((0.5 - f) * 60, 0, 1) * np.clip(f * 60, 0, 1))
+    v = base * (1 - 0.92 * ink)
+    return np.repeat(v[..., None], 3, -1), 0.1 * lt.fbm(604, 4.0)
+
+
+def bubble():
+    """Bubble wrap: rows of round bubbles, offset every other row, each a dome that catches the light."""
+    n = 8
+    yy, xx = np.mgrid[0:SIZE, 0:SIZE] / SIZE * n
+    row = np.floor(yy)
+    xx = xx + 0.5 * (row % 2)
+    dx, dy = xx % 1.0 - 0.5, yy % 1.0 - 0.5
+    d = np.sqrt(dx * dx + dy * dy) / 0.4
+    dome = np.sqrt(np.clip(1 - d * d, 0, 1))
+    v = 0.86 + 0.12 * dome - 0.1 * np.clip((d - 0.95) * 10, 0, 1) * (d < 1.15)
+    return np.repeat(v[..., None], 3, -1), dome * 1.2
+
+
 def images(finish):
     """(detail sRGB HxWx3, normal HxWx3) of a finish."""
+    if finish in ("chevron", "hazard_tape", "bubble"):
+        rgb, height = {"chevron": chevron, "hazard_tape": hazard_tape, "bubble": bubble}[finish]()
+        rgb = np.stack([half(np.clip(rgb[..., k], 0.03, 1.0)) for k in range(3)], -1) ** (1 / 2.2)
+        normal = lt.normal_from_height(height, 2.5)
+        return rgb, np.stack([half(normal[..., k]) for k in range(3)], -1)
     v, height = {"paint": paint, "metal": metal, "stone": stone, "wood": wood, "concrete": concrete, "worn_concrete": worn_concrete}[finish]()
     # v is the linear factor the colour is multiplied by; the image is stored as sRGB, at half the noise's size
     v = half(np.clip(v, 0.05, 1.0)) ** (1 / 2.2)

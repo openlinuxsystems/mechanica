@@ -548,6 +548,10 @@ _finish_images = {}
 
 def _finish(name, metal, noise_scale, cracks, moss):
     n = name.lower()
+    # the Spoolers' printed tapes and bubble wrap (factions_bots_b.py) carry their print in the detail image
+    for key, finish in (("chev", "chevron"), ("haztape", "hazard_tape"), ("bubble", "bubble")):
+        if n.startswith(key):
+            return finish
     if cracks > 0 or moss > 0 or "stone" in n or "flag" in n:
         return "stone"
     if "wood" in n or "plank" in n:
@@ -693,6 +697,20 @@ def no_collide(*obs):
     return obs[0] if len(obs) == 1 else obs
 
 
+def collider_box(P, name, size, loc, rot=(0, 0, 0)):
+    """A box that only collides: export() puts it in the 'collider' mesh, and it is never drawn or rendered. For pieces
+    whose collision is simpler than their look (a ramp, a walled pen, a burrow you walk into)."""
+    return collider_only(box(f"col_{name}", size, None, loc=loc, rot=rot, bev=0, parent=P))
+
+
+def collider_only(ob):
+    """Makes any mesh object collision only, like collider_box (a sloped hex mound with a tunnel cut through it)."""
+    ob["collider_only"] = 1
+    ob.hide_render = True
+    ob.display_type = "WIRE"
+    return ob
+
+
 def export(root, path, collide_min=0.6, lights=True, frame=None):
     """Writes the structure under root to a .glb with its origin at frame's (default root's): one mesh of every
     visible part (named after the file), a 'collider' mesh of the parts at least collide_min metres across (the game
@@ -707,6 +725,7 @@ def export(root, path, collide_min=0.6, lights=True, frame=None):
     # the collider is the larger parts without their bevels (openings cut by booleans stay)
     big = [ob for ob in obs if ob.type == "MESH" and ob.get("collide") != "never"
            and (ob.get("collide") == "only" or max(ob.dimensions) >= collide_min)]
+    big += [ob for ob in root.children_recursive if ob.get("collider_only")]
     for ob in big:
         for mod in ob.modifiers:
             if mod.type == "BEVEL":

@@ -37,7 +37,9 @@
         "scene_farmyard",
         "scene_kitchen_garden",
         "scene_field_edge",
-        "scene_harvest_wreck"
+        "scene_harvest_wreck",
+        "scene_rakehand_shrine",
+        "scene_rakehand_marks"
       ],
       "radius": 30,
       "share": 0.6

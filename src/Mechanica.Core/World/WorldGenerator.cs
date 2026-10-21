@@ -695,8 +695,9 @@ public sealed partial class WorldGenerator
     // Metres before and after a roadside spot over which the road's bend is measured.
     private const float BendReach = 20f;
 
-    // Whether a structure stands on a spot: a POI's footprint, unless the POI is a wild one (a pond, a ravine).
-    private bool Built(Vector2 spot) => PoisAt(spot.X, spot.Y).Any(p => !p.Poi.Prefab.Wild);
+    // Whether a structure stands on a spot: a POI's footprint, unless the POI is a wild one (a pond, a ravine) with no
+    // models. A wild POI with a model (a rock arch) grows its biome's plants but keeps scattered objects out of the rock.
+    private bool Built(Vector2 spot) => PoisAt(spot.X, spot.Y).Any(p => !p.Poi.Prefab.Wild || p.Poi.Prefab.Models is { Count: > 0 });
 
     // Whether a spot is dry land: above the sea and any pond.
     private bool Dry(Vector2 spot) => HeightAt(spot.X, spot.Y) >= WaterLevelAt(spot.X, spot.Y) + 0.2f;
@@ -733,6 +734,9 @@ public sealed partial class WorldGenerator
             return false;
         if (rule.Near is { } near && !Near(rule, near, spot))
             return false;
+        if (rule.AwayPois is { } away && _pois.Any(p => away.Contains(p.Poi.QualifiedId)
+                && Vector2.Distance(p.Centre, spot) < p.Radius + rule.Away!.Distance + rule.Object.Footprint))
+            return false;
         // A rock outcrop spreads its cubes over its footprint, so the whole of it must suit, not just its middle.
         if (rule.Object.Outcrop is not null)
         {
@@ -752,6 +756,8 @@ public sealed partial class WorldGenerator
     // ground counts, not what crowds it, so the answer never depends on rules placed after the near one.
     private bool Near(Scatter rule, NearDefinition near, Vector2 spot)
     {
+        if (rule.NearPois is { } pois && _pois.Any(p => pois.Contains(p.Poi.QualifiedId) && Vector2.Distance(p.Centre, spot) <= p.Radius + near.Within))
+            return true;
         foreach (var other in Data.ScatterRules)
         {
             if (other == rule || near.Objects?.Contains(other.Object.Id!) != true)
@@ -1538,7 +1544,23 @@ public sealed partial class WorldGenerator
             return false;
         if (!DryAndLevel(spot, radius, out pad))
             return false;
+        if (poi.Prefab.Placement.Level is { } level && !LevelRound(spot, radius, level))
+            return false;
         return poi.Prefab.Placement.Shore is not { } shore || NearWater(spot, radius, shore);
+    }
+
+    // Whether the natural ground on a footprint's rim and halfway in lies within level metres of its centre's.
+    private bool LevelRound(Vector2 spot, float radius, float level)
+    {
+        var centre = RawHeight(spot.X, spot.Y);
+        for (var k = 0; k < 16; k++)
+        {
+            var angle = k * MathF.Tau / 8f + (k < 8 ? 0f : MathF.PI / 8f);
+            var r = k < 8 ? radius : radius / 2f;
+            if (MathF.Abs(RawHeight(spot.X + MathF.Cos(angle) * r, spot.Y + MathF.Sin(angle) * r) - centre) > level)
+                return false;
+        }
+        return true;
     }
 
     // Dry at the centre and all round the rim, and not so far above or below the centre that the pad becomes a cliff.

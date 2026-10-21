@@ -245,6 +245,11 @@ public class NaturalFeatureTests
     [InlineData("""{ "object": "o", "spacing": 10, "chance": 1, "roadside": { "gap": 4, "junction": -5 } }""", "$.biomes[0].scatter[0].roadside.junction")]
     [InlineData("""{ "object": "o", "spacing": 10, "chance": 1, "near": { "objects": ["nothing"] } }""", "$.biomes[0].scatter[0].near.objects[0]")]
     [InlineData("""{ "object": "o", "spacing": 10, "chance": 1, "near": { "objects": ["s"], "within": 900 } }""", "$.biomes[0].scatter[0].near.within")]
+    [InlineData("""{ "object": "o", "spacing": 10, "chance": 1, "near": { "within": 50 } }""", "$.biomes[0].scatter[0].near.objects")]
+    [InlineData("""{ "object": "o", "spacing": 10, "chance": 1, "near": { "pois": ["nowhere"] } }""", "$.biomes[0].scatter[0].near.pois[0]")]
+    [InlineData("""{ "object": "o", "spacing": 10, "chance": 1, "away": { "distance": 50 } }""", "$.biomes[0].scatter[0].away.pois")]
+    [InlineData("""{ "object": "o", "spacing": 10, "chance": 1, "away": { "pois": ["nowhere"] } }""", "$.biomes[0].scatter[0].away.pois[0]")]
+    [InlineData("""{ "object": "o", "spacing": 10, "chance": 1, "away": { "pois": ["nowhere"], "distance": 5000 } }""", "$.biomes[0].scatter[0].away.distance")]
     public void BadWaterAndRoadsideRulesAreRejected(string rule, string path)
     {
         using var mods = new TestMods().Mod("vanilla").File("vanilla", WorldGenData.DefinitionFile, $$"""
@@ -254,6 +259,34 @@ public class NaturalFeatureTests
             """);
         var data = WorldGenData.Load(mods.Load());
         Assert.Contains(data.Diagnostics, d => d.Code == DiagnosticCodes.WorldGenInvalid && d.JsonPath == path);
+    }
+
+    [Fact]
+    public void RulesStandNearPoisAndKeepAwayFromOthers()
+    {
+        using var mods = new TestMods().Mod("vanilla")
+            .File("vanilla", WorldGenData.DefinitionFile, """
+                { "biomes": [{ "id": "a", "height": 5, "scatter": [
+                    { "object": "close", "spacing": 20, "chance": 1, "near": { "pois": ["yard"], "within": 40 } },
+                    { "object": "shy", "spacing": 20, "chance": 1, "away": { "pois": ["shop"], "distance": 100 } }] }],
+                  "objects": [{ "id": "close", "collider": { "shape": "sphere", "radius": 0.5 }, "footprint": 1 },
+                              { "id": "shy", "collider": { "shape": "sphere", "radius": 0.5 }, "footprint": 1 }] }
+                """)
+            .File("vanilla", "pois/yard.json", """{ "id": "yard", "radius": 10, "placement": { "fixed": [-200, 0] }, "terrain": [{ "op": "flatten", "radius": 6, "blend": 4 }] }""")
+            .File("vanilla", "pois/shop.json", """{ "id": "shop", "radius": 10, "placement": { "fixed": [200, 0] }, "terrain": [{ "op": "flatten", "radius": 6, "blend": 4 }] }""");
+        var data = WorldGenData.Load(mods.Load());
+        Assert.Empty(data.Diagnostics);
+        var gen = new WorldGenerator(data, 3, 1024f);
+        var yard = gen.Pois.Single(p => p.Poi.QualifiedId == "vanilla:yard");
+        var shop = gen.Pois.Single(p => p.Poi.QualifiedId == "vanilla:shop");
+        var all = gen.ObjectsIn(-512f, -512f, 512f, 512f).ToList();
+        var close = all.Where(o => o.Definition.Id == "close").Select(o => new Vector2(o.Position.X, o.Position.Z)).ToList();
+        var shy = all.Where(o => o.Definition.Id == "shy").Select(o => new Vector2(o.Position.X, o.Position.Z)).ToList();
+        Assert.NotEmpty(close);
+        Assert.All(close, c => Assert.True(Vector2.Distance(c, yard.Centre) <= yard.Radius + 40f + 0.01f, $"close at {c}"));
+        Assert.NotEmpty(shy);
+        Assert.All(shy, c => Assert.True(Vector2.Distance(c, shop.Centre) >= shop.Radius + 100f, $"shy at {c}"));
+        Assert.Contains(shy, c => Vector2.Distance(c, shop.Centre) < shop.Radius + 130f);
     }
 
     [Theory]
