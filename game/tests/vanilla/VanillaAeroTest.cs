@@ -325,9 +325,10 @@ public partial class VanillaAeroTest : StagedTest
         });
     }
 
-    // A cardboard plane flying toward -Z: a fuselage along Z with the seat on top and ballast in the nose, two
-    // wings a side behind the centre of mass, elevators and a fin at the tail, four thrusters pushing from
-    // the tail and four free wheels.
+    // A cardboard plane flying toward -Z: a fuselage along Z with the seat on top and a metal block of ballast behind
+    // it (it lifts the centre of mass, which the four 6 kg bearings low on the landing gear pull down and forward, back
+    // onto the thrusters' line), two wings a side behind the centre of mass, elevators and a fin at the tail, four
+    // thrusters pushing from the tail and four free wheels.
     private void SpawnPlane()
     {
         var plane = new Creation(PlaneId, _mods);
@@ -335,7 +336,7 @@ public partial class VanillaAeroTest : StagedTest
         Place(plane, Frame, GridCell.Zero);
         for (var z = 1; z <= 8; z++)
             Place(plane, Frame, new GridCell(0, 0, z));
-        Place(plane, "vanilla:metal_block", new GridCell(0, -1, 0));
+        Place(plane, "vanilla:metal_block", new GridCell(0, 1, 3));
         _planeSeat = Place(plane, "vanilla:drivers_seat", new GridCell(0, 1, 1));
         var flipped = GridRotation.FromAxes(new GridCell(-1, 0, 0), new GridCell(0, 1, 0));
         // Wings by their roots on the fuselage's sides, and a second wing on each tip.

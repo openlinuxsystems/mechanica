@@ -656,7 +656,9 @@ or scrap tier first. A new recipe joins its group: take the next free ten after 
 behind (or a number in between), and start a new group with the next free hundred. Mods use the same
 numbers to slot their recipes among vanilla's, for example `"order": 635` for a wheel that goes after the
 Off Road Wheel. Only level 1 of an upgradable part has a recipe, so a part's levels never take more than
-one place. Vanilla's groups:
+one place. A part made at both the Portable Fabricator and the Fabricator (Scrap Mechanic's Mini Craftbot and Craftbot)
+has two recipes with the same output: the scrap one, `<id>_scrap`, takes the number just before the Fabricator's
+(`bearing_scrap` 1005, `bearing` 1010), since every recipe needs its own number. Vanilla's groups:
 
 | Order | Group | Vanilla recipes, in order |
 |-------|-------|---------------------------|
@@ -669,13 +671,13 @@ one place. Vanilla's groups:
 | 700 | Suspension | `sport_suspension`, `offroad_suspension` |
 | 800 | Engines | `scrap_gas_engine`, `gas_engine`, `electric_engine` |
 | 900 | Fuel and power | `gasoline`, `ember`, `gas_container`, `battery`, `battery_pack` |
-| 1000 | Bearings and pistons | `bearing`, `piston` |
+| 1000 | Bearings and pistons | `bearing_scrap`, `bearing`, `piston` |
 | 1100 | Flight | `thruster`, `hover_jet`, `rotor`, `wing`, `control_surface` |
-| 1200 | Logic | `switch`, `button`, `logic_gate`, `timer`, `sensor` |
+| 1200 | Logic | `switch_scrap`, `switch`, `button`, `logic_gate`, `timer`, `sensor` |
 | 1300 | Working parts | `drill`, `saw_blade`, `water_cannon`, `potato_blaster_mounted` |
 | 1400 | Sound | `horn`, `radio` |
 | 1500 | Vehicle body | `bumper_front`, `bumper_rear`, `mud_flap`, `exhaust_pipe`, `license_plate`, `roof_rack`, `antenna`, `windshield`, `side_window` |
-| 1600 | Lights | `glowstick`, `interior_light`, `headlight`, `spotlight`, `construction_light`, `warning_light`, `beacon`, `warehouse_spotlight` |
+| 1600 | Lights | `glowstick`, `interior_light`, `headlight`, `spotlight`, `construction_light`, `warning_light`, `beacon_scrap`, `beacon`, `warehouse_spotlight` |
 | 1700 | Storage | `chest` (Scrap Chest), `small_chest`, `large_chest`, `cargo_chest`, `barrel`, `locker`, `tool_cabinet`, `file_cabinet`, `fridge`, `chemical_container`, `water_container`, `potato_ammo_container`, `dispenser`, `broken_microwave`, `ruin_chest` |
 | 1800 | Stations | `portable_fabricator`, `refiner`, `respawn_bed` |
 | 1900 | Farming | `soil_bag`, `water_bucket`, `feeding_trough`, `lead` |

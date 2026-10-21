@@ -1,8 +1,7 @@
 {
   "id": "switch",
   "stations": [
-    "fabricator",
-    "portable_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

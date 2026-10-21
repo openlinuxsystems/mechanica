@@ -1,0 +1,24 @@
+{
+  "id": "beacon_scrap",
+  "stations": [
+    "portable_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal_block",
+      "count": 40
+    },
+    {
+      "item": "circuit_board",
+      "count": 4
+    }
+  ],
+  "outputs": [
+    {
+      "item": "beacon",
+      "count": 1
+    }
+  ],
+  "time": 10,
+  "order": 1665
+}

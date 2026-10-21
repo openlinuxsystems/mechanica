@@ -1,17 +1,16 @@
 {
   "id": "scrap_wheel",
   "stations": [
-    "fabricator",
     "portable_fabricator"
   ],
   "inputs": [
     {
-      "item": "scrap_metal_block",
-      "count": 8
+      "item": "scrap_wood_block",
+      "count": 5
     },
     {
-      "item": "scrap_wood_block",
-      "count": 8
+      "item": "scrap_metal_block",
+      "count": 5
     }
   ],
   "outputs": [
@@ -20,6 +19,6 @@
       "count": 1
     }
   ],
-  "time": 4,
+  "time": 5,
   "order": 610
 }

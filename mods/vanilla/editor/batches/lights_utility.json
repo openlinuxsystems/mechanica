@@ -355,38 +355,49 @@
       "template": "interactive",
       "set": {
         "name": "Beacon",
-        "description": "Use it to switch it on: it flashes and pings so a base or a wreck can be found again, by day or night.",
-        "mass": 2,
-        "durability": 4,
-        "stack_size": 10,
+        "description": "Use it to switch it on: its lamp flashes cyan and pings so a base or a wreck can be found again, by day or night.",
+        "mass": 4.5,
+        "durability": 6,
+        "friction": 0.3,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 1,
         "size": [1, 2, 1],
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.25, 0], "normal": [0, -1, 0] }],
         "category": "light",
         "script": "scripts/beacon.lua",
-        "visual": { "color": "#c03030", "roughness": 0.4, "metallic": 0.4, "emission": "#ff3030" },
+        "icon": "textures/items/beacon_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "sounds": { "activate": "beacon_activate", "ping": "beacon_ping" },
         "logic": { "use": "toggle" },
-        "light": { "kind": "omni", "color": "#ff4040", "energy": 3, "range": 12, "offset": [0, 0.15, 0] },
+        "light": { "kind": "omni", "color": "#38c8ff", "energy": 3, "range": 12, "offset": [0, 0.05, 0] },
+        "display": { "clips": { "readout": "pose" } },
         "properties": { "ping": 3, "flash": 0.4 },
         "sound_material": "metal"
       },
-      "model": [
-        { "kind": "box", "size": [0.2, 0.12, 0.2], "position": [0, -0.19, 0] },
-        { "kind": "cylinder", "radius": 0.05, "height": 0.22, "position": [0, -0.02, 0] },
-        { "kind": "sphere", "radius": 0.08, "position": [0, 0.15, 0] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/beacon.glb" }],
       "recipes": [
         {
           "id": "beacon",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "scrap_metal_block", "count": 8 },
-            { "item": "component_kit", "count": 1 },
-            { "item": "circuit_board", "count": 1 }
+            { "item": "metal_block", "count": 20 },
+            { "item": "circuit_board", "count": 4 }
           ],
           "outputs": [{ "item": "beacon", "count": 1 }],
-          "time": 5,
+          "time": 10,
           "order": 1670
+        },
+        {
+          "id": "beacon_scrap",
+          "stations": ["portable_fabricator"],
+          "inputs": [
+            { "item": "scrap_metal_block", "count": 40 },
+            { "item": "circuit_board", "count": 4 }
+          ],
+          "outputs": [{ "item": "beacon", "count": 1 }],
+          "time": 10,
+          "order": 1665
         }
       ]
     },

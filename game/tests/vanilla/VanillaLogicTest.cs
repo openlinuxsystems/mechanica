@@ -38,6 +38,9 @@ public partial class VanillaLogicTest : StagedTest
     // tools/scrap_seat, tools/wheels, tools/switch, tools/button).
     private static readonly string[] Authored = ["electric_engine", "gas_engine", "scrap_drivers_seat", "scrap_seat", "scrap_gas_engine", "scrap_wheel", "wheel", "big_wheel", "switch", "button"];
 
+    // Parts made at both stations, with a second, scrap recipe (`<id>_scrap`) at the Portable Fabricator.
+    private static readonly string[] BothStations = ["switch"];
+
     private static readonly Vector3 CarAt = new(4, 1.0f, 8);
 
     private readonly List<ActionResult> _results = [];
@@ -81,7 +84,7 @@ public partial class VanillaLogicTest : StagedTest
             if (_batch is not { IsCompleted: true })
                 return false;
             var result = _batch.Result;
-            Check(result.Succeeded && result.Exports.Count == 2 * Outputs.Length,
+            Check(result.Succeeded && result.Exports.Count == 2 * Outputs.Length + BothStations.Length,
                 $"the batch exports {Outputs.Length} parts and their recipes ({string.Join("; ", result.Diagnostics)})");
             var made = Directory.GetFiles(_scratchMod, "*", SearchOption.AllDirectories)
                 .Select(f => Path.GetRelativePath(_scratchMod, f).Replace('\\', '/'))
@@ -89,7 +92,7 @@ public partial class VanillaLogicTest : StagedTest
                 .Order(StringComparer.Ordinal).ToList();
             // Parts whose model is a file made elsewhere (tools/bearing_engine, tools/gas_engine, tools/scrap_seat,
             // tools/wheels, tools/button) get no generated mesh.
-            Check(made.Count == 4 * Outputs.Length - Authored.Length, $"it writes a part, an editor source, a mesh (unless authored) and a recipe for each ({made.Count} files)");
+            Check(made.Count == 4 * Outputs.Length - Authored.Length + BothStations.Length, $"it writes a part, an editor source, a mesh (unless authored) and a recipe for each ({made.Count} files)");
             var differing = made.Where(f => !File.Exists(Path.Combine(VanillaDir, f))
                 || !File.ReadAllBytes(Path.Combine(VanillaDir, f)).AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(_scratchMod, f)))).ToList();
             Check(differing.Count == 0, $"every file matches mods/vanilla (differing: {string.Join(", ", differing)}); re-run tools/author-vanilla.sh");
@@ -319,7 +322,7 @@ public partial class VanillaLogicTest : StagedTest
                 Request(LogicActions.ConnectParts, new LinkPartsArgs(ScrapId, _scrapEngine, _scrapBearing));
                 Request(LogicActions.ActivatePart, new LogicPartArgs(ScrapId, _scrapSwitch));
                 Request(LogicActions.ConfigurePart, new ConfigurePartArgs(ScrapId, _scrapEngine,
-                    new Dictionary<string, JsonElement?> { ["on"] = JsonSerializer.SerializeToElement(true), ["gear"] = JsonSerializer.SerializeToElement(4) }));
+                    new Dictionary<string, JsonElement?> { ["on"] = JsonSerializer.SerializeToElement(true), ["gear"] = JsonSerializer.SerializeToElement(3) }));
             }
             if (Scrap(_client)?.Clip is { } shown)
                 _clientClips.Add(shown);
@@ -449,5 +452,5 @@ public partial class VanillaLogicTest : StagedTest
 
     private static bool IsBatchOutput(string relative) =>
         Outputs.Any(id => relative == $"parts/{id}.json" || (relative == $"meshes/{id}.glb" && !Authored.Contains(id))
-            || relative == $"editor/parts/{id}.json" || relative == $"recipes/{id}.json");
+            || relative == $"editor/parts/{id}.json" || relative == $"recipes/{id}.json" || (relative == $"recipes/{id}_scrap.json" && BothStations.Contains(id)));
 }

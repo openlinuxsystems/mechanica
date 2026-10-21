@@ -1,7 +1,7 @@
 {
   "id": "portable_fabricator",
   "name": "Portable Fabricator",
-  "description": "A carry-along FAB-1 that works one craft at a time from a short recipe list: basic blocks, bearings, switches, scrap wheels, gasoline from crude oil and the Connect Tool. Put it on a vehicle for repairs far from base.",
+  "description": "A carry-along FAB-1 that works one craft at a time from a short list of scrap recipes: scrap wedges, bearings, switches, the Beacon, the Scrap Seat and Scrap Driver's Seat, the Scrap Gas Engine, Scrap Wheels, gasoline from crude oil and the Connect Tool. Put it on a vehicle for repairs far from base.",
   "category": "station",
   "mass": 8,
   "durability": 6,

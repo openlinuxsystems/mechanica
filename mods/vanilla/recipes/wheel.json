@@ -5,12 +5,16 @@
   ],
   "inputs": [
     {
-      "item": "scrap_metal_block",
-      "count": 12
+      "item": "wood_block",
+      "count": 20
     },
     {
-      "item": "component_kit",
-      "count": 1
+      "item": "metal_block",
+      "count": 5
+    },
+    {
+      "item": "beeswax",
+      "count": 3
     }
   ],
   "outputs": [
@@ -19,6 +23,6 @@
       "count": 1
     }
   ],
-  "time": 5,
+  "time": 15,
   "order": 620
 }

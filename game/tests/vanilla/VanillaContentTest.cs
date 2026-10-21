@@ -5,6 +5,7 @@ using Mechanica.Core.Data;
 using Mechanica.Core.Editor;
 using Mechanica.Core.Logic;
 using Mechanica.Core.World;
+using Mechanica.Game.Creations;
 using Mechanica.Game.Editor;
 using Mechanica.Game.Mods;
 using Instance = Mechanica.Game.Tests.NetTestHarness.Instance;
@@ -16,8 +17,8 @@ namespace Mechanica.Game.Tests;
 /// utility parts, decor props and the remaining containers and stations into a scratch copy of the mod and
 /// checks every file they write is byte-for-byte what is checked in (D3). Then, on a host with a client
 /// (D10), through the client's Action API: a switch turns a spotlight and a rotor on, an interior light is
-/// switched off with F, a warning light blinks, and the client shows every light and the rotor's spinning
-/// model as the host's scripts drive them.
+/// switched off with F, a warning light blinks, a beacon switched on flashes and its model plays its on and flash clips,
+/// and the client shows every light and the rotor's spinning model as the host's scripts drive them.
 /// </summary>
 public partial class VanillaContentTest : StagedTest
 {
@@ -34,8 +35,9 @@ public partial class VanillaContentTest : StagedTest
     private ModLoadResult _mods = null!;
     private Instance _host = null!;
     private Instance _client = null!;
-    private int _switch, _spot, _lamp, _warning, _rotor;
+    private int _switch, _spot, _lamp, _warning, _rotor, _beacon;
     private readonly HashSet<bool> _blinks = [];
+    private readonly HashSet<string> _beaconClips = [];
     private float _rotorAngle, _rotorTurned;
 
     protected override string Tag => "vanilla-content";
@@ -162,12 +164,42 @@ public partial class VanillaContentTest : StagedTest
             Check(_results.Count == 1 && _results[0].Ok, $"using the light succeeds ({string.Join("; ", _results)})");
             foreach (var instance in new[] { _host, _client })
                 Check(Lit(instance, _lamp) is 0f, $"{instance}: the interior light is off ({Lit(instance, _lamp)})");
+            _results.Clear();
+            return true;
+        });
+        Add("the beacon rests dark, its model on its off clip", _ =>
+        {
+            foreach (var instance in new[] { _host, _client })
+            {
+                Check(Beacon(instance)?.Player is not null, $"{instance}: the beacon shows its whole model with its clips");
+                Check(Beacon(instance)?.Clip == "off", $"{instance}: the beacon plays its off clip ({Beacon(instance)?.Clip})");
+                Check(Lit(instance, _beacon) is 0f, $"{instance}: the beacon is dark ({Lit(instance, _beacon)})");
+            }
+            return true;
+        });
+        Add("the client switches the beacon on: it flashes cyan, and its model flashes and glows between", frame =>
+        {
+            if (frame == 0)
+                Request(LogicActions.ActivatePart, new LogicPartArgs(RigId, _beacon));
+            if (Beacon(_client)?.Clip is { } shown)
+                _beaconClips.Add(shown);
+            if (frame < 240)
+                return false;
+            Check(_results.Count == 1 && _results[0].Ok, $"using the beacon succeeds ({string.Join("; ", _results)})");
+            Check(_beaconClips.Contains("flash") && _beaconClips.Contains("on"),
+                $"the client's beacon plays its flash and on clips ({string.Join(", ", _beaconClips)})");
+            var light = _client.Main.Creations.NodeOf(RigId)!.Lights.First(l => l.Part == _beacon).Light;
+            Check(light.LightColor.B > 0.9f && light.LightColor.R < 0.4f, $"its light is cyan ({light.LightColor})");
+            Check(Lit(_client, _beacon) > 0f, $"it glows between flashes ({Lit(_client, _beacon)})");
             return true;
         });
     }
 
+    private PartDisplayVisual? Beacon(Instance instance) =>
+        instance.Main.Creations.NodeOf(RigId)?.Displays.FirstOrDefault(d => d.Part == _beacon);
+
     // A 6 x 6 metal plate with a switch linked to a spotlight and a rotor, an interior light hung under a
-    // corner and a warning light.
+    // corner, a warning light and a beacon.
     private void SpawnRig()
     {
         var rig = new Creation(RigId, _mods);
@@ -179,6 +211,7 @@ public partial class VanillaContentTest : StagedTest
         _rotor = Place(rig, "vanilla:rotor", new GridCell(3, 1, 0));
         _warning = Place(rig, "vanilla:warning_light", new GridCell(0, 1, 5));
         _lamp = Place(rig, "vanilla:interior_light", new GridCell(4, -1, 4));
+        _beacon = Place(rig, "vanilla:beacon", new GridCell(2, 1, 5));
         foreach (var to in new[] { _spot, _rotor })
         {
             if (!rig.TryLink(_switch, to, out var error))

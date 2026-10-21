@@ -272,19 +272,19 @@ public sealed class LogicScriptTests : IDisposable
         Steps(1);
         var first = _runtime.Readouts.Text(Car, engine, "clip")!;
         Assert.True(first.StartsWith("start#", StringComparison.Ordinal) || first.StartsWith("false_start#", StringComparison.Ordinal), first);
-        Assert.Equal(1f / 3, _runtime.Readouts.Number(Car, engine, "lever")!.Value, 4);
+        Assert.Equal(0.5f, _runtime.Readouts.Number(Car, engine, "lever")!.Value, 4);
         Steps(120);                                   // a false start (0.7 s) and the start (1 s) are over
         Assert.StartsWith("run_loop#", _runtime.Readouts.Text(Car, engine, "clip"));
         Assert.Equal(1f, _runtime.Readouts.Number(Car, engine, "running"));
-        // Gear 2 of 4 of 15 rad/s, uneven by up to 12 %, toward the engine's front.
+        // Gear 2 of 3 of 15 rad/s, uneven by up to 12 %, toward the engine's front.
         foreach (var (bearing, side) in wheels.Take(2))
         {
             var motor = LastMotor(bearing);
             Assert.Equal(240f, motor.MaxEffort);
-            Assert.InRange(-side * motor.Velocity!.Value, 7.5f * 0.87f, 7.5f * 1.13f);
+            Assert.InRange(-side * motor.Velocity!.Value, 10f * 0.87f, 10f * 1.13f);
         }
 
-        Configure(creation, engine, "gear", 4);
+        Configure(creation, engine, "gear", 3);
         Steps(1);
         Assert.StartsWith("gear#", _runtime.Readouts.Text(Car, engine, "clip"));
         Steps(30);
@@ -322,7 +322,7 @@ public sealed class LogicScriptTests : IDisposable
         Steps(10);
         Assert.Equal(1f, _runtime.Signals.Output(Car, engine));
         foreach (var (bearing, side) in wheels.Take(2))
-            Assert.InRange(-side * LastMotor(bearing).Velocity!.Value, 7.5f * 0.87f, 7.5f * 1.13f);
+            Assert.InRange(-side * LastMotor(bearing).Velocity!.Value, 10f * 0.87f, 10f * 1.13f);
 
         // Getting up (still holding W) stops it: the drive and the hum go, and it holds the wheels with its brake so the
         // parked car stays put.

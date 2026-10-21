@@ -1,19 +1,19 @@
 {
   "id": "scrap_drivers_seat",
   "stations": [
-    "fabricator"
+    "portable_fabricator"
   ],
   "inputs": [
     {
       "item": "scrap_metal_block",
-      "count": 12
+      "count": 10
     },
     {
       "item": "scrap_wood_block",
-      "count": 8
+      "count": 30
     },
     {
-      "item": "component_kit",
+      "item": "circuit_board",
       "count": 1
     }
   ],
@@ -23,6 +23,6 @@
       "count": 1
     }
   ],
-  "time": 5,
+  "time": 10,
   "order": 520
 }
