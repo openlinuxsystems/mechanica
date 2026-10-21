@@ -110,14 +110,15 @@ public partial class CaptureScene : Node
         var connectLines = args.Length > 1 && args[1] == "connect_lines";
         var husbandry = args.Length > 1 && args[1] == "husbandry";
         var fields = args.Length > 1 && args[1] == "fields";
+        var building = args.Length > 1 && args[1] == "parts_building";
         var formations = args.Length > 1 && args[1] == "formations";
         var factions = args.Length > 1 && args[1] == "factions";
-        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !factions && !connectLines && !husbandry && !fields && args[1] != "survey" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !factions && !connectLines && !husbandry && !fields && !building && args[1] != "survey" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         // Building the block wall needs Creative: free parts and no build reach.
-        _main.Options = LaunchOptions.Offline with { Seed = args.Length > 1 && args[1] == "survey" ? 1 : 7, GameMode = blocks || soil || wheels || portable || liftCapture || connectLines || husbandry ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
+        _main.Options = LaunchOptions.Offline with { Seed = args.Length > 1 && args[1] == "survey" ? 1 : 7, GameMode = blocks || building || soil || wheels || portable || liftCapture || connectLines || husbandry ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
         // The button shots show the HUD (the creation hotbar), which only a main reading the devices builds.
         _main.ReadDeviceInput = icons || wheels || button || engineMenu || connectLines;
         _main.DebugCar = debugCar;
@@ -247,6 +248,11 @@ public partial class CaptureScene : Node
         if (small)
         {
             SmallPoiShots();
+            return;
+        }
+        if (building)
+        {
+            BuildingPartShots(args.Length > 2 ? args[2] : null);
             return;
         }
         if (fields)

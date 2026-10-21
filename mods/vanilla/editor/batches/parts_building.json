@@ -1,0 +1,473 @@
+{
+  // The parts map's batches 11 and 12 (/mnt/project-files parts/PARTS_MAP.md): stairs, railings, the Net Fence,
+  // windows, windshields, the Concave Wedge, road and farm signs, the Antenna, the Traffic Cone, the Banner Holder and
+  // the Billboard, with the Scrap Mechanic wiki's stats and recipes. Models and icons are built by
+  // tools/parts_building/build_parts.py. Re-run with tools/author-vanilla.sh.
+  "format_version": 1,
+  "parts": [
+    {
+      "file": "parts/decor/ramp_block.json",
+      "template": "decor",
+      "set": {
+        "name": "Ramp Block",
+        "description": "A 45-degree steel ramp, 1 m on a side, low at the front: grated deck, cleats and a mustard nosing.",
+        "mass": 6,
+        "durability": 5,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          4,
+          4,
+          4
+        ],
+        "icon": "textures/items/ramp_block_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        },
+        "collision": {
+          "shape": "convex",
+          "mesh": "meshes/parts/ramp_block.glb"
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/ramp_block.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "ramp_block",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "scrap_metal_block",
+              "count": 8
+            },
+            {
+              "item": "scrap_wood_block",
+              "count": 8
+            }
+          ],
+          "outputs": [
+            {
+              "item": "ramp_block",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 210
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/metal_railing.json",
+      "template": "decor",
+      "set": {
+        "name": "Metal Railing",
+        "description": "A 1 m Colony handrail for walkways and stairs: two posts, a mustard rail, a mid rail and a toe board.",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          4,
+          4,
+          1
+        ],
+        "icon": "textures/items/metal_railing_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/metal_railing.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "metal_railing",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "scrap_metal_block",
+              "count": 8
+            }
+          ],
+          "outputs": [
+            {
+              "item": "metal_railing",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 240
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/windshield.json",
+      "template": "decor",
+      "set": {
+        "name": "Windshield",
+        "description": "A wrapped, tinted glass windshield on a gunmetal cowl, for the front of a cabin.",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.2,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "glass",
+        "size": [
+          6,
+          4,
+          2
+        ],
+        "icon": "textures/items/windshield_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/windshield.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "windshield",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "glass_block",
+              "count": 10
+            },
+            {
+              "item": "metal_block",
+              "count": 5
+            }
+          ],
+          "outputs": [
+            {
+              "item": "windshield",
+              "count": 1
+            }
+          ],
+          "time": 10,
+          "order": 1580
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/side_window.json",
+      "template": "decor",
+      "set": {
+        "name": "Side Window",
+        "description": "A tinted vehicle window in a gunmetal frame with a rubber seal.",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.2,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "glass",
+        "size": [
+          4,
+          3,
+          1
+        ],
+        "icon": "textures/items/side_window_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/side_window.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "side_window",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "glass_block",
+              "count": 5
+            },
+            {
+              "item": "metal_block",
+              "count": 5
+            }
+          ],
+          "outputs": [
+            {
+              "item": "side_window",
+              "count": 1
+            }
+          ],
+          "time": 10,
+          "order": 1590
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/concave_wedge.json",
+      "template": "decor",
+      "set": {
+        "name": "Concave Wedge",
+        "description": "A one-block wedge with a quarter-circle scoop, high at the back. Rounds off a body.",
+        "mass": 7.5,
+        "durability": 4,
+        "friction": 0.5,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          1,
+          1,
+          1
+        ],
+        "icon": "textures/items/concave_wedge_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        },
+        "collision": {
+          "shape": "convex",
+          "mesh": "meshes/parts/concave_wedge.glb"
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/concave_wedge.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "concave_wedge",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "concave_wedge",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 190
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/window_large.json",
+      "template": "decor",
+      "set": {
+        "name": "Large Window",
+        "description": "A 2 m window: clear glass in a steel-blue frame with a mullion and a bone sill.",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.2,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "glass",
+        "size": [
+          8,
+          4,
+          1
+        ],
+        "icon": "textures/items/window_large_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/window_large.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "window_large",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "glass_block",
+              "count": 15
+            },
+            {
+              "item": "metal_block",
+              "count": 10
+            }
+          ],
+          "outputs": [
+            {
+              "item": "window_large",
+              "count": 1
+            }
+          ],
+          "time": 10,
+          "order": 2920
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/windshield_large.json",
+      "template": "decor",
+      "set": {
+        "name": "Large Windshield",
+        "description": "A big wrapped windshield for a cabin, with a centre divider.",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.2,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "glass",
+        "size": [
+          8,
+          5,
+          3
+        ],
+        "icon": "textures/items/windshield_large_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/windshield_large.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "windshield_large",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "glass_block",
+              "count": 20
+            },
+            {
+              "item": "metal_block",
+              "count": 10
+            }
+          ],
+          "outputs": [
+            {
+              "item": "windshield_large",
+              "count": 1
+            }
+          ],
+          "time": 10,
+          "order": 1585
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/window_metal.json",
+      "template": "decor",
+      "set": {
+        "name": "Metal Window",
+        "description": "A storm window: fixed graphite louvres over dark glass in a steel-blue frame.",
+        "mass": 10.5,
+        "durability": 5,
+        "friction": 0.7,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          4,
+          4,
+          1
+        ],
+        "icon": "textures/items/window_metal_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/window_metal.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "window_metal",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 5
+            },
+            {
+              "item": "glass_block",
+              "count": 2
+            }
+          ],
+          "outputs": [
+            {
+              "item": "window_metal",
+              "count": 1
+            }
+          ],
+          "time": 5,
+          "order": 2930
+        }
+      ]
+    }
+  ]
+}
