@@ -3,6 +3,7 @@ using Godot;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Characters;
 using Mechanica.Core.Creations;
+using Mechanica.Core.Data;
 using Mechanica.Core.Logic;
 using Mechanica.Game.Building;
 using Mechanica.Game.Creations;
@@ -137,7 +138,8 @@ public partial class LogicSync : Node
 
     /// <summary>
     /// Where a player standing up from a seat lands: beside it (left, then right, front, back, then above), the first
-    /// spot with room for them (UI spec §10).
+    /// spot with room for them (UI spec §10). The spots clear the seat's own block footprint, so a big seat (the
+    /// 4 x 4 x 4 Driver's Seat) does not stand its rider up inside itself.
     /// </summary>
     public Vector3 BesideSeat(int creationId, int partId, PlayerController player)
     {
@@ -145,12 +147,20 @@ public partial class LogicSync : Node
             return player.GlobalPosition + Vector3.Up * 0.5f;
         var basis = seat.Feet.Basis;
         var feet = seat.Feet.Origin;
+        // How far the seat's footprint reaches from the feet, in the seat's own frame.
+        var definition = Creations.NodeOf(creationId)!.Creation.DefinitionOf(partId);
+        var half = (definition.Size ?? GridSize.One).Metres * 0.5f;
+        var anchor = SeatStyle.Anchor(definition);
         // The seat's own up may be tipped; stand upright in the world.
         Vector3 Flat(Vector3 v) => new Vector3(v.X, 0, v.Z) is var f && f.LengthSquared() > 1e-4f ? f.Normalized() : Vector3.Zero;
         var side = Flat(basis.X);
         var front = Flat(-basis.Z);
-        var reach = player.Settings.Radius + 0.45f;
-        Vector3[] spots = [feet - side * reach, feet + side * reach, feet + front * reach, feet - front * reach];
+        var clear = player.Settings.Radius + 0.2f;
+        Vector3[] spots =
+        [
+            feet - side * (half.X + anchor.X + clear), feet + side * (half.X - anchor.X + clear),
+            feet + front * (half.Z + anchor.Z + clear), feet - front * (half.Z - anchor.Z + clear),
+        ];
         foreach (var spot in spots)
         {
             if (side == Vector3.Zero && front == Vector3.Zero)
@@ -159,7 +169,7 @@ public partial class LogicSync : Node
             if (player.RoomAt(at))
                 return at;
         }
-        return feet + Vector3.Up * 0.75f;
+        return feet + Vector3.Up * MathF.Max(0.75f, half.Y - anchor.Y + 0.05f);
     }
 
     // Gives each seated player its seat, and takes it away from players who stood up.

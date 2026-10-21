@@ -6,33 +6,76 @@
       "file": "parts/drivers_seat.json",
       "template": "seat",
       "set": {
-        "name": "Driver's Seat",
-        "description": "Sit in it with E and drive: W and S are its output (link it to engines), A and D steer the upright bearings it is linked to. Switches and buttons it is linked to go on your hotbar while you sit.",
-        "mass": 6,
-        "durability": 5,
+        "name": "Driver's Seat 1",
+        "description": "A padded bucket seat with a steering wheel. Sit in it with E and drive: W and S are its output (link it to engines; a controller starts on W and stops on S, a thruster burns while you hold W), A and D steer the upright bearings it is linked to. Switches and buttons it is linked to go on your hotbar while you sit: 1 to 9 and 0 use them, Left and Right click the first two. Upgrade it in place with Component Kits (U) for more links.",
+        "mass": 7.5,
+        "durability": 3,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": true,
         "stack_size": 10,
+        "size": [4, 4, 4],
         "script": "scripts/seat.lua",
-        "visual": { "color": "#3d4f66", "roughness": 0.6, "metallic": 0.3 },
+        "icon": "textures/items/drivers_seat_1_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.5, 0], "normal": [0, -1, 0] }],
+        "logic": { "outputs": 6 },
         "sounds": { "enter": "seat_enter", "exit": "seat_exit" },
-        "seat": { "offset": [0, -0.25, 0], "cushion": [0, -0.03, 0.03], "hands": "wheel" },
-        "properties": { "steer_angle": 27, "steer_speed": 2.5, "steer_torque": 1500 }
+        "seat": { "offset": [0, -0.44, 0.18], "cushion": [0, -0.05, 0.18], "hands": "wheel", "bounce": 1 },
+        "display": { "clips": { "readout": "clip" } },
+        "properties": { "steer_angle": 27, "steer_speed": 2.5, "steer_torque": 1500 },
+        "upgrades": [
+          {
+            "cost": [{ "item": "component_kit", "count": 1 }],
+            "set": {
+              "name": "Driver's Seat 2",
+              "durability": 4,
+              "logic": { "outputs": 8 },
+              "mesh": "meshes/parts/drivers_seat_2.glb",
+              "icon": "textures/items/drivers_seat_2_icon.png"
+            }
+          },
+          {
+            "cost": [{ "item": "component_kit", "count": 2 }],
+            "set": {
+              "name": "Driver's Seat 3",
+              "durability": 5,
+              "logic": { "outputs": 12 },
+              "mesh": "meshes/parts/drivers_seat_3.glb",
+              "icon": "textures/items/drivers_seat_3_icon.png"
+            }
+          },
+          {
+            "cost": [{ "item": "component_kit", "count": 3 }],
+            "set": {
+              "name": "Driver's Seat 4",
+              "durability": 6,
+              "logic": { "outputs": 16 },
+              "mesh": "meshes/parts/drivers_seat_4.glb",
+              "icon": "textures/items/drivers_seat_4_icon.png"
+            }
+          },
+          {
+            "cost": [{ "item": "component_kit", "count": 5 }],
+            "set": {
+              "name": "Driver's Seat 5",
+              "description": "A racing bucket seat with a steering wheel. Sit in it with E and drive: W and S are its output (link it to engines; a controller starts on W and stops on S, a thruster burns while you hold W), A and D steer the upright bearings it is linked to. Switches and buttons it is linked to go on your hotbar while you sit: 1 to 9 and 0 use them, Left and Right click the first two.",
+              "durability": 7,
+              "logic": { "outputs": 20 },
+              "mesh": "meshes/parts/drivers_seat_5.glb",
+              "icon": "textures/items/drivers_seat_5_icon.png"
+            }
+          }
+        ]
       },
-      "model": [
-        { "kind": "box", "size": [0.5, 0.14, 0.48], "position": [0, -0.18, 0] },
-        { "kind": "box", "size": [0.44, 0.08, 0.4], "position": [0, -0.07, -0.02] },
-        { "kind": "box", "size": [0.44, 0.4, 0.08], "position": [0, 0.05, 0.2] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/drivers_seat_1.glb" }],
       "recipes": [
         {
           "id": "drivers_seat",
           "stations": ["fabricator"],
-          "inputs": [
-            { "item": "scrap_metal_block", "count": 12 },
-            { "item": "component_kit", "count": 2 },
-            { "item": "circuit_board", "count": 1 }
-          ],
+          "inputs": [{ "item": "metal_block", "count": 20 }, { "item": "component_kit", "count": 2 }, { "item": "circuit_board", "count": 1 }, { "item": "cotton", "count": 10 }],
           "outputs": [{ "item": "drivers_seat", "count": 1 }],
-          "time": 8,
+          "time": 30,
           "order": 540
         }
       ]
@@ -42,6 +85,7 @@
       "base": "drivers_seat",
       "set": {
         "name": "Scrap Driver's Seat",
+        "upgrades": null,
         "description": "A makeshift seat on a pallet with a pipe steering wheel. Sit in it with E and drive: W and S are its output (link it to engines; a controller starts on W and stops on S, a thruster burns while you hold W), A and D steer the upright bearings it is linked to. Switches and buttons it is linked to go on your hotbar while you sit: 1 to 9 and 0 use them, Left and Right click the first two. It takes 4 links.",
         "mass": 7.5,
         "durability": 2,
@@ -52,7 +96,7 @@
         "sound_material": "scrap",
         "size": [4, 4, 6],
         "icon": "textures/items/scrap_drivers_seat_icon.png",
-        "visual": { "color": "#ffffff" },
+        "visual": { "color": "#ffffff", "roughness": 0.6, "metallic": 0.3 },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.5, 0], "normal": [0, -1, 0] }],
         "logic": { "outputs": 4 },
         "sounds": { "enter": "scrap_seat_enter", "exit": "scrap_seat_exit" },
@@ -82,27 +126,71 @@
       "file": "parts/passenger_seat.json",
       "template": "seat",
       "set": {
-        "name": "Passenger Seat",
-        "description": "A seat to ride along in. It drives nothing.",
-        "mass": 5,
-        "durability": 5,
+        "name": "Passenger Seat 1",
+        "description": "A padded seat to ride along in. Sit in it with E to ride along; it drives and steers nothing. Switches and buttons it is linked to go on your hotbar while you sit: 1 to 9 and 0 use them, Left and Right click the first two. Upgrade it in place with Component Kits (U) for more links.",
+        "mass": 4.5,
+        "durability": 3,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": true,
         "stack_size": 10,
-        "logic": null,
-        "visual": { "color": "#56657a", "roughness": 0.6, "metallic": 0.3 },
-        "seat": { "offset": [0, -0.25, 0], "cushion": [0, -0.03, 0.03], "hands": "free" }
+        "size": [4, 4, 3],
+        "script": "scripts/seat.lua",
+        "icon": "textures/items/passenger_seat_1_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.5, 0], "normal": [0, -1, 0] }],
+        "logic": { "outputs": 2 },
+        "sounds": { "enter": "seat_enter", "exit": "seat_exit" },
+        "seat": { "offset": [0, -0.44, 0.04], "cushion": [0, -0.05, 0.04], "hands": "free", "bounce": 1 },
+        "display": { "clips": { "readout": "clip" } },
+        "upgrades": [
+          {
+            "cost": [{ "item": "component_kit", "count": 1 }],
+            "set": {
+              "name": "Passenger Seat 2",
+              "logic": { "outputs": 4 },
+              "mesh": "meshes/parts/passenger_seat_2.glb",
+              "icon": "textures/items/passenger_seat_2_icon.png"
+            }
+          },
+          {
+            "cost": [{ "item": "component_kit", "count": 1 }],
+            "set": {
+              "name": "Passenger Seat 3",
+              "logic": { "outputs": 6 },
+              "mesh": "meshes/parts/passenger_seat_3.glb",
+              "icon": "textures/items/passenger_seat_3_icon.png"
+            }
+          },
+          {
+            "cost": [{ "item": "component_kit", "count": 1 }],
+            "set": {
+              "name": "Passenger Seat 4",
+              "logic": { "outputs": 8 },
+              "mesh": "meshes/parts/passenger_seat_4.glb",
+              "icon": "textures/items/passenger_seat_4_icon.png"
+            }
+          },
+          {
+            "cost": [{ "item": "component_kit", "count": 1 }],
+            "set": {
+              "name": "Passenger Seat 5",
+              "description": "A sculpted racing seat to ride along in. Sit in it with E to ride along; it drives and steers nothing. Switches and buttons it is linked to go on your hotbar while you sit: 1 to 9 and 0 use them, Left and Right click the first two.",
+              "logic": { "outputs": 10 },
+              "mesh": "meshes/parts/passenger_seat_5.glb",
+              "icon": "textures/items/passenger_seat_5_icon.png"
+            }
+          }
+        ]
       },
-      "model": [
-        { "kind": "box", "size": [0.5, 0.14, 0.48], "position": [0, -0.18, 0] },
-        { "kind": "box", "size": [0.44, 0.08, 0.4], "position": [0, -0.07, -0.02] },
-        { "kind": "box", "size": [0.44, 0.4, 0.08], "position": [0, 0.05, 0.2] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/passenger_seat_1.glb" }],
       "recipes": [
         {
           "id": "passenger_seat",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 12 }, { "item": "component_kit", "count": 1 }],
+          "inputs": [{ "item": "metal_block", "count": 10 }, { "item": "component_kit", "count": 1 }, { "item": "circuit_board", "count": 1 }, { "item": "cotton", "count": 10 }],
           "outputs": [{ "item": "passenger_seat", "count": 1 }],
-          "time": 5,
+          "time": 30,
           "order": 530
         }
       ]
@@ -112,6 +200,7 @@
       "base": "passenger_seat",
       "set": {
         "name": "Scrap Seat",
+        "upgrades": null,
         "description": "A makeshift passenger seat on a pallet. Sit in it with E to ride along; it drives and steers nothing. Switches and buttons it is linked to go on your hotbar while you sit: 1 and 2 use them, or Left and Right click. It takes 2 links.",
         "mass": 4.5,
         "durability": 2,
@@ -141,6 +230,225 @@
           "outputs": [{ "item": "scrap_seat", "count": 1 }],
           "time": 10,
           "order": 510
+        }
+      ]
+    },
+    {
+      "file": "parts/drivers_saddle.json",
+      "template": "seat",
+      "set": {
+        "name": "Driver's Saddle 1",
+        "description": "A saddle with handlebars, 3 blocks wide so it sits in the middle of an odd-width build. Ride it astride. Sit in it with E and drive: W and S are its output (link it to engines; a controller starts on W and stops on S, a thruster burns while you hold W), A and D steer the upright bearings it is linked to. Switches and buttons it is linked to go on your hotbar while you sit: 1 to 9 and 0 use them, Left and Right click the first two. Upgrade it in place with Component Kits (U) for more links.",
+        "mass": 7.5,
+        "durability": 3,
+        "friction": 0.7,
+        "buoyancy": 0.5,
+        "flammable": false,
+        "stack_size": 10,
+        "size": [3, 4, 4],
+        "script": "scripts/seat.lua",
+        "icon": "textures/items/drivers_saddle_1_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.5, 0], "normal": [0, -1, 0] }],
+        "logic": { "outputs": 6 },
+        "sounds": { "enter": "seat_enter", "exit": "seat_exit" },
+        "seat": { "offset": [0, -0.45, 0.12], "cushion": [0, 0.078, 0.12], "hands": "wheel", "bounce": 1.3, "pose": "saddle" },
+        "display": { "clips": { "readout": "clip" } },
+        "properties": { "steer_angle": 27, "steer_speed": 2.5, "steer_torque": 1500 },
+        "upgrades": [
+          {
+            "cost": [{ "item": "component_kit", "count": 1 }],
+            "set": {
+              "name": "Driver's Saddle 2",
+              "durability": 4,
+              "logic": { "outputs": 8 },
+              "mesh": "meshes/parts/drivers_saddle_2.glb",
+              "icon": "textures/items/drivers_saddle_2_icon.png"
+            }
+          },
+          {
+            "cost": [{ "item": "component_kit", "count": 2 }],
+            "set": {
+              "name": "Driver's Saddle 3",
+              "durability": 5,
+              "logic": { "outputs": 12 },
+              "mesh": "meshes/parts/drivers_saddle_3.glb",
+              "icon": "textures/items/drivers_saddle_3_icon.png"
+            }
+          },
+          {
+            "cost": [{ "item": "component_kit", "count": 3 }],
+            "set": {
+              "name": "Driver's Saddle 4",
+              "durability": 6,
+              "logic": { "outputs": 16 },
+              "mesh": "meshes/parts/drivers_saddle_4.glb",
+              "icon": "textures/items/drivers_saddle_4_icon.png"
+            }
+          },
+          {
+            "cost": [{ "item": "component_kit", "count": 5 }],
+            "set": {
+              "name": "Driver's Saddle 5",
+              "description": "A sport saddle with handlebars, 3 blocks wide so it sits in the middle of an odd-width build. Ride it astride. Sit in it with E and drive: W and S are its output (link it to engines; a controller starts on W and stops on S, a thruster burns while you hold W), A and D steer the upright bearings it is linked to. Switches and buttons it is linked to go on your hotbar while you sit: 1 to 9 and 0 use them, Left and Right click the first two.",
+              "durability": 7,
+              "logic": { "outputs": 20 },
+              "mesh": "meshes/parts/drivers_saddle_5.glb",
+              "icon": "textures/items/drivers_saddle_5_icon.png"
+            }
+          }
+        ]
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/drivers_saddle_1.glb" }],
+      "recipes": [
+        {
+          "id": "drivers_saddle",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 15 }, { "item": "component_kit", "count": 2 }, { "item": "circuit_board", "count": 1 }, { "item": "cotton", "count": 5 }],
+          "outputs": [{ "item": "drivers_saddle", "count": 1 }],
+          "time": 30,
+          "order": 545
+        }
+      ]
+    },
+    {
+      "file": "parts/saddle.json",
+      "template": "seat",
+      "set": {
+        "name": "Saddle 1",
+        "description": "A saddle for a passenger, 3 blocks wide so it sits in the middle of an odd-width build. Ride it astride. Sit in it with E to ride along; it drives and steers nothing. Switches and buttons it is linked to go on your hotbar while you sit: 1 to 9 and 0 use them, Left and Right click the first two. Upgrade it in place with Component Kits (U) for more links.",
+        "mass": 4.5,
+        "durability": 4,
+        "friction": 0.7,
+        "buoyancy": 0.5,
+        "flammable": false,
+        "stack_size": 10,
+        "size": [3, 3, 3],
+        "script": "scripts/seat.lua",
+        "icon": "textures/items/saddle_1_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
+        "logic": { "outputs": 3 },
+        "sounds": { "enter": "seat_enter", "exit": "seat_exit" },
+        "seat": { "offset": [0, -0.345, 0.03], "cushion": [0, 0.183, 0.03], "hands": "free", "bounce": 1.3, "pose": "saddle" },
+        "display": { "clips": { "readout": "clip" } },
+        "upgrades": [
+          {
+            "cost": [{ "item": "component_kit", "count": 1 }],
+            "set": {
+              "name": "Saddle 2",
+              "logic": { "outputs": 4 },
+              "mesh": "meshes/parts/saddle_2.glb",
+              "icon": "textures/items/saddle_2_icon.png"
+            }
+          },
+          {
+            "cost": [{ "item": "component_kit", "count": 1 }],
+            "set": {
+              "name": "Saddle 3",
+              "logic": { "outputs": 6 },
+              "mesh": "meshes/parts/saddle_3.glb",
+              "icon": "textures/items/saddle_3_icon.png"
+            }
+          },
+          {
+            "cost": [{ "item": "component_kit", "count": 1 }],
+            "set": {
+              "name": "Saddle 4",
+              "logic": { "outputs": 8 },
+              "mesh": "meshes/parts/saddle_4.glb",
+              "icon": "textures/items/saddle_4_icon.png"
+            }
+          },
+          {
+            "cost": [{ "item": "component_kit", "count": 1 }],
+            "set": {
+              "name": "Saddle 5",
+              "description": "A sport saddle for a passenger, 3 blocks wide so it sits in the middle of an odd-width build. Ride it astride. Sit in it with E to ride along; it drives and steers nothing. Switches and buttons it is linked to go on your hotbar while you sit: 1 to 9 and 0 use them, Left and Right click the first two.",
+              "logic": { "outputs": 10 },
+              "mesh": "meshes/parts/saddle_5.glb",
+              "icon": "textures/items/saddle_5_icon.png"
+            }
+          }
+        ]
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/saddle_1.glb" }],
+      "recipes": [
+        {
+          "id": "saddle",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 5 }, { "item": "cotton", "count": 5 }, { "item": "circuit_board", "count": 2 }],
+          "outputs": [{ "item": "saddle", "count": 1 }],
+          "time": 40,
+          "order": 535
+        }
+      ]
+    },
+    {
+      "file": "parts/toilet.json",
+      "template": "seat",
+      "set": {
+        "name": "Toilet",
+        "description": "A patched-up outhouse toilet on a plank stand. Sit in it with E to ride along; it drives and steers nothing. Switches and buttons it is linked to go on your hotbar while you sit: 1 to 9 and 0 use them, Left and Right click the first two. It takes 10 links.",
+        "mass": 12,
+        "durability": 3,
+        "friction": 0.3,
+        "buoyancy": 0.4,
+        "flammable": false,
+        "stack_size": 10,
+        "sound_material": "metal",
+        "size": [3, 4, 4],
+        "script": "scripts/seat.lua",
+        "icon": "textures/items/toilet_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.5, 0], "normal": [0, -1, 0] }],
+        "logic": { "outputs": 10 },
+        "sounds": { "enter": "seat_enter", "exit": "seat_exit" },
+        "seat": { "cushion": [0, -0.11, 0.05], "hands": "free", "bounce": 0.6 }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/toilet.glb" }],
+      "recipes": [
+        {
+          "id": "toilet",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 5 }, { "item": "wood_block", "count": 5 }],
+          "outputs": [{ "item": "toilet", "count": 1 }],
+          "time": 5,
+          "order": 2024
+        }
+      ]
+    },
+    {
+      "file": "parts/bathtub.json",
+      "template": "seat",
+      "set": {
+        "name": "Bathtub",
+        "description": "A chipped clawfoot tub with a plank seat across it, as the settlers use. Sit in it with E and stretch your legs out; it drives and steers nothing. Switches and buttons it is linked to go on your hotbar while you sit: 1 to 9 and 0 use them, Left and Right click the first two. It takes 10 links.",
+        "mass": 7.5,
+        "durability": 4,
+        "friction": 0.2,
+        "buoyancy": 0.8,
+        "flammable": false,
+        "stack_size": 10,
+        "sound_material": "metal",
+        "size": [3, 3, 7],
+        "script": "scripts/seat.lua",
+        "icon": "textures/items/bathtub_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
+        "logic": { "outputs": 10 },
+        "sounds": { "enter": "seat_enter", "exit": "seat_exit" },
+        "seat": { "offset": [0, -0.235, 0.43], "cushion": [0, -0.065, 0.43], "hands": "free", "bounce": 0.5 }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/bathtub.glb" }],
+      "recipes": [
+        {
+          "id": "bathtub",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 10 }, { "item": "paint_ammo", "count": 2 }],
+          "outputs": [{ "item": "bathtub", "count": 1 }],
+          "time": 10,
+          "order": 2027
         }
       ]
     },
@@ -729,42 +1037,72 @@
       "file": "parts/sensor.json",
       "template": "logic",
       "set": {
-        "name": "Sensor",
-        "description": "On while something it is set to detect is in front of its face, up to the range you set (E).",
+        "name": "Sensor 1",
+        "description": "On while something it is set to detect is in front of its lens, up to the range you set (E). Its light is teal while it sees something. Upgrade it in place with Component Kits (U) to see further.",
+        "mass": 4.5,
+        "durability": 3,
+        "friction": 0.7,
+        "buoyancy": 0.5,
+        "flammable": false,
         "stack_size": 20,
+        "sound_material": "metal",
         "script": "scripts/sensor.lua",
-        "visual": { "color": "#5aa0c9", "roughness": 0.5, "metallic": 0.2 },
+        "icon": "textures/items/sensor_1_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "logic": { "inputs": null, "outputs": 10 },
         "sounds": { "detect": "sensor_detect", "lose": "sensor_lose" },
+        "display": { "clips": { "readout": "pose" } },
         "properties": { "interval": 2, "cone": 8 },
-        "settings": [
+        "settings": [{ "id": "range", "name": "Range (m)", "type": "number", "min": 0.25, "max": 1.0, "step": 0.25, "default": 1.0 }, { "id": "players", "name": "Players", "type": "toggle", "default": true, "group": "Detects" }, { "id": "bots", "name": "Bots", "type": "toggle", "default": true, "group": "Detects" }, { "id": "blocks", "name": "Blocks", "type": "toggle", "default": true, "group": "Detects" }, { "id": "creations", "name": "Creations", "type": "toggle", "default": true, "group": "Detects" }],
+        "menu": { "signals": true, "preview": { "shape": "cone", "range": "range", "axis": [0, 1, 0], "angle": 8 } },
+        "upgrades": [
           {
-            "id": "range",
-            "name": "Range (m)",
-            "type": "number",
-            "min": 1,
-            "max": 20,
-            "step": 0.25,
-            "default": 4
+            "cost": [{ "item": "component_kit", "count": 1 }],
+            "set": {
+              "name": "Sensor 2",
+              "settings": [{ "id": "range", "name": "Range (m)", "type": "number", "min": 0.25, "max": 2.0, "step": 0.25, "default": 2.0 }, { "id": "players", "name": "Players", "type": "toggle", "default": true, "group": "Detects" }, { "id": "bots", "name": "Bots", "type": "toggle", "default": true, "group": "Detects" }, { "id": "blocks", "name": "Blocks", "type": "toggle", "default": true, "group": "Detects" }, { "id": "creations", "name": "Creations", "type": "toggle", "default": true, "group": "Detects" }],
+              "mesh": "meshes/parts/sensor_2.glb",
+              "icon": "textures/items/sensor_2_icon.png"
+            }
           },
-          { "id": "players", "name": "Players", "type": "toggle", "default": true, "group": "Detects" },
-          { "id": "bots", "name": "Bots", "type": "toggle", "default": true, "group": "Detects" },
-          { "id": "blocks", "name": "Blocks", "type": "toggle", "default": true, "group": "Detects" },
-          { "id": "creations", "name": "Creations", "type": "toggle", "default": true, "group": "Detects" }
-        ],
-        "menu": { "signals": true, "preview": { "shape": "cone", "range": "range", "axis": [0, 1, 0], "angle": 8 } }
+          {
+            "cost": [{ "item": "component_kit", "count": 1 }],
+            "set": {
+              "name": "Sensor 3",
+              "settings": [{ "id": "range", "name": "Range (m)", "type": "number", "min": 0.25, "max": 3.0, "step": 0.25, "default": 3.0 }, { "id": "players", "name": "Players", "type": "toggle", "default": true, "group": "Detects" }, { "id": "bots", "name": "Bots", "type": "toggle", "default": true, "group": "Detects" }, { "id": "blocks", "name": "Blocks", "type": "toggle", "default": true, "group": "Detects" }, { "id": "creations", "name": "Creations", "type": "toggle", "default": true, "group": "Detects" }],
+              "mesh": "meshes/parts/sensor_3.glb",
+              "icon": "textures/items/sensor_3_icon.png"
+            }
+          },
+          {
+            "cost": [{ "item": "component_kit", "count": 1 }],
+            "set": {
+              "name": "Sensor 4",
+              "settings": [{ "id": "range", "name": "Range (m)", "type": "number", "min": 0.25, "max": 4.0, "step": 0.25, "default": 4.0 }, { "id": "players", "name": "Players", "type": "toggle", "default": true, "group": "Detects" }, { "id": "bots", "name": "Bots", "type": "toggle", "default": true, "group": "Detects" }, { "id": "blocks", "name": "Blocks", "type": "toggle", "default": true, "group": "Detects" }, { "id": "creations", "name": "Creations", "type": "toggle", "default": true, "group": "Detects" }],
+              "mesh": "meshes/parts/sensor_4.glb",
+              "icon": "textures/items/sensor_4_icon.png"
+            }
+          },
+          {
+            "cost": [{ "item": "component_kit", "count": 3 }],
+            "set": {
+              "name": "Sensor 5",
+              "description": "On while something it is set to detect is in front of its lens, up to the range you set (E). Its light is teal while it sees something.",
+              "settings": [{ "id": "range", "name": "Range (m)", "type": "number", "min": 0.25, "max": 5.0, "step": 0.25, "default": 5.0 }, { "id": "players", "name": "Players", "type": "toggle", "default": true, "group": "Detects" }, { "id": "bots", "name": "Bots", "type": "toggle", "default": true, "group": "Detects" }, { "id": "blocks", "name": "Blocks", "type": "toggle", "default": true, "group": "Detects" }, { "id": "creations", "name": "Creations", "type": "toggle", "default": true, "group": "Detects" }],
+              "mesh": "meshes/parts/sensor_5.glb",
+              "icon": "textures/items/sensor_5_icon.png"
+            }
+          }
+        ]
       },
-      "model": [
-        { "kind": "box", "size": [0.25, 0.08, 0.25], "position": [0, -0.085, 0] },
-        { "kind": "cylinder", "radius": 0.06, "height": 0.06, "position": [0, -0.015, 0] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/sensor_1.glb" }],
       "recipes": [
         {
           "id": "sensor",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "component_kit", "count": 1 }, { "item": "circuit_board", "count": 2 }],
+          "inputs": [{ "item": "metal_block", "count": 1 }, { "item": "glass_block", "count": 1 }, { "item": "circuit_board", "count": 2 }, { "item": "glue", "count": 2 }],
           "outputs": [{ "item": "sensor", "count": 1 }],
-          "time": 4,
+          "time": 30,
           "order": 1250
         }
       ]
@@ -844,51 +1182,76 @@
       "file": "parts/controller.json",
       "template": "logic",
       "set": {
-        "name": "Controller",
-        "description": "While its input is on, steps the bearings and pistons it is linked to through up to 10 frames you set (E). Linked from a seat, W starts it and S stops it.",
-        "stack_size": 20,
+        "name": "Controller 1",
+        "description": "While its input is on, steps the bearings and pistons it is linked to through up to 10 frames you set (E). Linked from a seat, W starts it and S stops it. Its light is teal while it runs. Upgrade it in place with Component Kits (U) to drive more joints, faster.",
+        "mass": 4.5,
+        "durability": 3,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 1,
+        "sound_material": "metal",
         "script": "scripts/controller.lua",
-        "visual": { "color": "#6a5ab8", "roughness": 0.5, "metallic": 0.2 },
+        "icon": "textures/items/controller_1_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "logic": { "inputs": 10, "outputs": 1 },
         "sounds": { "start": "controller_start", "tick": "controller_tick", "stop": "controller_stop" },
+        "display": { "clips": { "readout": "pose" } },
         "properties": { "speed": 2, "torque": 1000, "force": 5000 },
-        "settings": [
+        "settings": [{ "id": "frames", "name": "Frames", "type": "sequence", "min": -180, "max": 180, "step": 1, "max_count": 10, "max_speed": 2, "preview": "preview", "default": [0, 90] }, { "id": "frame_time", "name": "Seconds per frame", "type": "number", "min": 0.1, "max": 10, "step": 0.1, "default": 1 }, { "id": "loop", "name": "Loop", "type": "toggle", "default": false }],
+        "menu": { "apply": true, "signals": true },
+        "upgrades": [
           {
-            "id": "frames",
-            "name": "Frames",
-            "type": "sequence",
-            "min": -180,
-            "max": 180,
-            "step": 1,
-            "max_count": 10,
-            "max_speed": 10,
-            "preview": "preview",
-            "default": [0, 90]
+            "cost": [{ "item": "component_kit", "count": 1 }],
+            "set": {
+              "name": "Controller 2",
+              "logic": { "outputs": 2 },
+              "settings": [{ "id": "frames", "name": "Frames", "type": "sequence", "min": -180, "max": 180, "step": 1, "max_count": 10, "max_speed": 3, "preview": "preview", "default": [0, 90] }, { "id": "frame_time", "name": "Seconds per frame", "type": "number", "min": 0.1, "max": 10, "step": 0.1, "default": 1 }, { "id": "loop", "name": "Loop", "type": "toggle", "default": false }],
+              "mesh": "meshes/parts/controller_2.glb",
+              "icon": "textures/items/controller_2_icon.png"
+            }
           },
           {
-            "id": "frame_time",
-            "name": "Seconds per frame",
-            "type": "number",
-            "min": 0.1,
-            "max": 10,
-            "step": 0.1,
-            "default": 1
+            "cost": [{ "item": "component_kit", "count": 2 }],
+            "set": {
+              "name": "Controller 3",
+              "logic": { "outputs": 4 },
+              "settings": [{ "id": "frames", "name": "Frames", "type": "sequence", "min": -180, "max": 180, "step": 1, "max_count": 10, "max_speed": 5, "preview": "preview", "default": [0, 90] }, { "id": "frame_time", "name": "Seconds per frame", "type": "number", "min": 0.1, "max": 10, "step": 0.1, "default": 1 }, { "id": "loop", "name": "Loop", "type": "toggle", "default": false }],
+              "mesh": "meshes/parts/controller_3.glb",
+              "icon": "textures/items/controller_3_icon.png"
+            }
           },
-          { "id": "loop", "name": "Loop", "type": "toggle", "default": false }
-        ],
-        "menu": { "apply": true, "signals": true }
+          {
+            "cost": [{ "item": "component_kit", "count": 3 }],
+            "set": {
+              "name": "Controller 4",
+              "logic": { "outputs": 8 },
+              "settings": [{ "id": "frames", "name": "Frames", "type": "sequence", "min": -180, "max": 180, "step": 1, "max_count": 10, "max_speed": 7, "preview": "preview", "default": [0, 90] }, { "id": "frame_time", "name": "Seconds per frame", "type": "number", "min": 0.1, "max": 10, "step": 0.1, "default": 1 }, { "id": "loop", "name": "Loop", "type": "toggle", "default": false }],
+              "mesh": "meshes/parts/controller_4.glb",
+              "icon": "textures/items/controller_4_icon.png"
+            }
+          },
+          {
+            "cost": [{ "item": "component_kit", "count": 4 }],
+            "set": {
+              "name": "Controller 5",
+              "description": "While its input is on, steps the bearings and pistons it is linked to through up to 10 frames you set (E). Linked from a seat, W starts it and S stops it. Its light is teal while it runs.",
+              "logic": { "outputs": 10 },
+              "settings": [{ "id": "frames", "name": "Frames", "type": "sequence", "min": -180, "max": 180, "step": 1, "max_count": 10, "max_speed": 9, "preview": "preview", "default": [0, 90] }, { "id": "frame_time", "name": "Seconds per frame", "type": "number", "min": 0.1, "max": 10, "step": 0.1, "default": 1 }, { "id": "loop", "name": "Loop", "type": "toggle", "default": false }],
+              "mesh": "meshes/parts/controller_5.glb",
+              "icon": "textures/items/controller_5_icon.png"
+            }
+          }
+        ]
       },
-      "model": [
-        { "kind": "box", "size": [0.25, 0.08, 0.25], "position": [0, -0.085, 0] },
-        { "kind": "box", "size": [0.2, 0.06, 0.14], "position": [0, -0.015, 0] },
-        { "kind": "cylinder", "radius": 0.03, "height": 0.05, "position": [0.06, 0.03, 0] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/controller_1.glb" }],
       "recipes": [
         {
           "id": "controller",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "component_kit", "count": 2 }, { "item": "circuit_board", "count": 2 }],
+          "inputs": [{ "item": "metal_block", "count": 5 }, { "item": "component_kit", "count": 1 }, { "item": "circuit_board", "count": 5 }, { "item": "glue", "count": 1 }],
           "outputs": [{ "item": "controller", "count": 1 }],
-          "time": 6,
+          "time": 10,
           "order": 550
         }
       ]

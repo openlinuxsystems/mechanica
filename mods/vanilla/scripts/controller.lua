@@ -10,7 +10,8 @@
 -- The menu's Play button previews frames that are not applied yet: on_command("preview", {playing, frames})
 -- runs them in a loop, input or not, until Pause.
 -- Properties: "speed" (rad/s, for single-angle frames), "torque" (N·m) for the bearings and "force" (N) for
--- the pistons. Sounds: "start", "tick" on each frame and "stop".
+-- the pistons. Sounds: "start", "tick" on each frame and "stop". Its "pose" display is "on" while it runs or
+-- previews and "off" otherwise (the model's light; part data display.clips).
 
 local RESEND = 30
 
@@ -53,6 +54,7 @@ end
 
 function on_reload()
   state.assert = true
+  state.shown = nil
 end
 
 -- True when a seat linked into this one has a driver in it.
@@ -98,9 +100,18 @@ function on_command(name, args, peer)
   end
 end
 
+-- Shows "on" or "off" on the model when that changes.
+local function pose(on)
+  if state.shown ~= on then
+    part.display("pose", on and "on" or "off")
+    state.shown = on
+  end
+end
+
 function on_update(dt)
   local list = frames()
   local active = state.running or state.preview ~= nil
+  pose(active)
   -- Hold the current frame against anything else driving the joints.
   if active and state.index > 0 and list[state.index] and (state.assert or world.tick() % RESEND == 0) then
     go(list[state.index])

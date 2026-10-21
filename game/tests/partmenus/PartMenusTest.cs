@@ -339,7 +339,8 @@ public partial class PartMenusTest : StagedTest
         var board = new Creation(Board, _mods);
         for (var x = -12; x <= 6; x++)
             Place(board, "vanilla:metal_block", new GridCell(x, 0, 0));
-        _seat = Place(board, "vanilla:drivers_seat", new GridCell(0, 1, 0));
+        // The Driver's Seat is 4 x 4 x 4 blocks, over x -8..-5 and z -1..2.
+        _seat = Place(board, "vanilla:drivers_seat", new GridCell(-8, 1, -1));
         _switch = Place(board, "vanilla:switch", new GridCell(-12, 1, 0));
         _engine = Place(board, "vanilla:gas_engine", new GridCell(-4, 1, -1));
         var up = GridRotation.FromAxes(new GridCell(1, 0, 0), new GridCell(0, 1, 0));
@@ -348,6 +349,8 @@ public partial class PartMenusTest : StagedTest
         Place(board, "vanilla:metal_block", new GridCell(-14, 0, 0));
         _gate = Place(board, "vanilla:logic_gate", new GridCell(2, 1, 0));
         _controller = Place(board, "vanilla:controller", new GridCell(3, 1, 0));
+        // Controller 2: it drives two joints.
+        board.SetLevel(_controller, 1);
         _arm = Place(board, "vanilla:bearing", new GridCell(4, 1, 0), up);
         Place(board, "vanilla:metal_block", new GridCell(4, 2, 0));
         _piston = Place(board, "vanilla:piston", new GridCell(5, 1, 0), up);

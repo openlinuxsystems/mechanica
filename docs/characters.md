@@ -113,8 +113,9 @@ Override, patch or remove it through `overrides/<mod>/characters/`; see the [Pac
 
 ## Animations
 
-A seated player fits its seat (`seat.cushion` and `seat.hands` in [the part data](part-data-schema.md#logic-settings-and-seats)):
-the legs blend `sit` and `sit_low` so the hips land on the cushion, whatever its height, and the body faces the seat's front
+A seated player fits its seat (`seat.cushion`, `seat.hands` and `seat.pose` in [the part data](part-data-schema.md#logic-settings-and-seats)):
+the legs blend `sit` and `sit_low` so the hips land on the cushion, whatever its height (on a saddle, `sit_saddle` or
+`sit_saddle_ride` astride it, the body lifted or dropped onto the cushion), and the body faces the seat's front
 while the head looks around. While it sits, the body rides along: sitting down sinks it into the seat and lets it settle, then
 each change in the seat's own motion pushes springs that bob the hips and sway the upper body (a bump throws it up,
 braking tips it forward, a turn leans it out), scaled by the seat's `seat.bounce`, so a smooth road barely shows and rough
@@ -123,7 +124,9 @@ ground throws the driver about. The springs are `seat` in `game/data/character.j
 The animation set is shared by every character: `idle`, `idle_look` and `idle_stretch` (fidgets), `turn_l` and `turn_r`
 (stepping round on the spot), `walk`, `jog`, `run`, `crouch_idle`, `crouch_walk`,
 `jump`, `jump_run` (a running leap), `fall`, `land`, `land_hard` (a long fall, a hand to the ground), `swim_idle`, `swim`, `sit` (a chair, hands on a wheel), `sit_low` (a low seat, legs out in
-front), `sit_ride` and `sit_ride_low` (the same with the hands resting on the thighs, for passengers) move the whole body; `hold_tool`, `hold_heavy`,
+front), `sit_ride` and `sit_ride_low` (the same with the hands resting on the thighs, for passengers), `sit_saddle` (astride a
+saddle, leaning forward with the hands on handlebars) and `sit_saddle_ride` (astride, sitting up with the hands on the thighs)
+move the whole body; `hold_tool`, `hold_heavy`,
 `hold_heavy_block` (the Sledgehammer raised across the chest while right click blocks, in Creative), `hold_gun`, `hold_item`,
 `hold_refine` (the Refine Tool scraping at a resource node, a stroke every 0.75 s), `hold_connect` (the Connect Tool at
 chest height, tip forward, with a slow sway), `hold_connect_aim` (raised and aimed while a node is under the crosshair or a

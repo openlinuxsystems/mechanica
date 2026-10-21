@@ -1,0 +1,28 @@
+{
+  "id": "saddle",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 5
+    },
+    {
+      "item": "cotton",
+      "count": 5
+    },
+    {
+      "item": "circuit_board",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "saddle",
+      "count": 1
+    }
+  ],
+  "time": 40,
+  "order": 535
+}

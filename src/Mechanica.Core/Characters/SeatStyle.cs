@@ -9,7 +9,8 @@ namespace Mechanica.Core.Characters;
 /// <param name="Cushion">The cushion's height above the floor the feet rest on, in m; NaN when the seat names no cushion.</param>
 /// <param name="HandsFree">The hands rest on the thighs instead of holding a wheel.</param>
 /// <param name="Bounce">How much the sitter bounces and sways with the ride (0 to <see cref="SeatDefinition.MaxBounce"/>).</param>
-public readonly record struct SeatStyle(float Cushion, bool HandsFree, float Bounce)
+/// <param name="Saddle">The sitter sits astride a saddle (<see cref="SeatPose.Saddle"/>), not in a chair.</param>
+public readonly record struct SeatStyle(float Cushion, bool HandsFree, float Bounce, bool Saddle = false)
 {
     /// <summary>A seat with no cushion or hands given: the plain sitting pose, hands on a wheel.</summary>
     public static SeatStyle Default { get; } = new(float.NaN, false, 1f);
@@ -21,7 +22,8 @@ public readonly record struct SeatStyle(float Cushion, bool HandsFree, float Bou
             return Default;
         var cushion = seat.Cushion is { } c ? c.Y - FloorHeight(part, seat) : float.NaN;
         var hands = seat.Hands ?? (part.Logic?.Outputs > 0 ? SeatHands.Wheel : SeatHands.Free);
-        return new SeatStyle(cushion, hands == SeatHands.Free, Math.Clamp(seat.Bounce ?? 1f, 0f, SeatDefinition.MaxBounce));
+        return new SeatStyle(cushion, hands == SeatHands.Free, Math.Clamp(seat.Bounce ?? 1f, 0f, SeatDefinition.MaxBounce),
+            seat.Pose == SeatPose.Saddle);
     }
 
     /// <summary>

@@ -223,7 +223,7 @@ public static class CharacterRig
     public static IReadOnlyList<string> FullBodyClips { get; } =
     [
         "idle", "walk", "jog", "run", "crouch_idle", "crouch_walk", "jump", "fall", "land", "swim_idle", "swim", "sit",
-        "sit_low", "sit_ride", "sit_ride_low", "idle_look", "idle_stretch", "turn_l", "turn_r", "jump_run", "land_hard",
+        "sit_low", "sit_ride", "sit_ride_low", "sit_saddle", "sit_saddle_ride", "idle_look", "idle_stretch", "turn_l", "turn_r", "jump_run", "land_hard",
     ];
 
     /// <summary>

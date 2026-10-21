@@ -264,10 +264,10 @@ public partial class VanillaAeroTest : StagedTest
         Add("the host spawns a helicopter and the client wires and boards it", frame =>
         {
             if (frame == 0)
-            {
                 SpawnHelicopter();
+            // The client stood up from the plane in flight and keeps its speed: hold it by the helicopter until it stops.
+            if (frame <= 30)
                 _host.Main.PlayerSync.HostTeleport(_client.Peer, HeliAt + new Vector3(0, 0.5f, -2.5f));
-            }
             if (frame == 40)
             {
                 foreach (var part in _rotors.Append(_heliJet))
@@ -299,7 +299,8 @@ public partial class VanillaAeroTest : StagedTest
         });
         Add("Shift lowers the collective to a hover without spinning", frame =>
         {
-            Input(_client, sprint: frame < 30);
+            // Half a second less a little: the 4 x 4 x 4 Driver's Seat on its post makes it a little heavier.
+            Input(_client, sprint: frame < 26);
             if (frame < 300)
                 return false;
             var body = Body(_host, HeliId);
@@ -320,14 +321,14 @@ public partial class VanillaAeroTest : StagedTest
             if (body.GlobalPosition.Y - _start.Y > 0.5f && frame < 900)
                 return false;
             Check(body.GlobalPosition.Y - _start.Y < 0.5f, $"it landed ({body.GlobalPosition.Y - _start.Y:F1} m up)");
-            Check(_host.Main.Creations.Find(HeliId)!.Parts.Count == 19, "in one piece");
+            Check(_host.Main.Creations.Find(HeliId)!.Parts.Count == 20, "in one piece");
             return true;
         });
     }
 
-    // A cardboard plane flying toward -Z: a fuselage along Z with the seat on top and a metal block of ballast behind
-    // it (it lifts the centre of mass, which the four 6 kg bearings low on the landing gear pull down and forward, back
-    // onto the thrusters' line), two wings a side behind the centre of mass, elevators and a fin at the tail, four
+    // A cardboard plane flying toward -Z: a fuselage along Z with the seat on top (its 4 x 4 x 4 blocks and the pilot lift
+    // the centre of mass, which the four 6 kg bearings low on the landing gear pull down and forward, back onto the
+    // thrusters' line), two wings a side behind the centre of mass, elevators and a fin at the tail, four
     // thrusters pushing from the tail and four free wheels.
     private void SpawnPlane()
     {
@@ -336,8 +337,8 @@ public partial class VanillaAeroTest : StagedTest
         Place(plane, Frame, GridCell.Zero);
         for (var z = 1; z <= 8; z++)
             Place(plane, Frame, new GridCell(0, 0, z));
-        Place(plane, "vanilla:metal_block", new GridCell(0, 1, 3));
-        _planeSeat = Place(plane, "vanilla:drivers_seat", new GridCell(0, 1, 1));
+        // The Driver's Seat is 4 x 4 x 4 blocks: centred half a block right of the fuselage, over z 0..3.
+        _planeSeat = Place(plane, "vanilla:drivers_seat", new GridCell(-1, 1, 0));
         var flipped = GridRotation.FromAxes(new GridCell(-1, 0, 0), new GridCell(0, 1, 0));
         // Wings by their roots on the fuselage's sides, and a second wing on each tip.
         Place(plane, "vanilla:wing", new GridCell(1, 0, 3));
@@ -373,7 +374,7 @@ public partial class VanillaAeroTest : StagedTest
         _host.Main.Creations.Add(plane, _host.Main.Assets);
     }
 
-    // A cardboard cross with the seat in the middle, a rotor on each arm's end (clockwise on X, counter-clockwise
+    // A cardboard cross with the seat on a post in the middle, a rotor on each arm's end (clockwise on X, counter-clockwise
     // on Z) and a hover jet underneath.
     private void SpawnHelicopter()
     {
@@ -385,7 +386,9 @@ public partial class VanillaAeroTest : StagedTest
             for (var i = 1; i <= 3; i++)
                 Place(heli, Frame, new GridCell(d.X * i, 0, d.Z * i));
         }
-        _heliSeat = Place(heli, "vanilla:drivers_seat", new GridCell(0, 1, 0));
+        // The Driver's Seat (4 x 4 x 4 blocks) sits on a post over the rotors' level.
+        Place(heli, Frame, new GridCell(0, 1, 0));
+        _heliSeat = Place(heli, "vanilla:drivers_seat", new GridCell(-1, 2, -1));
         foreach (var hub in new[] { new GridCell(3, 1, 0), new GridCell(-3, 1, 0), new GridCell(0, 1, 3), new GridCell(0, 1, -3) })
         {
             var rotor = Place(heli, "vanilla:rotor", hub - new GridCell(1, 0, 1));

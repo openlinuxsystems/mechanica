@@ -1,3 +1,4 @@
+using Mechanica.Core.Characters;
 using Mechanica.Core.Data;
 using Mechanica.Core.Items;
 
@@ -360,6 +361,87 @@ public class VanillaCatalogTests
     }
 
     [Theory]
+    // Parts map batch 4 (seats and logic): the wiki's bars. The Bathtub, Driver's Saddle, Saddle and Toilet are new.
+    [InlineData("drivers_seat", 7.5, 3, 0.5, 0.2, true, 10)]
+    [InlineData("passenger_seat", 4.5, 3, 0.5, 0.2, true, 10)]
+    [InlineData("drivers_saddle", 7.5, 3, 0.7, 0.5, false, 10)]
+    [InlineData("saddle", 4.5, 4, 0.7, 0.5, false, 10)]
+    [InlineData("toilet", 12, 3, 0.3, 0.4, false, 10)]
+    [InlineData("bathtub", 7.5, 4, 0.2, 0.8, false, 10)]
+    [InlineData("controller", 4.5, 3, 0.5, 0.2, false, 1)]
+    [InlineData("sensor", 4.5, 3, 0.7, 0.5, false, 20)]
+    public void SeatsAndLogicPartsTakeTheWikiStats(string id, double mass, int durability, double friction, double buoyancy,
+        bool flammable, int stack) => VehiclePartsTakeTheWikiStats(id, mass, durability, friction, buoyancy, flammable, stack);
+
+    [Theory]
+    // Parts map batch 4: the wiki's Craftbot recipes, at the Fabricator only.
+    [InlineData("drivers_seat", 30, "metal_block:20", "component_kit:2", "circuit_board:1", "cotton:10")]
+    [InlineData("passenger_seat", 30, "metal_block:10", "component_kit:1", "circuit_board:1", "cotton:10")]
+    [InlineData("drivers_saddle", 30, "metal_block:15", "component_kit:2", "circuit_board:1", "cotton:5")]
+    [InlineData("saddle", 40, "metal_block:5", "cotton:5", "circuit_board:2")]
+    [InlineData("toilet", 5, "metal_block:5", "wood_block:5")]
+    [InlineData("bathtub", 10, "metal_block:10", "paint_ammo:2")]
+    [InlineData("controller", 10, "metal_block:5", "component_kit:1", "circuit_board:5", "glue:1")]
+    [InlineData("sensor", 30, "metal_block:1", "glass_block:1", "circuit_board:2", "glue:2")]
+    public void SeatsAndLogicPartsTakeTheWikiRecipes(string id, float time, params string[] inputs) =>
+        VehiclePartsTakeTheWikiRecipes(id, time, inputs);
+
+    [Theory]
+    // Parts map batch 4: crafted at level 1 only and upgraded in place, each level its own model and icon. A seat's
+    // levels add links (its hotbar); the Controller's add output links and joint speed; the Sensor's add range.
+    [InlineData("drivers_seat", "Driver's Seat", new[] { 1, 2, 3, 5 }, new[] { 6, 8, 12, 16, 20 })]
+    [InlineData("passenger_seat", "Passenger Seat", new[] { 1, 1, 1, 1 }, new[] { 2, 4, 6, 8, 10 })]
+    [InlineData("drivers_saddle", "Driver's Saddle", new[] { 1, 2, 3, 5 }, new[] { 6, 8, 12, 16, 20 })]
+    [InlineData("saddle", "Saddle", new[] { 1, 1, 1, 1 }, new[] { 3, 4, 6, 8, 10 })]
+    [InlineData("controller", "Controller", new[] { 1, 2, 3, 4 }, new[] { 1, 2, 4, 8, 10 })]
+    [InlineData("sensor", "Sensor", new[] { 1, 1, 1, 3 }, new[] { 10, 10, 10, 10, 10 })]
+    public void EachLeveledSeatAndLogicPartIsCraftedAtLevel1AndUpgradedInPlace(string id, string name, int[] kits, int[] outputs)
+    {
+        var book = RecipeBook.Load(Vanilla.Value);
+        Assert.Equal([$"vanilla:{id}"], book.All.SelectMany(r => r.Outputs).Select(o => o.Item).Where(i => i == $"vanilla:{id}" || i.StartsWith($"vanilla:{id}@", StringComparison.Ordinal)).Distinct());
+        var written = Part(id);
+        Assert.Equal(4, PartUpgrades.MaxLevel(written));
+        Assert.Equal(kits, written.Upgrades!.Select(u => u.Cost!.Single(c => c.Item == "component_kit").Count!.Value));
+        var vanilla = Path.Combine(TestMods.RepoRoot, "mods", "vanilla");
+        var meshes = new HashSet<string>();
+        for (var level = 0; level <= 4; level++)
+        {
+            var part = PartUpgrades.At(written, level);
+            Assert.Equal($"{name} {level + 1}", part.Name);
+            Assert.Equal($"meshes/parts/{id}_{level + 1}.glb", part.Mesh);
+            Assert.Equal($"textures/items/{id}_{level + 1}_icon.png", part.Icon);
+            Assert.True(File.Exists(Path.Combine(vanilla, part.Mesh!)), $"level {level + 1}'s model {part.Mesh}");
+            Assert.True(File.Exists(Path.Combine(vanilla, part.Icon!)), $"level {level + 1}'s icon {part.Icon}");
+            Assert.True(meshes.Add(part.Mesh!), "each level looks different");
+            Assert.Equal(outputs[level], part.Logic!.Outputs);
+            // The last level's description no longer offers an upgrade.
+            Assert.Equal(level < 4, part.Description!.Contains("Upgrade it in place", StringComparison.Ordinal));
+            if (id == "controller")
+                Assert.Equal(new[] { 2, 3, 5, 7, 9 }[level], part.Settings!.Single(s => s.Id == "frames").MaxSpeed);
+            if (id == "sensor")
+                Assert.Equal(level + 1, part.Settings!.Single(s => s.Id == "range").Max);
+        }
+    }
+
+    [Theory]
+    // Parts map batch 4: where a rider sits. Passenger seats keep their hands free for the hotbar; saddles are ridden
+    // astride (the sit_saddle clips), the driver's with its hands on the handlebars.
+    [InlineData("drivers_seat", SeatHands.Wheel, SeatPose.Chair)]
+    [InlineData("passenger_seat", SeatHands.Free, SeatPose.Chair)]
+    [InlineData("drivers_saddle", SeatHands.Wheel, SeatPose.Saddle)]
+    [InlineData("saddle", SeatHands.Free, SeatPose.Saddle)]
+    [InlineData("toilet", SeatHands.Free, SeatPose.Chair)]
+    [InlineData("bathtub", SeatHands.Free, SeatPose.Chair)]
+    public void EachSeatSitsItsRiderTheWayItIsBuilt(string id, SeatHands hands, SeatPose pose)
+    {
+        var part = Part(id);
+        Assert.Equal(hands, part.Seat!.Hands);
+        Assert.Equal(pose, part.Seat.Pose ?? SeatPose.Chair);
+        Assert.True(part.Logic!.Outputs > 0, $"{id}'s links go on the rider's hotbar");
+        Assert.Equal(pose == SeatPose.Saddle, SeatStyle.For(part).Saddle);
+    }
+
+    [Theory]
     [InlineData("gas_engine")]
     [InlineData("electric_engine")]
     public void EachEngineUpgradesForTheWikisKitsAndGetsTougherEachLevel(string id)
@@ -390,6 +472,8 @@ public class VanillaCatalogTests
     [InlineData("fabricator", "vanilla:wheel", "vanilla:big_wheel")]
     [InlineData("fabricator", "vanilla:gas_engine", "vanilla:electric_engine")]
     [InlineData("fabricator", "vanilla:switch", "vanilla:button")]
+    [InlineData("fabricator", "vanilla:passenger_seat", "vanilla:saddle", "vanilla:drivers_seat", "vanilla:drivers_saddle", "vanilla:controller")]
+    [InlineData("fabricator", "vanilla:toilet", "vanilla:bathtub")]
     [InlineData("portable_fabricator", "vanilla:scrap_wood_wedge", "vanilla:scrap_metal_wedge", "vanilla:scrap_seat",
         "vanilla:scrap_drivers_seat", "vanilla:scrap_wheel", "vanilla:scrap_gas_engine", "vanilla:gasoline", "vanilla:bearing_scrap",
         "vanilla:switch_scrap", "vanilla:beacon_scrap", "vanilla:connect_tool")]

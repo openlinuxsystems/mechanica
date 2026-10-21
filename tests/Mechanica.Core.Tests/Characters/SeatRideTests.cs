@@ -11,6 +11,7 @@ public class SeatRideTests
     private static readonly Dictionary<string, float> Lengths = new()
     {
         ["idle"] = 3f, ["sit"] = 2f, ["sit_low"] = 2f, ["sit_ride"] = 2f, ["sit_ride_low"] = 2f,
+        ["sit_saddle"] = 2f, ["sit_saddle_ride"] = 2f,
     };
 
     private static readonly SeatRideSettings Settings = new();
@@ -67,6 +68,52 @@ public class SeatRideTests
         var animator = Make();
         Run(animator, _ => Sitting(new SeatStyle(float.NaN, true, 1f)), 1f);
         Assert.Equal("sit_ride", Assert.Single(animator.Body).Clip);
+    }
+
+    [Fact]
+    public void ASaddleIsRiddenAstrideWithTheHandsOnTheBars()
+    {
+        var animator = Make();
+        var cushion = Settings.ClipHips["sit_saddle"] - Settings.HipsAboveCushion;
+        Run(animator, _ => Sitting(new SeatStyle(cushion, false, 1f, Saddle: true)), 1f);
+        Assert.Equal("sit_saddle", Assert.Single(animator.Body).Clip);
+        Assert.Equal(0f, animator.Lift, 3);
+    }
+
+    [Fact]
+    public void ASaddlePassengerHoldsOnAndAHigherSaddleLiftsTheRider()
+    {
+        var animator = Make();
+        var cushion = Settings.ClipHips["sit_saddle"] - Settings.HipsAboveCushion + 0.05f;
+        Run(animator, _ => Sitting(new SeatStyle(cushion, true, 0f, Saddle: true)), 1f);
+        Assert.Equal("sit_saddle_ride", Assert.Single(animator.Body).Clip);
+        Assert.Equal(0.05f, animator.Lift, 3);
+    }
+
+    [Fact]
+    public void ACharacterWithoutSaddleClipsSitsOnASaddleAsOnAChair()
+    {
+        var animator = new CharacterAnimator(new CharacterSettings(), Lengths.Where(p => !p.Key.StartsWith("sit_saddle", StringComparison.Ordinal))
+            .ToDictionary(p => p.Key, p => p.Value));
+        var cushion = Settings.ClipHips["sit"] - Settings.HipsAboveCushion;
+        Run(animator, _ => Sitting(new SeatStyle(cushion, false, 0f, Saddle: true)), 1f);
+        Assert.Equal(1f, Weight(animator, "sit"), 3);
+    }
+
+    [Theory]
+    [InlineData(SeatPose.Saddle, true)]
+    [InlineData(SeatPose.Chair, false)]
+    [InlineData(null, false)]
+    public void ASeatsPoseComesFromItsData(SeatPose? pose, bool saddle)
+    {
+        var part = new PartDefinition
+        {
+            Id = "t:seat", Name = "Seat", Size = new GridSize(3, 4, 4),
+            Seat = new SeatDefinition { Offset = new Vec3(0, -0.45f, 0.12f), Cushion = new Vec3(0, 0.078f, 0.12f), Pose = pose },
+        };
+        var style = SeatStyle.For(part);
+        Assert.Equal(saddle, style.Saddle);
+        Assert.Equal(0.528f, style.Cushion, 3);
     }
 
     [Fact]

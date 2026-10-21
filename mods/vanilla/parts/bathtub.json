@@ -1,0 +1,41 @@
+{
+  "id": "bathtub",
+  "name": "Bathtub",
+  "description": "A chipped clawfoot tub with a plank seat across it, as the settlers use. Sit in it with E and stretch your legs out; it drives and steers nothing. Switches and buttons it is linked to go on your hotbar while you sit: 1 to 9 and 0 use them, Left and Right click the first two. It takes 10 links.",
+  "category": "interactive",
+  "mass": 7.5,
+  "durability": 4,
+  "friction": 0.2,
+  "buoyancy": 0.8,
+  "flammable": false,
+  "stack_size": 10,
+  "sound_material": "metal",
+  "size": [3, 3, 7],
+  "mesh": "meshes/parts/bathtub.glb",
+  "icon": "textures/items/bathtub_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.375, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/seat.lua",
+  "sounds": {
+    "enter": "seat_enter",
+    "exit": "seat_exit"
+  },
+  "logic": {
+    "outputs": 10
+  },
+  "seat": {
+    "offset": [0, -0.235, 0.43],
+    "cushion": [0, -0.065, 0.43],
+    "hands": "free",
+    "bounce": 0.5
+  }
+}

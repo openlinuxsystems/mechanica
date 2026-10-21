@@ -408,10 +408,16 @@ public static class CreationJson
             sink.Error(invalid, $"{path}.damage", $"damage must be a number of 0 or more (got {damage}).");
         if (data.Fire is { } fire && !(float.IsFinite(fire) && fire >= 0 && fire <= 1))
             sink.Error(invalid, $"{path}.fire", $"fire must be a number from 0 to 1 (got {fire}).");
-        if (definition is not null && data.Settings is { } settings && Logic.PartSettings.Check(definition, settings) is { } bad)
-            sink.Error(invalid, $"{path}.settings", bad);
+        var levelOk = true;
         if (definition is not null && data.Level is { } level && (level < 0 || level > PartUpgrades.MaxLevel(definition)))
+        {
             sink.Error(invalid, $"{path}.level", $"level must be 0 to {PartUpgrades.MaxLevel(definition)} for '{data.Part}' (got {level}).");
+            levelOk = false;
+        }
+        // An upgraded part's settings are checked against its level (a Sensor 5 reaches further than a Sensor 1).
+        if (definition is not null && levelOk && data.Settings is { } settings
+            && Logic.PartSettings.Check(PartUpgrades.At(definition, data.Level ?? 0), settings) is { } bad)
+            sink.Error(invalid, $"{path}.settings", bad);
         if (sink.ErrorCount > errors)
             return null;
         KnownKeys.WarnUnknown(data.Extra, path, sink, typeof(PartInstanceData));
