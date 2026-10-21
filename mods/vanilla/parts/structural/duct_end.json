@@ -1,0 +1,19 @@
+{
+  "id": "duct_end",
+  "name": "Duct (End)",
+  "description": "A louvred vent that closes the end of a duct run.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 2,
+  "friction": 0.4,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/parts/duct_end.glb",
+  "icon": "textures/items/duct_end_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

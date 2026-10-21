@@ -1,0 +1,19 @@
+{
+  "id": "metal_tube",
+  "name": "Metal Tube",
+  "description": "A round galvanised tube, 2 blocks long, with bolted end rings.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 4,
+  "friction": 0.5,
+  "buoyancy": 0.7,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 2],
+  "mesh": "meshes/parts/metal_tube.glb",
+  "icon": "textures/items/metal_tube_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}
