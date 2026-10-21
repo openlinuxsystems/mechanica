@@ -690,7 +690,7 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 | 2500 | Weapons | `potato_blaster`, `potato_scattergun`, `potato_launcher`, `popper` |
 | 2600 | Refined materials | `wood_rod`, `pine_rod`, `stone_rod`, `metal_rod` |
 | 2700 | Crafting materials | `glue` |
-| 2800 | Ducts, conduits and cables | `duct_short`, `duct_long`, `duct_corner`, `duct_tee`, `duct_end`, `duct_holder`, `metal_tube`, `tubes_short` |
+| 2800 | Ducts, conduits and cables | `duct_short`, `duct_long`, `duct_corner`, `duct_tee`, `duct_end`, `duct_holder`, `metal_tube`, `tubes_short`, `tubes_long`, `tubes_corner`, `tubes_tee`, `wires_short`, `wires_long`, `wires_bend`, `wires_concave_bend`, `wires_convex_bend` |
 
 ## The editor source file
 

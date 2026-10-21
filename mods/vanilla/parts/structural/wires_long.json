@@ -1,0 +1,19 @@
+{
+  "id": "wires_long",
+  "name": "Cable (Long)",
+  "description": "Four blocks of cable run on a mounting plate.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 1,
+  "friction": 0.4,
+  "buoyancy": 0.4,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 4],
+  "mesh": "meshes/parts/wires_long.glb",
+  "icon": "textures/items/wires_long_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}
