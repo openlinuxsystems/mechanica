@@ -35,10 +35,18 @@ public sealed record LoadedSite(int Index, SiteDefinition Definition, LoadedPoi?
 /// <summary>A pool (<see cref="PoolDefinition"/>) ready for drawing: one prefab per site that uses it, in data order.</summary>
 public sealed record LoadedPool(string Id, IReadOnlyList<LoadedPoi> Entries);
 
-/// <summary>A scatter rule ready for generation. <see cref="Index"/> is its place among every biome's rules, and part of each object's id.</summary>
+/// <summary>
+/// A scatter rule ready for generation. <see cref="Index"/> is its place among every biome's rules and only sets which rule wins
+/// when two crowd each other (the earlier one). <see cref="Key"/> is the part of each object's id and the salt of its random
+/// numbers, and depends on nothing but the rule's biome, object and how many rules for that object come before it in its biome,
+/// so adding, removing or reordering other rules never moves an object or changes its id.
+/// </summary>
 public sealed record Scatter(int Index, int Biome, WorldObjectDefinition Object, float Spacing, float Chance, PerchDefinition? Perch = null,
     ClusterDefinition? Cluster = null, ScatterWater? Water = null, RoadsideDefinition? Roadside = null, NearDefinition? Near = null)
 {
+    /// <summary>The rule's stable key (<see cref="WorldObjectId.Rule"/> of its objects), never negative.</summary>
+    public int Key { get; init; }
+
     /// <summary>Qualified ids (<c>mod_id:poi_id</c>) of the POIs <see cref="NearDefinition.Pois"/> names, or null.</summary>
     public IReadOnlySet<string>? NearPois { get; init; }
 
@@ -112,15 +120,27 @@ public sealed class WorldGenData
         Objects = (definition.Objects ?? []).ToDictionary(o => o.Id!);
         Liquids = (definition.Liquids ?? []).ToDictionary(l => l.Id!);
         var scatter = new List<Scatter>();
+        var byKey = new Dictionary<int, Scatter>();
         foreach (var biome in definition.Biomes ?? [])
+        {
+            var seen = new Dictionary<string, int>(StringComparer.Ordinal);
             foreach (var rule in biome.Scatter ?? [])
-                scatter.Add(new Scatter(scatter.Count, Biomes.First(b => b.Id == biome.Id).Index, Objects[rule.Object!], rule.Spacing, rule.Chance, rule.Perch, rule.Cluster, rule.Water, rule.Roadside, rule.Near)
+            {
+                var nth = seen[rule.Object!] = seen.GetValueOrDefault(rule.Object!) + 1;
+                var key = ScatterKey(biome.Id!, rule.Object!, nth, byKey);
+                var loaded = new Scatter(scatter.Count, Biomes.First(b => b.Id == biome.Id).Index, Objects[rule.Object!], rule.Spacing, rule.Chance, rule.Perch, rule.Cluster, rule.Water, rule.Roadside, rule.Near)
                 {
+                    Key = key,
                     NearPois = rule.Near?.Pois is { } near ? near.Select(QualifyPoi).ToHashSet(StringComparer.Ordinal) : null,
                     Away = rule.Away,
                     AwayPois = rule.Away?.Pois is { } away ? away.Select(QualifyPoi).ToHashSet(StringComparer.Ordinal) : null,
-                });
+                };
+                scatter.Add(loaded);
+                byKey[key] = loaded;
+            }
+        }
         ScatterRules = scatter;
+        _scatterByKey = byKey;
         var flora = new List<Flora>();
         foreach (var biome in definition.Biomes ?? [])
         {
@@ -224,6 +244,22 @@ public sealed class WorldGenData
 
     /// <summary>Every biome's scatter rules, in biome then file order.</summary>
     public IReadOnlyList<Scatter> ScatterRules { get; }
+
+    private readonly Dictionary<int, Scatter> _scatterByKey;
+
+    /// <summary>The scatter rule that placed object <paramref name="id"/>, or null for a POI's object or a rule the data no longer has.</summary>
+    public Scatter? ScatterRuleOf(WorldObjectId id) => id.IsPoi ? null : _scatterByKey.GetValueOrDefault(id.Rule);
+
+    // A rule's key: a hash of its biome, object and which of that biome's rules for the object it is (1 for the first), kept
+    // apart from every other rule's (a clash, about one in a hundred million, rehashes the later one).
+    private static int ScatterKey(string biome, string obj, int nth, Dictionary<int, Scatter> taken)
+    {
+        var text = string.Create(CultureInfo.InvariantCulture, $"{biome}/{obj}/{nth}");
+        var key = (int)(Noise.Hash(text) & 0x7FFFFFFFu);
+        while (taken.ContainsKey(key))
+            key = (int)(Noise.Hash(text += "+") & 0x7FFFFFFFu);
+        return key;
+    }
 
     /// <summary>
     /// Largest <see cref="WorldObjectDefinition.Footprint"/> any scatter rule's object has, scaled by its largest scale: how

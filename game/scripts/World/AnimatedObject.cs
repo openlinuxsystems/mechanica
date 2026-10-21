@@ -70,7 +70,7 @@ public partial class AnimatedObject : Node3D
     {
         if (o.Definition.Mesh?.Clips is not { Break: { } broke } clips)
             return null;
-        var placed = new Transform3D(new Basis(Vector3.Up, o.Yaw).Scaled(new Vector3(o.Scale, o.Scale, o.Scale)), o.Position.ToGodot());
+        var placed = new Transform3D(TerrainChunk.Turn(o).Scaled(new Vector3(o.Scale, o.Scale, o.Scale)), o.Position.ToGodot());
         if (Create(file, o, placed, false, true) is not { } node)
             return null;
         node.Name = $"{o.Definition.Id}_wreck";

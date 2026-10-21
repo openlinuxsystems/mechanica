@@ -4,7 +4,7 @@ using System.Numerics;
 namespace Mechanica.Core.World;
 
 /// <summary>
-/// Stable id of a scattered world object: the scatter rule that placed it and the rule's grid cell. The
+/// Stable id of a scattered world object: the key of the scatter rule that placed it (<see cref="Scatter.Key"/>) and the rule's grid cell. The
 /// same seed and world data always give the same ids, so destroyed objects can be saved and synced as ids.
 /// Written as <c>rule.x.z</c>, or <c>rule.x.z.piece</c> for the second and later cubes of a rock outcrop
 /// (<see cref="WorldObjectDefinition.Outcrop"/>), each of which is an object of its own. An object a POI's
@@ -61,7 +61,14 @@ public readonly record struct WorldObjectId(int Rule, int CellX, int CellZ, int 
 /// <param name="Yaw">Turn about +Y in radians.</param>
 /// <param name="Scale">Uniform scale.</param>
 /// <param name="Variant">Which model it is drawn with: 0 for <see cref="MeshDefinition.File"/>, then each of <see cref="MeshDefinition.Variants"/>.</param>
-public sealed record WorldObjectPlacement(WorldObjectId Id, WorldObjectDefinition Definition, Vector3 Position, float Yaw, float Scale, int Variant = 0);
+public sealed record WorldObjectPlacement(WorldObjectId Id, WorldObjectDefinition Definition, Vector3 Position, float Yaw, float Scale, int Variant = 0)
+{
+    /// <summary>
+    /// Lean onto the ground's slope, applied after <see cref="Yaw"/>: identity for most objects, the ground's plane for a scene's
+    /// field patch (a flora-clearing box), so it lies along gently sloping ground instead of standing proud of its low side.
+    /// </summary>
+    public Quaternion Tilt { get; init; } = Quaternion.Identity;
+}
 
 /// <summary>A placed POI.</summary>
 /// <param name="Index">Its place in <see cref="WorldGenerator.Pois"/>.</param>

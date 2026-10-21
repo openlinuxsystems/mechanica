@@ -421,7 +421,7 @@ public class WorldGenTests
         Assert.NotEmpty(objects);
         foreach (var o in objects)
         {
-            var rule = gen.Data.ScatterRules[o.Id.Rule];
+            var rule = gen.Data.ScatterRuleOf(o.Id)!;
             // A rock deposit's blocks are its own object or the block objects its mounds are heaped from, and a scene's
             // pieces are the objects its layouts name.
             if (rule.Object.Scene is { } scene)
@@ -454,7 +454,7 @@ public class WorldGenTests
             {
                 for (var ix = (int)MathF.Floor(-VanillaSize / 2 / s); ix <= (int)MathF.Floor(VanillaSize / 2 / s); ix++)
                 {
-                    if (gen.Find(new WorldObjectId(rule.Index, ix, iz)) is not { } find)
+                    if (gen.Find(new WorldObjectId(rule.Key, ix, iz)) is not { } find)
                         continue;
                     counts[find.Definition.Id!] = counts.GetValueOrDefault(find.Definition.Id!) + 1;
                     Assert.DoesNotContain(gen.PoisAt(find.Position.X, find.Position.Z), p => !p.Poi.Prefab.Wild);
@@ -788,24 +788,32 @@ public class WorldGenTests
         var farms = new[] { "scene_wheat_field", "scene_vegetable_field", "scene_corn_field", "scene_ploughed_field", "scene_overgrown_field", "scene_orchard", "scene_field_ditch" };
         var counts = new Dictionary<string, int>();
         var patches = 0;
+        var gaps = new List<float>();
         foreach (var (rule, placed) in Scattered(gen, r => farms.Contains(r.Object.Id)))
         {
             var biome = gen.Data.Biomes[rule.Biome].Id!;
             counts[biome] = counts.GetValueOrDefault(biome) + 1;
             foreach (var o in placed.Where(p => p.Definition.ClearFlora && p.Definition.Id!.StartsWith("field_", StringComparison.Ordinal)))
             {
-                // Each 8 m patch stands on the highest ground under it, so none pokes through, with every corner and side
-                // within its 0.45 m soil skirt, so no gap shows under it; and it is never on a road.
+                // Each 8 m patch lies along the ground under it, so none pokes through, with every corner and side within
+                // its 0.45 m soil skirt, so no gap shows under it, and mostly far less (no wall of skirt on its low side);
+                // and it is never on a road.
                 patches++;
                 Assert.False(gen.Roads.Covers(o.Position.X, o.Position.Z), $"{o.Definition.Id} on a road at {o.Position}");
-                var bottom = o.Position.Y + o.Definition.Sink;    // the ground the model's origin was sunk from
+                var bottom = o.Position + new Vector3(0f, o.Definition.Sink, 0f);    // the ground the model's origin was sunk from
+                var turn = o.Tilt * Quaternion.CreateFromAxisAngle(Vector3.UnitY, o.Yaw);
                 foreach (var (cx, cz) in new[] { (-4f, -4f), (4f, -4f), (-4f, 4f), (4f, 4f), (0f, 0f), (4f, 0f), (-4f, 0f), (0f, 4f), (0f, -4f) })
                 {
-                    var w = Vector3.Transform(new Vector3(cx, 0f, cz), Quaternion.CreateFromAxisAngle(Vector3.UnitY, o.Yaw));
-                    Assert.InRange(gen.HeightAt(o.Position.X + w.X, o.Position.Z + w.Z), o.Position.Y - 0.45f, bottom + 1e-3f);
+                    var at = bottom + Vector3.Transform(new Vector3(cx, 0f, cz), turn);
+                    var gap = at.Y - gen.HeightAt(at.X, at.Z);
+                    Assert.InRange(gap, -0.01f, 0.45f - o.Definition.Sink);
+                    gaps.Add(gap);
                 }
             }
         }
+        // Lying along the slope, a patch's rim stays within a hand's breadth of the ground nearly everywhere.
+        gaps.Sort();
+        Assert.True(gaps[(int)(gaps.Count * 0.95)] < 0.1f, $"95% of field patch rims within {gaps[(int)(gaps.Count * 0.95)]} m of the ground");
         // The farmland reads as a patchwork of fields (World fill: props 300); the meadow has fewer, round its farms.
         Assert.True(counts.GetValueOrDefault("field") >= 150, $"fields and orchards in the field biome ({counts.GetValueOrDefault("field")})");
         Assert.True(counts.GetValueOrDefault("meadow") >= 30, $"fields and orchards in the meadow ({counts.GetValueOrDefault("meadow")})");
@@ -1182,6 +1190,43 @@ public class WorldGenTests
     }
 
     [Fact]
+    public void ObjectsKeepTheirIdsAndSpotsWhenOtherRulesAreAddedOrMoved()
+    {
+        // A rule that places nothing, put first in every biome's list, moves every other rule one place down; the same
+        // biome's rules reversed move them all. Neither may move an object or change its id (a save's destroyed ids).
+        var definition = VanillaData.Value.Definition;
+        var padded = definition with
+        {
+            Biomes = [.. definition.Biomes!.Select(b => b with
+            {
+                Scatter = b.Scatter is { Count: > 0 } rules
+                    ? [rules[0] with { Object = definition.Objects!.First(o => rules.All(r => r.Object != o.Id)).Id, Chance = 0f }, .. rules]
+                    : b.Scatter,
+            })],
+        };
+        var reversed = definition with
+        {
+            Biomes = [.. definition.Biomes!.Select(b => b with { Scatter = b.Scatter is { } rules ? [.. Enumerable.Reverse(rules)] : null })],
+        };
+        var before = WorldGenData.FromDefinition(definition);
+        var after = WorldGenData.FromDefinition(padded);
+        Assert.Equal(before.ScatterRules.Select(r => r.Key), after.ScatterRules.Where((r, i) => after.ScatterRules.Take(i).Any(o => o.Biome == r.Biome)).Select(r => r.Key));
+        Assert.Equal(before.ScatterRules.Select(r => r.Key).Order(), WorldGenData.FromDefinition(reversed).ScatterRules.Select(r => r.Key).Order());
+        Assert.Equal(before.ScatterRules.Count, before.ScatterRules.Select(r => r.Key).Distinct().Count());
+
+        var a = new WorldGenerator(before, Seed, VanillaSize, VanillaDepth);
+        var b = new WorldGenerator(after, Seed, VanillaSize, VanillaDepth);
+        var placed = 0;
+        foreach (var (x, z) in new[] { (-3000f, -2000f), (0f, 0f), (2500f, 1500f), (-1200f, 2600f), (3800f, -2900f) })
+        {
+            var expected = a.ObjectsIn(x, z, x + 300f, z + 300f).Select(o => (o.Id, o.Position)).ToList();
+            Assert.Equal(expected, b.ObjectsIn(x, z, x + 300f, z + 300f).Select(o => (o.Id, o.Position)));
+            placed += expected.Count;
+        }
+        Assert.True(placed > 100, $"only {placed} objects to compare");
+    }
+
+    [Fact]
     public void FactionSitesStandOnTheirFactionsGround()
     {
         // Each bot faction's site (its lair with its smaller pieces) stands where its bots live, in good numbers on the vanilla
@@ -1203,7 +1248,7 @@ public class WorldGenTests
             {
                 for (var ix = (int)MathF.Floor(-VanillaSize / 2 / s); ix <= (int)MathF.Floor(VanillaSize / 2 / s); ix++)
                 {
-                    var placed = Enumerable.Range(0, pieces).Select(k => gen.Find(new WorldObjectId(rule.Index, ix, iz, k))).OfType<WorldObjectPlacement>().ToList();
+                    var placed = Enumerable.Range(0, pieces).Select(k => gen.Find(new WorldObjectId(rule.Key, ix, iz, k))).OfType<WorldObjectPlacement>().ToList();
                     if (placed.Count == 0)
                         continue;
                     var id = rule.Object.Id!;

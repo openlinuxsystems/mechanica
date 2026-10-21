@@ -193,7 +193,7 @@ change (usually `vanilla`). Every patch applies in load order on top of the last
 | `objects[].harvest` | `true` for something gathered by hand, like the oil geyser: pressing Use (E) on it (the `Harvest` action) puts its `drops` straight into the inventory, leaves what does not fit on the ground and uses the object up. Not with `refine`. Default `false`. |
 | `objects[].regrow` | Seconds of world time (the scripts' clock, which saves carry on) after the object is destroyed, by any means, until it stands again as new. The host restores it for every peer, and saves keep the times. Omitted: it stays gone. The oil geyser takes 3600 s, about Scrap Mechanic's 2.5 game days. |
 | `objects[].model` | A built-in flora model (see [Flora](#flora)) drawn instead of `pieces`, such as `bush_berry`. |
-| `objects[].clear_flora` | `true` for an object that covers the ground, like a crop field patch: no grass, ground cover or bush grows inside its box collider (inside its `footprint` when the collider is another shape). As a scene's piece with a box collider it also needs level ground: it is left out where the ground round its box rises and falls more than its slope limit allows over half the box's diagonal, and it stands on the highest of that ground, so the ground never shows through it. Default `false`. |
+| `objects[].clear_flora` | `true` for an object that covers the ground, like a crop field patch: no grass, ground cover or bush grows inside its box collider (inside its `footprint` when the collider is another shape). As a scene's piece with a box collider it also needs level ground: it is left out where the ground round its box rises and falls more than its slope limit allows over half the box's diagonal, and it leans to lie along the plane that best fits that ground, lifted just enough that the ground never shows through it, so it neither stands proud of its low side nor sinks into its high side. Default `false`. |
 | `objects[].solid` | `false` for an object players, bots and Creations walk and drive through, like the seed bush: its collider only catches the Sledgehammer's swing, so it still breaks for its drops. Default `true`. |
 | `objects[].refine` | `true` for a raw resource node (tree, rock node): holding Use (E) on it for `refine_seconds` (`game/data/survival.json`, 5.2 s, as in Scrap Mechanic) refines it, and its `drops` go straight into the inventory. Moving more than `refine_cancel_distance` (1.5 m) or letting go cancels. Default `false`. |
 | `objects[].damage_from` | Kinds of damage that hurt it: `sledge`, `drill`, `saw`, `weapon`, `explosion`, `bot`. Omitted: all of them. Rock deposit blocks take only `drill` (a Drill spun on a bearing at drilling speed). |
@@ -214,6 +214,10 @@ Shapes (`collider`, `pieces`) are `box` (`size`), `sphere` (`radius`) or `cylind
 placeholders until meshes are authored.
 
 Scattered objects keep stable ids (`rule.cell_x.cell_z`), which is how a destroyed tree stays destroyed (trees never grow back).
+`rule` is the rule's key, a number made from its biome, its object and how many rules for that object come before it in
+that biome, and it also seeds where the rule's objects stand. So adding, removing or reordering other rules never moves an
+object or changes its id. Where two rules' objects would crowd each other the rule earlier in its list keeps its object, so
+add new rules at the end of a biome's list to leave every existing object where it is.
 Objects a POI's `object` markers place have ids of their own, `poi.poi_index.marker_index`.
 
 ### Bloom Pods
@@ -342,8 +346,8 @@ them. Fields are scenes of 8 m patches (`props_fields.py`: furrows, wheat, corn,
 carrots, fallow, stubble and overgrown) tiled 3 × 3 to 5 × 4, each patch the same crop or strips of several, with a
 windbreak hedge and an irrigation ditch (both tile every 8 m) along their edges, gate posts, marker posts and a cart or
 crates at the front. The patches `clear_flora`, so no grass pokes through the crops, and the scenes are `level` (1.2 m
-over their footprint) with patches no steeper than 0.08 across, so each patch sits on its ground within its
-0.45 m soil skirt.
+over their footprint) with patches no steeper than 0.08 across. Each patch leans to lie along the ground's slope, so
+its edges meet the ground (nearly all within 10 cm) and its 0.45 m soil skirt only fills what dips are left.
 Orchards are grids of fruit trees about 6.5 m apart. In the meadow the same scenes, also first in its list, are sparser and stand `near` the farm
 scenes (farmsteads, farmyards and kitchen gardens). The vanilla world has about 170 fields and orchards in the field
 biome and 45 in the meadow, some 3,000 patches in all.
