@@ -149,6 +149,7 @@ public static class LuaApi
 
         new("farm.soil", "farm.soil(creation, part)", "A soil part in the holder's reach: {seed?, crop?, stage, ripe, water, capacity}, or nil and why.", "farm"),
         new("farm.plant", "farm.plant(creation, part, seed?)", "Plants seed (default: this item) in empty soil in reach; returns the soil, or nil and why. Takes no items.", "farm"),
+        new("farm.can_plant", "farm.can_plant(creation, part, seed?)", "True when seed (default: this item) could be planted there now (soil in reach, empty, and one it grows), or nil and why. Only reads, so can_use may call it.", "farm"),
         new("farm.water", "farm.water(creation, part, seconds)", "Adds seconds of water to soil in reach, up to its capacity; returns the soil, or nil and why. Takes no items.", "farm"),
         new("farm.near", "farm.near(position, radius)", "Soil parts within radius m of position, nearest first: a list of {creation, part}.", "farm"),
 

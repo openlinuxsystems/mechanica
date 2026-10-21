@@ -30,6 +30,7 @@ public partial class CropNode : Node3D
     private (AnimationPlayer Player, Animation Clip)? _wilt;
     private float _grown = float.NaN;
     private float _grownTarget;
+    private (Node3D? Node, float Top) _topOf = (null, float.NaN);
     private float _wilted = float.NaN;
     private float _wiltTarget;
 
@@ -116,7 +117,10 @@ public partial class CropNode : Node3D
             Visible = false;
             return;
         }
-        GlobalTransform = partNode.GlobalTransform * new Transform3D(Basis.Identity, new Vector3(0, TopOf(partNode, creation, part), 0));
+        // Worked out once per part node (a rebuilt Creation makes new ones): it looks through the model.
+        if (_topOf.Node != partNode || !float.IsFinite(_topOf.Top))
+            _topOf = (partNode, TopOf(partNode, creation, part));
+        GlobalTransform = partNode.GlobalTransform * new Transform3D(Basis.Identity, new Vector3(0, _topOf.Top, 0));
         Visible = true;
     }
 
@@ -214,14 +218,16 @@ public partial class CropNode : Node3D
         MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.36f, 0.25f, 0.16f), Roughness = 1f },
     };
 
-    // The top of the part's model above its centre (a mound is lower than its cell), or the top of its cell.
+    // The top of the part's soil above its centre (a mound is lower than its cell; a Growbed's soil sits inside its
+    // rim): its meshes named Soil…, or the whole model when none is; else the top of its cell.
     private static float TopOf(Node3D partNode, Creation creation, PartInstance part)
     {
         var top = float.NegativeInfinity;
         if (partNode.GetNodeOrNull<Node3D>("Model") is { } model)
         {
-            foreach (var mesh in model.GetChildren().OfType<MeshInstance3D>())
-                top = Math.Max(top, (mesh.Transform * mesh.GetAabb()).End.Y);
+            var inverse = model.GlobalTransform.AffineInverse();
+            foreach (var mesh in SoilLooks.SoilMeshes(model))
+                top = Math.Max(top, (inverse * mesh.GlobalTransform * mesh.GetAabb()).End.Y);
         }
         if (float.IsFinite(top))
             return top;

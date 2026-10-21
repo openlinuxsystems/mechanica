@@ -9,6 +9,14 @@
 -- was last brought up to date (its `updated` stamp), not step by step. A parked Creation (no player near)
 -- runs no on_update, so when it is next updated it catches up on the whole time it was parked; growing in
 -- one long stretch gives the same crop as growing in many short ones.
+--
+-- Soil built onto a Creation (the Growbed, E9) runs this script too. Its crop rides along with the Creation, and its
+-- data can set two more things: soil.yield, a fixed number of crops every harvest gives (seeds back still follow the
+-- seed), and which seeds it takes (soil.seeds, checked by the host when one is planted). With properties.charge_item
+-- it needs power: a crop only grows while one charge_item (a battery) from the Battery Containers linked into it (or
+-- from any of its Creation's containers when none is linked) lasts, properties.charge_time seconds of growing each;
+-- empty soil and a ripe crop use none, and Creative needs none. Its model then shows "on" on its "pose" readout
+-- while the crop grows (the cyan power pip) and "off" otherwise.
 
 local next_check = 0
 
@@ -20,50 +28,106 @@ local function qualify(id, owner)
   return string.match(owner, "^[^:]+") .. ":" .. id
 end
 
--- grown, water and stage of soil `s` once it has grown until `now`. Changes nothing.
-local function grown_by(s, now)
+-- The containers linked into the part (Battery Containers), or nil for all of the Creation's.
+local function cells()
+  local ids
+  for _, input in ipairs(part.inputs()) do
+    if input.storage then
+      ids = ids or {}
+      ids[#ids + 1] = input.part
+    end
+  end
+  return ids
+end
+
+-- True when the soil needs power to grow (properties.charge_item) and this is not Creative.
+local function needs_power()
+  return properties.charge_item ~= nil and not world.creative()
+end
+
+-- Seconds of growing the power at hand lasts: the battery in use and those in the linked containers. Changes nothing.
+local function power_left()
+  if not needs_power() then
+    return math.huge
+  end
+  return (state.charge or 0) + creation.count(properties.charge_item, cells()) * properties.charge_time
+end
+
+-- Uses `seconds` of growing power, taking batteries as the one in use runs out.
+local function draw(seconds)
+  if not needs_power() or seconds <= 0 then
+    return
+  end
+  local charge = (state.charge or 0) - seconds
+  if charge < 0 then
+    local wanted = math.ceil(-charge / properties.charge_time)
+    charge = charge + creation.take(properties.charge_item, wanted, cells()) * properties.charge_time
+  end
+  state.charge = math.max(0, charge)
+end
+
+-- grown, water and stage of soil `s` once it has grown until `now`, with `power` seconds of growing power at hand,
+-- and the seconds it grew for. Changes nothing.
+local function grown_by(s, now, power)
   if not s.seed then
     -- Nothing planted: the water dries out, full soil in soil.dry_time seconds (none set: it keeps).
     local data = world.item(part.type(), "soil") or {}
     local elapsed = math.max(0, now - (s.updated or now))
     if s.water > 0 and data.dry_time and data.dry_time > 0 then
-      return s.grown, math.max(0, s.water - elapsed * (data.capacity or 0) / data.dry_time), 0
+      return s.grown, math.max(0, s.water - elapsed * (data.capacity or 0) / data.dry_time), 0, 0
     end
-    return s.grown, s.water, 0
+    return s.grown, s.water, 0, 0
   end
   local seed = world.item(s.seed, "seed")
   local grow_time = seed and seed.grow_time
   if not grow_time or grow_time <= 0 then
     -- The seed's mod is gone or it says nothing about growing: leave it as it is.
-    return s.grown, s.water, s.stage
+    return s.grown, s.water, s.stage, 0
   end
   local grown, water = s.grown, s.water
   local elapsed = math.max(0, now - (s.updated or now))
+  local used = 0
   if elapsed > 0 and water > 0 and grown < grow_time then
     local speed = (world.item(part.type(), "soil") or {}).growth or 1
-    -- Water goes only on the growing still to do.
-    local used = math.min(elapsed, water)
+    -- Water (and power) go only on the growing still to do.
+    used = math.min(elapsed, water, power or math.huge)
     if speed > 0 then
       used = math.min(used, (grow_time - grown) / speed)
     end
     water = water - used
     grown = math.min(grow_time, grown + used * speed)
   end
-  return grown, water, math.min(s.stages, math.floor(grown / grow_time * s.stages))
+  return grown, water, math.min(s.stages, math.floor(grown / grow_time * s.stages)), used
 end
 
--- Grows the crop up to `now` and stores it. Returns the soil as it is now.
+-- Grows the crop up to `now`, using power for it, and stores it. Returns the soil as it is now, and whether the crop
+-- grew all that time (false when it ran out of water or power, or is ripe).
 local function settle(now)
   local s = soil.get()
-  local grown, water, stage = grown_by(s, now)
+  local grown, water, stage, used = grown_by(s, now, power_left())
+  draw(used)
   soil.set({ grown = grown, water = water, stage = stage, updated = now })
-  return soil.get()
+  local elapsed = math.max(0, now - (s.updated or now))
+  return soil.get(), s.seed ~= nil and stage < s.stages and used >= elapsed and water > 0
+end
+
+-- The "pose" readout of soil that needs power: "on" while its crop grows, "off" otherwise.
+local function show(growing)
+  if properties.charge_item == nil then
+    return
+  end
+  local pose = growing and "on" or "off"
+  if state.pose ~= pose then
+    state.pose = pose
+    part.display("pose", pose)
+  end
 end
 
 -- What a harvest gives: the crop times its yield, and seeds back. A seed with seeds_max gives from seeds to seeds_max
 -- back, rolled per harvest; `most` takes the most it could give (to check there is room for it).
 local function harvest_of(seed_id, seed, most)
-  local items = { { item = qualify(seed.crop, seed_id), count = seed.yield or 1 } }
+  local fixed = (world.item(part.type(), "soil") or {}).yield
+  local items = { { item = qualify(seed.crop, seed_id), count = fixed or seed.yield or 1 } }
   local least = seed.seeds or 0
   local count = least
   if seed.seeds_max and seed.seeds_max > least then
@@ -86,7 +150,8 @@ function on_update(dt)
     return
   end
   next_check = now + properties.interval
-  settle(now)
+  local _, growing = settle(now)
+  show(growing)
 end
 
 function can_activate(peer)
@@ -98,7 +163,7 @@ function can_activate(peer)
   if not seed then
     return "The " .. s.seed .. " grows nothing."
   end
-  local _, _, stage = grown_by(s, world.time())
+  local _, _, stage = grown_by(s, world.time(), power_left())
   if stage < s.stages then
     return "The " .. name_of(qualify(seed.crop, s.seed)) .. " is not ripe yet."
   end

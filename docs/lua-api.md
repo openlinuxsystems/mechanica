@@ -250,7 +250,10 @@ The Creation the part belongs to.
 
 The soil part the script runs on (chunk 20). The host only stores what the script decides; the vanilla
 `soil.lua` grows crops from the world clock and harvests them in `on_activate`. A soil function on a part
-without a `soil` section raises an error.
+without a `soil` section raises an error. The soil may be a ground mound or a part built into a Creation (the
+Growbed): the state belongs to the part either way. On a Growbed `soil.lua` also uses up batteries while the crop grows
+(`charge_item` and `charge_time` in its properties, from `part.inputs()` storage or else `creation.count` / `creation.take`),
+sets the `pose` readout `on` while growing and `off` otherwise, and harvests `soil.yield` crops.
 
 | Function | Returns |
 |----------|---------|
@@ -327,7 +330,7 @@ one) in `mods/vanilla/scripts/`.
 - **Damage follows the world's rules.** In Creative nothing hurts players; with friendly fire off
   (the default) no shot, splash or part script hurts a player, but a player's own splash still hurts them.
 - `part` and `creation` functions don't work in an item script; `world` and `log` do. The `item`,
-  `holder` and `inventory` libraries only work in an item script; `combat`, `farm` (except `farm.plant`) and
+  `holder` and `inventory` libraries only work in an item script; `combat`, `farm` (except `farm.plant` and `farm.can_plant`) and
   `fire` work in part and mod scripts too (below).
 
 ```lua
@@ -403,7 +406,7 @@ are the same primitives bots use (chunk 21).
 
 ### `farm`
 
-Soil parts (chunk 20). A soil table is `{seed?, crop?, stage, ripe, water, capacity}`: the planted
+Soil parts (chunk 20): a mound on the ground or soil built onto a Creation (a Growbed), alike. A soil table is `{seed?, crop?, stage, ripe, water, capacity}`: the planted
 seed and its crop (qualified ids), the growth stage (0 to 4, 4 is `ripe`) and the seconds of water it
 holds of its `capacity`. Each function checks the part is soil within the holder's `reach`, and
 returns `nil` and the reason when it can't act; in `on_hit`, `farm.water` reaches wherever the item's projectile
@@ -414,6 +417,7 @@ soil part's own script ([`soil`](#soil)); the seed's `seed` section sets what gr
 |----------|---------|
 | `farm.soil(creation, part)` | The soil table. |
 | `farm.plant(creation, part, seed?)` | Plants `seed` (an item with a `seed` section; default this item) in empty soil and returns the soil table. It takes nothing from the inventory: use `item.consume`. |
+| `farm.can_plant(creation, part, seed?)` | `true` when `farm.plant` would plant `seed` (default this item) there now, or `nil` and the reason: not soil, out of reach, something already growing, or soil whose `soil.seeds` does not list it (a Growbed). It only reads, so `can_use` may call it. |
 | `farm.water(creation, part, seconds)` | Adds `seconds` of water, up to `capacity`, and returns the soil table. Takes nothing from the inventory either. |
 | `farm.near(position, radius)` | Soil parts within `radius` m of `position` (at most `max_overlap_radius`), nearest first: a list of `{creation, part}`, for watering where a splash lands. |
 

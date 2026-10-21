@@ -1,0 +1,64 @@
+// Parts map batch 17b (Scrap Mechanic parity, engine item E9: soil on Creations): the new Growbed, a raised bed of soil
+// that can be built onto anything, so crops grow on a Creation and ride along with it. The wiki's stats (1.5 kg per
+// weight bar; durability = bars; friction and buoyancy = bars / 10) and Craftbot recipe, with a Circuit Board for the
+// Cable Roll we lack. It is soil (the `soil` section) run by the vanilla soil.lua like the ground mound: soil.yield is
+// its fixed harvest, soil.seeds what it grows, and properties.charge_item a battery from the Battery Containers linked
+// into it (properties.charge_time seconds of growing each). The model and icon are built by
+// tools/growbed/build_growbed.py (tools/part_kit/farming_kit.py). Re-run with tools/author-vanilla.sh.
+{
+  "format_version": 1,
+  "parts": [
+    {
+      "file": "parts/growbed.json",
+      "template": "interactive",
+      "set": {
+        "name": "Growbed",
+        "description": "A raised bed of soil to build onto anything: crops grow on your creation and ride along with it. Plant carrot, potato, tomato or cotton seeds and water it; every harvest gives 5. It needs power: link a Battery Container to it with the Connect Tool (one battery grows for 6 minutes).",
+        "category": "interactive",
+        "mass": 4.5,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.6,
+        "flammable": false,
+        "stack_size": 5,
+        "sound_material": "wood",
+        "size": [5, 2, 5],
+        "icon": "textures/items/growbed_icon.png",
+        "visual": { "color": "#ffffff" },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.25, 0], "normal": [0, -1, 0] }],
+        "script": "scripts/soil.lua",
+        "sounds": { "use": "pickup_produce", "place": "place_wood" },
+        "soil": {
+          "capacity": 600,
+          "growth": 1,
+          "dry_time": 2160,
+          "wet_level": 0.25,
+          "yield": 5,
+          "seeds": ["carrot_seed", "potato_seed", "tomato_seed", "cotton_seed"]
+        },
+        "logic": { "inputs": 4 },
+        "display": { "clips": { "readout": "pose" } },
+        "properties": {
+          "interval": 0.5,
+          "charge_item": "battery_pack",
+          "charge_time": 360
+        }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/growbed.glb" }],
+      "recipes": [
+        {
+          "id": "growbed",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "component_kit", "count": 2 },
+            { "item": "circuit_board", "count": 2 },
+            { "item": "soil_bag", "count": 1 }
+          ],
+          "outputs": [{ "item": "growbed", "count": 1 }],
+          "time": 30,
+          "order": 1955
+        }
+      ]
+    }
+  ]
+}

@@ -49,6 +49,12 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
   using a second of water per second of growth, through four stages. Harvest it ripe (E) for its crop
   and usually a seed back. Crops keep growing while nobody is near (the soil catches up from the world
   clock when it next runs) and are saved with the soil's Creation.
+- **Growbeds:** the Growbed (Fabricator: 2 Component Kits, 2 Circuit Boards and a Soil Bag) is soil you build into a
+  Creation, so a farm can be a cart, a boat or a base. It takes carrot, potato, tomato and cotton seeds, and a harvest
+  always gives 5 crops. It runs on batteries: each Battery Pack powers 6 minutes of growth, taken from Battery Containers
+  wired into it (or any container on its Creation); its cyan light shows while it grows. The crop rides along with the
+  Creation wherever it drives, across chunks and while it is parked, and saves with it. Picking a bed (or a soil mound) up
+  gives an unripe crop's seed back; a ripe crop must be harvested first. A bed that breaks drops its seed.
 - **Building costs items.** Placing a part takes one from your inventory; removing it gives it back
   (or drops it when your inventory is full). Craft parts at a Portable Fabricator or a Fabricator.
   The Portable Fabricator (every player starts with one) makes the scrap tier from scrap blocks: the Scrap Seat, Scrap
@@ -132,7 +138,10 @@ their item's properties.
   and its growth speed; the script reads both with `world.item`. The host keeps only what the script stores
   on the soil (seed, growth, water, stage and when growth was last worked out): that is what is saved, sent
   to clients and read by bots and raids. Vanilla's items and soil are authored by the Part Editor batch
-  `mods/vanilla/editor/batches/survival.json`.
+  `mods/vanilla/editor/batches/survival.json`. Soil on a Creation (the Growbed, parts map E9) is the same: its state is
+  per part, so it follows the part through splits and welds and saves in the Creation. `soil.yield` and `soil.seeds` fix
+  its harvest and the seeds it takes (checked by the host in `CheckPlant`, which `farm.can_plant` asks), and `soil.lua`'s
+  `charge_item` / `charge_time` properties power it. The Growbed is in `mods/vanilla/editor/batches/parts_farming.json`.
 - `game/data/building.json`: `sledge.combat_damage` (players and bots), `sledge.object_damage` (world objects
   without their own) and the knockback (`impulse`, `max_knockback_speed`, `character_mass`, `knockback_lift`,
   `knockback_drag`). A world object's own hit damage is its `sledge_damage` in `worldgen.json`. A mod changes

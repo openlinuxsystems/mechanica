@@ -436,7 +436,10 @@ public sealed record SeedDefinition
     public Dictionary<string, JsonElement>? Extra { get; init; }
 }
 
-/// <summary>Farm soil: one crop grows on top of the part.</summary>
+/// <summary>
+/// Farm soil: one crop grows on top of the part. Any placeable part can be soil: a mound on the ground
+/// (<c>ground_only</c>, the Soil Bag's) or a bed built onto a Creation (the Growbed), whose crop rides along with it.
+/// </summary>
 public sealed record SoilDefinition
 {
     /// <summary>Most seconds of water the soil holds (more than 0).</summary>
@@ -456,6 +459,18 @@ public sealed record SoilDefinition
     /// Omitted means 0.5.
     /// </summary>
     public float? WetLevel { get; init; }
+
+    /// <summary>
+    /// How many of its crop every harvest gives, whatever the seed's own <c>yield</c> (a Growbed's fixed harvest).
+    /// Omitted gives the seed's yield. The soil script reads it; seeds back still follow the seed.
+    /// </summary>
+    public int? Yield { get; init; }
+
+    /// <summary>
+    /// The seeds (item ids; a bare id is in the part's own mod) that can be planted here. Omitted takes any seed.
+    /// The host refuses the rest when one is planted (<c>CheckPlant</c>).
+    /// </summary>
+    public IReadOnlyList<string>? Seeds { get; init; }
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
