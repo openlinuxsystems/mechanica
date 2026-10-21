@@ -1,0 +1,20 @@
+{
+  "id": "cracked_concrete_wedge",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "cracked_concrete_block",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "cracked_concrete_wedge",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 168
+}

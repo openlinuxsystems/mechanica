@@ -1,0 +1,26 @@
+{
+  "id": "concrete_slab_wedge",
+  "name": "Concrete Slab Wedge",
+  "description": "Concrete Slab Block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 4.5,
+  "durability": 4,
+  "friction": 0.7,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 256,
+  "sound_material": "concrete",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/concrete_slab_wedge.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.85,
+    "metallic": 0,
+    "texture": "textures/blocks/concrete_slab.png",
+    "texture_span": 2
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/concrete_slab_wedge.glb"
+  }
+}

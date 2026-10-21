@@ -242,7 +242,7 @@
           "inputs": [{ "item": "sand_block", "count": 10 }, { "item": "ember", "count": 1 }],
           "outputs": [{ "item": "glass_block", "count": 10 }],
           "time": 5,
-          "order": 171
+          "order": 175
         }
       ]
     },
@@ -263,7 +263,7 @@
           "inputs": [{ "item": "glass_block", "count": 1 }],
           "outputs": [{ "item": "glass_wedge", "count": 1 }],
           "time": 2,
-          "order": 172
+          "order": 176
         }
       ]
     },
@@ -719,7 +719,7 @@
           ],
           "outputs": [{ "item": "armored_glass_block", "count": 10 }],
           "time": 10,
-          "order": 175
+          "order": 179
         }
       ]
     },
@@ -740,7 +740,7 @@
           "inputs": [{ "item": "armored_glass_block", "count": 1 }],
           "outputs": [{ "item": "armored_glass_wedge", "count": 1 }],
           "time": 2,
-          "order": 176
+          "order": 180
         }
       ]
     },
@@ -938,7 +938,7 @@
           "inputs": [{ "item": "sand_block", "count": 10 }, { "item": "water_bucket_full", "count": 1 }],
           "outputs": [{ "item": "plaster_block", "count": 10 }],
           "time": 5,
-          "order": 167
+          "order": 171
         }
       ]
     },
@@ -959,7 +959,7 @@
           "inputs": [{ "item": "plaster_block", "count": 1 }],
           "outputs": [{ "item": "plaster_wedge", "count": 1 }],
           "time": 2,
-          "order": 168
+          "order": 172
         }
       ]
     },
@@ -1210,7 +1210,7 @@
           "inputs": [{ "item": "sand_block", "count": 10 }, { "item": "ember", "count": 1 }],
           "outputs": [{ "item": "glass_tile_block", "count": 10 }],
           "time": 10,
-          "order": 173
+          "order": 177
         }
       ]
     },
@@ -1231,7 +1231,7 @@
           "inputs": [{ "item": "glass_tile_block", "count": 1 }],
           "outputs": [{ "item": "glass_tile_wedge", "count": 1 }],
           "time": 2,
-          "order": 174
+          "order": 178
         }
       ]
     },
@@ -1604,7 +1604,7 @@
           "inputs": [{ "item": "crude_oil", "count": 5 }],
           "outputs": [{ "item": "plastic_block", "count": 10 }],
           "time": 5,
-          "order": 179
+          "order": 183
         }
       ]
     },
@@ -1625,7 +1625,7 @@
           "inputs": [{ "item": "plastic_block", "count": 1 }],
           "outputs": [{ "item": "plastic_wedge", "count": 1 }],
           "time": 2,
-          "order": 180
+          "order": 184
         }
       ]
     },
@@ -1658,7 +1658,7 @@
           "inputs": [{ "item": "crude_oil", "count": 5 }],
           "outputs": [{ "item": "bubble_plastic_block", "count": 10 }],
           "time": 10,
-          "order": 181
+          "order": 185
         }
       ]
     },
@@ -1679,7 +1679,7 @@
           "inputs": [{ "item": "bubble_plastic_block", "count": 1 }],
           "outputs": [{ "item": "bubble_plastic_wedge", "count": 1 }],
           "time": 2,
-          "order": 182
+          "order": 186
         }
       ]
     },
@@ -2094,7 +2094,7 @@
           "inputs": [{ "item": "plaster_block", "count": 10 }, { "item": "paint_ammo", "count": 1 }],
           "outputs": [{ "item": "painted_wall_block", "count": 10 }],
           "time": 10,
-          "order": 169
+          "order": 173
         }
       ]
     },
@@ -2115,7 +2115,7 @@
           "inputs": [{ "item": "painted_wall_block", "count": 1 }],
           "outputs": [{ "item": "painted_wall_wedge", "count": 1 }],
           "time": 2,
-          "order": 170
+          "order": 174
         }
       ]
     },
@@ -2205,7 +2205,7 @@
           "inputs": [{ "item": "water_bucket_full", "count": 2 }],
           "outputs": [{ "item": "ice_block", "count": 10 }],
           "time": 5,
-          "order": 177
+          "order": 181
         }
       ]
     },
@@ -2226,9 +2226,122 @@
           "inputs": [{ "item": "ice_block", "count": 1 }],
           "outputs": [{ "item": "ice_wedge", "count": 1 }],
           "time": 2,
-          "order": 178
+          "order": 182
         }
       ]
+    },
+    {
+      "file": "parts/blocks/cracked_concrete_block.json",
+      "template": "block",
+      "set": {
+        "name": "Cracked Concrete Block",
+        "description": "Old sun-bleached concrete broken into plates. A little lighter and weaker than Concrete Block 1.",
+        "mass": 9,
+        "durability": 3,
+        "friction": 0.6,
+        "buoyancy": 0.4,
+        "flammable": false,
+        "stack_size": 256,
+        "sound_material": "concrete",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#ffffff",
+          "texture": "textures/blocks/cracked_concrete.png",
+          "texture_span": 2,
+          "roughness": 0.9,
+          "metallic": 0
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }],
+      "recipes": [
+        {
+          "id": "cracked_concrete_block",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "concrete_block", "count": 5 }],
+          "outputs": [{ "item": "cracked_concrete_block", "count": 10 }],
+          "time": 5,
+          "order": 167
+        }
+      ]
+    },
+    {
+      "file": "parts/blocks/cracked_concrete_wedge.json",
+      "base": "cracked_concrete_block",
+      "set": {
+        "name": "Cracked Concrete Wedge",
+        "description": "Cracked Concrete Block cut on the diagonal. Same material, half the mass.",
+        "mass": 4.5
+      },
+      "recipes": [
+        {
+          "id": "cracked_concrete_wedge",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "cracked_concrete_block", "count": 1 }],
+          "outputs": [{ "item": "cracked_concrete_wedge", "count": 1 }],
+          "time": 2,
+          "order": 168
+        }
+      ],
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true
+    },
+    {
+      "file": "parts/blocks/concrete_slab_block.json",
+      "template": "block",
+      "set": {
+        "name": "Concrete Slab Block",
+        "description": "Tan cast slabs with deep joints. Grippy underfoot, and it sinks like a stone.",
+        "mass": 9,
+        "durability": 4,
+        "friction": 0.7,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "stack_size": 256,
+        "sound_material": "concrete",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#ffffff",
+          "texture": "textures/blocks/concrete_slab.png",
+          "texture_span": 2,
+          "roughness": 0.85,
+          "metallic": 0
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }],
+      "recipes": [
+        {
+          "id": "concrete_slab_block",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "scrap_stone_block", "count": 10 },
+            { "item": "water_bucket_full", "count": 1 }
+          ],
+          "outputs": [{ "item": "concrete_slab_block", "count": 10 }],
+          "time": 5,
+          "order": 169
+        }
+      ]
+    },
+    {
+      "file": "parts/blocks/concrete_slab_wedge.json",
+      "base": "concrete_slab_block",
+      "set": {
+        "name": "Concrete Slab Wedge",
+        "description": "Concrete Slab Block cut on the diagonal. Same material, half the mass.",
+        "mass": 4.5
+      },
+      "recipes": [
+        {
+          "id": "concrete_slab_wedge",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "concrete_slab_block", "count": 1 }],
+          "outputs": [{ "item": "concrete_slab_wedge", "count": 1 }],
+          "time": 2,
+          "order": 170
+        }
+      ],
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true
     }
   ]
 }

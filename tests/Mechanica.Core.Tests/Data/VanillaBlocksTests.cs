@@ -23,6 +23,7 @@ public class VanillaBlocksTests
         { "bubble_plastic_block", "bubble_plastic_wedge", "plastic", 256 }, { "cardboard_block", "cardboard_wedge", "cardboard", 256 },
         { "carpet_block", "carpet_wedge", "fabric", 500 }, { "concrete_block", "concrete_wedge", "concrete", 500 },
         { "concrete_block_2", "concrete_wedge_2", "concrete", 256 }, { "concrete_block_3", "concrete_wedge_3", "concrete", 256 },
+        { "concrete_slab_block", "concrete_slab_wedge", "concrete", 256 }, { "cracked_concrete_block", "cracked_concrete_wedge", "concrete", 256 },
         { "diamond_plate_block", "diamond_plate_wedge", "metal", 256 }, { "extruded_metal_block", "extruded_metal_wedge", "metal", 256 },
         { "glass_block", "glass_wedge", "glass", 256 }, { "glass_tile_block", "glass_tile_wedge", "glass", 256 },
         { "hull_floor_block", "hull_floor_wedge", "metal", 256 }, { "hull_plate_block", "hull_plate_wedge", "metal", 500 },
@@ -66,6 +67,8 @@ public class VanillaBlocksTests
         { "concrete_block", 10.5f, 5, 0.6f, 0.5f, false },
         { "concrete_block_2", 12f, 6, 0.6f, 0.5f, false },
         { "concrete_block_3", 13.5f, 7, 0.6f, 0.5f, false },
+        { "concrete_slab_block", 9f, 4, 0.7f, 0.1f, false },
+        { "cracked_concrete_block", 9f, 3, 0.6f, 0.4f, false },
         { "diamond_plate_block", 7.5f, 5, 0.6f, 0.2f, false },
         { "extruded_metal_block", 4.5f, 4, 0.4f, 0.1f, false },
         { "glass_block", 4.5f, 1, 0.3f, 0.5f, false },
@@ -188,6 +191,8 @@ public class VanillaBlocksTests
     [InlineData("worn_tile_block", "scrap_stone_block:10,beeswax:1", 10)]
     [InlineData("carpet_block", "cotton:5,paint_ammo:1", 10)]
     [InlineData("punched_steel_block", "metal_block:10", 20)]
+    [InlineData("cracked_concrete_block", "concrete_block:5", 10)]
+    [InlineData("concrete_slab_block", "scrap_stone_block:10,water_bucket_full:1", 10)]
     public void BlockRecipesAreTheWikis(string id, string inputs, int count)
     {
         var book = RecipeBook.Load(Vanilla.Value);
@@ -221,7 +226,7 @@ public class VanillaBlocksTests
     }
 
     [Theory]
-    [InlineData("structural_blocks.json", 82)]
+    [InlineData("structural_blocks.json", 86)]
     [InlineData("survival.json", 30)]
     [InlineData("joints.json", 4)]
     [InlineData("lights_utility.json", 15)]
