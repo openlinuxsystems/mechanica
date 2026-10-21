@@ -11,10 +11,10 @@
   "stack_size": 5,
   "sound_material": "wood",
   "size": [3, 2, 3],
-  "mesh": "meshes/chest.glb",
+  "mesh": "meshes/parts/chest.glb",
+  "icon": "textures/items/chest_icon.png",
   "visual": {
-    "color": "#8a5a30",
-    "paintable": true
+    "color": "#ffffff"
   },
   "sockets": [
     {

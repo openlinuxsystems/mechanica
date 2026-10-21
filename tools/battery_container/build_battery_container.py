@@ -10,7 +10,8 @@ What it builds (procedurally, from scratch: no .blend inputs, no downloads):
   painted lid instead of the plates and carrying handle, two big copper terminals (the + one with a red collar) and a
   red breaker on it; on each long side a wide charge gauge of five teal cells side by side (not a fuel column) next to
   a big copper lightning-bolt plate, and a row of vent slots; on the ends gunmetal cooling fins instead of copper
-  frames and pipe sockets, the +X end with one round power socket. Everything stays inside the 4 x 3 x 3 box.
+  frames and pipe sockets, the +X end with the standard two-way IO port (docs/io-ports.md, ``tools/io_port``:
+  centred on the end 0.375 m above the base, its collar face on x = 0.5). Everything stays inside the 4 x 3 x 3 box.
 
   The cells are their own nodes, ``CellL0`` / ``CellR0`` (toward -X) to ``CellL4`` / ``CellR4``, each a dark piece
   with a lit one in front. One glTF clip, ``charge`` (1 s, scrubbed by the ``charge`` readout of
@@ -18,7 +19,7 @@ What it builds (procedurally, from scratch: no .blend inputs, no downloads):
   five.
 
 * ``mods/vanilla/textures/items/battery_icon.png`` - the hotbar, inventory and Fabricator picture, 256 x 256 on a
-  clear background, three-quarter from the -Y gauge side with the socket end on the right.
+  clear background, three-quarter from the -Y gauge side with the port end on the right.
 
     pip install bpy==5.2.2 numpy pillow
     python tools/battery_container/build_battery_container.py                  # writes the .glb and the icon
@@ -52,7 +53,7 @@ rivets = gc.rivets
 
 HALF_X, HALF_Y, HALF_Z = 0.5, 0.375, 0.375  # the part's half sizes: 4 x 3 x 3 blocks
 FLOOR = -HALF_Z
-BX, BY = 0.465, 0.35          # the body's half length and depth (the fins and socket fill the rest)
+BX, BY = 0.465, 0.35          # the body's half length and depth (the fins and IO port fill the rest)
 Z_BOT, Z_TOP = -0.375, 0.285  # the body's bottom and top (the terminals and breaker fill the rest to 0.375)
 ZC, HZ = (Z_BOT + Z_TOP) / 2, (Z_TOP - Z_BOT) / 2
 RAIL = 0.028                  # edge rails' half thickness (as the Gas Container)
@@ -62,7 +63,6 @@ GAUGE_X0, GAUGE_X1 = -0.07, 0.36  # the charge window's ends along X
 GAUGE_Z, GAUGE_HZ = -0.03, 0.085  # its centre and half height
 CELLS = 5
 CHARGE = 3                    # cells lit in the renders and the icon
-SOCKET_R = 0.056
 TOP = Z_TOP
 
 
@@ -114,22 +114,6 @@ def build_housing():
         end_fins(g, sx)
     build_top(g)
     return g
-
-
-def socket(g, p, n):
-    """A round copper power socket: a flange with bolts, a collar and a dark bore with three teal pins."""
-    p, n = Vector(p), Vector(n)
-    u, w = bl.frame_of(n)
-    cylinder(g, p, p + n * 0.012, SOCKET_R + 0.022, "copper", segs=36)
-    for k in range(6):
-        a = math.pi / 6 + k * math.pi / 3
-        hexnut(g, p + n * 0.012 + (u * math.cos(a) + w * math.sin(a)) * (SOCKET_R + 0.01), n, 0.0065, 0.004, "bolt")
-    cylinder(g, p + n * 0.012, p + n * 0.026, SOCKET_R, "copper", segs=36)
-    cylinder(g, p + n * 0.02, p + n * 0.0265, SOCKET_R - 0.013, "hole", segs=36)
-    for k in range(3):
-        a = math.pi / 2 + k * 2 * math.pi / 3
-        q = p + (u * math.cos(a) + w * math.sin(a)) * 0.02
-        cylinder(g, q + n * 0.02, q + n * 0.0275, 0.0055, "glow_soft", segs=12)
 
 
 def bolt_mark(g, c, y, sy, size, mat):
@@ -188,20 +172,18 @@ def long_side(g, sy):
 
 
 def end_fins(g, sx):
-    """An end: gunmetal cooling fins across the face; the +X end has the power socket in a gap between them."""
+    """An end: gunmetal cooling fins across the face; the +X end has the IO port in a gap between them."""
     x = sx * (BX - 0.004)
     box(g, (x + sx * 0.002, 0, ZC), (0.004, BY - 0.05, HZ - 0.05), "plate", bevel=0.003)
     zs = [ZC - HZ + 0.075 + k * (2 * HZ - 0.15) / 10 for k in range(11)]
     for z in zs:
-        if sx > 0 and abs(z - ZC) < SOCKET_R + 0.04:
+        if sx > 0 and abs(z - gc.PORT_CENTER[2]) < gc.io.PORT_SIZE / 2 + 0.012:
             continue
         box(g, (x + sx * 0.016, 0, z), (0.014, BY - 0.065, 0.006), "gun", bevel=0.003)
     for s in (-1, 1):
         box(g, (x + sx * 0.018, s * (BY - 0.07), ZC), (0.016, 0.01, HZ - 0.06), "gun", bevel=0.004)
         for z in (ZC - HZ + 0.08, ZC + HZ - 0.08):
             hexnut(g, (x + sx * 0.034, s * (BY - 0.07), z), (sx, 0, 0), 0.007, 0.004, "bolt")
-    if sx > 0:
-        socket(g, (x + 0.004, 0, ZC), (1, 0, 0))
 
 
 def build_top(g):
@@ -257,6 +239,7 @@ def build_battery(mats, offset=(0, 0, 0)):
     root = rig["root"]
     bl.make_object("Housing", build_housing(), mats, root)
     bl.make_object("Glass", build_glass(), mats, root)
+    gc.mount_io_port(root)
     step = (GAUGE_X1 - GAUGE_X0) / CELLS
     rig["cells"] = []
     for sy, side in ((1, "L"), (-1, "R")):
@@ -304,7 +287,7 @@ def strip_animation(rig):
         ob.animation_data.action = None
 
 
-ICON_VIEW = (1.25, -2.1, 0.95)     # as the Gas Container's icon: from the -Y gauge side, the socket end on the right
+ICON_VIEW = (1.25, -2.1, 0.95)     # as the Gas Container's icon: from the -Y gauge side, the port end on the right
 ICON_ORTHO = 1.42
 
 

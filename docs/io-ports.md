@@ -36,6 +36,11 @@ Machines connect to each other and to tubes, so every machine puts its ports in 
 
 A face must be at least 3 blocks wide and 3 blocks tall from the floor to carry a port.
 
+Containers follow the same rule. The Small Chest (one port), Large Chest (three) and Cargo Chest (ten: three on the
+front, three on the back, two on each end) carry ports, as do the Gas, Battery, Water, Chemical and Potato Ammo
+Containers (one on the right end each). The Scrap Chest is too short for a port, and furniture and world containers
+(Fridge, Locker, File Cabinet, Tool Cabinet, Barrel, crates, Dispenser, Broken Microwave, Ruin Chest) have none.
+
 Logic links made with the Connect Tool are points, not ports, and don't use this face.
 
 ## Building a machine model with ports

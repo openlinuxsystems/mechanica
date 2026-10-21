@@ -6,17 +6,19 @@ What it builds (procedurally, from scratch: no .blend inputs, no downloads):
   axis along Blender X (the game's X). A dark gunmetal box with chamfered corner blocks and riveted edge rails, a
   recessed panel, label plate and round access hatch on each long side, and beside them a gauge window (a teal fuel
   column behind glass, with five tick marks, one a slot). On top two plates, a hatch and a carrying handle (a steel bar
-  with a copper grip on copper brackets). The +X end has a copper frame and two copper pipe sockets; the -X end a copper
-  frame and the filler cap. The handle and sockets stay inside the 4 x 3 x 3 box.
+  with a copper grip on copper brackets). The +X end has a copper frame and the standard two-way IO port
+  (docs/io-ports.md, ``tools/io_port``: centred on the end 0.375 m above the base, its collar face on x = 0.5, on a
+  gunmetal mounting block); the -X end a copper frame and the filler cap. The handle and port stay inside the
+  4 x 3 x 3 box.
 
   Moving pieces are their own nodes: ``LiquidL`` / ``LiquidR`` (the fuel columns; they scale up from the window's
-  bottom), and under each the ``Pulse`` and ``Glint`` glows, and ``SocketGlow0`` / ``SocketGlow1`` at the sockets.
+  bottom), and under each the ``Pulse`` and ``Glint`` glows, and ``SocketGlow0`` in the IO port's bore.
   glTF clips (the script ``scripts/gas_container.lua`` picks them from its ``clip`` readout):
 
   - ``rest`` (0.1 s): every glow off (empty or full).
   - ``idle_loop`` (4 s): a faint glint drifts up the fuel column and fades (partly full).
   - ``pulse`` (0.4 s): the fuel column glows and fades (fuel went in).
-  - ``supply`` (0.6 s): a glint runs down the column, the column glows softly and the sockets light up (a linked engine
+  - ``supply`` (0.6 s): a glint runs down the column, the column glows softly and the port's bore lights up (a linked engine
     or thruster drew fuel).
   - ``fill`` (1 s, scrubbed): the fuel columns from empty (0 s) to full (1 s); the ``fill`` readout drives it.
 
@@ -41,14 +43,16 @@ from pathlib import Path
 
 import bpy  # noqa: I001  (bpy first: it makes bmesh and mathutils importable)
 import numpy as np
-from mathutils import Matrix, Vector
+from mathutils import Matrix, Quaternion, Vector
 
 sys.dont_write_bytecode = True                      # no __pycache__ next to the script
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "bearing_engine"))
 sys.path.insert(0, str(HERE.parent / "lift"))
+sys.path.insert(0, str(HERE.parent / "io_port"))
 import build_bearing_engine as bbe  # noqa: E402  (export, icon render)
+import build_io_port as io  # noqa: E402
 import build_lift as bl  # noqa: E402
 import lift_textures as lt  # noqa: E402
 import part_textures as pt  # noqa: E402
@@ -72,8 +76,9 @@ SIDE = BY - 0.022            # the long sides' plate faces
 GAUGE_X = 0.245              # the gauge's centre along X
 WIN_HALF_X = 0.036           # the window's half width
 WIN_Z0, WIN_Z1 = -0.245, 0.14  # the window's bottom and top (the fuel column's range)
-SOCKETS_Z = (0.08, -0.2)  # the two pipe sockets on the +X end
-SOCKET_R = 0.056
+SOCKET_R = 0.071             # sizes the glow ring in the IO port's bore (inside its wall)
+PORT_CENTER = (0.5, 0.0, 0.0)  # the standard IO port: on the +X end, 0.375 m above the base, collar face on x = 0.5
+PORT_GLOW_X = 0.496          # just inside the port's mouth, so it shows from an angle
 OFF = 0.01                   # scale of a glow that is off (hidden inside the column)
 
 
@@ -307,20 +312,8 @@ def build_ends():
     g = Geo()
     end_frame(g, 1)
     end_frame(g, -1)
-    # the two pipe sockets on +X: a flange, a body, a collar with bolts, a bored mouth
-    x0 = BX + 0.005
-    for z in SOCKETS_Z:
-        cylinder(g, (x0, 0, z), (x0 + 0.014, 0, z), SOCKET_R + 0.022, "copper", segs=36)
-        for k in range(6):
-            a = 2 * math.pi * k / 6 + math.pi / 6
-            hexnut(g, (x0 + 0.014, 0.06 * math.cos(a), z + 0.06 * math.sin(a)), (1, 0, 0), 0.0065, 0.004, "bolt")
-        cylinder(g, (x0 + 0.014, 0, z), (0.47, 0, z), SOCKET_R - 0.008, "copper", segs=36)
-        cylinder(g, (0.445, 0, z), (0.495, 0, z), SOCKET_R, "copper", segs=36, cap1=False)
-        # the mouth: a rim and a dark bore
-        mouth = Geo()
-        ring(mouth, -0.004, 0.0, SOCKET_R - 0.014, SOCKET_R, "copper", segs=36)
-        g.extend(mouth, Matrix.Translation((0.495, 0, z)) @ Matrix.Rotation(math.pi / 2, 4, "Y"))
-        cylinder(g, (0.47, 0, z), (0.4935, 0, z), SOCKET_R - 0.014, "hole", segs=36, cap1=True)
+    # the IO port's mounting block on +X (mount_io_port adds the port itself)
+    port_block(g, BX)
     # the filler cap on -X: a boss and a ribbed cap
     z = ZC + 0.11
     cylinder(g, (-BX - 0.005, 0, z), (-BX - 0.024, 0, z), 0.058, "copper", segs=36)
@@ -331,6 +324,56 @@ def build_ends():
             rot=Matrix.Rotation(a, 3, "X"))
     cylinder(g, (-0.493, 0, z), (-0.497, 0, z), 0.03, "copper", segs=24)
     return g
+
+
+def port_block(g, x_wall, top=0.462):
+    """A gunmetal block from an end wall at x_wall to just behind the IO port's plate face (the plate sinks into it),
+    a little smaller than the plate so it hides behind it."""
+    h = io.PORT_SIZE / 2 - 0.006
+    box(g, ((x_wall + top) / 2, 0, PORT_CENTER[2]), ((top - x_wall) / 2 + 0.002, h, h), "gun", bevel=0.006)
+
+
+_IO_MATS = {}
+
+
+def mount_io_port(parent, center=PORT_CENTER, normal=(1, 0, 0), mode="both"):
+    """The standard IO port (docs/io-ports.md) under parent, baked into one mesh node ``IOPort`` (bevels applied, in
+    parent space, game materials), as the Fabricator does."""
+    io.GAME = True
+    if not _IO_MATS:
+        _IO_MATS.update(io.materials())
+    port = io.mount(parent, mode, center, normal, _IO_MATS, "IOPortParts")
+    # roll it about its normal so its own +Y (the two-way port's teal "out" axis) stands up, as docs/io-ports.md shows
+    n = Vector(normal).normalized()
+    q = port.rotation_euler.to_quaternion()
+    up = Vector((0, 0, 1))
+    if abs(n.dot(up)) < 0.9:
+        v = q @ Vector((0, 1, 0))
+        roll = math.atan2(n.dot(v.cross(up)), v.dot(up))
+        port.rotation_euler = (Quaternion(n, roll) @ q).to_euler()
+    bpy.context.view_layer.update()
+    dg = bpy.context.evaluated_depsgraph_get()
+    inv = parent.matrix_world.inverted()
+    parts = []
+    for ob in port.children_recursive:
+        if ob.type != "MESH":
+            continue
+        me = bpy.data.meshes.new_from_object(ob.evaluated_get(dg))
+        me.transform(inv @ ob.matrix_world)
+        part = bpy.data.objects.new("IOPort", me)
+        bpy.context.scene.collection.objects.link(part)
+        parts.append(part)
+    for ob in [*port.children_recursive, port]:
+        bpy.data.objects.remove(ob)
+    with bpy.context.temp_override(active_object=parts[0], selected_editable_objects=parts, selected_objects=parts):
+        bpy.ops.object.join()
+    ob = parts[0]
+    ob.name = ob.data.name = "IOPort"
+    ob.parent = parent
+    ob.matrix_parent_inverse.identity()
+    ob.location = (0, 0, 0)
+    lt.box_uvs(ob.data, [None] * len(ob.data.polygons))
+    return ob
 
 
 # =====================================================================================================
@@ -374,7 +417,8 @@ def build_container(mats):
         rig["liquid"].append(lq)
         rig["pulse"].append(bl.make_object(f"Pulse{side}", pulse, mats, lq, (0, sy * 0.0045, 0)))
         rig["glint"].append(bl.make_object(f"Glint{side}", glint(), mats, lq, (0, sy * 0.0055, 0)))
-    rig["sockets"] = [bl.make_object(f"SocketGlow{i}", socket_glow(), mats, root, (0.4955, 0, z)) for i, z in enumerate(SOCKETS_Z)]
+    mount_io_port(root)
+    rig["sockets"] = [bl.make_object("SocketGlow0", socket_glow(), mats, root, (PORT_GLOW_X, 0, 0))]
     for ob in [*rig["liquid"], *rig["pulse"], *rig["glint"], *rig["sockets"]]:
         ob.rotation_mode = "XYZ"
     apply_pose(rig, rest_pose())

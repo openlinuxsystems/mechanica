@@ -47,7 +47,7 @@ def render_all(rig, out: Path, build):
         clips.append((name, t, rl.render(gauge, out / f"gas_container_{name}_{t:.2f}.png", 500, 500)))
     socket_cam = rl.camera("sockets", (1.9, -1.2, 0.35), (0.45, 0, -0.04), ortho=0.75)
     pose(0.6, build.clip_supply()[1](0.3))
-    clips.append(("supply sockets", 0.3, rl.render(socket_cam, out / "gas_container_supply_sockets_0.30.png", 500, 500)))
+    clips.append(("supply port", 0.3, rl.render(socket_cam, out / "gas_container_supply_port_0.30.png", 500, 500)))
     pose(0.6)
 
     F, INK = rl.font, rl.INK
@@ -55,7 +55,7 @@ def render_all(rig, out: Path, build):
     d = ImageDraw.Draw(sheet)
     d.text((60, 36), "GAS CONTAINER (design review)", fill=INK, font=F(46, True))
     d.text((60, 98), "4 x 3 x 3 blocks (100 x 75 x 75 cm). Gunmetal body, copper fittings, teal gauge that fills with the five "
-           "slots of gasoline. Handle and sockets stay inside the box.", fill=INK, font=F(24))
+           "slots of gasoline. Handle and the standard IO port stay inside the box.", fill=INK, font=F(24))
     for i, key in enumerate(("three_quarter", "back")):
         x = 60 + i * 940
         sheet.paste(Image.open(shots[key]).convert("RGB"), (x, 170))

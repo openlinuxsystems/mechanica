@@ -9,10 +9,10 @@
   "flammable": true,
   "sound_material": "wood",
   "size": [3, 3, 3],
-  "mesh": "meshes/wooden_crate.glb",
+  "mesh": "meshes/parts/wooden_crate.glb",
+  "icon": "textures/items/wooden_crate_icon.png",
   "visual": {
-    "color": "#a07040",
-    "paintable": true
+    "color": "#ffffff"
   },
   "sockets": [
     {

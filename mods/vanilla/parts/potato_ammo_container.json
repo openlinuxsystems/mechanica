@@ -10,10 +10,10 @@
   "flammable": false,
   "sound_material": "metal",
   "size": [4, 3, 3],
-  "mesh": "meshes/potato_ammo_container.glb",
+  "mesh": "meshes/parts/potato_ammo_container.glb",
+  "icon": "textures/items/potato_ammo_container_icon.png",
   "visual": {
-    "color": "#8a7a3a",
-    "paintable": true
+    "color": "#ffffff"
   },
   "sockets": [
     {

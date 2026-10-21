@@ -9,6 +9,7 @@
       "set": {
         "name": "Scrap Chest",
         "description": "A chest knocked together from scrap wood and metal. Holds ten stacks of anything.",
+        "icon": "textures/items/chest_icon.png",
         "category": "container",
         "mass": 9,
         "durability": 3,
@@ -18,20 +19,12 @@
         "stack_size": 5,
         "sound_material": "wood",
         "size": [3, 2, 3],
-        "visual": { "color": "#8a5a30", "paintable": true },
+        "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.25, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "chest_open", "close": "chest_close", "place": "chest_place" },
         "inventory": { "slots": 10 }
       },
-      "model": [
-        { "kind": "box", "size": [0.75, 0.5, 0.75] },
-        {
-          "kind": "box",
-          "operation": "subtract",
-          "size": [0.6, 0.4, 0.04],
-          "position": [0, 0, 0.375]
-        }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/chest.glb" }],
       "recipes": [
         {
           "id": "chest",
@@ -52,6 +45,7 @@
       "set": {
         "name": "Small Chest",
         "description": "A steel chest with ten slots and a port on its side for pipes.",
+        "icon": "textures/items/small_chest_icon.png",
         "category": "container",
         "mass": 6,
         "durability": 6,
@@ -61,20 +55,12 @@
         "stack_size": 5,
         "sound_material": "metal",
         "size": [3, 3, 3],
-        "visual": { "color": "#5a6068", "paintable": true },
+        "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
         "inventory": { "slots": 10 }
       },
-      "model": [
-        { "kind": "box", "size": [0.75, 0.75, 0.75] },
-        {
-          "kind": "box",
-          "operation": "subtract",
-          "size": [0.6, 0.6, 0.04],
-          "position": [0, 0, 0.375]
-        }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/small_chest.glb" }],
       "recipes": [
         {
           "id": "small_chest",
@@ -96,6 +82,7 @@
       "set": {
         "name": "Large Chest",
         "description": "A big steel chest with thirty slots and three pipe ports.",
+        "icon": "textures/items/large_chest_icon.png",
         "category": "container",
         "mass": 7.5,
         "durability": 6,
@@ -105,20 +92,12 @@
         "stack_size": 1,
         "sound_material": "metal",
         "size": [5, 3, 4],
-        "visual": { "color": "#5a6068", "paintable": true },
+        "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
         "inventory": { "slots": 30 }
       },
-      "model": [
-        { "kind": "box", "size": [1.25, 0.75, 1.0] },
-        {
-          "kind": "box",
-          "operation": "subtract",
-          "size": [1.0, 0.6, 0.04],
-          "position": [0, 0, 0.5]
-        }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/large_chest.glb" }],
       "recipes": [
         {
           "id": "large_chest",
@@ -140,6 +119,7 @@
       "set": {
         "name": "Cargo Chest",
         "description": "A cargo bin with a hundred slots and ten pipe ports, for a base's whole store.",
+        "icon": "textures/items/cargo_chest_icon.png",
         "category": "container",
         "mass": 12,
         "durability": 6,
@@ -149,20 +129,12 @@
         "stack_size": 1,
         "sound_material": "metal",
         "size": [8, 6, 6],
-        "visual": { "color": "#5a6068", "paintable": true },
+        "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.75, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
         "inventory": { "slots": 100 }
       },
-      "model": [
-        { "kind": "box", "size": [2.0, 1.5, 1.5] },
-        {
-          "kind": "box",
-          "operation": "subtract",
-          "size": [1.6, 1.2, 0.04],
-          "position": [0, 0, 0.75]
-        }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/cargo_chest.glb" }],
       "recipes": [
         {
           "id": "cargo_chest",
@@ -184,6 +156,7 @@
       "set": {
         "name": "Barrel",
         "description": "A steel drum with 8 slots.",
+        "icon": "textures/items/barrel_icon.png",
         "category": "container",
         "mass": 12,
         "durability": 6,
@@ -192,20 +165,12 @@
         "flammable": false,
         "sound_material": "metal",
         "size": [2, 4, 2],
-        "visual": { "color": "#3a5a8a", "paintable": true },
+        "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.5, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
         "inventory": { "slots": 8 }
       },
-      "model": [
-        { "kind": "box", "size": [0.5, 1, 0.5] },
-        {
-          "kind": "box",
-          "operation": "subtract",
-          "size": [0.4, 0.8, 0.04],
-          "position": [0, 0, 0.25]
-        }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/barrel.glb" }],
       "recipes": [
         {
           "id": "barrel",
@@ -223,6 +188,7 @@
       "set": {
         "name": "Locker",
         "description": "A tall steel locker with four slots. Lockers in warehouses and wrecks often hold something.",
+        "icon": "textures/items/locker_icon.png",
         "category": "container",
         "mass": 6,
         "durability": 3,
@@ -232,20 +198,12 @@
         "stack_size": 1,
         "sound_material": "metal",
         "size": [2, 7, 2],
-        "visual": { "color": "#4a6a8a", "paintable": true },
+        "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.875, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
         "inventory": { "slots": 4 }
       },
-      "model": [
-        { "kind": "box", "size": [0.5, 1.75, 0.5] },
-        {
-          "kind": "box",
-          "operation": "subtract",
-          "size": [0.4, 1.4, 0.04],
-          "position": [0, 0, 0.25]
-        }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/locker.glb" }],
       "recipes": [
         {
           "id": "locker",
@@ -263,6 +221,7 @@
       "set": {
         "name": "Tool Cabinet",
         "description": "A red tool chest with 15 slots.",
+        "icon": "textures/items/tool_cabinet_icon.png",
         "category": "container",
         "mass": 20,
         "durability": 8,
@@ -271,20 +230,12 @@
         "flammable": false,
         "sound_material": "metal",
         "size": [3, 4, 2],
-        "visual": { "color": "#b03030", "paintable": true },
+        "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.5, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
         "inventory": { "slots": 15 }
       },
-      "model": [
-        { "kind": "box", "size": [0.75, 1, 0.5] },
-        {
-          "kind": "box",
-          "operation": "subtract",
-          "size": [0.6, 0.8, 0.04],
-          "position": [0, 0, 0.25]
-        }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/tool_cabinet.glb" }],
       "recipes": [
         {
           "id": "tool_cabinet",
@@ -302,6 +253,7 @@
       "set": {
         "name": "File Cabinet",
         "description": "A steel cabinet with 10 slots.",
+        "icon": "textures/items/file_cabinet_icon.png",
         "category": "container",
         "mass": 10.5,
         "durability": 7,
@@ -310,20 +262,12 @@
         "flammable": false,
         "sound_material": "metal",
         "size": [2, 5, 3],
-        "visual": { "color": "#7a7a72", "paintable": true },
+        "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.625, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
         "inventory": { "slots": 10 }
       },
-      "model": [
-        { "kind": "box", "size": [0.5, 1.25, 0.75] },
-        {
-          "kind": "box",
-          "operation": "subtract",
-          "size": [0.4, 1, 0.04],
-          "position": [0, 0, 0.375]
-        }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/file_cabinet.glb" }],
       "recipes": [
         {
           "id": "file_cabinet",
@@ -341,6 +285,7 @@
       "set": {
         "name": "Fridge",
         "description": "Keeps food: 20 slots.",
+        "icon": "textures/items/fridge_icon.png",
         "category": "container",
         "mass": 6,
         "durability": 3,
@@ -350,20 +295,12 @@
         "stack_size": 1,
         "sound_material": "metal",
         "size": [4, 7, 3],
-        "visual": { "color": "#e8e8e0", "paintable": true },
+        "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.875, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
         "inventory": { "slots": 20, "accepts": ["carrot", "potato", "tomato"] }
       },
-      "model": [
-        { "kind": "box", "size": [1, 1.75, 0.75] },
-        {
-          "kind": "box",
-          "operation": "subtract",
-          "size": [0.8, 1.4, 0.04],
-          "position": [0, 0, 0.375]
-        }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/fridge.glb" }],
       "recipes": [
         {
           "id": "fridge",
@@ -386,6 +323,7 @@
       "set": {
         "name": "Chemical Container",
         "description": "Holds five stacks of chemicals.",
+        "icon": "textures/items/chemical_container_icon.png",
         "category": "container",
         "mass": 7.5,
         "durability": 6,
@@ -394,20 +332,12 @@
         "flammable": false,
         "sound_material": "metal",
         "size": [4, 3, 3],
-        "visual": { "color": "#6a3a9a", "paintable": true },
+        "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
         "inventory": { "slots": 5, "accepts": ["chemical"] }
       },
-      "model": [
-        { "kind": "box", "size": [1, 0.75, 0.75] },
-        {
-          "kind": "box",
-          "operation": "subtract",
-          "size": [0.8, 0.6, 0.04],
-          "position": [0, 0, 0.375]
-        }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/chemical_container.glb" }],
       "recipes": [
         {
           "id": "chemical_container",
@@ -430,6 +360,7 @@
       "set": {
         "name": "Water Container",
         "description": "Holds five full water buckets.",
+        "icon": "textures/items/water_container_icon.png",
         "category": "container",
         "mass": 7.5,
         "durability": 6,
@@ -438,20 +369,12 @@
         "flammable": false,
         "sound_material": "metal",
         "size": [4, 3, 3],
-        "visual": { "color": "#3a6a9a", "paintable": true },
+        "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
         "inventory": { "slots": 5, "accepts": ["water_bucket_full"] }
       },
-      "model": [
-        { "kind": "box", "size": [1.0, 0.75, 0.75] },
-        {
-          "kind": "box",
-          "operation": "subtract",
-          "size": [0.8, 0.6, 0.04],
-          "position": [0, 0, 0.375]
-        }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/water_container.glb" }],
       "recipes": [
         {
           "id": "water_container",
@@ -473,6 +396,7 @@
       "set": {
         "name": "Potato Ammo Container",
         "description": "Holds five stacks of potatoes for mounted potato guns.",
+        "icon": "textures/items/potato_ammo_container_icon.png",
         "category": "container",
         "mass": 7.5,
         "durability": 6,
@@ -481,20 +405,12 @@
         "flammable": false,
         "sound_material": "metal",
         "size": [4, 3, 3],
-        "visual": { "color": "#8a7a3a", "paintable": true },
+        "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
         "inventory": { "slots": 5, "accepts": ["potato"] }
       },
-      "model": [
-        { "kind": "box", "size": [1.0, 0.75, 0.75] },
-        {
-          "kind": "box",
-          "operation": "subtract",
-          "size": [0.8, 0.6, 0.04],
-          "position": [0, 0, 0.375]
-        }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/potato_ammo_container.glb" }],
       "recipes": [
         {
           "id": "potato_ammo_container",
@@ -517,6 +433,7 @@
       "set": {
         "name": "Broken Microwave",
         "description": "A dead microwave from the SV-04's galley. Its one slot still makes a cupboard.",
+        "icon": "textures/items/broken_microwave_icon.png",
         "category": "container",
         "mass": 7.5,
         "durability": 3,
@@ -526,20 +443,12 @@
         "stack_size": 1,
         "sound_material": "metal",
         "size": [2, 2, 2],
-        "visual": { "color": "#d8d4c8", "paintable": true },
+        "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.25, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
         "inventory": { "slots": 1 }
       },
-      "model": [
-        { "kind": "box", "size": [0.5, 0.5, 0.5] },
-        {
-          "kind": "box",
-          "operation": "subtract",
-          "size": [0.4, 0.4, 0.04],
-          "position": [0, 0, 0.25]
-        }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/broken_microwave.glb" }],
       "recipes": [
         {
           "id": "broken_microwave",
@@ -557,6 +466,7 @@
       "set": {
         "name": "Ruin Chest",
         "description": "An old stone chest from the ruins. It holds six stacks.",
+        "icon": "textures/items/ruin_chest_icon.png",
         "category": "container",
         "mass": 7.5,
         "durability": 6,
@@ -565,20 +475,12 @@
         "flammable": false,
         "sound_material": "concrete",
         "size": [4, 3, 3],
-        "visual": { "color": "#8a867c", "paintable": true },
+        "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_concrete" },
         "inventory": { "slots": 6 }
       },
-      "model": [
-        { "kind": "box", "size": [1.0, 0.75, 0.75] },
-        {
-          "kind": "box",
-          "operation": "subtract",
-          "size": [0.8, 0.6, 0.04],
-          "position": [0, 0, 0.375]
-        }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/ruin_chest.glb" }],
       "recipes": [
         {
           "id": "ruin_chest",
@@ -595,6 +497,7 @@
       "template": "interactive",
       "set": {
         "name": "Wooden Crate",
+        "icon": "textures/items/wooden_crate_icon.png",
         "category": "container",
         "mass": 10,
         "durability": 5,
@@ -603,26 +506,19 @@
         "flammable": true,
         "sound_material": "wood",
         "size": [3, 3, 3],
-        "visual": { "color": "#a07040", "paintable": true },
+        "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_wood" },
         "inventory": { "slots": 10 }
       },
-      "model": [
-        { "kind": "box", "size": [0.75, 0.75, 0.75] },
-        {
-          "kind": "box",
-          "operation": "subtract",
-          "size": [0.6, 0.6, 0.04],
-          "position": [0, 0, 0.375]
-        }
-      ]
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/wooden_crate.glb" }]
     },
     {
       "file": "parts/metal_crate.json",
       "template": "interactive",
       "set": {
         "name": "Metal Crate",
+        "icon": "textures/items/metal_crate_icon.png",
         "category": "container",
         "mass": 20,
         "durability": 10,
@@ -631,20 +527,12 @@
         "flammable": false,
         "sound_material": "metal",
         "size": [3, 3, 3],
-        "visual": { "color": "#5a6068", "paintable": true },
+        "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
         "inventory": { "slots": 15 }
       },
-      "model": [
-        { "kind": "box", "size": [0.75, 0.75, 0.75] },
-        {
-          "kind": "box",
-          "operation": "subtract",
-          "size": [0.6, 0.6, 0.04],
-          "position": [0, 0, 0.375]
-        }
-      ]
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/metal_crate.glb" }]
     },
     {
       "file": "parts/gas_container.json",
