@@ -262,6 +262,8 @@ internal static class WorldGenValidator
         var biomes = definition.Biomes ?? [];
         if (biomes.Count == 0)
             sink.Error(Code, "$.biomes", "at least one biome is needed.");
+        // Objects some rule scatters near something else: another near rule may not name them, so nothing chains.
+        var nearing = biomes.SelectMany(b => b.Scatter ?? []).Where(r => r.Near is not null && r.Object is not null).Select(r => r.Object!).ToHashSet();
         for (var i = 0; i < biomes.Count; i++)
         {
             var b = biomes[i];
@@ -294,6 +296,21 @@ internal static class WorldGenValidator
                     Positive(perch.Rise, $"{rulePath}.perch.rise", sink);
                     Positive(perch.Within, $"{rulePath}.perch.within", sink);
                 }
+                if (rule.Near is { } near)
+                {
+                    KnownKeys.WarnUnknown(near.Extra, $"{rulePath}.near", sink, typeof(NearDefinition));
+                    if (near.Objects is not { Count: > 0 })
+                        sink.Error(Code, $"{rulePath}.near.objects", "near needs the objects to stand near.");
+                    for (var k = 0; k < (near.Objects?.Count ?? 0); k++)
+                    {
+                        if (!objectIds.Contains(near.Objects![k]))
+                            sink.Error(Code, $"{rulePath}.near.objects[{k}]", $"'{near.Objects[k]}' is not one of the objects defined in this file.");
+                        else if (nearing.Contains(near.Objects[k]))
+                            sink.Error(Code, $"{rulePath}.near.objects[{k}]", $"'{near.Objects[k]}' is scattered near something itself; a near rule names objects placed without one.");
+                    }
+                    if (!(near.Within is > 0f and <= 400f))
+                        sink.Error(Code, $"{rulePath}.near.within", $"within must be above 0 and at most 400 m (got {near.Within}).");
+                }
                 if (rule.Water is not null && rule.Object is { } wet && objects.GetValueOrDefault(wet) is { } floating
                     && (floating.Scene is not null || floating.Outcrop is not null || rule.Perch is not null || rule.Roadside is not null))
                     sink.Error(Code, $"{rulePath}.water", "a water rule places single objects: no scene, rock outcrop, perch or roadside.");
@@ -302,8 +319,14 @@ internal static class WorldGenValidator
                     KnownKeys.WarnUnknown(roadside.Extra, $"{rulePath}.roadside", sink, typeof(RoadsideDefinition));
                     if (rule.Perch is not null)
                         sink.Error(Code, $"{rulePath}.roadside", "a roadside rule cannot also be perched.");
-                    if (rule.Object is { } id && objects.GetValueOrDefault(id) is { } beside && !(roadside.Gap > beside.Footprint + 1f))
-                        sink.Error(Code, $"{rulePath}.roadside.gap", $"gap must be more than the object's footprint plus 1 m ({beside.Footprint + 1f}), or the road keeps it away (got {roadside.Gap}).");
+                    // A scene's pieces each keep their own footprint off the road; its spot only has to be off it.
+                    if (rule.Object is { } id && objects.GetValueOrDefault(id) is { } beside
+                        && !(roadside.Gap > (beside.Scene is null ? beside.Footprint : 0f) + 1f))
+                        sink.Error(Code, $"{rulePath}.roadside.gap", $"gap must be more than the object's footprint plus 1 m ({(beside.Scene is null ? beside.Footprint : 0f) + 1f}), or the road keeps it away (got {roadside.Gap}).");
+                    if (roadside.Junction is { } junction && !(junction > 0f && float.IsFinite(junction)))
+                        sink.Error(Code, $"{rulePath}.roadside.junction", $"junction must be a distance in metres above 0 (got {junction}).");
+                    if (roadside.Bend is { } bend && !(bend is > 0f and < 180f))
+                        sink.Error(Code, $"{rulePath}.roadside.bend", $"bend must be an angle in degrees above 0 and under 180 (got {bend}).");
                 }
                 if (rule.Cluster is { } cluster)
                 {
@@ -768,6 +791,8 @@ internal static class WorldGenValidator
             sink.Error(Code, path, "a scene needs a footprint: no piece stands further out than it.");
         if (scene.Layouts is not { Count: > 0 })
             sink.Error(Code, $"{path}.layouts", "a scene needs at least one layout.");
+        if (scene.Level is { } level && !(level > 0f && float.IsFinite(level)))
+            sink.Error(Code, $"{path}.level", $"level must be a height in metres above 0 (got {level}).");
         for (var l = 0; l < (scene.Layouts?.Count ?? 0); l++)
         {
             var layout = scene.Layouts![l];

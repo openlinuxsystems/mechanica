@@ -16,7 +16,8 @@
     "color": "#ffffff",
     "roughness": 1,
     "metallic": 0,
-    "texture": "textures/blocks/carpet.png"
+    "texture": "textures/blocks/carpet.png",
+    "texture_span": 2
   },
   "collision": {
     "shape": "convex",

@@ -147,10 +147,104 @@ public class NaturalFeatureTests
         Assert.True(lefts == 0 || lefts == poles.Count, $"{lefts} of {poles.Count} poles on one side");
     }
 
+    [Fact]
+    public void EvenRoadsideRulesStandASpacingApartAndBendAndJunctionRulesKeepToThem()
+    {
+        using var mods = new TestMods().Mod("vanilla").File("vanilla", WorldGenData.DefinitionFile, """
+            { "biomes": [{ "id": "a", "height": 5, "scatter": [
+                { "object": "pole", "spacing": 40, "chance": 1, "roadside": { "gap": 3, "side": "left", "even": true } },
+                { "object": "rail", "spacing": 20, "chance": 1, "roadside": { "gap": 3, "side": "outside", "bend": 10 } },
+                { "object": "sign", "spacing": 30, "chance": 1, "roadside": { "gap": 3, "junction": 40 } }] }],
+              "roads": {},
+              "sites": [{ "id": "a", "poi": "hut", "at": [0.3, 0.0], "road": "road" }, { "id": "b", "poi": "hut", "at": [-0.3, 0.05], "road": "road" },
+                        { "id": "c", "poi": "hut", "at": [0.0, 0.35], "road": "road" }, { "id": "d", "poi": "hut", "at": [0.05, -0.35], "road": "road" }],
+              "objects": [{ "id": "pole", "collider": { "shape": "sphere", "radius": 0.5 }, "footprint": 0.5 },
+                          { "id": "rail", "collider": { "shape": "sphere", "radius": 0.5 }, "footprint": 0.5 },
+                          { "id": "sign", "collider": { "shape": "sphere", "radius": 0.5 }, "footprint": 0.5 }] }
+            """).File("vanilla", "pois/hut.json", """{ "id": "hut", "radius": 10, "placement": {}, "terrain": [{ "op": "flatten", "radius": 6, "blend": 4 }] }""");
+        var data = WorldGenData.Load(mods.Load());
+        Assert.Empty(data.Diagnostics);
+        var gen = new WorldGenerator(data, 3, 2048f);
+        var all = gen.ObjectsIn(-1024f, -1024f, 1024f, 1024f).ToList();
+        var poles = all.Where(o => o.Definition.Id == "pole").Select(o => new Vector2(o.Position.X, o.Position.Z)).ToList();
+        Assert.True(poles.Count >= gen.Roads.LengthOf(RoadKind.Road) / 40f * 0.6f, $"poles ({poles.Count})");
+        // Evenly spread: hardly any pole stands much closer to its neighbour than a spacing (a random spot per cell would).
+        var close = poles.Count(p => poles.Where(q => q != p).Min(q => Vector2.Distance(p, q)) < 20f);
+        Assert.True(close <= poles.Count / 10, $"{close} of {poles.Count} poles under 20 m from the next");
+        // Rails only where the road bends, on the outside of the bend; signs only near a junction.
+        foreach (var rail in all.Where(o => o.Definition.Id == "rail"))
+        {
+            var p = new Vector2(rail.Position.X, rail.Position.Z);
+            var road = gen.Roads.Nearest(p.X, p.Y, 48f)!.Value;
+            var c = road.Chain;
+            var k = road.Segment;
+            var before = c.Points[Math.Max(k - 4, 0)];
+            var after = c.Points[Math.Min(k + 5, c.Points.Length - 1)];
+            // The outside: the side away from where the road's ends turn to.
+            var chord = (before + after) / 2f;
+            Assert.True(Vector2.Dot(p - road.Point, chord - road.Point) <= 0.5f, $"rail at {p} is on the outside of the bend");
+        }
+        // No junction here (each site has its own road), so no junction sign either.
+        Assert.DoesNotContain(gen.Roads.Nodes, n => n.Kind == RoadNodeKind.Junction);
+        Assert.DoesNotContain(all, o => o.Definition.Id == "sign");
+    }
+
+    [Fact]
+    public void FieldPatchesClearTheFloraAndNearRulesKeepCloseToTheirTargets()
+    {
+        using var mods = new TestMods().Mod("vanilla").File("vanilla", WorldGenData.DefinitionFile, """
+            { "biomes": [{ "id": "a", "height": 5, "scatter": [
+                { "object": "farm", "spacing": 200, "chance": 1 },
+                { "object": "field", "spacing": 50, "chance": 1, "near": { "objects": ["farm"], "within": 60 } }],
+                "flora": [{ "kind": "grass", "density": 4 }] }],
+              "objects": [{ "id": "farm", "collider": { "shape": "sphere", "radius": 0.5 }, "footprint": 1 },
+                          { "id": "patch", "collider": { "shape": "box", "size": [8, 0.5, 8] }, "footprint": 4, "solid": false, "clear_flora": true },
+                          { "id": "field", "footprint": 9, "scene": { "level": 1, "layouts": [{ "pieces": [
+                              { "object": "patch", "at": [-4, 0] }, { "object": "patch", "at": [4, 0] }] }] } }] }
+            """);
+        var data = WorldGenData.Load(mods.Load());
+        Assert.Empty(data.Diagnostics);
+        var gen = new WorldGenerator(data, 4, 1024f);
+        var all = gen.ObjectsIn(-512f, -512f, 512f, 512f).ToList();
+        var farms = all.Where(o => o.Definition.Id == "farm").ToList();
+        var patches = all.Where(o => o.Definition.Id == "patch").ToList();
+        Assert.NotEmpty(patches);
+        // Every field stands within 60 m of a farm (its spot is the middle of its two patches).
+        foreach (var pair in patches.Chunk(2))
+        {
+            var middle = (pair[0].Position + pair[^1].Position) / 2f;
+            Assert.Contains(farms, f => Vector2.Distance(new Vector2(f.Position.X, f.Position.Z), new Vector2(middle.X, middle.Z)) < 61f);
+        }
+        // No grass grows on a patch, even one reaching in from the next chunk; it grows right up to its edge.
+        var grown = 0;
+        foreach (var patch in patches.Take(4))
+        {
+            var coord = ChunkCoord.At(patch.Position.X, patch.Position.Z, 64f);
+            for (var dx = -1; dx <= 1; dx++)
+            {
+                for (var dz = -1; dz <= 1; dz++)
+                {
+                    var chunk = gen.GenerateChunk(new ChunkCoord(coord.X + dx, coord.Z + dz), 64f);
+                    foreach (var plant in FloraScatter.Grow(gen, chunk, FloraKind.Grass, 1f))
+                    {
+                        Assert.False(WorldGenerator.Clears(patch, plant.Position.X, plant.Position.Z), $"grass at {plant.Position} on the patch at {patch.Position}");
+                        if (Vector2.Distance(new Vector2(plant.Position.X, plant.Position.Z), new Vector2(patch.Position.X, patch.Position.Z)) < 7f)
+                            grown++;
+                    }
+                }
+            }
+        }
+        Assert.True(grown > 0, "grass grows round the patches");
+    }
+
     [Theory]
     [InlineData("""{ "object": "o", "spacing": 10, "chance": 1, "roadside": { "gap": 1 } }""", "$.biomes[0].scatter[0].roadside.gap")]
     [InlineData("""{ "object": "o", "spacing": 10, "chance": 1, "roadside": { "gap": 4 }, "perch": {} }""", "$.biomes[0].scatter[0].roadside")]
     [InlineData("""{ "object": "s", "spacing": 10, "chance": 1, "water": "surface" }""", "$.biomes[0].scatter[0].water")]
+    [InlineData("""{ "object": "o", "spacing": 10, "chance": 1, "roadside": { "gap": 4, "bend": 200 } }""", "$.biomes[0].scatter[0].roadside.bend")]
+    [InlineData("""{ "object": "o", "spacing": 10, "chance": 1, "roadside": { "gap": 4, "junction": -5 } }""", "$.biomes[0].scatter[0].roadside.junction")]
+    [InlineData("""{ "object": "o", "spacing": 10, "chance": 1, "near": { "objects": ["nothing"] } }""", "$.biomes[0].scatter[0].near.objects[0]")]
+    [InlineData("""{ "object": "o", "spacing": 10, "chance": 1, "near": { "objects": ["s"], "within": 900 } }""", "$.biomes[0].scatter[0].near.within")]
     public void BadWaterAndRoadsideRulesAreRejected(string rule, string path)
     {
         using var mods = new TestMods().Mod("vanilla").File("vanilla", WorldGenData.DefinitionFile, $$"""

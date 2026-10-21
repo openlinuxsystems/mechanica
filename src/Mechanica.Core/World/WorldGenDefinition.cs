@@ -277,6 +277,9 @@ public sealed record ScatterRule
     /// <summary>Gathers the rule's objects into patches (groves, rock fields) with open ground between. Omitted: spread evenly.</summary>
     public ClusterDefinition? Cluster { get; init; }
 
+    /// <summary>Keeps the rule's spots near other scattered objects or scenes (fields round farms). Omitted: anywhere.</summary>
+    public NearDefinition? Near { get; init; }
+
     /// <summary>
     /// Keeps the rule's objects to water (<see cref="ScatterWater"/>): floating on its surface (lily pads) or standing in
     /// the shallows along its edge (reeds). Omitted: dry land only.
@@ -320,6 +323,41 @@ public sealed record RoadsideDefinition
     /// </summary>
     public RoadSide Side { get; init; } = RoadSide.Either;
 
+    /// <summary>
+    /// True to take each cell's middle instead of a random spot in it, so the objects stand about a spacing apart along
+    /// the road, as a line of poles does. Default false.
+    /// </summary>
+    public bool Even { get; init; }
+
+    /// <summary>
+    /// Keeps the rule to within this many metres along the road of a junction, where three or more roads meet (a
+    /// direction sign). Omitted: anywhere along the road.
+    /// </summary>
+    public float? Junction { get; init; }
+
+    /// <summary>
+    /// Keeps the rule to bends: the road must turn at least this many degrees over the 40 m round the spot (curve warning
+    /// signs, guard rails). Omitted: straights too.
+    /// </summary>
+    public float? Bend { get; init; }
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// Keeps a scatter rule's spots near other scattered things (<see cref="ScatterRule.Near"/>): a spot is used only when a
+/// spot of a rule scattering one of <see cref="Objects"/> lies within <see cref="Within"/> metres, on ground that suits it.
+/// </summary>
+public sealed record NearDefinition
+{
+    /// <summary>Ids of the objects or scenes to stand near.</summary>
+    public List<string>? Objects { get; init; }
+
+    /// <summary>Metres from one of their spots (at most 400).</summary>
+    public float Within { get; init; } = 150f;
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -336,6 +374,9 @@ public enum RoadSide
 
     /// <summary>Right of the road's direction.</summary>
     Right,
+
+    /// <summary>The outside of the road's bend there (the side it turns away from), where a guard rail or chevron sign goes.</summary>
+    Outside,
 }
 
 /// <summary>
@@ -389,6 +430,12 @@ public sealed record WorldObjectDefinition
     /// catches the sledge, so it can still be broken for its drops. True (the default) blocks movement.
     /// </summary>
     public bool Solid { get; init; } = true;
+
+    /// <summary>
+    /// True for an object that covers the ground it stands on, like a crop field patch: no flora (grass, ground cover or
+    /// bushes) grows inside its box collider, or inside its footprint when the collider is not a box. Default false.
+    /// </summary>
+    public bool ClearFlora { get; init; }
 
     /// <summary>Radius in metres that other scattered objects keep clear of.</summary>
     public float Footprint { get; init; } = 1f;
@@ -728,6 +775,13 @@ public sealed record SceneDefinition
 {
     /// <summary>The layouts to pick from.</summary>
     public List<SceneLayout>? Layouts { get; init; }
+
+    /// <summary>
+    /// Keeps the scene to level ground: the ground across its footprint (sampled round its rim and halfway out) must lie
+    /// within this many metres of the ground at its spot, as a crop field's patches need. Omitted: only the slope at the
+    /// spot counts.
+    /// </summary>
+    public float? Level { get; init; }
 
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]

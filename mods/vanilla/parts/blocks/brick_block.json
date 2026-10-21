@@ -16,6 +16,7 @@
     "color": "#ffffff",
     "roughness": 0.9,
     "metallic": 0,
-    "texture": "textures/blocks/brick.png"
+    "texture": "textures/blocks/brick.png",
+    "texture_span": 2
   }
 }

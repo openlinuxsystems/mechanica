@@ -21,7 +21,8 @@ structure's centre (glTF +Y up, front towards +Z):
   props_settler_a.py, props_settler_b.py, props_farm.py, props_camp.py and props_salvage.py (Settler Patchwork),
   props_colony_a.py, props_colony_b.py, props_street.py, props_industry.py, props_utility.py and props_vehicles.py
   (Colony Works), props_salvager.py (Salvager Tech wreckage), props_stone.py, props_ruins_a.py and props_ruins_b.py
-  (Old Stone ruins), props_nature.py (rocks, wood, plants and bones) and props_coast.py (shore and harbour).
+  (Old Stone ruins), props_nature.py (rocks, wood, plants and bones), props_coast.py (shore and harbour), props_fields.py (crop fields
+  and orchards, Settler Patchwork) and props_roadside.py (cable poles, guard rails, road signs and roadside litter).
 
 A structure model is one mesh of every part with a few shared detail textures (textures.py), a ``collider`` mesh of
 its larger parts (the game collides with that and does not draw it), and its point lights. World object models have
@@ -32,6 +33,7 @@ How to run (Blender as a Python module, no Blender UI needed):
     pip install bpy==5.2.2 numpy pillow
     python tools/structures/build_structures.py          # everything
     python tools/structures/build_structures.py props    # only the scene props
+    python tools/structures/build_structures.py props props_fields    # only the props of the modules named
 
 The outputs are committed; re-run this script after changing it (or kit.py, frame.py, families.py, ship.py,
 workshop.py, props*.py, textures.py) and commit the result. The build is deterministic (seeded noise only).
@@ -70,6 +72,8 @@ import props_ruins_b  # noqa: E402
 import props_salvager  # noqa: E402
 import props_nature  # noqa: E402
 import props_coast  # noqa: E402
+import props_fields  # noqa: E402
+import props_roadside  # noqa: E402
 import ship as S  # noqa: E402
 import workshop as W  # noqa: E402
 
@@ -126,17 +130,20 @@ def pile(kind):
     return build
 
 
-def props():
+def props(only=()):
     for module in (PR, props_settler_a, props_settler_b, props_colony_a, props_colony_b, props_stone,
                    props_farm, props_camp, props_salvage, props_street, props_industry, props_utility,
-                   props_vehicles, props_ruins_a, props_ruins_b, props_salvager, props_nature, props_coast):
+                   props_vehicles, props_ruins_a, props_ruins_b, props_salvager, props_nature, props_coast,
+                   props_fields, props_roadside):
+        if only and module.__name__ not in only:
+            continue
         for name, build in module.PROPS.items():
             single(name, build, WORLD / "props", collider=False)
 
 
 def main():
-    if sys.argv[1:] == ["props"]:
-        props()
+    if sys.argv[1:2] == ["props"]:
+        props(sys.argv[2:])
         return
     ship()
     single("relay_beacon_dead", lambda: F.dead_beacon())

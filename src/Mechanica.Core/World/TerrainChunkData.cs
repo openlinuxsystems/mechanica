@@ -241,6 +241,12 @@ public sealed class TerrainChunkData
     /// <summary>Scattered objects whose ground point is in the chunk, destroyed ones included.</summary>
     public IReadOnlyList<WorldObjectPlacement> Objects { get; }
 
+    /// <summary>
+    /// Objects that clear the flora under them (<see cref="WorldObjectDefinition.ClearFlora"/>) and reach into the chunk,
+    /// wherever they stand: no plant grows on them.
+    /// </summary>
+    public IReadOnlyList<WorldObjectPlacement> FloraClearers { get; init; } = [];
+
     /// <summary>POI structure pieces whose centre is in the chunk.</summary>
     public IReadOnlyList<PoiPiecePlacement> Pieces { get; }
 
