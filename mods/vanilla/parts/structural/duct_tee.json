@@ -1,0 +1,19 @@
+{
+  "id": "duct_tee",
+  "name": "Duct (Tee)",
+  "description": "A square duct with a branch to the side.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 2,
+  "friction": 0.4,
+  "buoyancy": 0.5,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/parts/duct_tee.glb",
+  "icon": "textures/items/duct_tee_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}
