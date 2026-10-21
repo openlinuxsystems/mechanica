@@ -25,7 +25,7 @@ public class VanillaBotsTests
     [
         "scuttler_green", "scuttler_blue", "scuttler_yellow", "scuttler_red", "scuttler_seed", "rakehand",
         "rakehand_baler", "rakehand_scarecrow", "spooler_blue", "spooler_green", "spooler_yellow", "spooler_red", "thresher",
-        "thresher_tiller", "thresher_duster", "grazer",
+        "thresher_tiller", "thresher_duster", "grazer", "grazer_calf",
     ];
 
     private static Bot Bot(string id) => Book.Value.FindBot(id) ?? throw new Xunit.Sdk.XunitException($"vanilla has no bot '{id}'.");
@@ -385,6 +385,26 @@ public class VanillaBotsTests
         Assert.Equal("LeadRing", Book.Value.FindBot("vanilla:grazer")!.Model!.LeadNode);
     }
 
+    [Fact]
+    public void GrazersBreedCalvesThatGrowIntoGrazers()
+    {
+        var grazer = Book.Value.FindBot("vanilla:grazer")!;
+        var breed = grazer.Tame!.Breed!;
+        Assert.Equal(("vanilla:tomato", "vanilla:grazer_calf"), (breed.Treat, breed.Calf));
+        Assert.True(breed.Herd >= 2 && breed.Seconds > 0 && breed.Cooldown > breed.Seconds);
+
+        var calf = Book.Value.FindBot(breed.Calf)!;
+        Assert.Equal("vanilla:grazer", calf.Grow!.Into);
+        Assert.Null(calf.Wild);
+        Assert.Null(calf.Tame!.Breed);
+        Assert.Equal(grazer.Tame.Lead, calf.Tame.Lead);
+        Assert.Equal(grazer.Tame.Homes, calf.Tame.Homes);
+        // a calf keeps its coat when it grows up: the same number of looks, in the same order
+        Assert.Equal(grazer.Model!.Variants.Count, calf.Model!.Variants.Count);
+        Assert.Equal(["Collar"], calf.Model.KeptNodes);
+        Assert.True(calf.Height < grazer.Height && calf.Health < grazer.Health);
+    }
+
     [Theory]
     [InlineData("""{ "feeds": 2 }""", "$.tame.foods", "list one or more foods it eats.")]
     [InlineData("""{ "foods": ["no_such_food"] }""", "$.tame.foods[0]", "there is no item 'vanilla:no_such_food'.")]
@@ -392,6 +412,11 @@ public class VanillaBotsTests
     [InlineData("""{ "foods": ["carrot"], "lead": "no_such_rope" }""", "$.tame.lead", "there is no item 'vanilla:no_such_rope'.")]
     [InlineData("""{ "foods": ["carrot"], "homes": ["no_such_trough"] }""", "$.tame.homes[0]", "there is no part 'vanilla:no_such_trough'.")]
     [InlineData("""{ "foods": ["carrot"], "home_radius": 0 }""", "$.tame.home_radius", "home_radius must be greater than 0.")]
+    [InlineData("""{ "foods": ["carrot"], "breed": { "calf": "grazer_calf" } }""", "$.tame.breed.treat", "treat is required.")]
+    [InlineData("""{ "foods": ["carrot"], "breed": { "treat": "no_such_treat", "calf": "grazer_calf" } }""", "$.tame.breed.treat", "there is no item 'vanilla:no_such_treat'.")]
+    [InlineData("""{ "foods": ["carrot"], "breed": { "treat": "tomato" } }""", "$.tame.breed.calf", "calf is required.")]
+    [InlineData("""{ "foods": ["carrot"], "breed": { "treat": "tomato", "calf": "grazer_calf", "herd": 1 } }""", "$.tame.breed.herd", "herd must be 2 or more.")]
+    [InlineData("""{ "foods": ["carrot"], "breed": { "treat": "tomato", "calf": "grazer_calf", "seconds": 0 } }""", "$.tame.breed.seconds", "seconds must be greater than 0.")]
     public void BadTamesAreReported(string tame, string path, string message)
     {
         var bot = ModelBot(null) with
@@ -403,6 +428,23 @@ public class VanillaBotsTests
         var diagnostics = BotBook.Validate(bot, "test", null, Vanilla.Value, "test/bots/whipper.json");
 
         Assert.Contains(diagnostics, d => d.JsonPath == path && d.Message == message);
+    }
+
+    [Fact]
+    public void BotsNamingMissingBotsAreLeftOut()
+    {
+        var parent = ModelBot(null) with
+        {
+            Tame = new BotTameDefinition { Foods = ["carrot"], Breed = new BotBreedDefinition { Treat = "tomato", Calf = "no_such_calf" } },
+        };
+        var young = ModelBot(null) with { Id = "whelp", Grow = new BotGrowDefinition { Into = "no_such_adult", Seconds = 10 } };
+
+        var error = Assert.Throws<FormatException>(() => BotBook.From(Vanilla.Value, ("test", parent), ("test", young)));
+
+        Assert.Contains("there is no bot 'vanilla:no_such_calf'.", error.Message);
+        Assert.Contains("there is no bot 'vanilla:no_such_adult'.", error.Message);
+        Assert.NotNull(BotBook.From(Vanilla.Value, ("test", young with { Grow = new BotGrowDefinition { Into = "test:whipper", Seconds = 10 } }),
+            ("test", ModelBot(null))).FindBot("test:whelp")!.Grow);
     }
 
     private static BotDefinition ModelBot(string? model) => new()

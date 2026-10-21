@@ -30,6 +30,9 @@ public partial class BotBody : CharacterBody3D
     /// <summary>Its type.</summary>
     public Bot Type { get; init; } = null!;
 
+    /// <summary>Which of its model's looks it has, or null to go by its id (<see cref="BotView.Look"/>).</summary>
+    public int? Look { get; init; }
+
     /// <summary>Where its model loads from; null shows the placeholder.</summary>
     public PartAssets? Assets { get; init; }
 
@@ -49,7 +52,7 @@ public partial class BotBody : CharacterBody3D
     {
         var shape = new CapsuleShape3D { Radius = Type.Radius, Height = Type.Height };
         AddChild(new CollisionShape3D { Shape = shape, Position = new Vector3(0, Type.Height / 2, 0) });
-        Model = BotModelView.For(Type, Assets, GetRid(), BotId);
+        Model = BotModelView.For(Type, Assets, GetRid(), BotId, Look);
         if (Model is not null)
             Model.PlaySound = sound => Sounds?.PlayLocal(sound, Type.ModId, GlobalPosition + new Vector3(0, Type.Height / 2, 0));
         if (Model is not null)
@@ -92,11 +95,13 @@ public partial class BotBody : CharacterBody3D
     /// <summary>Shows a view from the host: health, death, and (on clients) where to move to.</summary>
     public void Show(BotView view, bool follow)
     {
-        // Hearts rise when a player feeds it, more when that tames it.
+        // Hearts rise when a player feeds it, more when that tames it or puts it in the mood to pair.
         if (View is { } before && !view.Dead && GetParent() is { } world)
         {
             if (view.Kept && !before.Kept)
                 BotHearts.Show(world, GlobalPosition + new Vector3(0, Type.Height, 0), 7);
+            else if (view.InLove && !before.InLove)
+                BotHearts.Show(world, GlobalPosition + new Vector3(0, Type.Height, 0), 5);
             else if (view.Fed > before.Fed)
                 BotHearts.Show(world, GlobalPosition + new Vector3(0, Type.Height, 0), 2);
         }

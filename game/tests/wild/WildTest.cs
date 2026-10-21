@@ -19,6 +19,8 @@ public partial class WildTest : StagedTest
     private const string Grazer = "vanilla:grazer";
     private const string Carrot = "vanilla:carrot";
     private const string Lead = "vanilla:lead";
+    private const string Tomato = "vanilla:tomato";
+    private const string Calf = "vanilla:grazer_calf";
 
     private NetTestHarness _harness = null!;
     private Instance _host = null!;
@@ -193,8 +195,8 @@ public partial class WildTest : StagedTest
             }
             var feet = _host.Main.PlayerSync.Players[_client.Peer].GlobalPosition;
             var now = Flat(host.Find(_kept)!.Position.ToGodot() - feet);
-            if (frame % 120 == 0)
-                GD.Print($"[wild] following: {now:0.0} m of {gap:0.0} m to go (bot at {host.Find(_kept)!.Position}, led by {host.Find(_kept)!.LedBy})");
+            if (frame % 60 == 0)
+                GD.Print($"[wild] following: {now:0.0} m of {gap:0.0} m to go (bot at {host.Find(_kept)!.Position}, led by {host.Find(_kept)!.LedBy}, {_host.Main.Bots.Bodies[_kept].Velocity}, client at {feet})");
             if (now > 4f && now > gap - 2f)
                 return false;
             Check(_client.Main.Bots.GetNode<Bots.BotLeads>("Leads").Drawn.Contains(_kept), "the client draws the rope");
@@ -212,6 +214,59 @@ public partial class WildTest : StagedTest
             var bot = host.Find(_kept)!;
             Check((bot.Home - bot.Position).Length() < 2f, $"its home is where it was let go ({bot.Home} vs {bot.Position})");
             Check(!_client.Main.Bots.GetNode<Bots.BotLeads>("Leads").Drawn.Contains(_kept), "the rope is gone");
+            return true;
+        });
+        var partner = 0;
+        var calf = 0;
+        var treats = new List<ActionResult>();
+        Add("the client gives two tame Grazers a tomato each and they have a calf that grows up", frame =>
+        {
+            var host = _host.Main.Bots.Bots!;
+            var mum = host.Find(_kept)!;
+            if (frame == 0)
+            {
+                // a second tame Grazer beside the first
+                partner = host.Bots.Values.First(b => b.Type.QualifiedId == Grazer && b.Id != _kept && !b.Dead).Id;
+                host.Keep(partner);
+                _host.Main.Bots.Bodies[partner].GlobalPosition = mum.Position.ToGodot() + new Vector3(1.5f, 0.2f, 0);
+                Check(_host.Main.Inventory.Items!.PlayerInventory(_client.Peer).Add(Tomato, 2) == 2, "the client gets two tomatoes");
+                _host.Main.PlayerSync.HostTeleport(_client.Peer, mum.Position.ToGodot() + new Vector3(0.75f, 0.3f, 1.8f));
+            }
+            if (frame == 10)
+            {
+                _client.Main.Actions.Request(BotActions.FeedBot, new FeedBotArgs(_kept, Tomato), treats.Add);
+                _client.Main.Actions.Request(BotActions.FeedBot, new FeedBotArgs(partner, Tomato), treats.Add);
+            }
+            var mother = new[] { _kept, partner }.Select(host.Find).FirstOrDefault(b => b?.DueAt is not null);
+            if (calf == 0)
+            {
+                if (treats.Count < 2 || mother is null)
+                    return false;
+                Check(treats.All(t => t.Ok), $"both take a tomato ({string.Join(", ", treats.Select(t => t.Message ?? "ok"))})");
+                Check(host.Find(_kept)!.BreedsAt > host.Now && host.Find(partner)!.BreedsAt > host.Now, "they paired");
+                host.Hurry(mother.Id);
+                calf = -1;
+                return false;
+            }
+            if (calf < 0)
+            {
+                if (host.Bots.Values.FirstOrDefault(b => b.Type.QualifiedId == Calf) is not { } born || !_client.Main.Bots.Bodies.ContainsKey(born.Id))
+                    return false;
+                Check(born.Kept, "the calf is born tame");
+                var parentLooks = new[] { _kept, partner }.Select(id => host.Find(id)!.Type.Model!.LookOf(id, host.Find(id)!.Look)).ToList();
+                Check(born.Look is { } look && parentLooks.Contains(look), $"it has a parent's coat ({born.Look} of {string.Join(", ", parentLooks)})");
+                Check(Collar(born.Id) is { Visible: true }, "the client shows its collar");
+                calf = born.Id;
+                host.Hurry(calf);
+                return false;
+            }
+            if (host.Find(calf) is not null || host.Bots.Values.FirstOrDefault(b => b.Type.QualifiedId == Grazer && b.Kept && b.Id > calf) is not { } grown
+                || !_client.Main.Bots.Bodies.ContainsKey(grown.Id) || _client.Main.Bots.Bodies.ContainsKey(calf))
+                return false;
+            Check(grown.Look is not null, "it keeps its coat as it grows into a Grazer");
+            // back to the one kept Grazer for the stages after
+            host.Remove(grown.Id);
+            host.Remove(partner);
             return true;
         });
         Add("a kept Grazer stays when the players leave and the wild ones go", frame =>

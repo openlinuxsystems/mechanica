@@ -115,8 +115,8 @@ public partial class ItemTool : HandTool
     }
 
     /// <summary>
-    /// Use (E) on an animal: with a food it eats in hand it feeds it (<see cref="BotActions.FeedBot"/>), towards taming it;
-    /// with its Lead in hand it takes a tame one on the Lead, or lets it go (<see cref="BotActions.LeadBot"/>).
+    /// Use (E) on an animal: with a food it eats in hand it feeds it (<see cref="BotActions.FeedBot"/>), towards taming it,
+    /// and a tame one its breed's treat, so it looks for a partner; with its Lead in hand it takes a tame one on the Lead, or lets it go (<see cref="BotActions.LeadBot"/>).
     /// </summary>
     public override (string Label, Action Run)? Interaction
     {
@@ -132,9 +132,10 @@ public partial class ItemTool : HandTool
                 var label = view.LedBy == Player.PeerId ? Loc.T("let the {0} go", name) : Loc.T("lead the {0}", name);
                 return (label, () => Send(BotActions.LeadBot, new BotArgs(bot.BotId), null));
             }
-            if (view.Kept || !tame.Foods.Contains(hand.Item))
-                return null;
             var item = hand.Item;
+            // a tame one takes its breed's treat (it looks for a partner); a wild one a food it eats
+            if (view.Kept ? tame.Breed?.Treat != item || view.InLove : !tame.Foods.Contains(item))
+                return null;
             return (Loc.T("feed the {0}", name), () => Send(BotActions.FeedBot, new FeedBotArgs(bot.BotId, item), null));
         }
     }

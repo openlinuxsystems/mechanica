@@ -53,7 +53,15 @@
     "homes": [
       "feeding_trough"
     ],
-    "home_radius": 20
+    "home_radius": 20,
+    "breed": {
+      "treat": "tomato",
+      "calf": "grazer_calf",
+      "seconds": 60,
+      "cooldown": 600,
+      "herd": 8,
+      "radius": 8
+    }
   },
   "model": {
     "mesh": "meshes/bots/grazer.glb",

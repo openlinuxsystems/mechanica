@@ -8,7 +8,7 @@ using Mechanica.Game.World;
 namespace Mechanica.Game.Tools;
 
 // The husbandry gear in a running world (tools/capture-husbandry.sh): the Lead in hand, a tame Grazer led on it and
-// following, the rope at its collar, and the Feeding Trough with a herd living round it.
+// following, the rope at its collar, the Feeding Trough with a herd living round it, and two of them having a calf.
 public partial class CaptureScene
 {
     private void HusbandryShots()
@@ -95,6 +95,41 @@ public partial class CaptureScene
             View(at + new Vector3(-7f, 4.5f, 8f), at);
             foreach (var id in grazers)
                 GD.Print($"[capture] grazer {id} home {_main.Bots.Bots!.Find(id)?.Home}");
+        });
+        // breeding: two of the herd fed a tomato pair up (hearts), one has a calf that follows her
+        Shot("husbandry_15_in_love", 25, () =>
+        {
+            var bots = _main.Bots.Bots!;
+            var a = bots.Find(grazers[1])!.Position.ToGodot();
+            var b = bots.Find(grazers[2])!.Position.ToGodot();
+            Player.GlobalPosition = Ground((a + b) / 2 + new Vector3(0, 0, 1.5f)) + Vector3.Up * 0.2f;
+            _main.Inventory.Items!.PlayerInventory(Player.PeerId).Add("vanilla:tomato", 2);
+            foreach (var id in grazers.Skip(1).Take(2))
+                _main.Actions.Request(BotActions.FeedBot, new FeedBotArgs(id, "vanilla:tomato"), r => GD.Print($"[capture] treat: {r.Ok} {r.Message}"));
+            var mid = (a + b) / 2 + Vector3.Up * 1.2f;
+            View(mid + new Vector3(-1.5f, 1.4f, 5.5f), mid);
+        });
+        Shot("husbandry_16_calf_born", 240, () =>
+        {
+            var bots = _main.Bots.Bots!;
+            foreach (var id in grazers)
+                bots.Hurry(id);
+            Player.GlobalPosition += new Vector3(0, 0, 6);
+        });
+        Shot("husbandry_17_calf", 20, () =>
+        {
+            var bots = _main.Bots.Bots!;
+            var calf = bots.Bots.Values.First(b => b.Type.QualifiedId == "vanilla:grazer_calf");
+            var mother = bots.Find(calf.Mother ?? grazers[1])!;
+            var at = (calf.Position.ToGodot() + mother.Position.ToGodot()) / 2 + Vector3.Up * 0.7f;
+            View(at + new Vector3(3.2f, 1.2f, 2.6f), at);
+            GD.Print($"[capture] calf {calf.Id} look {calf.Look}, mother {mother.Id}");
+        });
+        Shot("husbandry_18_calf_close", 20, () =>
+        {
+            var calf = _main.Bots.Bots!.Bots.Values.First(b => b.Type.QualifiedId == "vanilla:grazer_calf");
+            var at = calf.Position.ToGodot() + Vector3.Up * 0.5f;
+            View(at + new Vector3(1.4f, 0.5f, 1.2f), at);
         });
     }
 }

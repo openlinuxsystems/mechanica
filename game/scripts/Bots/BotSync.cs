@@ -405,7 +405,7 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
             return;
         if (!_bodies.TryGetValue(view.Id, out var body))
         {
-            body = _bodies[view.Id] = new BotBody { Name = $"Bot{view.Id}", BotId = view.Id, Type = type, Assets = Survival.Assets, Sounds = Sounds };
+            body = _bodies[view.Id] = new BotBody { Name = $"Bot{view.Id}", BotId = view.Id, Type = type, Look = view.Look, Assets = Survival.Assets, Sounds = Sounds };
             AddChild(body);
             body.GlobalPosition = view.Position.ToGodot();
             body.Rotation = new Vector3(0, Mathf.DegToRad(view.Yaw), 0);

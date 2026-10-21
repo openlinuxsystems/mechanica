@@ -1,0 +1,98 @@
+{
+  "id": "grazer_calf",
+  "name": "Grazer Calf",
+  "description": "A young Grazer, born tame by a Feeding Trough. Wanders round its mother and grows into a Grazer.",
+  "family": "grazer",
+  "health": 25,
+  "speed": 3,
+  "water_speed": 1,
+  "sight": 10,
+  "size": {
+    "radius": 0.35,
+    "height": 0.7
+  },
+  "color": "#c9b48a",
+  "tame": {
+    "foods": [
+      "carrot"
+    ],
+    "feeds": 1,
+    "lead": "lead",
+    "homes": [
+      "feeding_trough"
+    ],
+    "home_radius": 20
+  },
+  "model": {
+    "mesh": "meshes/bots/grazer_calf.glb",
+    "clip_speeds": {
+      "patrol": 0.45,
+      "chase": 1.71
+    },
+    "variants": [
+      "meshes/bots/grazer_fawn_calf.glb",
+      "meshes/bots/grazer_chocolate_calf.glb"
+    ],
+    "kept_nodes": [
+      "Collar"
+    ],
+    "lead_node": "LeadRing",
+    "idles": [
+      {
+        "clip": "graze",
+        "weight": 3
+      },
+      {
+        "clip": "chew",
+        "weight": 2
+      },
+      {
+        "clip": "look",
+        "weight": 3
+      },
+      {
+        "clip": "tail_flick",
+        "weight": 2
+      },
+      {
+        "clip": "moo",
+        "sound": "grazer_idle"
+      }
+    ],
+    "idle_every": [
+      4,
+      10
+    ]
+  },
+  "grow": {
+    "into": "grazer",
+    "seconds": 1200
+  },
+  "passive": true,
+  "behavior": {
+    "type": "selector",
+    "children": [
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "health_below",
+            "fraction": 0.999
+          },
+          {
+            "type": "find_player"
+          },
+          {
+            "type": "flee",
+            "range": 15
+          }
+        ]
+      },
+      {
+        "type": "wander",
+        "radius": 8,
+        "speed": 0.3
+      }
+    ]
+  }
+}

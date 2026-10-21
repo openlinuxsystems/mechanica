@@ -60,6 +60,9 @@ public sealed record BotSettings
     /// <summary>Seconds between two looks of tame bots for a home part nearby (<c>tame.homes</c>).</summary>
     public float HomeCheckSeconds { get; init; } = 2f;
 
+    /// <summary>Seconds a tame bot fed its breed's treat stays in the mood to pair (<c>tame.breed</c>).</summary>
+    public float LoveSeconds { get; init; } = 30f;
+
     /// <summary>Parses settings from JSON and validates them.</summary>
     /// <exception cref="FormatException">The JSON is malformed or a value is out of range.</exception>
     public static BotSettings FromJson(string json)
@@ -95,6 +98,7 @@ public sealed record BotSettings
         NonNegative(GuardRespawn, "guard_respawn");
         Positive(LeadLength, "lead_length");
         Positive(HomeCheckSeconds, "home_check_seconds");
+        Positive(LoveSeconds, "love_seconds");
         if (!(LeadBreak > LeadLength) || !float.IsFinite(LeadBreak))
             throw new FormatException($"lead_break must be more than lead_length (got {LeadBreak}).");
         if (GuardSleepDistance < GuardWakeDistance)

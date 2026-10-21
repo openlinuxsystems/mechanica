@@ -187,7 +187,7 @@ public partial class BotTest : StagedTest
                 var missing = shared.Concat(type.Model!.Attacks.Values.SelectMany(c => c)).Concat(type.Model.Idles.Select(i => i.Clip)).Where(c => player?.HasAnimation(c) != true).ToList();
                 var legs = type.QualifiedId switch
                 {
-                    "vanilla:thresher_tiller" or "vanilla:grazer" => 4,
+                    "vanilla:thresher_tiller" or "vanilla:grazer" or "vanilla:grazer_calf" => 4,
                     _ when type.Family is "rakehand" or "spooler" or "thresher" => 2,
                     _ => 6,
                 };

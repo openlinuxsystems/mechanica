@@ -78,7 +78,24 @@ public sealed record BotTame(IReadOnlySet<string> Foods, int Feeds, string? Lead
 {
     /// <summary>Qualified part ids it makes its home (empty for none).</summary>
     public IReadOnlySet<string> Homes { get; init; } = Homes ?? new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>How two tame ones have young, or null when they never do.</summary>
+    public BotBreed? Breed { get; init; }
 }
+
+/// <summary>How two tame bots of a type have young (<see cref="BotBreedDefinition"/>), with defaults filled in.</summary>
+/// <param name="Treat">Qualified item that puts one in the mood.</param>
+/// <param name="Calf">Qualified bot type of the young.</param>
+/// <param name="Seconds">Seconds from pairing to the birth.</param>
+/// <param name="Cooldown">Seconds after pairing before either can pair again.</param>
+/// <param name="Herd">Most tame ones round one home before they stop breeding.</param>
+/// <param name="Radius">How near the two must be to pair, m.</param>
+public sealed record BotBreed(string Treat, string Calf, float Seconds, float Cooldown, int Herd, float Radius);
+
+/// <summary>What a young bot grows up into (<see cref="BotGrowDefinition"/>).</summary>
+/// <param name="Into">Qualified bot type it becomes.</param>
+/// <param name="Seconds">Seconds from birth until it grows up.</param>
+public sealed record BotGrow(string Into, float Seconds);
 
 /// <summary>A bot's model with its path qualified and every default filled in.</summary>
 /// <param name="Mesh">Qualified glTF path (<c>mod:meshes/bots/x.glb</c>).</param>
@@ -108,10 +125,17 @@ public sealed record BotModel(string Mesh, IReadOnlyDictionary<string, IReadOnly
     /// <summary>The longest wait between idles, in s.</summary>
     public float IdleMax { get; init; } = BotBook.DefaultIdleMax;
 
-    /// <summary>The mesh bot <paramref name="botId"/> shows: <see cref="Mesh"/> or one of <see cref="Variants"/>, the same on every peer.</summary>
-    public string MeshFor(int botId)
+    /// <summary>
+    /// Which look bot <paramref name="botId"/> has: 0 for <see cref="Mesh"/>, n for <see cref="Variants"/>[n - 1].
+    /// <paramref name="look"/> (one it was born with) wins when the model has it; otherwise its id picks, the same on every peer.
+    /// </summary>
+    public int LookOf(int botId, int? look = null) =>
+        look is { } l && l >= 0 && l <= Variants.Count ? l : (int)((uint)botId % (uint)(Variants.Count + 1));
+
+    /// <summary>The mesh bot <paramref name="botId"/> shows (<see cref="LookOf"/>).</summary>
+    public string MeshFor(int botId, int? look = null)
     {
-        var pick = (int)((uint)botId % (uint)(Variants.Count + 1));
+        var pick = LookOf(botId, look);
         return pick == 0 ? Mesh : Variants[pick - 1];
     }
 }
@@ -185,6 +209,9 @@ public sealed record Bot(
 
     /// <summary>How players tame it, or null when it cannot be tamed.</summary>
     public BotTame? Tame { get; init; }
+
+    /// <summary>What it grows up into, or null when it never changes.</summary>
+    public BotGrow? Grow { get; init; }
 
     /// <summary>How far below the water's surface its middle swims (m), or null when it walks on the bottom.</summary>
     public float? SwimDepth { get; init; }
@@ -261,6 +288,18 @@ public sealed class BotBook : IBotCatalog
     /// <summary>How near a home part must be for a tame bot to move in when its data leaves <c>home_radius</c> out, m.</summary>
     public const float DefaultHomeRadius = 20f;
 
+    /// <summary>Seconds from pairing to the birth when a breed does not say.</summary>
+    public const float DefaultBreedSeconds = 60f;
+
+    /// <summary>Seconds before a parent can pair again when a breed does not say.</summary>
+    public const float DefaultBreedCooldown = 600f;
+
+    /// <summary>Most tame ones round a home before they stop breeding, when a breed does not say.</summary>
+    public const int DefaultBreedHerd = 8;
+
+    /// <summary>How near two must be to pair, m, when a breed does not say.</summary>
+    public const float DefaultBreedRadius = 8f;
+
     /// <summary>Deepest behaviour tree accepted.</summary>
     public const int MaxBehaviorDepth = 24;
 
@@ -320,6 +359,7 @@ public sealed class BotBook : IBotCatalog
             if (bot is not null && sink.ErrorCount == 0)
                 bots.Add(bot.QualifiedId, bot);
         }
+        CheckLinks(bots, diagnostics);
         return new BotBook(bots.Values, diagnostics);
     }
 
@@ -335,6 +375,9 @@ public sealed class BotBook : IBotCatalog
             if (Check(definition, modId, null, catalog, sink) is { } bot && sink.ErrorCount == 0)
                 list.Add(bot);
         }
+        var byId = list.ToDictionary(b => b.QualifiedId, StringComparer.Ordinal);
+        CheckLinks(byId, diagnostics);
+        list = [.. list.Where(b => byId.ContainsKey(b.QualifiedId))];
         if (diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error))
             throw new FormatException(string.Join("\n", diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)));
         return new BotBook(list, diagnostics);
@@ -425,6 +468,7 @@ public sealed class BotBook : IBotCatalog
 
         var wild = b.Wild is { } w ? CheckWild(w, sink) : null;
         var tame = b.Tame is { } t ? CheckTame(t, catalog, sink) : null;
+        var grow = b.Grow is { } g ? CheckGrow(g, sink) : null;
 
         if (b.Behavior is { } tree)
             CheckBehavior(tree, "$.behavior", 1, new int[1], b.Script is not null, sink);
@@ -447,7 +491,7 @@ public sealed class BotBook : IBotCatalog
             return null;
         return new Bot($"{modId}:{b.Id}", modId, b.Name!, family, b.Health!.Value, b.Speed!.Value, b.WaterSpeed ?? b.Speed!.Value,
             b.Sight ?? DefaultSight, radius, height, b.Color?.ToLowerInvariant() ?? DefaultColor, b.MeleeImmune ?? false, b.Passive ?? false,
-            b.RaidCost, attacks, drops, script, b) { Model = model, SwimDepth = b.SwimDepth, Wild = wild, Tame = tame };
+            b.RaidCost, attacks, drops, script, b) { Model = model, SwimDepth = b.SwimDepth, Wild = wild, Tame = tame, Grow = grow };
     }
 
     private static BotModel? CheckModel(BotModelDefinition m, string modId, string? modDirectory, List<BotAttack> attacks, DiagnosticSink sink)
@@ -746,7 +790,62 @@ public sealed class BotBook : IBotCatalog
                 homes.Add(Identifiers.Qualify(home));
         }
         Positive(t.HomeRadius, "$.tame.home_radius", "home_radius", false, sink);
-        return sink.ErrorCount > errors ? null : new BotTame(foods, t.Feeds ?? DefaultTameFeeds, lead, homes, t.HomeRadius ?? DefaultHomeRadius);
+        var breed = t.Breed is { } b ? CheckBreed(b, catalog, sink) : null;
+        return sink.ErrorCount > errors ? null : new BotTame(foods, t.Feeds ?? DefaultTameFeeds, lead, homes, t.HomeRadius ?? DefaultHomeRadius) { Breed = breed };
+    }
+
+    private static BotBreed? CheckBreed(BotBreedDefinition b, IPartCatalog catalog, DiagnosticSink sink)
+    {
+        const string code = DiagnosticCodes.BotInvalid;
+        var errors = sink.ErrorCount;
+        KnownKeys.WarnUnknown(b.Extra, "$.tame.breed", sink, typeof(BotBreedDefinition));
+        if (b.Treat is null)
+            sink.Error(code, "$.tame.breed.treat", "treat is required.");
+        else if (!PartValidator.IsItemRef(b.Treat))
+            sink.Error(code, "$.tame.breed.treat", $"'{b.Treat}' must be an item id or 'mod_id:item_id'.");
+        else if (catalog.FindDefinition(Identifiers.Qualify(b.Treat)) is null)
+            sink.Error(code, "$.tame.breed.treat", $"there is no item '{Identifiers.Qualify(b.Treat)}'.");
+        CheckBotRef(b.Calf, "$.tame.breed.calf", "calf", sink);
+        Positive(b.Seconds, "$.tame.breed.seconds", "seconds", false, sink);
+        Positive(b.Cooldown, "$.tame.breed.cooldown", "cooldown", false, sink);
+        Positive(b.Radius, "$.tame.breed.radius", "radius", false, sink);
+        if (b.Herd is < 2)
+            sink.Error(code, "$.tame.breed.herd", "herd must be 2 or more.");
+        return sink.ErrorCount > errors ? null : new BotBreed(Identifiers.Qualify(b.Treat!), Identifiers.Qualify(b.Calf!),
+            b.Seconds ?? DefaultBreedSeconds, b.Cooldown ?? DefaultBreedCooldown, b.Herd ?? DefaultBreedHerd, b.Radius ?? DefaultBreedRadius);
+    }
+
+    private static BotGrow? CheckGrow(BotGrowDefinition g, DiagnosticSink sink)
+    {
+        var errors = sink.ErrorCount;
+        KnownKeys.WarnUnknown(g.Extra, "$.grow", sink, typeof(BotGrowDefinition));
+        CheckBotRef(g.Into, "$.grow.into", "into", sink);
+        Positive(g.Seconds, "$.grow.seconds", "seconds", true, sink);
+        return sink.ErrorCount > errors ? null : new BotGrow(Identifiers.Qualify(g.Into!), g.Seconds!.Value);
+    }
+
+    // A bot type named in a bot's data; whether it exists is checked once every bot is loaded (CheckLinks).
+    private static void CheckBotRef(string? id, string path, string label, DiagnosticSink sink)
+    {
+        if (id is null)
+            sink.Error(DiagnosticCodes.BotInvalid, path, $"{label} is required.");
+        else if (!PartValidator.IsItemRef(id))
+            sink.Error(DiagnosticCodes.BotInvalid, path, $"'{id}' must be a bot id or 'mod_id:bot_id'.");
+    }
+
+    // The bot types bots name (a breed's calf, what a calf grows into) must exist; a bot naming a missing one is left out.
+    private static void CheckLinks(Dictionary<string, Bot> bots, List<DataDiagnostic> diagnostics)
+    {
+        foreach (var bot in bots.Values.ToList())
+        {
+            var sink = new DiagnosticSink(bot.QualifiedId, diagnostics);
+            if (bot.Tame?.Breed is { } breed && !bots.ContainsKey(breed.Calf))
+                sink.Error(DiagnosticCodes.BotInvalid, "$.tame.breed.calf", $"there is no bot '{breed.Calf}'.");
+            if (bot.Grow is { } grow && !bots.ContainsKey(grow.Into))
+                sink.Error(DiagnosticCodes.BotInvalid, "$.grow.into", $"there is no bot '{grow.Into}'.");
+            if (sink.ErrorCount > 0)
+                bots.Remove(bot.QualifiedId);
+        }
     }
 
     private static void Positive(float? value, string path, string label, bool required, DiagnosticSink sink)

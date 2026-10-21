@@ -55,8 +55,10 @@ public sealed record StartRaidArgs(int? Level = null);
 /// <param name="Kept">Whether it is kept (a domesticated animal): saved with the world and never taken away.</param>
 /// <param name="Fed">Feeds towards taming it so far (<c>FeedBot</c>).</param>
 /// <param name="LedBy">The player leading it on a Lead (<c>LeadBot</c>), or null.</param>
+/// <param name="Look">Which of its model's looks it has (0 the main mesh, n the nth variant), or null to go by its id.</param>
+/// <param name="InLove">Whether it is in the mood to pair (a player fed it its breed's treat).</param>
 public sealed record BotView(int Id, string Type, Vec3 Position, float Yaw, float Health, float MaxHealth, bool Dead, int? Raid = null, bool Engaged = false,
-    bool Swimming = false, bool Kept = false, int Fed = 0, int? LedBy = null);
+    bool Swimming = false, bool Kept = false, int Fed = 0, int? LedBy = null, int? Look = null, bool InLove = false);
 
 /// <summary>Arguments of <c>KeepBot</c>.</summary>
 /// <param name="Bot">The bot.</param>
@@ -71,8 +73,9 @@ public sealed record FeedBotArgs(int Bot, string Item);
 /// <summary>Value of a successful <c>FeedBot</c>.</summary>
 /// <param name="Fed">Feeds so far.</param>
 /// <param name="Feeds">Feeds that tame it.</param>
-/// <param name="Kept">Whether this feed tamed it.</param>
-public sealed record FeedBotResult(int Fed, int Feeds, bool Kept);
+/// <param name="Kept">Whether it is tame now.</param>
+/// <param name="InLove">Whether this feed (its breed's treat, to a tame one) put it in the mood to pair.</param>
+public sealed record FeedBotResult(int Fed, int Feeds, bool Kept, bool InLove = false);
 
 /// <summary>Value of a successful <c>LeadBot</c>.</summary>
 /// <param name="Led">True when the caller now leads it, false when they let it go (it makes its home where it stands).</param>
@@ -84,7 +87,13 @@ public sealed record LeadBotResult(bool Led);
 /// <param name="Yaw">Its facing, degrees.</param>
 /// <param name="Home">Where it wanders round, m.</param>
 /// <param name="Health">Its health.</param>
-public sealed record SavedBot(string Type, Vec3 Position, float Yaw, Vec3 Home, float Health);
+/// <param name="Look">Which of its model's looks it has.</param>
+/// <param name="BreedIn">Seconds until it can pair again, or null.</param>
+/// <param name="DueIn">Seconds until its young is born, or null.</param>
+/// <param name="DueLook">The look its young will have.</param>
+/// <param name="GrowsIn">Seconds until it grows up (a young one), or null.</param>
+public sealed record SavedBot(string Type, Vec3 Position, float Yaw, Vec3 Home, float Health, int? Look = null, float? BreedIn = null,
+    float? DueIn = null, int DueLook = 0, float? GrowsIn = null);
 
 /// <summary>Value of a successful <c>SpawnBot</c>.</summary>
 /// <param name="Bot">The new bot's id.</param>
