@@ -323,7 +323,8 @@
         { "object": "road_sign_junction", "spacing": 60.0, "chance": 0.8, "roadside": { "road": "road", "gap": 2.0, "junction": 45.0 } },
         { "object": "roadside_billboard_small", "spacing": 90.0, "chance": 0.04, "roadside": { "road": "road", "gap": 3.0 } },
         { "object": "scene_roadside_wreck", "spacing": 90.0, "chance": 0.04, "roadside": { "road": "road", "gap": 3.6 } },
-        { "object": "roadside_tire_pile", "spacing": 90.0, "chance": 0.03, "roadside": { "road": "track", "gap": 2.6 } }
+        { "object": "roadside_tire_pile", "spacing": 90.0, "chance": 0.03, "roadside": { "road": "track", "gap": 2.6 } },
+        { "object": "balanced_rock", "spacing": 300.0, "chance": 0.5 }
       ],
       "flora": [
         { "kind": "grass", "density": 0.25, "coverage": 0.25, "patch_size": 10.0, "scale": [0.6, 1.0], "models": ["grass_short", "grass_tipped"], "colors": ["#c4b45a", "#b0a64e"] },
@@ -549,7 +550,8 @@
         { "object": "road_sign_warning_curve", "spacing": 70.0, "chance": 0.6, "roadside": { "road": "road", "gap": 2.2, "side": "outside", "bend": 12.0 } },
         { "object": "road_sign_junction", "spacing": 60.0, "chance": 0.8, "roadside": { "road": "road", "gap": 2.0, "junction": 45.0 } },
         { "object": "roadside_billboard_small", "spacing": 90.0, "chance": 0.04, "roadside": { "road": "road", "gap": 3.0 } },
-        { "object": "scene_roadside_wreck", "spacing": 90.0, "chance": 0.04, "roadside": { "road": "road", "gap": 3.6 } }
+        { "object": "scene_roadside_wreck", "spacing": 90.0, "chance": 0.04, "roadside": { "road": "road", "gap": 3.6 } },
+        { "object": "sea_stack", "spacing": 40.0, "chance": 0.5, "water": "shallows" }
       ],
       "flora": [
         { "kind": "grass", "density": 0.3, "coverage": 0.3, "patch_size": 10.0, "scale": [0.8, 1.3], "models": ["grass_tall", "grass_tipped"], "colors": ["#b9c45a", "#a7bd4e"] },
@@ -5723,6 +5725,28 @@
       "footprint": 1.9,
       "sink": 0.04,
       "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      // Rock formations (docs/world-generation.md, Rock formations): a sea stack the sea cut from the cliffs, standing in
+      // the shallows, and a balanced rock in the desert. Too big to break. The arches, the window and the hoodoos are POIs.
+      "id": "sea_stack",
+      "collider": { "shape": "cylinder", "radius": 4.2, "height": 18.0, "at": [0.0, 9.0, 0.0] },
+      "mesh": { "file": "meshes/world/formations/sea_stack.glb" },
+      "footprint": 8.0,
+      "scale": [0.8, 1.15],
+      "sink": 0.6,
+      "max_slope": 0.5,
+      "damage_from": []
+    },
+    {
+      "id": "balanced_rock",
+      "collider": { "shape": "cylinder", "radius": 2.6, "height": 8.6, "at": [0.0, 4.3, 0.0] },
+      "mesh": { "file": "meshes/world/formations/balanced_rock.glb" },
+      "footprint": 5.0,
+      "scale": [0.85, 1.15],
+      "sink": 0.2,
+      "max_slope": 0.3,
       "damage_from": []
     },
     {

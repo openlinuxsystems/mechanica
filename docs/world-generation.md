@@ -534,6 +534,31 @@ walkable (flights of steps up to 40° collide as ramps); `game/tests/landmarks` 
 | `landmark_windmill_tower` | field, meadow | Settler Patchwork: a colony water tower crowned with a windmill, shacks round its gallery; a switchback stair up to the gallery |
 | `landmark_freighter_wreck` | desert, burned forest, field, meadow | Salvager Tech: the CF-9 freighter broken over a ridge, beacon still lit; walk into either torn end, or over the nose and along the roof to the bridge |
 
+### Rock formations
+
+Natural rock stands about the open country to find, drive under and fly through. The formations are built by
+`tools/structures/rock_formations.py` (`build_structures.py formations`, into `meshes/world/formations/`) as weathered
+rock, not blocks: rough masses merged by a voxel remesh, worn by noise, cut into beds that stand proud or weather back
+(the darker stone in some), and faceted to a few thousand triangles, in the Old Stone grey of the island's rocks with
+loose chiselled blocks round their feet. The ones a player passes under or through are `wild` POIs with one model whose
+`collider` mesh keeps the openings open, on level ground (`placement.level`) flattened under their legs: a wild POI with a model keeps the
+biome's scattered objects off its footprint (nothing grows into the rock) while its plants still grow there.
+
+| Formation | Where | What |
+|-----------|-------|------|
+| `rock_arch_medium` | desert, mountain, burned forest, meadow; 1000 to 1500 m apart | An arch about 8 m across and 6 m high under its span: walk or drive under it |
+| `rock_arch_large` | desert, mountain; 1100 to 1700 m apart | A great arch about 22 m across and 15 m high: fly through it |
+| `rock_arch_double` | desert, mountain, burned forest; 1100 to 1600 m apart | One fin worn through twice, a 10 m and a 6 m opening on a shared pier |
+| `rock_arch_collapsed` | desert, mountain, burned forest, meadow; 1700 to 2500 m apart | Two broken legs with the fallen span in pieces between them |
+| `rock_window` | desert, mountain, burned forest; 1000 to 1500 m apart | A fin 21 m long and 12 m high with a window about 5 m across |
+| `hoodoo_cluster` | desert; 400 to 600 m apart | Four or five slender hoodoos 4 to 11 m tall under caps of darker rock |
+| `sea_stack` (object) | coastal, in the shallows (`water: shallows`) | An 18 m stack of bedded rock with a stump beside it |
+| `balanced_rock` (object) | desert | A boulder the size of a van on a waisted pedestal 5 m high |
+
+The sea stack and the balanced rock are world objects (too big to break, cylinder colliders) scattered at the end of
+their biomes' lists. The vanilla world has about 59 arches, 14 windows, 42 hoodoo clusters, 26 sea stacks and 24
+balanced rocks. `tools/capture-formations.sh OUT_DIR` shoots them in a running world.
+
 ## Roads
 
 ```json
@@ -593,13 +618,14 @@ Another mod's POI is changed or removed through `overrides/<mod>/pois/`, a `.pat
 | Key | Meaning |
 |-----|---------|
 | `radius` | Footprint, including terrain blending. POIs never overlap, and nothing is scattered inside (unless `wild`). |
-| `wild` | `true` for a natural feature with no structure: a pond, a ravine, a mesa. The biome's flora and scattered objects grow on its footprint as on open ground, wherever its slopes and water allow; roads and other POIs still keep clear of it. |
+| `wild` | `true` for a natural feature: a pond, a ravine, a mesa, a rock arch. The biome's flora and scattered objects grow on its footprint as on open ground, wherever its slopes and water allow; roads and other POIs still keep clear of it. A wild POI with `models` (a rock arch) keeps the scattered objects off its footprint, so none grows into the rock. |
 | `placement.fixed` | `[x, z]` of a single POI, with optional `pad_height` and `yaw` (a multiple of 90). Give this, `spacing`, or neither (`"placement": {}`): then only a site places it. |
 | `placement.spacing` | `[min, max]` metres between neighbours of this kind. `min` must be at least twice the radius. Needs `biomes`. A spaced POI is turned a random quarter turn. |
 | `placement.priority` | Higher kinds are placed first and win contested ground. |
 | `placement.clearance` | Metres a spaced POI's footprint keeps clear of every other POI's footprint and of the roads. |
 | `placement.roadside` | For a spaced POI that stands beside a road (a roadside kiosk): metres between the road's bed and its footprint (at least `clearance`). Such POIs are laid along the roads, not the tracks, every `spacing` metres on a side the seed picks, turned so their −z side faces the road, and only where the ground is within 1.5 m of the road's height. |
 | `placement.shore` | For a spaced POI on a shore: open water (a lake or the sea) must lie within this many metres of its footprint. |
+| `placement.level` | For a spaced POI that needs level ground (a rock arch): the natural ground on its footprint's rim and halfway in must lie within this many metres of its centre's height. Omitted: the rim may lie up to 0.6 × the radius above or below. |
 | `size` | The footprint as built, `[width, height, depth]` in metres, for the placement manifest and design work. |
 | `road` | What joins it to the roads: `road` (only where a site places it), `track` (a dirt track) or `none` (the default). |
 | `bot_free_radius` | Metres from the POI centre inside which no bot appears: no wild bots (on land or in water), no guards at `bot` markers and no raiders (a raid on a farm inside comes in from just past the edge). Bots may still walk in, and one spawned by hand in Creative may stand there. Omitted: bots appear right up to the POI. The crash site keeps 250 m clear so a new player starts in peace, and a Workshop its own footprint (46 m). |

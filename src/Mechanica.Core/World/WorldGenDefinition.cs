@@ -1275,8 +1275,9 @@ public sealed record PoiPrefab
     public string? Flora { get; init; }
 
     /// <summary>
-    /// True for a natural feature with no structure (a pond, a ravine, a mesa): the biome's flora and scattered objects
-    /// grow on its footprint as on open ground, wherever its slopes and water allow. Roads and other POIs still keep clear.
+    /// True for a natural feature (a pond, a ravine, a mesa, a rock arch): the biome's flora and scattered objects grow on
+    /// its footprint as on open ground, wherever its slopes and water allow. Roads and other POIs still keep clear. One with
+    /// <see cref="Models"/> (a rock arch) keeps the scattered objects off its footprint, so none grows into the rock.
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public bool Wild { get; init; }
@@ -1347,6 +1348,13 @@ public sealed record PoiPlacement
     /// Omitted: anywhere.
     /// </summary>
     public float? Shore { get; init; }
+
+    /// <summary>
+    /// Most metres the natural ground round a spaced POI's footprint (on its rim and halfway in) may lie above or below its
+    /// centre, for POIs that need level ground (a rock arch, whose pad would otherwise stand on a bank of fill). Omitted:
+    /// only the general limit of 0.6 × the radius.
+    /// </summary>
+    public float? Level { get; init; }
 
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]

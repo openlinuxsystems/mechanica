@@ -1,0 +1,17 @@
+{
+  // A natural arch of weathered rock about 8 m across and 6 m high under its span: walk or drive under it.
+  // A rock formation (docs/world-generation.md, Rock formations): wild ground, so the biome's plants grow round it,
+  // but its model keeps the scattered objects off its footprint. The model collides, so the openings stay open.
+  "id": "rock_arch_medium",
+  "name": "Rock Arch",
+  "wild": true,
+  "radius": 20.0,
+  "size": [23.4, 8.8, 8.8],
+  "placement": { "spacing": [1000.0, 1500.0], "biomes": ["desert", "mountain", "burned_forest", "meadow"], "priority": 4, "clearance": 12.0, "level": 2.5 },
+  "terrain": [
+    { "op": "flatten", "radius": 11.0, "blend": 8.0 }
+  ],
+  "models": [
+    { "file": "meshes/world/formations/rock_arch_medium.glb", "at": [0.0, 0.0, 0.0] }
+  ]
+}

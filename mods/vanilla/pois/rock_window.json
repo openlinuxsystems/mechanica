@@ -1,0 +1,17 @@
+{
+  // A thin fin of rock 21 m long and 12 m high with a window about 5 m across worn through it.
+  // A rock formation (docs/world-generation.md, Rock formations): wild ground, so the biome's plants grow round it,
+  // but its model keeps the scattered objects off its footprint. The model collides, so the openings stay open.
+  "id": "rock_window",
+  "name": "Rock Window",
+  "wild": true,
+  "radius": 22.0,
+  "size": [25.5, 12.9, 11.0],
+  "placement": { "spacing": [1000.0, 1500.0], "biomes": ["desert", "mountain", "burned_forest"], "priority": 4, "clearance": 12.0, "level": 3.0 },
+  "terrain": [
+    { "op": "flatten", "at": [-9.0, 0.0], "to": [9.0, 0.0], "radius": 6.0, "blend": 7.0 }
+  ],
+  "models": [
+    { "file": "meshes/world/formations/rock_window.glb", "at": [0.0, 0.0, 0.0] }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  // One rock fin worn through in two places, a wide opening and a narrow one on a shared pier.
+  // A rock formation (docs/world-generation.md, Rock formations): wild ground, so the biome's plants grow round it,
+  // but its model keeps the scattered objects off its footprint. The model collides, so the openings stay open.
+  "id": "rock_arch_double",
+  "name": "Double Arch",
+  "wild": true,
+  "radius": 28.0,
+  "size": [36.0, 12.5, 11.5],
+  "placement": { "spacing": [1100.0, 1600.0], "biomes": ["desert", "mountain", "burned_forest"], "priority": 4, "clearance": 12.0, "level": 3.0 },
+  "terrain": [
+    { "op": "flatten", "at": [-13.0, 0.0], "to": [13.0, 0.0], "radius": 7.0, "blend": 8.0 }
+  ],
+  "models": [
+    { "file": "meshes/world/formations/rock_arch_double.glb", "at": [0.0, 0.0, 0.0] }
+  ]
+}

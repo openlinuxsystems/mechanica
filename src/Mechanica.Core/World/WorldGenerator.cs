@@ -695,8 +695,9 @@ public sealed partial class WorldGenerator
     // Metres before and after a roadside spot over which the road's bend is measured.
     private const float BendReach = 20f;
 
-    // Whether a structure stands on a spot: a POI's footprint, unless the POI is a wild one (a pond, a ravine).
-    private bool Built(Vector2 spot) => PoisAt(spot.X, spot.Y).Any(p => !p.Poi.Prefab.Wild);
+    // Whether a structure stands on a spot: a POI's footprint, unless the POI is a wild one (a pond, a ravine) with no
+    // models. A wild POI with a model (a rock arch) grows its biome's plants but keeps scattered objects out of the rock.
+    private bool Built(Vector2 spot) => PoisAt(spot.X, spot.Y).Any(p => !p.Poi.Prefab.Wild || p.Poi.Prefab.Models is { Count: > 0 });
 
     // Whether a spot is dry land: above the sea and any pond.
     private bool Dry(Vector2 spot) => HeightAt(spot.X, spot.Y) >= WaterLevelAt(spot.X, spot.Y) + 0.2f;
@@ -1538,7 +1539,23 @@ public sealed partial class WorldGenerator
             return false;
         if (!DryAndLevel(spot, radius, out pad))
             return false;
+        if (poi.Prefab.Placement.Level is { } level && !LevelRound(spot, radius, level))
+            return false;
         return poi.Prefab.Placement.Shore is not { } shore || NearWater(spot, radius, shore);
+    }
+
+    // Whether the natural ground on a footprint's rim and halfway in lies within level metres of its centre's.
+    private bool LevelRound(Vector2 spot, float radius, float level)
+    {
+        var centre = RawHeight(spot.X, spot.Y);
+        for (var k = 0; k < 16; k++)
+        {
+            var angle = k * MathF.Tau / 8f + (k < 8 ? 0f : MathF.PI / 8f);
+            var r = k < 8 ? radius : radius / 2f;
+            if (MathF.Abs(RawHeight(spot.X + MathF.Cos(angle) * r, spot.Y + MathF.Sin(angle) * r) - centre) > level)
+                return false;
+        }
+        return true;
     }
 
     // Dry at the centre and all round the rim, and not so far above or below the centre that the pad becomes a cliff.
