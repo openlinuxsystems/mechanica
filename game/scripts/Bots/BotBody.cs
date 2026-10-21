@@ -92,6 +92,14 @@ public partial class BotBody : CharacterBody3D
     /// <summary>Shows a view from the host: health, death, and (on clients) where to move to.</summary>
     public void Show(BotView view, bool follow)
     {
+        // Hearts rise when a player feeds it, more when that tames it.
+        if (View is { } before && !view.Dead && GetParent() is { } world)
+        {
+            if (view.Kept && !before.Kept)
+                BotHearts.Show(world, GlobalPosition + new Vector3(0, Type.Height, 0), 7);
+            else if (view.Fed > before.Fed)
+                BotHearts.Show(world, GlobalPosition + new Vector3(0, Type.Height, 0), 2);
+        }
         View = view;
         _label.Visible = view.Health < view.MaxHealth;
         _label.Text = view.Dead ? Loc.T("{0} (destroyed)", Type.Name) : $"{Type.Name}  {view.Health:0}/{view.MaxHealth:0}";

@@ -292,6 +292,33 @@ public sealed class BotActionsTests
     }
 
     [Fact]
+    public void Feeding_a_bot_its_food_tames_it()
+    {
+        var critter = _f.Spawn(BotFixture.Critter, new Vector3(1, 0, 1));
+        var grunt = _f.Spawn(BotFixture.Grunt, new Vector3(-1, 0, 1));
+        var far = _f.Spawn(BotFixture.Critter, new Vector3(30, 0, 0));
+        Assert.Contains("You have no", S.Refused(Me, BotActions.FeedBot, new FeedBotArgs(critter, SurvivalFixture.Crop)));
+        S.Pockets(Me).Add(SurvivalFixture.Crop, 5);
+        S.Pockets(Me).Add(SurvivalFixture.Seed, 5);
+        Assert.Contains("cannot be tamed", S.Refused(Me, BotActions.FeedBot, new FeedBotArgs(grunt, SurvivalFixture.Crop)));
+        Assert.Contains("does not eat", S.Refused(Me, BotActions.FeedBot, new FeedBotArgs(critter, SurvivalFixture.Seed)));
+        Assert.Contains("away", S.Refused(Me, BotActions.FeedBot, new FeedBotArgs(far, SurvivalFixture.Crop)));
+
+        var first = S.Ok<FeedBotResult>(Me, BotActions.FeedBot, new FeedBotArgs(critter, SurvivalFixture.Crop));
+        Assert.Equal(new FeedBotResult(1, 2, false), first);
+        Assert.Equal(1, S.Ok<BotView>(Me, BotActions.GetBot, new BotArgs(critter)).Fed);
+        var second = S.Ok<FeedBotResult>(Me, BotActions.FeedBot, new FeedBotArgs(critter, "test:crop"));
+        Assert.True(second.Kept);
+        Assert.True(_f.Bots.Find(critter)!.Kept);
+        Assert.Equal(3, S.Pockets(Me).Count(SurvivalFixture.Crop));
+        Assert.Contains("already tame", S.Refused(Me, BotActions.FeedBot, new FeedBotArgs(critter, SurvivalFixture.Crop)));
+
+        var scared = _f.Spawn(BotFixture.Critter, new Vector3(1, 0, -1));
+        _f.Bots.Engage(scared);
+        Assert.Contains("too scared", S.Refused(Me, BotActions.FeedBot, new FeedBotArgs(scared, SurvivalFixture.Crop)));
+    }
+
+    [Fact]
     public void Bubble_wrap_slows_a_player_for_a_while()
     {
         // You stand at (0, 0, 6).

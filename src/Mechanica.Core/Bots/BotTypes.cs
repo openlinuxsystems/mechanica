@@ -53,13 +53,25 @@ public sealed record StartRaidArgs(int? Level = null);
 /// <param name="Engaged">Whether it is fighting: it spotted a target, attacked or was hurt in the last <c>engaged_seconds</c>.</param>
 /// <param name="Swimming">Whether it is swimming: a swimmer (<c>swim_depth</c>) in water.</param>
 /// <param name="Kept">Whether it is kept (a domesticated animal): saved with the world and never taken away.</param>
+/// <param name="Fed">Feeds towards taming it so far (<c>FeedBot</c>).</param>
 public sealed record BotView(int Id, string Type, Vec3 Position, float Yaw, float Health, float MaxHealth, bool Dead, int? Raid = null, bool Engaged = false,
-    bool Swimming = false, bool Kept = false);
+    bool Swimming = false, bool Kept = false, int Fed = 0);
 
 /// <summary>Arguments of <c>KeepBot</c>.</summary>
 /// <param name="Bot">The bot.</param>
 /// <param name="Kept">True to keep it (saved with the world, never taken away), false to let it go wild again.</param>
 public sealed record KeepBotArgs(int Bot, bool Kept = true);
+
+/// <summary>Arguments of <c>FeedBot</c>.</summary>
+/// <param name="Bot">The bot.</param>
+/// <param name="Item">The food, from the player's inventory (an item id or <c>mod_id:item_id</c>).</param>
+public sealed record FeedBotArgs(int Bot, string Item);
+
+/// <summary>Value of a successful <c>FeedBot</c>.</summary>
+/// <param name="Fed">Feeds so far.</param>
+/// <param name="Feeds">Feeds that tame it.</param>
+/// <param name="Kept">Whether this feed tamed it.</param>
+public sealed record FeedBotResult(int Fed, int Feeds, bool Kept);
 
 /// <summary>A kept bot in a save (<see cref="BotActions.SaveKept"/>).</summary>
 /// <param name="Type">Qualified bot type id.</param>

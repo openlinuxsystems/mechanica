@@ -279,6 +279,7 @@ public class VanillaBotsTests
     [InlineData("""{ "mesh": "meshes/x.glb", "idles": [{ "sound": "moo" }] }""", "$.model.idles[0].clip", "clip is required.")]
     [InlineData("""{ "mesh": "meshes/x.glb", "idles": [{ "clip": "moo", "sound": " " }] }""", "$.model.idles[0].sound", "sound must name a sound event (or be left out).")]
     [InlineData("""{ "mesh": "meshes/x.glb", "idles": [{ "clip": "moo", "weight": 0 }] }""", "$.model.idles[0].weight", "weight 0 must be above 0.")]
+    [InlineData("""{ "mesh": "meshes/x.glb", "kept_nodes": [" "] }""", "$.model.kept_nodes[0]", "a node name is required.")]
     [InlineData("""{ "mesh": "meshes/x.glb", "idle_every": [5] }""", "$.model.idle_every", "idle_every must be [min, max] seconds, 0 < min <= max.")]
     [InlineData("""{ "mesh": "meshes/x.glb", "idle_every": [9, 4] }""", "$.model.idle_every", "idle_every must be [min, max] seconds, 0 < min <= max.")]
     public void BadModelsAreReported(string model, string path, string? message)
@@ -369,6 +370,33 @@ public class VanillaBotsTests
         Assert.Equal(["field", "meadow"], wild.Biomes.Order());
         Assert.True(wild.HerdMin >= 2 && wild.HerdMax <= wild.Count);
         Assert.Contains("scene_farmstead", wild.Near!.Objects);
+    }
+
+    [Fact]
+    public void GrazersAreTamedWithCarrots()
+    {
+        var tame = Book.Value.FindBot("vanilla:grazer")!.Tame!;
+
+        Assert.Contains("vanilla:carrot", tame.Foods);
+        Assert.True(tame.Feeds >= 1);
+        Assert.Equal(["Collar"], Book.Value.FindBot("vanilla:grazer")!.Model!.KeptNodes);
+    }
+
+    [Theory]
+    [InlineData("""{ "feeds": 2 }""", "$.tame.foods", "list one or more foods it eats.")]
+    [InlineData("""{ "foods": ["no_such_food"] }""", "$.tame.foods[0]", "there is no item 'vanilla:no_such_food'.")]
+    [InlineData("""{ "foods": ["carrot"], "feeds": 0 }""", "$.tame.feeds", "feeds must be 1 or more.")]
+    public void BadTamesAreReported(string tame, string path, string message)
+    {
+        var bot = ModelBot(null) with
+        {
+            Tame = System.Text.Json.JsonSerializer.Deserialize<BotTameDefinition>(tame,
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.SnakeCaseLower }),
+        };
+
+        var diagnostics = BotBook.Validate(bot, "test", null, Vanilla.Value, "test/bots/whipper.json");
+
+        Assert.Contains(diagnostics, d => d.JsonPath == path && d.Message == message);
     }
 
     private static BotDefinition ModelBot(string? model) => new()

@@ -1,9 +1,7 @@
 using Godot;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Bots;
-using Mechanica.Core.Creations;
 using Mechanica.Core.Survival;
-using Mechanica.Game.Creations;
 using Instance = Mechanica.Game.Tests.NetTestHarness.Instance;
 
 namespace Mechanica.Game.Tests;
@@ -11,19 +9,23 @@ namespace Mechanica.Game.Tests;
 /// <summary>
 /// Bots in the wild, host plus client, in a generated Survival world: with both players on a shore, Blue Scuttlers
 /// appear in the deep water off it and swim there on both peers; when the players go far inland they are taken away.
-/// In a meadow, Grazers appear in herds in their biomes and show on the client. One is kept: when the players leave,
+/// In a meadow, Grazers appear in herds in their biomes and show on the client. The client tames one with carrots: when the players leave,
 /// the wild ones go and it stays, and it comes back where it was when the world is saved and loaded.
 /// </summary>
 public partial class WildTest : StagedTest
 {
     private const string Blue = "vanilla:scuttler_blue";
     private const string Grazer = "vanilla:grazer";
+    private const string Carrot = "vanilla:carrot";
 
     private NetTestHarness _harness = null!;
     private Instance _host = null!;
     private Instance _client = null!;
     private Vector3 _shore;
     private int _kept;
+
+    // A Grazer's collar on the client.
+    private Node3D? Collar(int bot) => _client.Main.Bots.Bodies.GetValueOrDefault(bot)?.Model?.Scene.FindChild("Collar", true, false) as Node3D;
     private Vector3 _keptAt;
 
     protected override string Tag => "wild";
@@ -116,16 +118,43 @@ public partial class WildTest : StagedTest
                 Check(gen.BiomeAt(bot!.Position.X, bot.Position.Z).Id is "meadow" or "field", $"Grazer {bot.Id} is in a meadow or field");
             // a herd appears within 5 m and each wanders up to 8 m round its own spot
             Check(grazers.All(a => grazers.Count(b => (a!.Position - b!.Position).Length() < 22f) >= 2), "each Grazer has herd mates near it");
+            Check(grazers.All(b => Collar(b!.Id) is { Visible: false }), "wild Grazers wear no collar");
             _kept = grazers[0]!.Id;
+            return true;
+        });
+        var fed = new List<ActionResult>();
+        var carrots = 0;
+        Add("the client tames a Grazer by feeding it three carrots", frame =>
+        {
+            if (frame == 0)
+            {
+                Check(_host.Main.Inventory.Items!.PlayerInventory(_client.Peer).Add(Carrot, 3) == 3, "the client gets three carrots");
+                carrots = _host.Main.Inventory.Items!.PlayerInventory(_client.Peer).Count(Carrot);
+            }
+            if (frame % 20 == 0 && fed.Count == frame / 20 && fed.Count < 3)
+            {
+                // stand by it (it wanders) and hand it a carrot
+                var at = _host.Main.Bots.Bots!.Find(_kept)!.Position.ToGodot();
+                _host.Main.PlayerSync.HostTeleport(_client.Peer, at + new Vector3(1.5f, 0.3f, 0));
+            }
+            if (frame % 20 == 10 && fed.Count == frame / 20 && fed.Count < 3)
+                _client.Main.Actions.Request(BotActions.FeedBot, new FeedBotArgs(_kept, Carrot), fed.Add);
+            if (fed.Count < 3 || _client.Main.Bots.Bodies.GetValueOrDefault(_kept)?.View is not { Kept: true })
+            {
+                if (frame == 500)
+                    GD.Print($"[wild] the feeds so far: {string.Join(", ", fed)}");
+                return false;
+            }
+            Check(fed.All(r => r.Ok), $"every feed is taken ({string.Join(", ", fed)})");
+            Check(_host.Main.Bots.Bots!.Find(_kept) is { Kept: true, Fed: 3 }, "three feeds tame it on the host");
+            Check(Collar(_kept) is { Visible: true }, "the client shows its collar");
+            Check(_host.Main.Inventory.Items!.PlayerInventory(_client.Peer).Count(Carrot) == carrots - 3, "three carrots were eaten");
             return true;
         });
         Add("a kept Grazer stays when the players leave and the wild ones go", frame =>
         {
             if (frame == 0)
             {
-                var result = _host.Main.Actions.Dispatcher.Dispatch(new ActionCaller(Creation.HostPeer, ActionSource.Bot), BotActions.KeepBot,
-                    System.Text.Json.JsonSerializer.Serialize(new KeepBotArgs(_kept), ActionJson.Options));
-                Check(result.Ok, $"KeepBot is accepted ({result})");
                 var away = meadow + new Vector3(0, 0, 400);
                 away.Y = _host.Main.Streamer.Generator.HeightAt(away.X, away.Z) + 0.5f;
                 _host.Main.PlayerSync.HostTeleport(_host.Peer, away);

@@ -48,7 +48,11 @@ internal sealed class BotFixture : IBotWorld, IRaidWorld
                 Attacks = [new BotAttackDefinition { Id = "boom", Kind = BotAttackKind.Area, Damage = 40, Radius = 4, Interval = 1, KillsSelf = true }],
             }),
             ("test", new BotDefinition { Id = "tank", Name = "Tank", Health = 1500, Speed = 3, RaidCost = 5, MeleeImmune = true }),
-            ("test", new BotDefinition { Id = "critter", Name = "Critter", Health = 30, Speed = 2, Passive = true }),
+            ("test", new BotDefinition
+            {
+                Id = "critter", Name = "Critter", Health = 30, Speed = 2, Passive = true,
+                Tame = new BotTameDefinition { Foods = [SurvivalFixture.Crop], Feeds = 2 },
+            }),
             ("test", new BotDefinition
             {
                 Id = "swimmer", Name = "Swimmer", Health = 30, Speed = 2, WaterSpeed = 6, SwimDepth = 0.5f,

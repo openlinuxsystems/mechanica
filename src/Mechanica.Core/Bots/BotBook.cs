@@ -65,6 +65,11 @@ public sealed record BotWild(bool Water, int Count, float MinDistance, float Max
 /// <param name="Share">Share of spawns (0 to 1) that try near one first.</param>
 public sealed record BotWildNear(IReadOnlySet<string> Objects, float Radius, float Share);
 
+/// <summary>How players tame a bot by feeding it (<see cref="BotActions.FeedBot"/>).</summary>
+/// <param name="Foods">Qualified item ids it eats from a player's hand.</param>
+/// <param name="Feeds">How many feeds keep it.</param>
+public sealed record BotTame(IReadOnlySet<string> Foods, int Feeds);
+
 /// <summary>A bot's model with its path qualified and every default filled in.</summary>
 /// <param name="Mesh">Qualified glTF path (<c>mod:meshes/bots/x.glb</c>).</param>
 /// <param name="Attacks">Clips each attack plays, by attack id (every attack has at least one).</param>
@@ -80,6 +85,9 @@ public sealed record BotModel(string Mesh, IReadOnlyDictionary<string, IReadOnly
 
     /// <summary>Clips it plays now and then while it stands calm.</summary>
     public IReadOnlyList<BotIdle> Idles { get; init; } = [];
+
+    /// <summary>Nodes shown only while the bot is kept (<see cref="BotModelDefinition.KeptNodes"/>).</summary>
+    public IReadOnlyList<string> KeptNodes { get; init; } = [];
 
     /// <summary>The shortest wait between idles, in s.</summary>
     public float IdleMin { get; init; } = BotBook.DefaultIdleMin;
@@ -162,6 +170,9 @@ public sealed record Bot(
     /// <summary>Where it lives in the wild, or null when it only comes in raids and as a guard.</summary>
     public BotWild? Wild { get; init; }
 
+    /// <summary>How players tame it, or null when it cannot be tamed.</summary>
+    public BotTame? Tame { get; init; }
+
     /// <summary>How far below the water's surface its middle swims (m), or null when it walks on the bottom.</summary>
     public float? SwimDepth { get; init; }
 
@@ -230,6 +241,9 @@ public sealed class BotBook : IBotCatalog
 
     /// <summary>Default share of a wild bot's spawns that try near its <see cref="BotWild.Near"/> objects first.</summary>
     public const float DefaultWildNearShare = 0.5f;
+
+    /// <summary>Feeds that tame a bot when its <c>tame</c> leaves <c>feeds</c> out.</summary>
+    public const int DefaultTameFeeds = 3;
 
     /// <summary>Deepest behaviour tree accepted.</summary>
     public const int MaxBehaviorDepth = 24;
@@ -394,6 +408,7 @@ public sealed class BotBook : IBotCatalog
         }
 
         var wild = b.Wild is { } w ? CheckWild(w, sink) : null;
+        var tame = b.Tame is { } t ? CheckTame(t, catalog, sink) : null;
 
         if (b.Behavior is { } tree)
             CheckBehavior(tree, "$.behavior", 1, new int[1], b.Script is not null, sink);
@@ -416,7 +431,7 @@ public sealed class BotBook : IBotCatalog
             return null;
         return new Bot($"{modId}:{b.Id}", modId, b.Name!, family, b.Health!.Value, b.Speed!.Value, b.WaterSpeed ?? b.Speed!.Value,
             b.Sight ?? DefaultSight, radius, height, b.Color?.ToLowerInvariant() ?? DefaultColor, b.MeleeImmune ?? false, b.Passive ?? false,
-            b.RaidCost, attacks, drops, script, b) { Model = model, SwimDepth = b.SwimDepth, Wild = wild };
+            b.RaidCost, attacks, drops, script, b) { Model = model, SwimDepth = b.SwimDepth, Wild = wild, Tame = tame };
     }
 
     private static BotModel? CheckModel(BotModelDefinition m, string modId, string? modDirectory, List<BotAttack> attacks, DiagnosticSink sink)
@@ -498,6 +513,11 @@ public sealed class BotBook : IBotCatalog
             else
                 idles.Add(new BotIdle(idle.Clip, idle.Sound, idle.Weight ?? 1f));
         }
+        for (var i = 0; i < (m.KeptNodes?.Count ?? 0); i++)
+        {
+            if (string.IsNullOrWhiteSpace(m.KeptNodes![i]))
+                sink.Error(code, $"$.model.kept_nodes[{i}]", "a node name is required.");
+        }
         var (idleMin, idleMax) = (DefaultIdleMin, DefaultIdleMax);
         if (m.IdleEvery is { } every)
         {
@@ -509,7 +529,7 @@ public sealed class BotBook : IBotCatalog
         if (sink.ErrorCount > errors)
             return null;
         return new BotModel(mesh!, clips, speeds, m.EyeCalm?.ToLowerInvariant() ?? DefaultEyeCalm, m.EyeEngaged?.ToLowerInvariant() ?? DefaultEyeEngaged,
-            effects) { Variants = variants, Idles = idles, IdleMin = idleMin, IdleMax = idleMax };
+            effects) { Variants = variants, Idles = idles, IdleMin = idleMin, IdleMax = idleMax, KeptNodes = m.KeptNodes ?? [] };
     }
 
     private static BotAttack? CheckAttack(BotAttackDefinition a, string path, string family, DiagnosticSink sink)
@@ -661,6 +681,29 @@ public sealed class BotBook : IBotCatalog
             HerdMax = w.Herd?[1] ?? 1,
             Near = near,
         };
+    }
+
+    private static BotTame? CheckTame(BotTameDefinition t, IPartCatalog catalog, DiagnosticSink sink)
+    {
+        const string code = DiagnosticCodes.BotInvalid;
+        var errors = sink.ErrorCount;
+        KnownKeys.WarnUnknown(t.Extra, "$.tame", sink, typeof(BotTameDefinition));
+        var foods = new HashSet<string>(StringComparer.Ordinal);
+        if (t.Foods is not { Count: > 0 })
+            sink.Error(code, "$.tame.foods", "list one or more foods it eats.");
+        for (var i = 0; i < (t.Foods?.Count ?? 0); i++)
+        {
+            var food = t.Foods![i];
+            if (!PartValidator.IsItemRef(food))
+                sink.Error(code, $"$.tame.foods[{i}]", $"'{food}' must be an item id or 'mod_id:item_id'.");
+            else if (catalog.FindDefinition(Identifiers.Qualify(food)) is null)
+                sink.Error(code, $"$.tame.foods[{i}]", $"there is no item '{Identifiers.Qualify(food)}'.");
+            else
+                foods.Add(Identifiers.Qualify(food));
+        }
+        if (t.Feeds is < 1)
+            sink.Error(code, "$.tame.feeds", "feeds must be 1 or more.");
+        return sink.ErrorCount > errors ? null : new BotTame(foods, t.Feeds ?? DefaultTameFeeds);
     }
 
     private static void Positive(float? value, string path, string label, bool required, DiagnosticSink sink)

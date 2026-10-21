@@ -61,6 +61,7 @@ public partial class BotModelView : Node3D
     private float _glowEnergy = 1f;
     private string? _loop;
     private string? _oneShot;
+    private readonly List<Node3D> _keptNodes = [];
     private double _oneShotLeft;
     private Vector3 _lastPosition;
     private Vector3 _velocity;
@@ -137,6 +138,10 @@ public partial class BotModelView : Node3D
         _shot = _scene.FindChild(BotEffects.ShotNode, true, false) as Node3D;
         if (_shot is not null)
             _shot.Visible = false;
+        // A tamed animal's collar and the like show only while it is kept.
+        _keptNodes.AddRange(Model.KeptNodes.Select(n => _scene.FindChild(n, true, false)).OfType<Node3D>());
+        foreach (var node in _keptNodes)
+            node.Visible = _view?.Kept == true;
         _player = LiftBody.FindPlayer(_scene);
         if (_player is not null)
         {
@@ -156,6 +161,8 @@ public partial class BotModelView : Node3D
     {
         var before = _view;
         _view = view;
+        foreach (var node in _keptNodes)
+            node.Visible = view.Kept;
         if (before is null)
         {
             _eye = view.Engaged ? 1f : 0f;
@@ -172,7 +179,11 @@ public partial class BotModelView : Node3D
             }
             return;
         }
-        if (view.Health < before.Health)
+        if (view.Kept && !before.Kept)
+            PlayOneShot("happy");
+        else if (view.Fed > before.Fed)
+            PlayOneShot("eat");
+        else if (view.Health < before.Health)
             PlayOneShot("hit");
         else if (view.Engaged && !before.Engaged)
             PlayOneShot("alert");

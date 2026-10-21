@@ -1908,6 +1908,7 @@
             "meshes/bots/grazer_fawn.glb",
             "meshes/bots/grazer_chocolate.glb"
           ],
+          "kept_nodes": ["Collar"],
           "clip_speeds": {
             "patrol": 0.61,
             "chase": 2.36
@@ -1921,6 +1922,7 @@
           ],
           "idle_every": [5, 12]
         },
+        "tame": { "foods": ["carrot"], "feeds": 3 },
         "wild": {
           "habitat": "land",
           "count": 4,

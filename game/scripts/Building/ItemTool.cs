@@ -1,5 +1,6 @@
 using Godot;
 using Mechanica.Core.Actions;
+using Mechanica.Core.Bots;
 using Mechanica.Core.Characters;
 using Mechanica.Core.Data;
 using Mechanica.Core.Input;
@@ -111,6 +112,20 @@ public partial class ItemTool : HandTool
         var aim = -Player.Camera.GlobalBasis.Z;
         Send(ScriptRuntime.UseItem, new UseItemArgs(hand!.Slot, new Vec3(aim.X, aim.Y, aim.Z), aimed?.Node.Creation.Id, aimed?.Part), done);
         return true;
+    }
+
+    /// <summary>Use (E) on an animal that eats the food in hand feeds it (<see cref="BotActions.FeedBot"/>), towards taming it.</summary>
+    public override (string Label, Action Run)? Interaction
+    {
+        get
+        {
+            if (!Active || InHand is not { } hand || Survival.Settings is not { } settings
+                || CastShown(Player, settings.Reach)?.Collider is not Bots.BotBody { View: { Dead: false, Kept: false } } bot
+                || bot.Type.Tame is not { } tame || !tame.Foods.Contains(hand.Item))
+                return null;
+            var item = hand.Item;
+            return (Loc.T("feed the {0}", Loc.Mod(bot.Type.Name)), () => Send(BotActions.FeedBot, new FeedBotArgs(bot.BotId, item), null));
+        }
     }
 
     /// <inheritdoc/>
