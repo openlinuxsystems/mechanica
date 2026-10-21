@@ -1,0 +1,21 @@
+{
+  "id": "plastic_block",
+  "name": "Plastic Block",
+  "description": "Moulded from crude oil. Light and buoyant.",
+  "category": "block",
+  "mass": 6,
+  "durability": 2,
+  "friction": 0.4,
+  "buoyancy": 0.7,
+  "flammable": false,
+  "stack_size": 500,
+  "sound_material": "plastic",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/plastic_block.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.3,
+    "metallic": 0,
+    "texture": "textures/blocks/plastic.png"
+  }
+}

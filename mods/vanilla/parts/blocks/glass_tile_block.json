@@ -1,0 +1,22 @@
+{
+  "id": "glass_tile_block",
+  "name": "Glass Tile Block",
+  "description": "Frosted glass bricks in a gunmetal grid. Lets light through, and breaks as easily as glass.",
+  "category": "block",
+  "mass": 4.5,
+  "durability": 1,
+  "friction": 0.3,
+  "buoyancy": 0.5,
+  "flammable": false,
+  "stack_size": 256,
+  "sound_material": "glass",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/glass_tile_block.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.1,
+    "metallic": 0,
+    "opacity": 0.85,
+    "texture": "textures/blocks/glass_tile.png"
+  }
+}

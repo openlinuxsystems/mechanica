@@ -1,0 +1,20 @@
+{
+  "id": "net_block",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 5
+    }
+  ],
+  "outputs": [
+    {
+      "item": "net_block",
+      "count": 20
+    }
+  ],
+  "time": 5,
+  "order": 129
+}

@@ -1,0 +1,25 @@
+{
+  "id": "plastic_wedge",
+  "name": "Plastic Wedge",
+  "description": "Plastic Block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 3,
+  "durability": 2,
+  "friction": 0.4,
+  "buoyancy": 0.7,
+  "flammable": false,
+  "stack_size": 500,
+  "sound_material": "plastic",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/plastic_wedge.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.3,
+    "metallic": 0,
+    "texture": "textures/blocks/plastic.png"
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/plastic_wedge.glb"
+  }
+}

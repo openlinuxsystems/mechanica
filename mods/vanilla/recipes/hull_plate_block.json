@@ -1,0 +1,24 @@
+{
+  "id": "hull_plate_block",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block_2",
+      "count": 10
+    },
+    {
+      "item": "circuit_board",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "hull_plate_block",
+      "count": 10
+    }
+  ],
+  "time": 10,
+  "order": 139
+}

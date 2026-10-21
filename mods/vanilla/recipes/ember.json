@@ -1,0 +1,24 @@
+{
+  "id": "ember",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_wood_block",
+      "count": 50
+    },
+    {
+      "item": "ember",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "ember",
+      "count": 5
+    }
+  ],
+  "time": 10,
+  "order": 915
+}

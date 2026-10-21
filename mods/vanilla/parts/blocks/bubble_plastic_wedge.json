@@ -1,0 +1,25 @@
+{
+  "id": "bubble_plastic_wedge",
+  "name": "Bubble Plastic Wedge",
+  "description": "Bubble Plastic Block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 0.75,
+  "durability": 1,
+  "friction": 0.4,
+  "buoyancy": 0.8,
+  "flammable": true,
+  "stack_size": 256,
+  "sound_material": "plastic",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/bubble_plastic_wedge.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.35,
+    "metallic": 0,
+    "texture": "textures/blocks/bubble_plastic.png"
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/bubble_plastic_wedge.glb"
+  }
+}

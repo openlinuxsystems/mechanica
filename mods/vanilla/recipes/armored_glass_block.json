@@ -1,0 +1,28 @@
+{
+  "id": "armored_glass_block",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "glass_block",
+      "count": 10
+    },
+    {
+      "item": "net_block",
+      "count": 2
+    },
+    {
+      "item": "ember",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "armored_glass_block",
+      "count": 10
+    }
+  ],
+  "time": 10,
+  "order": 157
+}

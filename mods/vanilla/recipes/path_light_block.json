@@ -1,0 +1,24 @@
+{
+  "id": "path_light_block",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 10
+    },
+    {
+      "item": "circuit_board",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "path_light_block",
+      "count": 10
+    }
+  ],
+  "time": 10,
+  "order": 137
+}

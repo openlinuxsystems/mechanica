@@ -1,0 +1,20 @@
+{
+  "id": "carpet_wedge",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "carpet_block",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "carpet_wedge",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 122
+}

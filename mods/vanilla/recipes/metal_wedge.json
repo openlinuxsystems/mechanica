@@ -5,20 +5,16 @@
   ],
   "inputs": [
     {
-      "item": "scrap_metal_block",
-      "count": 8
-    },
-    {
-      "item": "component_kit",
+      "item": "metal_block",
       "count": 1
     }
   ],
   "outputs": [
     {
       "item": "metal_wedge",
-      "count": 4
+      "count": 1
     }
   ],
   "time": 2,
-  "order": 160
+  "order": 124
 }

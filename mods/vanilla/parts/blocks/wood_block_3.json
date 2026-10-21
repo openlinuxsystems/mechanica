@@ -1,0 +1,22 @@
+{
+  "id": "wood_block_3",
+  "name": "Wood Block 3",
+  "description": "Steel-banded hardwood. Light, tough and very buoyant: good for boats and aircraft.",
+  "category": "block",
+  "mass": 3,
+  "durability": 6,
+  "friction": 0.5,
+  "buoyancy": 0.9,
+  "flammable": true,
+  "stack_size": 500,
+  "sound_material": "wood",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/wood_block_3.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.65,
+    "metallic": 0.2,
+    "texture": "textures/blocks/wood_3.png",
+    "texture_span": 4
+  }
+}

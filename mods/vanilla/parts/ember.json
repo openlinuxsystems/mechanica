@@ -1,0 +1,22 @@
+{
+  "id": "ember",
+  "name": "Ember",
+  "description": "A log of charcoal still glowing inside, held between two bolted caps. Found in the ashes of burnt trees; the Fabricator kindles more from wood. Glass, Glass Tile, Armored Glass and Metal Blocks 2 and 3 need it.",
+  "category": "resource",
+  "mass": 6,
+  "durability": 2,
+  "friction": 0.5,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/items/ember.glb",
+  "icon": "textures/items/ember_icon.png",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.8,
+    "metallic": 0
+  },
+  "loose": true
+}

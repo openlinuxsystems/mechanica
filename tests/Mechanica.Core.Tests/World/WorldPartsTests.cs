@@ -344,7 +344,7 @@ public sealed class WorldPartsTests
         var plain = new Creation(1, Catalog).With(Wood);
         Assert.Null(WorldOwned.Refusal(plain, "painted"));
         Assert.Null(WorldOwned.Refusal(null, "painted"));
-        Assert.Equal("The Wood Block belongs to the world: it can't be painted.",
+        Assert.Equal("The Wood Block 1 belongs to the world: it can't be painted.",
             WorldOwned.Refusal(Mechanica.Core.Tests.Creations.WorldOwnedCreations.Owned(plain), "painted"));
     }
 

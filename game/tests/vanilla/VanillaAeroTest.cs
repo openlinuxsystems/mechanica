@@ -194,7 +194,8 @@ public partial class VanillaAeroTest : StagedTest
         {
             // Two seconds of Space opens the lever all the way (lever_rate 0.5 a second).
             Input(_client, jump: frame < 130);
-            if (Body(_host, PlaneId).LinearVelocity.Length() < 14f && frame < 400)
+            // Rolled up to 16 m/s: at about 100 kg the wings need a little over 14 to lift it.
+            if (Body(_host, PlaneId).LinearVelocity.Length() < 16f && frame < 400)
                 return false;
             var moved = Body(_host, PlaneId).GlobalPosition - _start;
             var speed = Body(_host, PlaneId).LinearVelocity.Length();

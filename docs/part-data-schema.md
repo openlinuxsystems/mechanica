@@ -660,7 +660,7 @@ one place. Vanilla's groups:
 
 | Order | Group | Vanilla recipes, in order |
 |-------|-------|---------------------------|
-| 100 | Blocks | `scrap_wood_block`, `scrap_wood_wedge`, `scrap_metal_block`, `scrap_metal_wedge`, `metal_block`, `metal_wedge` |
+| 100 | Blocks | Each block then its wedge, scrap first: scrap wood, scrap metal, scrap stone, sand, Wood Blocks 1-3, cardboard, barrier, insulation, carpet, Metal Blocks 1-3, net, diamond plate, aluminum, rusted metal, path light, hull plate, brick, tile, Concrete Blocks 1-3, plaster, glass, glass tile, armored glass, plastic, bubble plastic |
 | 200 | Ramps, stairs and railings | `ramp_block`, `stairs_block`, `ladder`, `metal_railing` |
 | 300 | Beams and frames | `support_pillar`, `support_bracket`, `metal_column`, `ibeam_short`, `ibeam_long`, `door_frame`, `window_frame` |
 | 400 | Pipes | `small_pipe_short`, `small_pipe_long`, `small_pipe_corner`, `small_pipe_tee`, `small_pipe_cross`, `large_pipe_short`, `large_pipe_long`, `large_pipe_corner`, `large_pipe_tee` |
@@ -668,7 +668,7 @@ one place. Vanilla's groups:
 | 600 | Wheels | `scrap_wheel`, `wheel`, `big_wheel` |
 | 700 | Suspension | `sport_suspension`, `offroad_suspension` |
 | 800 | Engines | `scrap_gas_engine`, `gas_engine`, `electric_engine` |
-| 900 | Fuel and power | `gasoline`, `gas_container`, `battery`, `battery_pack` |
+| 900 | Fuel and power | `gasoline`, `ember`, `gas_container`, `battery`, `battery_pack` |
 | 1000 | Bearings and pistons | `bearing`, `piston` |
 | 1100 | Flight | `thruster`, `hover_jet`, `rotor`, `wing`, `control_surface` |
 | 1200 | Logic | `switch`, `button`, `logic_gate`, `timer`, `sensor` |

@@ -1508,6 +1508,15 @@ public partial class CaptureScene : Node
         "metal", "scrap_metal", "rusted_metal", "aluminum", "diamond_plate", "hull_plate", "glass", "armored_glass", "net", "path_light",
     ];
 
+    // The first batch of blocks matched to the full block list, with their wedges, in a row behind the others.
+    private static readonly (string Block, string Wedge)[] NewBlocks =
+    [
+        ("sand_block", "sand_wedge"), ("wood_block_2", "wood_wedge_2"), ("wood_block_3", "wood_wedge_3"),
+        ("metal_block_2", "metal_wedge_2"), ("metal_block_3", "metal_wedge_3"), ("concrete_block_2", "concrete_wedge_2"),
+        ("concrete_block_3", "concrete_wedge_3"), ("glass_tile_block", "glass_tile_wedge"), ("plastic_block", "plastic_wedge"),
+        ("bubble_plastic_block", "bubble_plastic_wedge"),
+    ];
+
     // A 3 by 3 panel of each block material with wedges in front, in two rows of ten, built through the Action API.
     private void BlockShots()
     {
@@ -1547,6 +1556,18 @@ public partial class CaptureScene : Node
             Place("vanilla:brick_block", wall, back);
             foreach (var (material, dx) in new[] { ("glass", 0f), ("armored_glass", 0.75f), ("net", 1.5f) })
                 Place($"vanilla:{material}_block", panel, back + new Vector3(dx, 0, 0.75f));
+            // The new blocks as 4 by 4 panels, wide enough to show a texture spanning four blocks.
+            var square = new List<Core.Creations.GridCell>();
+            for (var x = 0; x < 4; x++)
+                for (var y = 0; y < 4; y++)
+                    square.Add(new(x, y, 0));
+            for (var i = 0; i < NewBlocks.Length; i++)
+            {
+                var at = Ground(_meadow + new Vector3(-9.5f + i * 2f, 0, -6f)) + Vector3.Up * 0.16f;
+                Place($"vanilla:{NewBlocks[i].Block}", square, at);
+                Place($"vanilla:{NewBlocks[i].Wedge}", [new(0, 0, 0)], at + new Vector3(0f, 0f, 0.6f));
+                Place($"vanilla:{NewBlocks[i].Wedge}", [new(0, 0, 0), new(1, 0, 0)], at + new Vector3(0.375f, 0f, 0.6f));
+            }
             // Walls of the scrap blocks, 8 by 6, to show textures that span several blocks.
             var big = new List<Core.Creations.GridCell>();
             for (var x = 0; x < 8; x++)
@@ -1570,6 +1591,16 @@ public partial class CaptureScene : Node
         {
             var x = -9.5f + i * 3f + 0.875f;
             Shot($"blocks_{12 + i}_wall_{ScrapWalls[i]}", 30, () => View(new Vector3(x + 0.6f, 1.0f, 11.2f), new Vector3(x, 0.8f, 8f)));
+        }
+        for (var i = 0; i < NewBlocks.Length; i += 2)
+        {
+            var x = -9.5f + i * 2f + 1.9f;
+            Shot($"blocks_2{i / 2}_new_{NewBlocks[i].Block}", 30, () => View(new Vector3(x, 1.3f, -3.4f), new Vector3(x, 0.5f, -6f)));
+        }
+        for (var i = 0; i < NewBlocks.Length; i++)
+        {
+            var x = -9.5f + i * 2f + 0.4f;
+            Shot($"blocks_3{i}_close_{NewBlocks[i].Block}", 30, () => View(new Vector3(x + 0.3f, 0.9f, -4.3f), new Vector3(x, 0.45f, -6f)));
         }
         Shot("blocks_11_close_scrap_metal", 30, () => View(new Vector3(-6.7f, 0.85f, 1.5f), new Vector3(-7.25f, 0.4f, 0.2f)));
     }

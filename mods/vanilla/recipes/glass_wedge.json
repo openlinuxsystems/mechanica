@@ -1,0 +1,20 @@
+{
+  "id": "glass_wedge",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "glass_block",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "glass_wedge",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 154
+}

@@ -1,0 +1,26 @@
+{
+  "id": "glass_tile_wedge",
+  "name": "Glass Tile Wedge",
+  "description": "Glass Tile Block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 2.25,
+  "durability": 1,
+  "friction": 0.3,
+  "buoyancy": 0.5,
+  "flammable": false,
+  "stack_size": 256,
+  "sound_material": "glass",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/glass_tile_wedge.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.1,
+    "metallic": 0,
+    "opacity": 0.85,
+    "texture": "textures/blocks/glass_tile.png"
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/glass_tile_wedge.glb"
+  }
+}

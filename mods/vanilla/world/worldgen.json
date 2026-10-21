@@ -928,6 +928,7 @@
       "health": 40.0,
       "damage_from": ["sledge", "saw", "explosion"],
       "breaks_into": { "count": 2, "count_max": 3, "parts": [{ "part": "wood_log" }] },
+      "drops": [{ "item": "ember", "count": 1, "count_max": 2 }],
       "fell": { "height": 6.0, "spin": 0.6 },
       "sounds": { "hit": "leafy_hit", "break": "leafy_fall" },
       "debris": { "chips": ["#2a2522", "#4a3a30"] }

@@ -1,0 +1,22 @@
+{
+  "id": "metal_block_3",
+  "name": "Metal Block 3",
+  "description": "Heavy armour plate. The toughest metal block.",
+  "category": "block",
+  "mass": 7.5,
+  "durability": 8,
+  "friction": 0.4,
+  "buoyancy": 0.6,
+  "flammable": false,
+  "stack_size": 500,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/metal_block_3.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.34,
+    "metallic": 0.85,
+    "texture": "textures/blocks/metal_3.png",
+    "texture_span": 4
+  }
+}

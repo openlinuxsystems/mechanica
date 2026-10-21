@@ -1,0 +1,24 @@
+{
+  "id": "concrete_block_2",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "concrete_block",
+      "count": 10
+    },
+    {
+      "item": "metal_block_2",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "concrete_block_2",
+      "count": 10
+    }
+  ],
+  "time": 10,
+  "order": 147
+}

@@ -1,0 +1,21 @@
+{
+  "id": "bubble_plastic_block",
+  "name": "Bubble Plastic Block",
+  "description": "Air cushions in plastic film. Almost weightless and very buoyant: made for boats.",
+  "category": "block",
+  "mass": 1.5,
+  "durability": 1,
+  "friction": 0.4,
+  "buoyancy": 0.8,
+  "flammable": true,
+  "stack_size": 256,
+  "sound_material": "plastic",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/bubble_plastic_block.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.35,
+    "metallic": 0,
+    "texture": "textures/blocks/bubble_plastic.png"
+  }
+}

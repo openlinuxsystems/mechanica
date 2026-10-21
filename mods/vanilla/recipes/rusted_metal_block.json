@@ -1,0 +1,24 @@
+{
+  "id": "rusted_metal_block",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal_block",
+      "count": 10
+    },
+    {
+      "item": "water_bucket_full",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "rusted_metal_block",
+      "count": 10
+    }
+  ],
+  "time": 5,
+  "order": 135
+}
