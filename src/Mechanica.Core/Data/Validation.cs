@@ -546,6 +546,18 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             RequirePositive(soil.DryTime, "$.soil.dry_time", "dry_time (s)", false, "soil", sink);
             if (soil.WetLevel is { } wet && !(wet > 0 && wet <= 1))
                 sink.Error(Code, "$.soil.wet_level", $"wet_level must be more than 0 and at most 1 (got {wet}).");
+            if (soil.Yield is < 1)
+                sink.Error(Code, "$.soil.yield", "yield must be 1 or more.");
+            if (soil.Seeds is { } seeds)
+            {
+                if (seeds.Count == 0)
+                    sink.Error(Code, "$.soil.seeds", "seeds must list at least one seed (leave it out to take any).");
+                for (var i = 0; i < seeds.Count; i++)
+                {
+                    if (!IsItemRef(seeds[i]))
+                        sink.Error(Code, $"$.soil.seeds[{i}]", $"'{seeds[i]}' is not an item id or 'mod_id:item_id'.");
+                }
+            }
             KnownKeys.WarnUnknown(soil.Extra, "$.soil", sink, typeof(SoilDefinition));
         }
     }

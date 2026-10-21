@@ -310,6 +310,8 @@ in `properties`. The vanilla scripts read these properties:
 | `scripts/seed.lua` | (none) | Plants the seed in the soil aimed at. Its `seed` section (below) says what grows. |
 | `scripts/watering.lua` | `seconds` (s) | Seconds of water one use adds to the soil aimed at. The item is used up. |
 | `scripts/soil.lua` (a part) | `interval` (s) | How often the soil works out its crop's growth while its Creation is live. Growth is exact whatever it is (it comes from the world clock); it only bounds how late a new stage shows. The soil also grows, from the clock, the time its Creation was parked. E on a ripe crop (`ActivatePart`) harvests it. |
+| | `charge_item` | Makes the soil powered (the Growbed): growth uses up one of these items (vanilla `battery_pack`) per `charge_time` seconds, taken from the containers wired into the part's logic inputs, else from any container on its Creation. Without one the crop stops growing until there is. The model's `on` clip plays while it grows and `off` otherwise (`display.clips` with a `pose` readout). Creative needs none. Omitted means unpowered (ground soil). |
+| | `charge_time` (s) | Seconds of growth one `charge_item` powers (the Growbed: 360). Required with `charge_item`. |
 
 ```json
 "script": "scripts/potato_gun.lua",
@@ -329,6 +331,8 @@ in `properties`. The vanilla scripts read these properties:
 | `soil.growth` | number > 0 | Growth speed multiplier for crops on it. Default 1. |
 | `soil.dry_time` | number > 0 (s) | Seconds full soil with nothing planted takes to dry out completely (vanilla 1440, about a game day). Read by `soil.lua`; omitted, empty soil keeps its water. |
 | `soil.wet_level` | number in (0, 1] | Share of `capacity` from which the soil looks fully wet. Below it, watered soil looks lightly watered, or drying once it has been fully wet. Default 0.5. |
+| `soil.yield` | integer ≥ 1 | Crop items every harvest from this soil gives, whatever the seed's `yield` (the Growbed: 5). Read by `soil.lua`. Default: the seed's `yield`. |
+| `soil.seeds` | array of item ids | The only seeds it takes (a bare id is in the part's own mod); planting any other is refused. Omitted takes any seed. |
 | `respawn_point` | bool | Players can sleep in it (E) to respawn there. |
 | `aim.zoom` | number 0.2 to 1 | While right click is held the field of view is multiplied by this (a slight zoom) and the crosshair tightens. Default 0.85. The script sees `target.aiming`. |
 | `aim.fire_on_release` | bool | Fire when right click is let go, as well as on left click while aiming. Default false. |
@@ -339,6 +343,13 @@ in `properties`. The vanilla scripts read these properties:
 
 The soil's script (vanilla `scripts/soil.lua`) reads these through `world.item(seed, "seed")`, so another
 soil script may treat them differently. A bare `crop` id is in the seed's own mod.
+
+Soil need not be ground: a part with a `soil` section and no `ground_only` builds into a Creation like any other part
+(the Growbed, parts map E9). Its crop lives on that part, so it rides with the Creation, follows the part when the Creation
+splits or welds, streams and saves with it. Only the model's meshes named `Soil…` (any depth) take the wet and dry soil
+looks and set the height the crop stands at; without such meshes the whole model is soil. Only soil placed from an item
+(`placed_from`, the Soil Bag) plays the spill animation. Picking soil up gives an unripe crop's seed back and is refused
+while the crop is ripe (harvest it first); breaking it drops the seed with whatever it held.
 
 ### Crop plant models
 
@@ -689,7 +700,7 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 | 1600 | Lights | `shack_light`, `glowstick`, `fluorescent_light`, `packing_lamp`, `interior_light`, `headlight`, `spotlight`, `construction_light`, `warning_light`, `beacon_scrap`, `beacon`, `warehouse_spotlight`, `frame_beam_light`, `neon_sign`, `protector_sign` |
 | 1700 | Storage | `chest` (Scrap Chest), `small_chest`, `large_chest`, `cargo_chest`, `barrel`, `locker`, `tool_cabinet`, `file_cabinet`, `fridge`, `chemical_container`, `water_container`, `potato_ammo_container`, `dispenser`, `broken_microwave`, `ruin_chest` |
 | 1800 | Stations | `portable_fabricator`, `refiner`, `respawn_bed`, `fancy_bed`, `freezer`, `ice_block_freezer` (the Freezer's one recipe) |
-| 1900 | Farming | `soil_bag`, `water_bucket`, `feeding_trough`, `lead` |
+| 1900 | Farming | `soil_bag`, `water_bucket`, `feeding_trough`, `lead`, `growbed` |
 | 2000 | Furniture | `stool`, `chair`, `toilet`, `bathtub`, `anvil`, `cash_register`, `wooden_table`, `metal_table`, `office_table`, `table_support`, `office_chair_base`, `cubicle_wall`, `shelf_unit`, `shelf_pillar`, `shelf_support`, `shelf_support_tall`, `pallet`, `stall_door`, `sink`, `mattress`, `pillow`, `mug`, `calendar`, `toilet_paper` |
 | 2100 | Road signs | `stop_sign`, `caution_sign`, `danger_sign`, `no_entry_sign`, `speed_limit_sign`, `direction_arrow_left`, `direction_arrow_straight`, `direction_arrow_right` |
 | 2200 | Road and site | `traffic_cone`, `barrier_tape`, `outpost_sign`, `warehouse_key_sign` |

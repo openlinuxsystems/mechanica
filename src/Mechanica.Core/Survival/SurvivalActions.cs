@@ -828,7 +828,20 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             return $"Unknown item '{seed}'.";
         if (CropOf(Identifiers.Qualify(seed), item.Seed) is not { } crop || catalog.FindDefinition(crop) is null)
             return $"{item.Name ?? seed} cannot be planted.";
-        return world.FindCreation(creationId)!.SoilOf(partId)!.Seed is not null ? "Something is already growing there." : null;
+        var creation = world.FindCreation(creationId)!;
+        if (!Grows(creation, partId, seed))
+            return $"The {creation.DefinitionOf(partId).Name ?? "soil"} cannot grow {item.Name ?? seed}.";
+        return creation.SoilOf(partId)!.Seed is not null ? "Something is already growing there." : null;
+    }
+
+    // True when the soil part's soil.seeds (bare ids in the part's own mod) lists the seed, or lists nothing.
+    private static bool Grows(Creation creation, int partId, string seed)
+    {
+        if (creation.DefinitionOf(partId).Soil?.Seeds is not { } seeds)
+            return true;
+        var owner = Identifiers.Qualify(creation.FindPart(partId)!.Part).Split(':')[0];
+        var wanted = Identifiers.Qualify(seed);
+        return seeds.Any(s => Identifiers.Qualify(s, owner) == wanted);
     }
 
     /// <summary>
@@ -1285,14 +1298,25 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         return drop;
     }
 
-    /// <summary>A part with an inventory is breaking: everything in it falls out as a pile where it was.</summary>
+    /// <summary>
+    /// A part is breaking: everything in its inventory falls out as a pile where it was, and so does the seed of a crop
+    /// planted in it (soil on a Creation, a Growbed, that is smashed).
+    /// </summary>
     public void Spill(Creation creation, int partId)
     {
-        if (creation.InventoryOf(partId) is not { IsEmpty: false } inventory)
-            return;
-        var items = inventory.Slots.Where(s => s is not null).Select(s => s!).ToList();
-        inventory.Clear();
-        AddDrop(PartCentre(creation, partId), items);
+        var items = new List<ItemStack>();
+        if (creation.InventoryOf(partId) is { IsEmpty: false } inventory)
+        {
+            items.AddRange(inventory.Slots.Where(s => s is not null).Select(s => s!));
+            inventory.Clear();
+        }
+        if (creation.SoilOf(partId) is { Seed: { } seed } soil)
+        {
+            items.Add(new ItemStack(seed, 1));
+            soil.Clear();
+        }
+        if (items.Count > 0)
+            AddDrop(PartCentre(creation, partId), items);
     }
 
     private void RemoveDrop(int id)

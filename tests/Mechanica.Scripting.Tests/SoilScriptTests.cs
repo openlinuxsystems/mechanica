@@ -62,6 +62,43 @@ public sealed class SoilScriptTests : IDisposable
     }
 
     [Fact]
+    public void SoilOnACreationGrowsOnBatteriesAndGivesItsFixedYield()
+    {
+        // A Growbed-like soil part (E9) built into a Creation with a container: each Scrap (its battery) grows for 10 s.
+        F.Catalog.Add("test:bed", F.Catalog.FindDefinition(Soil)! with
+        {
+            Id = "bed",
+            Soil = new SoilDefinition { Capacity = 60, Growth = 2, Yield = 5 },
+            Properties = new JsonObject { ["interval"] = 0.5, ["charge_item"] = "scrap", ["charge_time"] = 10 },
+        });
+        var cart = new Creation(F.World.NextCreationId(), F.Catalog);
+        Assert.True(cart.TryPlacePart("test:bed", new GridCell(0, 0, 0), default, out _, out var error), error);
+        Assert.True(cart.TryPlacePart(Chest, new GridCell(1, 0, 0), default, out _, out error), error);
+        cart.SetAllBodyPoses(new Pose(new Vector3(0, 0, 1), Quaternion.Identity));
+        F.World.Added(cart);
+        cart.InventoryOf(2)!.Add(Scrap, 1);
+        _rig.Runtime.Update(1);
+        F.Survival.PlantSeed(Me, cart.Id, 1, Seed);
+        F.Survival.WaterSoil(Me, cart.Id, 1, 60);
+
+        _rig.Runtime.Update(100); // one battery: 10 s of growing at speed 2, 20 of 40 s, then it stops
+        Assert.Equal((20f, 50f, 2), (State(cart.Id).Grown, View(cart.Id).Water, View(cart.Id).Stage));
+        Assert.Equal(0, cart.InventoryOf(2)!.Count(Scrap));
+        _rig.Runtime.Update(100);
+        Assert.Equal(20f, State(cart.Id).Grown); // no power, no growth, no water used
+        Assert.Equal(50f, View(cart.Id).Water);
+
+        cart.InventoryOf(2)!.Add(Scrap, 3);
+        _rig.Runtime.Update(100); // ripe on one more battery; the rest stay in the chest
+        Assert.True(View(cart.Id).Ripe);
+        Assert.Equal(2, cart.InventoryOf(2)!.Count(Scrap));
+
+        var items = Activate(Me, cart.Id)["items"]!.AsArray().Select(i => (i!["item"]!.GetValue<string>(), i["count"]!.GetValue<int>()));
+        Assert.Equal([(Crop, 5), (Seed, 1)], items); // the bed's yield, not the seed's 2
+        Assert.DoesNotContain(_rig.Messages, m => m.Kind != ScriptMessageKind.Print);
+    }
+
+    [Fact]
     public void EmptyWateredSoilDriesOutWatchedThroughItsFourLooks()
     {
         // Full (60 s) soil dries in 100 s with nothing planted, and looks wet from 30 s of water up.

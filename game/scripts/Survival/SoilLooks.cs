@@ -116,8 +116,9 @@ public partial class SoilLooks : Node3D
                 if (look is null)
                 {
                     look = _looks[key] = new Look();
-                    // Mounds there when the world loads were not just spilled.
-                    if (_started && !_seen.Contains(key) && _sounds.Any(s => s.At.DistanceTo(partNode.GlobalPosition) < SoundReach))
+                    // Mounds there when the world loads were not just spilled, nor is soil that comes out of no bag (a Growbed).
+                    if (_started && !_seen.Contains(key) && node.Creation.DefinitionOf(part).PlacedFrom is not null
+                        && _sounds.Any(s => s.At.DistanceTo(partNode.GlobalPosition) < SoundReach))
                         StartSpill(look, node, part, partNode, now);
                 }
                 if (look.Model != model)
@@ -148,12 +149,12 @@ public partial class SoilLooks : Node3D
         _started = true;
     }
 
-    // Swaps each mesh of a part's new model to the soil material (the nodes are remade whenever the Creation is rebuilt).
+    // Swaps the soil meshes of a part's new model to the soil material (the nodes are remade whenever the Creation is rebuilt).
     private static void Take(Look look, Node3D partNode, Node3D model)
     {
         look.PartNode = partNode;
         look.Model = model;
-        look.Meshes = [.. model.GetChildren().OfType<MeshInstance3D>()];
+        look.Meshes = SoilMeshes(model);
         look.Shown = (float.NaN, 0, 0);
         foreach (var mesh in look.Meshes)
         {
@@ -164,6 +165,17 @@ public partial class SoilLooks : Node3D
                     mesh.SetSurfaceOverrideMaterial(i, SoilMaterial.For(source));
             }
         }
+    }
+
+    /// <summary>
+    /// The meshes of a soil part's model that are soil: those named <c>Soil…</c> anywhere in it (a Growbed's fill, not its
+    /// planks), or every mesh of a model that names none (a mound is all soil).
+    /// </summary>
+    public static MeshInstance3D[] SoilMeshes(Node3D model)
+    {
+        var all = model.FindChildren("*", nameof(MeshInstance3D), recursive: true, owned: false).OfType<MeshInstance3D>().ToArray();
+        var named = all.Where(m => m.Name.ToString().StartsWith("Soil", StringComparison.Ordinal)).ToArray();
+        return named.Length > 0 ? named : all;
     }
 
     // Sets the look on the meshes when it changed.

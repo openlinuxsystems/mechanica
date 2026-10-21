@@ -672,6 +672,14 @@ public sealed partial class ScriptRuntime
             return _survival!.CheckPlant(instance.Caller, creation, part, seed) is { } bad ? NilBecause(bad)
                 : SoilTable(script, _survival.PlantSeed(instance.Caller, creation, part, seed));
         });
+        Fn(farm, "can_plant", args =>
+        {
+            // Only reads, so an item's can_use may ask it: the same check farm.plant makes.
+            var instance = ItemNow();
+            var (creation, part) = SoilArgs(args, "farm.can_plant");
+            var seed = args.Count > 2 && !args[2].IsNil() ? ItemId(instance, args.AsType(2, "farm.can_plant", DataType.String).String) : instance.PartType;
+            return _survival!.CheckPlant(instance.Caller, creation, part, seed) is { } bad ? NilBecause(bad) : DynValue.True;
+        });
         Fn(farm, "water", args =>
         {
             var (_, caller, _) = Combatant("farm.water", acting: true);
