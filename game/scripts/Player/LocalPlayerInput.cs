@@ -2,13 +2,14 @@ using Godot;
 using Mechanica.Core.Input;
 using Mechanica.Core.Player;
 using Mechanica.Game.Settings;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Player;
 
 /// <summary>
 /// Turns this machine's keyboard and mouse into <see cref="PlayerInput"/> for one player.
 /// It writes into the controller; on a client, <see cref="Net.PlayerSync"/> also sends each tick's input to the host.
-/// Crouch slows the player (and dives in deep water). Click captures the mouse and Esc releases it. The camera starts
+/// Crouch slows the player (and dives in deep water). Click captures the mouse (unless a window is open) and Esc releases it. The camera starts
 /// third-person (UI spec §6); Zoom in (X) and Zoom out (C) step it closer or further, and all the way in is first-person.
 /// Look speed, inverted look and field of view come from the player's settings. While the mouse is free
 /// (a menu, the inventory or a panel is open) the player stands still and a seated player stops driving.
@@ -29,6 +30,9 @@ public partial class LocalPlayerInput : Node
 
     /// <summary>True while the player's owner watches someone else (<see cref="Spectator"/>): the player stands still.</summary>
     public Func<bool> Suspended { get; set; } = () => false;
+
+    /// <summary>Takes the mouse for the game when the player clicks the world (tests count the calls).</summary>
+    public Action CaptureMouse { get; set; } = () => Input.MouseMode = Input.MouseModeEnum.Captured;
 
     /// <summary>The player this input drives.</summary>
     public PlayerController Target { get; set; } = null!;
@@ -72,7 +76,11 @@ public partial class LocalPlayerInput : Node
                 _pitch = Mathf.Clamp(_pitch - motion.Relative.Y * MouseSensitivity * (GameSettings.Current.InvertY ? -1 : 1), -maxPitch, maxPitch);
                 break;
             case InputEventMouseButton { Pressed: true } when Input.MouseMode != Input.MouseModeEnum.Captured:
-                Input.MouseMode = Input.MouseModeEnum.Captured;
+                // A click on the screen around an open window leaves the mouse with the window: only closing it
+                // gives the mouse back to the game.
+                if (EscapeStack.AnyOpenIn(GetViewport()))
+                    return;
+                CaptureMouse();
                 break;
             default:
                 // Esc frees the mouse; the key goes on to the in-game menu, which opens or closes what is open.

@@ -47,6 +47,12 @@ public static class EscapeStack
     /// <summary>The topmost open panel that is a <typeparamref name="T"/>.</summary>
     public static T? TopmostOf<T>() where T : Node => Top(n => n is T) as T;
 
+    /// <summary>
+    /// True while a panel in <paramref name="viewport"/> is open, so a click on the screen around it must not take the
+    /// mouse back for the game (each Sandbox instance is its own viewport, under the Sandbox's own window).
+    /// </summary>
+    public static bool AnyOpenIn(Viewport viewport) => Top(n => n.GetViewport() == viewport) is not null;
+
     /// <summary>Closes <see cref="Topmost"/>; false when nothing is open.</summary>
     public static bool CloseTopmost()
     {
