@@ -12,7 +12,7 @@ namespace Mechanica.Game.Tests;
 /// the in-game menu, Options (every tab, scrolled past both ends), the save screen, AI Reports, the inventory, the Fabricator screen, a Gas Container, the upgrade dialog, the Logbook, the full map, the Lift's
 /// blueprint menu, the Paint Tool's colour picker, a part's menu and a confirm dialog never reach the game behind them (nor over the hotbar while the inventory is open), nor do clicks on the screen around a window opened from
 /// the menu, where a wheel changes the hotbar and a click takes the
-/// mouse back and closes the menu. The windows are still open afterwards. Esc closes each of them, the window opened
+/// mouse back and closes the menu. A click on the world around any open window leaves the mouse free. The windows are still open afterwards. Esc closes each of them, the window opened
 /// last first, and opens the menu only when nothing is open.
 /// </summary>
 public partial class WindowsTest : StagedTest
@@ -462,6 +462,41 @@ public partial class WindowsTest : StagedTest
             Check(_main.Characters.Window is not null, "the choice is still open");
             return Clean("the character choice");
         });
+        Add("choosing a character closes the choice", frame =>
+        {
+            if (frame == 0)
+            {
+                _main.Characters.Choose(_main.Characters.Book.Default!.QualifiedId);
+                return false;
+            }
+            if (_main.Characters.Window is not null && frame < 120)
+                return false;
+            Check(_main.Characters.Window is null, "the choice closes");
+            return true;
+        });
+        // A click on the screen around an open window leaves the mouse free (it used to take it for the game, with the
+        // window still open); only with nothing open does a click take the mouse.
+        ClicksAround("the inventory", () => _main.GetNode<Items.InventoryScreen>("InventoryScreen").Show(null), () => _main.GetNode<Items.InventoryScreen>("InventoryScreen").IsOpen);
+        ClicksAround("the Fabricator screen", () => _main.GetNode<Items.InventoryScreen>("InventoryScreen").Show(Core.Items.InventoryRef.OfPart(_station.Creation, _station.Part)), () => _main.GetNode<Items.InventoryScreen>("InventoryScreen").IsOpen);
+        ClicksAround("the Logbook", () => _main.GetNode<Quests.QuestHud>("QuestHud").Open(), () => _main.GetNode<Quests.QuestHud>("QuestHud").IsOpen);
+        ClicksAround("the full map", () => _main.GetNode<Quests.MapHud>("MapHud").Open(), () => _main.GetNode<Quests.MapHud>("MapHud").IsOpen);
+        ClicksAround("the blueprint menu", () => _main.Blueprints!.Open(), () => _main.Blueprints!.IsOpen);
+        ClicksAround("a part's menu", () => _main.PartSettings!.Open(_station.Creation, _engine), () => _main.PartSettings!.IsOpen);
+        ClicksAround("the Creation Inspector", () => _main.Inspector.Open(_station.Creation), () => _main.Inspector.IsOpen);
+        ClicksAround("chat", () => _main.GetNode<Chat.ChatPanel>("ChatPanel").Open(), () => _main.GetNode<Chat.ChatPanel>("ChatPanel").IsOpen);
+        Add("with nothing open a click takes the mouse", frame =>
+        {
+            var input = _main.GetNode<LocalPlayerInput>("LocalPlayerInput");
+            var captures = 0;
+            var capture = input.CaptureMouse;
+            input.CaptureMouse = () => captures++;
+            Check(EscapeStack.Topmost is null, $"nothing is open ({EscapeStack.Topmost?.Name})");
+            Press(AroundPoints().First(), MouseButton.Left);
+            input.CaptureMouse = capture;
+            Check(captures == 1, $"the click takes the mouse ({captures})");
+            _leaked.Clear();
+            return true;
+        });
     }
 
     // A Fabricator on a small wooden floor in front of the player.
@@ -540,6 +575,45 @@ public partial class WindowsTest : StagedTest
         Check(!_menu.IsOpen, $"Esc on {what} does not open the menu too");
         return true;
     });
+
+    private void ClicksAround(string what, Action open, Func<bool> isOpen) => Add($"a click around {what} leaves the mouse free", frame =>
+    {
+        if (frame == 0)
+        {
+            open();
+            return false;
+        }
+        if (EscapeStack.Topmost is null && frame < 120)
+            return false;
+        var input = _main.GetNode<LocalPlayerInput>("LocalPlayerInput");
+        var captures = 0;
+        var capture = input.CaptureMouse;
+        input.CaptureMouse = () => captures++;
+        _leaked.Clear();
+        foreach (var at in AroundPoints())
+        {
+            Press(at, MouseButton.Left);
+            Press(at, MouseButton.Right);
+        }
+        input.CaptureMouse = capture;
+        Move(AroundPoints().First());
+        Check(_leaked.Count > 0, $"the clicks around {what} land on the world, not on another window ({GetViewport().GuiGetHoveredControl()?.Name})");
+        Check(captures == 0, $"no click around {what} takes the mouse ({captures} did)");
+        Check(isOpen(), $"{what} is still open");
+        while (isOpen() && EscapeStack.CloseTopmost())
+        {
+        }
+        _leaked.Clear();
+        return true;
+    });
+
+    // Points near the left and right edges of the screen, half way up: outside every window, clear of the HUD.
+    private IEnumerable<Vector2> AroundPoints()
+    {
+        var size = GetViewport().GetVisibleRect().Size;
+        yield return new Vector2(12, size.Y / 2);
+        yield return new Vector2(size.X - 12, size.Y / 2);
+    }
 
     private void PressEsc()
     {
