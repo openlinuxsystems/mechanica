@@ -1,0 +1,19 @@
+{
+  "id": "crane_body",
+  "name": "Crane Body",
+  "description": "A colony hoist with its cable drum and motor. Hang a Crane Hook under it.",
+  "category": "decor",
+  "mass": 10.5,
+  "durability": 6,
+  "friction": 0.5,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [4, 4, 4],
+  "mesh": "meshes/parts/crane_body.glb",
+  "icon": "textures/items/crane_body_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}
