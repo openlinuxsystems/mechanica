@@ -1508,10 +1508,14 @@ public partial class CaptureScene : Node
         "metal", "scrap_metal", "rusted_metal", "aluminum", "diamond_plate", "hull_plate", "glass", "armored_glass", "net", "path_light",
     ];
 
-    // The latest batch of blocks matched to the full block list (batch 3), with their wedges, in a row behind the others.
+    // The latest blocks to change (the texture review's redrawn ones), with their wedges, in a row behind the others.
     private static readonly (string Block, string Wedge)[] NewBlocks =
     [
-        ("cracked_concrete_block", "cracked_concrete_wedge"), ("concrete_slab_block", "concrete_slab_wedge"),
+        ("carpet_block", "carpet_wedge"), ("scrap_stone_block", "scrap_stone_wedge"),
+        ("scrap_metal_block", "scrap_metal_wedge"), ("scrap_wood_block", "scrap_wood_wedge"),
+        ("plaster_block", "plaster_wedge"), ("hull_plate_block", "hull_plate_wedge"),
+        ("brick_block", "brick_wedge"), ("aluminum_block", "aluminum_wedge"),
+        ("rusted_metal_block", "rusted_metal_wedge"), ("concrete_block", "concrete_wedge"),
     ];
 
     // A 3 by 3 panel of each block material with wedges in front, in two rows of ten, built through the Action API.

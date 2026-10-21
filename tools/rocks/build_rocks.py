@@ -17,8 +17,6 @@ What it builds (procedurally, from scratch: no .blend inputs, no downloads):
   its long axis along glTF Z.
 * ``mods/vanilla/meshes/items/metal_rod.glb`` - the Metal Rod: the same bar in brushed steel (metallic 0.9,
   roughness about 0.35) with slightly bevelled edges and one thin seam line along the top.
-* ``mods/vanilla/textures/blocks/scrap_stone.png`` - the Scrap Stone Block texture: 512 x 512, one 0.25 m block
-  face, tiling seamlessly (rubble stones in dark mortar).
 
 Each model is one mesh with one material: a baked albedo atlas (one box chart per side, see rock_textures.py) and
 a tangent-space normal map, plus a metallic-roughness map on the metal-rich ones; the images are embedded in the
@@ -28,7 +26,7 @@ so the rods are built along Blender Y).
 How to run (Blender as a Python module, no Blender UI needed):
 
     pip install bpy==5.2.2 numpy pillow
-    python tools/rocks/build_rocks.py                  # writes the .glb files and the .png
+    python tools/rocks/build_rocks.py                  # writes the .glb files
     python tools/rocks/build_rocks.py --render OUT_DIR # also renders the review sheet and an outcrop into OUT_DIR
 
 The outputs are committed; re-run this script after changing it and commit the result. The build is
@@ -46,7 +44,6 @@ from pathlib import Path
 import bpy  # noqa: I001  (bpy first: it makes bmesh and mathutils importable)
 import bmesh
 import numpy as np
-from PIL import Image
 
 sys.dont_write_bytecode = True                      # no __pycache__ next to the script
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -55,7 +52,6 @@ import rock_textures as rt  # noqa: E402
 REPO = Path(__file__).resolve().parents[2]
 WORLD = REPO / "mods" / "vanilla" / "meshes" / "world"
 ITEMS = REPO / "mods" / "vanilla" / "meshes" / "items"
-BLOCKS = REPO / "mods" / "vanilla" / "textures" / "blocks"
 
 # ---- Dimensions (metres) ----------------------------------------------------------------------------
 # Deposit blocks, half extents in Blender x, y, z (up): glTF and worldgen size [2x, 2z (up), 2y].
@@ -340,14 +336,6 @@ def export(ob, path):
         export_extras=False, export_cameras=False, export_lights=False)
 
 
-def write_scrap_stone():
-    rgb = rt.scrap_stone_tile()
-    path = BLOCKS / "scrap_stone.png"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    Image.fromarray(np.round(rgb * 255).astype(np.uint8), "RGB").save(path, optimize=True)
-    return path
-
-
 # =====================================================================================================
 # Verification
 # =====================================================================================================
@@ -379,8 +367,6 @@ def main():
         print(f"wrote {path.relative_to(REPO)} ({i['kib']:.0f} KiB, {i['tris']} triangles, {i['images']} images, "
               f"{i['materials']} material) bounds {np.round(i['min'], 4).tolist()} .. {np.round(i['max'], 4).tolist()} "
               f"size {np.round(i['size'], 4).tolist()}{' EXTRA ' + str(i['extras']) if i['extras'] else ''}")
-    p = write_scrap_stone()
-    print(f"wrote {p.relative_to(REPO)} ({p.stat().st_size // 1024} KiB)")
     if "--render" in sys.argv:
         import render_rocks
         render_rocks.render_all(models, Path(sys.argv[sys.argv.index("--render") + 1]), sys.modules[__name__])

@@ -16,7 +16,8 @@
     "color": "#c4c4c4",
     "roughness": 0.35,
     "metallic": 0.85,
-    "texture": "textures/blocks/hull_plate.png"
+    "texture": "textures/blocks/hull_plate.png",
+    "texture_span": 2
   },
   "collision": {
     "shape": "convex",

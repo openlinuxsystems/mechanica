@@ -16,6 +16,7 @@
     "color": "#b8b8b8",
     "roughness": 0.9,
     "metallic": 0,
-    "texture": "textures/blocks/plaster.png"
+    "texture": "textures/blocks/plaster.png",
+    "texture_span": 4
   }
 }
