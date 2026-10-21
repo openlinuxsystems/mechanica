@@ -1,0 +1,19 @@
+{
+  "id": "tubes_short",
+  "name": "Conduit (Short)",
+  "description": "Four mustard conduit tubes strapped into a steel-blue channel tray.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 4,
+  "friction": 0.3,
+  "buoyancy": 0.4,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [2, 1, 2],
+  "mesh": "meshes/parts/tubes_short.glb",
+  "icon": "textures/items/tubes_short_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

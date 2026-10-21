@@ -1,0 +1,19 @@
+{
+  "id": "duct_short",
+  "name": "Duct (Short)",
+  "description": "One block of galvanised square duct with a seam collar at each end.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 2,
+  "friction": 0.4,
+  "buoyancy": 0.5,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/parts/duct_short.glb",
+  "icon": "textures/items/duct_short_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

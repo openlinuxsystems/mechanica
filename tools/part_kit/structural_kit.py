@@ -65,7 +65,7 @@ def materials():
         "zinc": tex("s_zinc", half(metal(511, "#9aa3ab", 0.42, 0.8, wear=0.3, edge_light=0.2)), normal_strength=0.4),
         "zinc_dark": tex("s_zinc_dark", half(metal(512, "#7d868e", 0.46, 0.8, wear=0.3, edge_light=0.2)), normal_strength=0.4),
         "steel": tex("s_steel", half(metal(513, "#8d9196", 0.32, 0.9, wear=0.3, edge_light=0.2)), normal_strength=0.4),
-        "rubber": tex("s_rubber", half(lt.rubber_surface(515)), normal_strength=2.0),
+        "rubber": tex("s_rubber", half(lt.rubber_surface(515)), normal_strength=0.5),
         "hole": pt.plain("s_hole", "#0c0d0f", 0.9, 0.2),
         "lens": pt.plain("s_lens", "#6a1712", 0.15, 0.0),
     }

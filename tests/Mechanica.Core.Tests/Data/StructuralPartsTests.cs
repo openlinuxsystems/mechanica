@@ -69,6 +69,15 @@ public class StructuralPartsTests
         new("main_pipe_mount", new GridSize(3, 3, 1), 7.5, 5, 0.5, 0.2, false, 20, 5, 445, ["metal_block:4"]),
         new("main_pipe_cap", new GridSize(3, 3, 1), 7.5, 5, 0.5, 0.2, false, 20, 5, 446, ["metal_block:4"]),
         new("main_pipe_compressor", new GridSize(5, 5, 8), 7.5, 5, 0.5, 0.2, false, 20, 10, 450, ["metal_block:20", "component_kit:2"]),
+        // Batch 10a: ducts, the metal tube and the first conduit (all uncraftable in Scrap Mechanic).
+        new("duct_short", new GridSize(1, 1, 1), 3, 2, 0.4, 0.5, false, 20, 2, 2810, ["metal_block:1"]),
+        new("duct_long", new GridSize(1, 1, 2), 3, 2, 0.4, 0.5, false, 20, 2, 2811, ["metal_block:2"]),
+        new("duct_corner", new GridSize(1, 1, 1), 3, 2, 0.4, 0.5, false, 20, 2, 2812, ["metal_block:1"]),
+        new("duct_tee", new GridSize(1, 1, 1), 3, 2, 0.4, 0.5, false, 20, 2, 2813, ["metal_block:1"]),
+        new("duct_end", new GridSize(1, 1, 1), 3, 2, 0.4, 0.2, false, 20, 2, 2814, ["metal_block:1"]),
+        new("duct_holder", new GridSize(1, 1, 1), 3, 2, 0.4, 0.2, false, 20, 2, 2815, ["metal_block:1"]),
+        new("metal_tube", new GridSize(1, 1, 2), 6, 4, 0.5, 0.7, false, 20, 2, 2820, ["metal_block:2"]),
+        new("tubes_short", new GridSize(2, 1, 2), 6, 4, 0.3, 0.4, true, 20, 2, 2830, ["metal_block:1", "scrap_wood_block:1"]),
     ];
 
     public static TheoryData<string> Ids => [.. All.Select(r => r.Id)];

@@ -1,0 +1,19 @@
+{
+  "id": "duct_corner",
+  "name": "Duct (Corner)",
+  "description": "A square duct bend that turns a run through a right angle.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 2,
+  "friction": 0.4,
+  "buoyancy": 0.5,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/parts/duct_corner.glb",
+  "icon": "textures/items/duct_corner_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}
