@@ -48,6 +48,16 @@ public class DecorPartsTests
     [InlineData("vending_machine", 6, 4, 0.4, 0.6, true, 1, 4, 7, 3)]
     [InlineData("grazer_head_topper", 7.5, 6, 0.4, 0.6, false, 1, 4, 3, 3)]
     [InlineData("produce_box_potato", 6, 1, 0.5, 0.2, true, 20, 4, 4, 4)]
+    [InlineData("air_conditioner", 6, 6, 0.6, 0.6, true, 20, 4, 3, 3)]
+    [InlineData("juice_drum", 7.5, 3, 0.3, 0.6, false, 20, 2, 3, 2)]
+    [InlineData("broken_concrete_large", 7.5, 4, 0.2, 0.1, false, 20, 4, 3, 2)]
+    [InlineData("broken_concrete_medium", 7.5, 4, 0.2, 0.1, false, 20, 3, 3, 2)]
+    [InlineData("crane_body", 10.5, 6, 0.5, 0.1, false, 20, 4, 4, 4)]
+    [InlineData("crane_hook", 10.5, 6, 0.5, 0.1, false, 20, 2, 4, 2)]
+    [InlineData("fuse_box", 6, 6, 0.4, 0.3, false, 20, 2, 3, 1)]
+    [InlineData("coil_corner", 9, 6, 0.6, 0.3, false, 20, 3, 3, 3)]
+    [InlineData("coil_segment", 9, 6, 0.6, 0.2, false, 20, 3, 3, 2)]
+    [InlineData("tank_large", 3, 4, 0.4, 0.4, false, 20, 7, 5, 7)]
     public void DecorPartsTakeTheWikiStatsAndTheirSize(string id, double mass, int durability, double friction, double buoyancy,
         bool flammable, int stack, int x, int y, int z)
     {
@@ -95,6 +105,16 @@ public class DecorPartsTests
     [InlineData("vending_machine", 5, 3030, "metal_block:10", "glass_block:2")]
     [InlineData("grazer_head_topper", 5, 3032, "cotton:5", "paint_ammo:2")]
     [InlineData("produce_box_potato", 2, 3012, "scrap_wood_block:4")]
+    [InlineData("air_conditioner", 5, 3126, "metal_block:10", "circuit_board:3")]
+    [InlineData("juice_drum", 5, 3116, "metal_block:4")]
+    [InlineData("broken_concrete_large", 5, 3142, "metal_block:6", "concrete_block:12")]
+    [InlineData("broken_concrete_medium", 5, 3140, "metal_block:4", "concrete_block:8")]
+    [InlineData("crane_body", 10, 3130, "metal_block:20")]
+    [InlineData("crane_hook", 5, 3132, "metal_block:5")]
+    [InlineData("fuse_box", 5, 3124, "metal_block:2", "circuit_board:1")]
+    [InlineData("coil_corner", 5, 3122, "metal_block:6", "circuit_board:1")]
+    [InlineData("coil_segment", 5, 3120, "metal_block:6", "circuit_board:1")]
+    [InlineData("tank_large", 5, 3114, "metal_block:12")]
     public void DecorPartsAreMadeAtTheFabricatorInTheirGroup(string id, float time, int order, params string[] inputs)
     {
         var book = RecipeBook.Load(Vanilla.Value);
@@ -118,5 +138,5 @@ public class DecorPartsTests
 
     [Fact]
     public void ThePartFilesAreTheBatchOutput() =>
-        new VanillaBlocksTests().PartFilesAreThePartEditorBatchOutput("parts_decor.json", 32);
+        new VanillaBlocksTests().PartFilesAreThePartEditorBatchOutput("parts_decor.json", 42);
 }

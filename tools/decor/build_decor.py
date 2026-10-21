@@ -6,7 +6,7 @@
     python tools/decor/build_decor.py --only mug,calendar --render OUT_DIR   # these, with review sheets
 
 Writes ``mods/vanilla/meshes/parts/<id>.glb`` and ``mods/vanilla/textures/items/<id>_icon.png``. The models are in
-office.py (13a, 13b) and farm.py (14a, 14b); tools/part_kit/decor_kit.py has the shared materials, shapes and runner. The outputs are
+office.py (13a, 13b), farm.py (14a, 14b) and industry.py (15a, 15b); tools/part_kit/decor_kit.py has the shared materials, shapes and runner. The outputs are
 committed; re-run this after changing a model and commit the result. The build is deterministic (seeded noise only).
 """
 
@@ -19,12 +19,15 @@ sys.path.insert(0, str(HERE))
 import decor_kit as D  # noqa: E402  (first: it imports bpy)
 import office  # noqa: E402
 import farm  # noqa: E402
+import industry  # noqa: E402
 
 BATCHES = {
     "13a": (office.BATCH_13A, office.materials_13),
     "13b": (office.BATCH_13B, office.materials_13),
     "14a": (farm.BATCH_14A, farm.materials_14),
     "14b": (farm.BATCH_14B, farm.materials_14),
+    "15a": (industry.BATCH_15A, industry.materials_15),
+    "15b": (industry.BATCH_15B, industry.materials_15),
 }
 
 if __name__ == "__main__":

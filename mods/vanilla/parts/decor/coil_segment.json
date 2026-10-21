@@ -1,0 +1,19 @@
+{
+  "id": "coil_segment",
+  "name": "Coil Segment",
+  "description": "A straight run of generator coil, copper windings on a plinth.",
+  "category": "decor",
+  "mass": 9,
+  "durability": 6,
+  "friction": 0.6,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [3, 3, 2],
+  "mesh": "meshes/parts/coil_segment.glb",
+  "icon": "textures/items/coil_segment_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

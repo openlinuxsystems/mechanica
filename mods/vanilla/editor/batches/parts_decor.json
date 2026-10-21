@@ -928,6 +928,296 @@
           "order": 3012
         }
       ]
+    },
+    {
+      "file": "parts/decor/air_conditioner.json",
+      "template": "decor",
+      "set": {
+        "name": "Air Conditioner",
+        "description": "A colony condenser unit with a round fan grille. Its power light is still on.",
+        "icon": "textures/items/air_conditioner_icon.png",
+        "mass": 6,
+        "durability": 6,
+        "friction": 0.6,
+        "buoyancy": 0.6,
+        "flammable": true,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [4, 3, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/air_conditioner.glb" }],
+      "recipes": [
+        {
+          "id": "air_conditioner",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 10 }, { "item": "circuit_board", "count": 3 }],
+          "outputs": [{ "item": "air_conditioner", "count": 1 }],
+          "time": 5,
+          "order": 3126
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/juice_drum.json",
+      "template": "decor",
+      "set": {
+        "name": "Juice Drum",
+        "description": "A 200 litre colony drum of berry juice concentrate, sealed.",
+        "icon": "textures/items/juice_drum_icon.png",
+        "mass": 7.5,
+        "durability": 3,
+        "friction": 0.3,
+        "buoyancy": 0.6,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [2, 3, 2],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/juice_drum.glb" }],
+      "recipes": [
+        {
+          "id": "juice_drum",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 4 }],
+          "outputs": [{ "item": "juice_drum", "count": 1 }],
+          "time": 5,
+          "order": 3116
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/broken_concrete_large.json",
+      "template": "decor",
+      "set": {
+        "name": "Broken Concrete (Large)",
+        "description": "A broken slab of cast concrete with rusted rebar sticking out of the break.",
+        "icon": "textures/items/broken_concrete_large_icon.png",
+        "mass": 7.5,
+        "durability": 4,
+        "friction": 0.2,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "concrete",
+        "stack_size": 20,
+        "size": [4, 3, 2],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/broken_concrete_large.glb" }],
+      "recipes": [
+        {
+          "id": "broken_concrete_large",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 6 }, { "item": "concrete_block", "count": 12 }],
+          "outputs": [{ "item": "broken_concrete_large", "count": 1 }],
+          "time": 5,
+          "order": 3142
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/broken_concrete_medium.json",
+      "template": "decor",
+      "set": {
+        "name": "Broken Concrete (Medium)",
+        "description": "A smaller broken slab of cast concrete with two rebar ends.",
+        "icon": "textures/items/broken_concrete_medium_icon.png",
+        "mass": 7.5,
+        "durability": 4,
+        "friction": 0.2,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "concrete",
+        "stack_size": 20,
+        "size": [3, 3, 2],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/broken_concrete_medium.glb" }],
+      "recipes": [
+        {
+          "id": "broken_concrete_medium",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 4 }, { "item": "concrete_block", "count": 8 }],
+          "outputs": [{ "item": "broken_concrete_medium", "count": 1 }],
+          "time": 5,
+          "order": 3140
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/crane_body.json",
+      "template": "decor",
+      "set": {
+        "name": "Crane Body",
+        "description": "A colony hoist with its cable drum and motor. Hang a Crane Hook under it.",
+        "icon": "textures/items/crane_body_icon.png",
+        "mass": 10.5,
+        "durability": 6,
+        "friction": 0.5,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [4, 4, 4],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/crane_body.glb" }],
+      "recipes": [
+        {
+          "id": "crane_body",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 20 }],
+          "outputs": [{ "item": "crane_body", "count": 1 }],
+          "time": 10,
+          "order": 3130
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/crane_hook.json",
+      "template": "decor",
+      "set": {
+        "name": "Crane Hook",
+        "description": "The hoist's hook block, the hook painted for safety.",
+        "icon": "textures/items/crane_hook_icon.png",
+        "mass": 10.5,
+        "durability": 6,
+        "friction": 0.5,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [2, 4, 2],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/crane_hook.glb" }],
+      "recipes": [
+        {
+          "id": "crane_hook",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 5 }],
+          "outputs": [{ "item": "crane_hook", "count": 1 }],
+          "time": 5,
+          "order": 3132
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/fuse_box.json",
+      "template": "decor",
+      "set": {
+        "name": "Fuse Box",
+        "description": "A colony wall fuse box. Its power light is still on.",
+        "icon": "textures/items/fuse_box_icon.png",
+        "mass": 6,
+        "durability": 6,
+        "friction": 0.4,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [2, 3, 1],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/fuse_box.glb" }],
+      "recipes": [
+        {
+          "id": "fuse_box",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 2 }, { "item": "circuit_board", "count": 1 }],
+          "outputs": [{ "item": "fuse_box", "count": 1 }],
+          "time": 5,
+          "order": 3124
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/coil_corner.json",
+      "template": "decor",
+      "set": {
+        "name": "Coil Corner",
+        "description": "A generator coil turning a quarter round. It lines up with the Coil Segment.",
+        "icon": "textures/items/coil_corner_icon.png",
+        "mass": 9,
+        "durability": 6,
+        "friction": 0.6,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [3, 3, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/coil_corner.glb" }],
+      "recipes": [
+        {
+          "id": "coil_corner",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 6 }, { "item": "circuit_board", "count": 1 }],
+          "outputs": [{ "item": "coil_corner", "count": 1 }],
+          "time": 5,
+          "order": 3122
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/coil_segment.json",
+      "template": "decor",
+      "set": {
+        "name": "Coil Segment",
+        "description": "A straight run of generator coil, copper windings on a plinth.",
+        "icon": "textures/items/coil_segment_icon.png",
+        "mass": 9,
+        "durability": 6,
+        "friction": 0.6,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [3, 3, 2],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/coil_segment.glb" }],
+      "recipes": [
+        {
+          "id": "coil_segment",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 6 }, { "item": "circuit_board", "count": 1 }],
+          "outputs": [{ "item": "coil_segment", "count": 1 }],
+          "time": 5,
+          "order": 3120
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/tank_large.json",
+      "template": "decor",
+      "set": {
+        "name": "Large Tank",
+        "description": "A colony storage tank with a ladder up the side. It is empty, so it floats.",
+        "icon": "textures/items/tank_large_icon.png",
+        "mass": 3,
+        "durability": 4,
+        "friction": 0.4,
+        "buoyancy": 0.4,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [7, 5, 7],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/tank_large.glb" }],
+      "recipes": [
+        {
+          "id": "tank_large",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 12 }],
+          "outputs": [{ "item": "tank_large", "count": 1 }],
+          "time": 5,
+          "order": 3114
+        }
+      ]
     }
   ]
 }
