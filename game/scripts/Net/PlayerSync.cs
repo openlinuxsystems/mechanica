@@ -117,14 +117,15 @@ public partial class PlayerSync : Node
     public Vector3? SpawnSpotOf(int peer) => _slots.SlotOf(peer) is { } slot ? SpawnTransform(slot).Origin : null;
 
     /// <summary>
-    /// Host side: moves a player's feet to <paramref name="feet"/>, at rest. A client's own prediction
-    /// is corrected by the next snapshot. <paramref name="yaw"/> turns them too. Returns false if the peer has no player.
+    /// Host side: moves a player's feet to <paramref name="feet"/>, at rest or moving at <paramref name="velocity"/> (m/s).
+    /// A client's own prediction is corrected by the next snapshot. <paramref name="yaw"/> turns them too. Returns false
+    /// if the peer has no player.
     /// </summary>
-    public bool HostTeleport(int peer, Vector3 feet, float? yaw = null)
+    public bool HostTeleport(int peer, Vector3 feet, float? yaw = null, Vector3? velocity = null)
     {
         if (!Session.IsHost || !_players.TryGetValue(peer, out var player))
             return false;
-        player.ApplyState(feet, Vector3.Zero, yaw ?? player.Rotation.Y, player.Head.Rotation.X);
+        player.ApplyState(feet, velocity ?? Vector3.Zero, yaw ?? player.Rotation.Y, player.Head.Rotation.X);
         return true;
     }
 

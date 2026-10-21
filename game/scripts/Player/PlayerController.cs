@@ -169,17 +169,45 @@ public partial class PlayerController : CharacterBody3D
     }
 
     /// <summary>True when a standing player's capsule at <paramref name="feet"/> touches nothing (this player aside).</summary>
-    public bool RoomAt(Vector3 feet)
+    public bool RoomAt(Vector3 feet) => GetWorld3D().DirectSpaceState.IntersectShape(StandingQuery(feet), 1).Count == 0;
+
+    /// <summary>
+    /// True when a standing player's capsule at <paramref name="feet"/> touches a Body of Creation
+    /// <paramref name="creationId"/>.
+    /// </summary>
+    public bool Touches(Vector3 feet, int creationId) =>
+        GetWorld3D().DirectSpaceState.IntersectShape(StandingQuery(feet), 16)
+            .Any(hit => hit["collider"].AsGodotObject() is CreationBody body && body.CreationId == creationId);
+
+    /// <summary>
+    /// Where the feet of a standing player let go at <paramref name="feet"/> come down: on something it can stand on,
+    /// or <paramref name="depth"/> metres down when there is nothing that close. Null when it would come down on an edge
+    /// or a side it slides off (the edge of a Creation's deck, catching the Creation as it falls past).
+    /// </summary>
+    public Vector3? LandingFrom(Vector3 feet, float depth)
     {
-        var query = new PhysicsShapeQueryParameters3D
-        {
-            Shape = new CapsuleShape3D { Height = Settings.Height, Radius = Settings.Radius },
-            Transform = new Transform3D(Basis.Identity, feet + new Vector3(0, Settings.Height / 2f, 0)),
-            CollisionMask = CollisionMask,
-            Exclude = [GetRid()],
-        };
-        return GetWorld3D().DirectSpaceState.IntersectShape(query, 1).Count == 0;
+        var query = StandingQuery(feet);
+        var start = query.Transform;
+        query.Motion = Vector3.Down * depth;
+        var space = GetWorld3D().DirectSpaceState;
+        var cast = space.CastMotion(query);
+        if (cast.Length < 2 || cast[1] >= 1f)
+            return feet + query.Motion;
+        query.Transform = start.Translated(query.Motion * cast[1]);
+        query.Motion = Vector3.Zero;
+        var rest = space.GetRestInfo(query);
+        if (rest.TryGetValue("normal", out var normal) && normal.AsVector3().AngleTo(UpDirection) > FloorMaxAngle + 0.01f)
+            return null;
+        return feet + Vector3.Down * depth * cast[0];
     }
+
+    private PhysicsShapeQueryParameters3D StandingQuery(Vector3 feet) => new()
+    {
+        Shape = new CapsuleShape3D { Height = Settings.Height, Radius = Settings.Radius },
+        Transform = new Transform3D(Basis.Identity, feet + new Vector3(0, Settings.Height / 2f, 0)),
+        CollisionMask = CollisionMask,
+        Exclude = [GetRid()],
+    };
 
     public override void _Process(double delta)
     {
@@ -572,7 +600,7 @@ public partial class PlayerController : CharacterBody3D
         if (!wasOnFloor && IsOnFloor() && velocity.Y < 0)
             Landed?.Invoke(-velocity.Y);
         if (PushesBodies)
-            PushRigidBodies(delta);
+            PushRigidBodies(delta, velocity.ToGodot());
         Ground = Riding(delta);
         Body = (IsOnFloor() ? BodyFlags.OnFloor : 0)
             | (PlayerMotor.IsSwimming(WaterDepth, Settings) ? BodyFlags.Swimming : 0)
@@ -791,19 +819,29 @@ public partial class PlayerController : CharacterBody3D
         _head.Rotation = new Vector3(pitch, 0, 0);
     }
 
-    private void PushRigidBodies(float delta)
+    // Shoves the rigid bodies the player walked into this step, with `moving` its velocity before the slide. Only a
+    // player moving into a body pushes it: one that stands on it, rests against it, slides off its edge or is run into
+    // by it does not (a player standing up beside a car shoved it sideways, and one it ran into braked it).
+    private void PushRigidBodies(float delta, Vector3 moving)
     {
         for (var i = 0; i < GetSlideCollisionCount(); i++)
         {
             var collision = GetSlideCollision(i);
             if (collision.GetCollider() is not RigidBody3D body)
                 continue;
+            // What the player stands on carries it; it is not walked into. Without this, the slight tilt of a curved
+            // floor (a wheel's tread, a wedge) became a full horizontal push, and a player standing on a parked car
+            // shoved it along.
+            if (collision.GetAngle(0, UpDirection) <= FloorMaxAngle + 0.01f)
+                continue;
             var push = -collision.GetNormal();
             push.Y = 0f;
             if (push.LengthSquared() < 1e-4f)
                 continue;
-            body.ApplyImpulse(push.Normalized() * Settings.PushForce * delta,
-                collision.GetPosition() - body.GlobalPosition);
+            push = push.Normalized();
+            if (moving.Dot(push) <= 0.01f)
+                continue;
+            body.ApplyImpulse(push * Settings.PushForce * delta, collision.GetPosition() - body.GlobalPosition);
         }
     }
 }
