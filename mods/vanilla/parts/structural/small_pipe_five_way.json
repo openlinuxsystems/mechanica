@@ -1,0 +1,19 @@
+{
+  "id": "small_pipe_five_way",
+  "name": "Small Pipe (Five Way)",
+  "description": "A cross fitting with a fifth outlet pointing up.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 4,
+  "friction": 0.3,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/parts/small_pipe_five_way.glb",
+  "icon": "textures/items/small_pipe_five_way_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

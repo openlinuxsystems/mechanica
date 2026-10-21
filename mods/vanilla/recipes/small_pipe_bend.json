@@ -1,0 +1,20 @@
+{
+  "id": "small_pipe_bend",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "small_pipe_bend",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 403
+}

@@ -1,0 +1,19 @@
+{
+  "id": "small_pipe_bend",
+  "name": "Small Pipe (Bend)",
+  "description": "A swept 90-degree bend of small pipe.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 4,
+  "friction": 0.3,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/parts/small_pipe_bend.glb",
+  "icon": "textures/items/small_pipe_bend_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}
