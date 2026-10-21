@@ -8,16 +8,17 @@
       "template": "interactive",
       "set": {
         "name": "Refiner",
-        "description": "Refines raw materials such as crude oil.",
+        "description": "Refines raw materials such as crude oil, rods and logs. Input port on the left, output port on the right.",
         "category": "station",
-        "mass": 20,
-        "durability": 10,
-        "friction": 0.5,
-        "buoyancy": 0.2,
+        "mass": 10.5,
+        "durability": 7,
+        "friction": 0.6,
+        "buoyancy": 0.1,
         "flammable": false,
         "sound_material": "metal",
         "size": [4, 6, 4],
-        "visual": { "color": "#5a7a8c", "paintable": true },
+        "icon": "textures/items/refiner_icon.png",
+        "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.75, 0], "normal": [0, -1, 0] }],
         "sounds": {
           "start": "refiner_start",
@@ -26,17 +27,15 @@
           "place": "place_metal"
         },
         "inventory": { "slots": 6 },
-        "crafting": { "speed": 1, "queue_size": 8, "link_range": 1 }
+        "crafting": {
+          "speed": 1,
+          "queue_size": 8,
+          "link_range": 1,
+          "clips": { "start": "start", "work": "work_loop", "complete": "complete" }
+        },
+        "display": { "clips": { "readout": "station", "idle": "idle_loop" } }
       },
-      "model": [
-        { "kind": "box", "size": [1, 1.5, 1] },
-        {
-          "kind": "box",
-          "operation": "subtract",
-          "size": [0.8, 1.2, 0.04],
-          "position": [0, 0, 0.5]
-        }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/refiner.glb" }],
       "recipes": [
         {
           "id": "refiner",
@@ -59,10 +58,10 @@
         "name": "Fabricator",
         "description": "Crafts parts and items from resources: the crafting menu shows its queue slots. Upgrade it in place with Component Kits (U) for more slots, then double speed. Input port on the left, output port on the right.",
         "category": "station",
-        "mass": 60,
-        "durability": 12,
-        "friction": 0.5,
-        "buoyancy": 0.2,
+        "mass": 10.5,
+        "durability": 7,
+        "friction": 0.6,
+        "buoyancy": 0.1,
         "flammable": false,
         "sound_material": "metal",
         "size": [10, 9, 8],

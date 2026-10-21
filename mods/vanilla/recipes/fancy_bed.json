@@ -1,0 +1,28 @@
+{
+  "id": "fancy_bed",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block_2",
+      "count": 25
+    },
+    {
+      "item": "cotton",
+      "count": 20
+    },
+    {
+      "item": "paint_ammo",
+      "count": 10
+    }
+  ],
+  "outputs": [
+    {
+      "item": "fancy_bed",
+      "count": 1
+    }
+  ],
+  "time": 30,
+  "order": 1835
+}

@@ -1,0 +1,32 @@
+{
+  "id": "fancy_bed",
+  "name": "Fancy Bed",
+  "description": "The colony's painted steel bed: sturdier than the Respawn Bed and it cannot catch fire. Sleep here (Use) and you respawn here when you die.",
+  "category": "interactive",
+  "mass": 4.5,
+  "durability": 7,
+  "friction": 0.4,
+  "buoyancy": 0.6,
+  "flammable": false,
+  "stack_size": 5,
+  "sound_material": "metal",
+  "size": [5, 3, 8],
+  "mesh": "meshes/parts/fancy_bed.glb",
+  "icon": "textures/items/fancy_bed_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.375, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "sounds": {
+    "use": "bed_use",
+    "set": "bed_set"
+  },
+  "respawn_point": true
+}

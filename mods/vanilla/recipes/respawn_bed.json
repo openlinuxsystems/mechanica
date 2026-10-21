@@ -5,12 +5,16 @@
   ],
   "inputs": [
     {
-      "item": "scrap_wood_block",
-      "count": 24
+      "item": "wood_block",
+      "count": 50
     },
     {
-      "item": "scrap_metal_block",
-      "count": 8
+      "item": "cotton",
+      "count": 20
+    },
+    {
+      "item": "paint_ammo",
+      "count": 10
     }
   ],
   "outputs": [
@@ -19,6 +23,6 @@
       "count": 1
     }
   ],
-  "time": 8,
+  "time": 30,
   "order": 1830
 }

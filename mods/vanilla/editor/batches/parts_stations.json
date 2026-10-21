@@ -1,0 +1,136 @@
+// Parts map batch 7 (Scrap Mechanic parity, beds and stations): the new Fancy Bed, Freezer and Anvil. The Respawn Bed
+// is in survival.json and the Fabricator and Refiner in containers_stations.json. The wiki's stats (1.5 kg per weight
+// bar; durability = bars; friction and buoyancy = bars / 10) and Craftbot recipes. Models and icons are built by
+// tools/<part>/build_<part>.py (tools/part_kit/station_kit.py). Re-run with tools/author-vanilla.sh.
+{
+  "format_version": 1,
+  "parts": [
+    {
+      "file": "parts/fancy_bed.json",
+      "template": "interactive",
+      "set": {
+        "name": "Fancy Bed",
+        "description": "The colony's painted steel bed: sturdier than the Respawn Bed and it cannot catch fire. Sleep here (Use) and you respawn here when you die.",
+        "category": "interactive",
+        "mass": 4.5,
+        "durability": 7,
+        "friction": 0.4,
+        "buoyancy": 0.6,
+        "flammable": false,
+        "stack_size": 5,
+        "sound_material": "metal",
+        "size": [5, 3, 8],
+        "icon": "textures/items/fancy_bed_icon.png",
+        "visual": { "color": "#ffffff" },
+        "respawn_point": true,
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
+        "sounds": { "use": "bed_use", "set": "bed_set" }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/fancy_bed.glb" }],
+      "recipes": [
+        {
+          "id": "fancy_bed",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "metal_block_2", "count": 25 },
+            { "item": "cotton", "count": 20 },
+            { "item": "paint_ammo", "count": 10 }
+          ],
+          "outputs": [{ "item": "fancy_bed", "count": 1 }],
+          "time": 30,
+          "order": 1835
+        }
+      ]
+    },
+    {
+      "file": "parts/freezer.json",
+      "template": "interactive",
+      "set": {
+        "name": "Freezer",
+        "description": "Freezes water into ice: craft Ice Blocks here from a full Water Bucket, 20 a bucket in a minute, and the empty bucket comes back. Two-way port on the right.",
+        "category": "station",
+        "mass": 4.5,
+        "durability": 7,
+        "friction": 0.6,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 5,
+        "sound_material": "metal",
+        "size": [3, 4, 3],
+        "icon": "textures/items/freezer_icon.png",
+        "visual": { "color": "#ffffff" },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.5, 0], "normal": [0, -1, 0] }],
+        "sounds": {
+          "start": "freezer_start",
+          "work": "freezer_work",
+          "complete": "freezer_complete",
+          "place": "place_metal"
+        },
+        "inventory": { "slots": 4 },
+        "crafting": {
+          "speed": 1,
+          "queue_size": 4,
+          "link_range": 1,
+          "clips": { "start": "start", "work": "work_loop", "complete": "complete" }
+        },
+        "display": { "clips": { "readout": "station", "idle": "idle_loop" } }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/freezer.glb" }],
+      "recipes": [
+        {
+          "id": "freezer",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "metal_block_2", "count": 20 },
+            { "item": "component_kit", "count": 2 },
+            { "item": "circuit_board", "count": 4 },
+            { "item": "chemical", "count": 20 }
+          ],
+          "outputs": [{ "item": "freezer", "count": 1 }],
+          "time": 30,
+          "order": 1840
+        },
+        {
+          "id": "ice_block_freezer",
+          "stations": ["freezer"],
+          "inputs": [{ "item": "water_bucket_full", "count": 1 }],
+          "outputs": [
+            { "item": "ice_block", "count": 20 },
+            { "item": "water_bucket", "count": 1 }
+          ],
+          "time": 60,
+          "order": 1841
+        }
+      ]
+    },
+    {
+      "file": "parts/anvil.json",
+      "template": "decor",
+      "set": {
+        "name": "Anvil",
+        "description": "A settler's anvil stapled onto a hardwood stump. Heavy and grippy.",
+        "mass": 15,
+        "durability": 5,
+        "friction": 0.8,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [3, 3, 3],
+        "icon": "textures/items/anvil_icon.png",
+        "visual": { "color": "#ffffff" }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/anvil.glb" }],
+      "recipes": [
+        {
+          "id": "anvil",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block_2", "count": 100 }],
+          "outputs": [{ "item": "anvil", "count": 1 }],
+          "time": 10,
+          "order": 2028
+        }
+      ]
+    }
+  ]
+}
