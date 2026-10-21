@@ -1,15 +1,18 @@
 {
   // A natural pond (wild: the meadow or forest grows right up to its bank): a level clearing with a lobed basin of pond
-  // water, lily pads on the surface and reeds in the shallows (the biomes' water scatter rules).
+  // water, lily pads on the surface and reeds in the shallows (the biomes' water scatter rules). Shaped for fishing: a
+  // shallow shelf round the bank, then a drop-off into a hole about 4 m deep, off centre so the deep water is closer to
+  // one bank.
   "id": "pond",
   "name": "Pond",
   "wild": true,
   "radius": 42.0,
-  "size": [44.0, 2.0, 44.0],
+  "size": [44.0, 5.0, 44.0],
   "placement": { "spacing": [520.0, 820.0], "biomes": ["meadow", "forest", "field", "autumn_forest"], "priority": 8, "clearance": 24.0 },
   "terrain": [
     { "op": "flatten", "radius": 30.0, "blend": 10.0 },
-    { "op": "basin", "radius": 11.0, "blend": 9.0, "depth": 2.0, "wobble": 0.3 }
+    { "op": "basin", "radius": 13.0, "blend": 9.0, "depth": 2.0, "wobble": 0.3 },
+    { "op": "basin", "at": [3.0, -2.0], "radius": 5.0, "blend": 9.0, "depth": 4.5, "wobble": 0.2 }
   ],
   "ground": [{ "ground": "dirt", "radius": 12.0, "blend": 8.0, "noise": 4.0 }],
   "pools": [{ "liquid": "water", "radius": 29.0, "level": -0.5 }]

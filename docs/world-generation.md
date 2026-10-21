@@ -438,14 +438,20 @@ bots swim in it, buckets fill from it, and it is drawn with the sea's surface.
 
 | POI | Where | What |
 |-----|-------|------|
-| `pond` | meadow, forest, field, autumn forest; 520 to 820 m apart | A lobed pond about 25 m across in a level clearing |
-| `pond_large` | meadow, field, forest; 1300 to 1900 m apart | Two joined lobes about 60 m across, deep enough for a small boat |
-| `marsh` | meadow, forest, autumn forest; 900 to 1400 m apart | Five shallow pools among reed islands |
+| `pond` | meadow, forest, field, autumn forest; 520 to 820 m apart | A lobed pond about 25 m across in a level clearing: a shallow shelf by the bank, then a hole about 4 m deep |
+| `pond_large` | meadow, field, forest; 1300 to 1900 m apart | Two joined lobes about 60 m across, deep enough for a small boat, with a hole about 6 m deep in the big lobe |
+| `marsh` | meadow, forest, autumn forest; 900 to 1400 m apart | Five shallow pools (under a metre) among reed islands |
 
 Three creeks (`rivers[]` 4 to 10 m wide and 1.5 m deep) run down to the big lake through the north-eastern meadows, the
 western woods and the southern fields. The meadow, forest, field, autumn forest and lake biomes end their `scatter`
 with three water rules shared by every water body: `lily_pad_cluster` on the `surface`, `reed_bed` and `cattail_clump`
 in the `shallows`, gathered into patches.
+
+The water is shaped for fishing: every pond has shallows to wade and a deep hole to cast into, and the lakes are open
+water at sea level, most of their bed 10 to 17 m down with shallow margins. `WorldGenerator.WaterBodyAt(x, z)` says which
+water a point is in and how deep it is there: a `Pond` (named by its POI, such as `vanilla:pond`), a `River` (rivers and
+creeks), or `Open` water at sea level (named by its biome: `lake`, or the coast for the sea). A fishing game can pick its
+catch by that body and depth.
 
 ### Ravines, gullies, mesas and buttes
 

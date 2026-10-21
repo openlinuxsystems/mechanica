@@ -349,6 +349,26 @@ public sealed partial class WorldGenerator
         return SeaLevel;
     }
 
+    /// <summary>
+    /// The body of water over a world position, for fishing and anything else that cares which water it is and how deep:
+    /// a pond (a POI pool of plain water, named by its POI), a river or creek, or open water at sea level (a lake or the
+    /// sea, named by the biome it lies in). Null on dry ground.
+    /// </summary>
+    public WaterBody? WaterBodyAt(float x, float z)
+    {
+        var ground = HeightAt(x, z);
+        foreach (var pool in PoolsAt(x, z))
+        {
+            if (pool.Liquid.Water && pool.Centre.Y > SeaLevel && pool.Holds(new Vector3(x, pool.Centre.Y, z)) && ground < pool.Centre.Y)
+                return new WaterBody(WaterBodyKind.Pond, pool.Poi.Poi.QualifiedId, pool.Centre.Y, pool.Centre.Y - ground);
+        }
+        if (ground >= SeaLevel)
+            return null;
+        return RiverDistance(x, z) <= 0f
+            ? new WaterBody(WaterBodyKind.River, "river", SeaLevel, SeaLevel - ground)
+            : new WaterBody(WaterBodyKind.Open, BiomeAt(x, z).Id, SeaLevel, SeaLevel - ground);
+    }
+
     /// <summary>The liquid pools of the POIs whose footprint covers a world position.</summary>
     public IEnumerable<PoiPoolPlacement> PoolsAt(float x, float z) => PoisAt(x, z).SelectMany(PoolsOf);
 

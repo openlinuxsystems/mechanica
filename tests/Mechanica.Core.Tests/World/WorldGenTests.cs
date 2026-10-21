@@ -764,6 +764,45 @@ public class WorldGenTests
     }
 
     [Fact]
+    public void PondsAndLakesAreDeepEnoughToFish()
+    {
+        var gen = Vanilla.Value;
+        // Each pond has shallows by its bank and a deep hole; a large pond goes deeper, a marsh stays shallow, and each
+        // knows which water it is (a fishing game keys its catch on that).
+        foreach (var (id, deepest, most) in new[] { ("pond", 3.5f, 5f), ("pond_large", 5.5f, 7f), ("marsh", 0.4f, 1.2f) })
+        {
+            foreach (var pond in gen.Pois.Where(p => p.Poi.Prefab.Id == id).Take(6))
+            {
+                var bodies = Enumerable.Range(0, 1600)
+                    .Select(k => gen.WaterBodyAt(pond.Centre.X + (k % 40 - 20) * 2f, pond.Centre.Y + (k / 40 - 20) * 2f))
+                    .OfType<WaterBody>().Where(b => b.Kind == WaterBodyKind.Pond).ToList();
+                Assert.NotEmpty(bodies);
+                Assert.All(bodies, b => Assert.Equal($"vanilla:{id}", b.Id));
+                var depth = bodies.Max(b => b.Depth);
+                Assert.InRange(depth, deepest, most);
+                Assert.Contains(bodies, b => b.Depth is > 0.2f and < 1.2f);
+            }
+        }
+        // The lakes are open water at sea level, many metres deep over most of their bed.
+        var lake = new List<float>();
+        for (var x = -6000f; x < 6000f; x += 40f)
+        {
+            for (var z = -4500f; z < 4500f; z += 40f)
+            {
+                if (gen.WaterBodyAt(x, z) is { Kind: WaterBodyKind.Open, Id: "lake" } body)
+                    lake.Add(body.Depth);
+            }
+        }
+        Assert.True(lake.Count > 1000, $"lake water ({lake.Count} samples)");
+        Assert.True(lake.Count(d => d > 10f) > lake.Count / 2, "most of the lake is over 10 m deep");
+        Assert.Contains(lake, d => d < 2f);
+        // The creeks are rivers, wadeable deep.
+        var creek = gen.Rivers.SelectMany(line => line).Select(p => gen.WaterBodyAt(p.X, p.Y)).OfType<WaterBody>().Where(b => b.Kind == WaterBodyKind.River).ToList();
+        Assert.NotEmpty(creek);
+        Assert.All(creek, b => Assert.Equal("river", b.Id));
+    }
+
+    [Fact]
     public void RavinesAndMesasRoughenTheLand()
     {
         var gen = Vanilla.Value;
