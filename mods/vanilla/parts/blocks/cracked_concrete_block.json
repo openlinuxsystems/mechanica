@@ -1,0 +1,22 @@
+{
+  "id": "cracked_concrete_block",
+  "name": "Cracked Concrete Block",
+  "description": "Old sun-bleached concrete broken into plates. A little lighter and weaker than Concrete Block 1.",
+  "category": "block",
+  "mass": 9,
+  "durability": 3,
+  "friction": 0.6,
+  "buoyancy": 0.4,
+  "flammable": false,
+  "stack_size": 256,
+  "sound_material": "concrete",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/cracked_concrete_block.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.9,
+    "metallic": 0,
+    "texture": "textures/blocks/cracked_concrete.png",
+    "texture_span": 2
+  }
+}

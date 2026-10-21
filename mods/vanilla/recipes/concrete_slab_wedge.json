@@ -1,0 +1,20 @@
+{
+  "id": "concrete_slab_wedge",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "concrete_slab_block",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "concrete_slab_wedge",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 170
+}

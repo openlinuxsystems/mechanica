@@ -596,6 +596,87 @@ def ice(size=1024):
     return rgb, alpha
 
 
+# =====================================================================================================
+# Cracked Concrete and Concrete Slab (batch 3)
+# =====================================================================================================
+def voronoi_wrap(size, count, seed):
+    """For a wrapping cell pattern of ``count`` random points: each pixel's distance to its cell's edge (the
+    bisector with the second-nearest point) and which point's cell it is in, for cracks and slabs."""
+    rng = np.random.default_rng(seed)
+    pts = rng.uniform(0, size, (count, 2))
+    y, x = grid(size)
+    d1 = np.full((size, size), np.inf)
+    d2 = np.full((size, size), np.inf)
+    i1 = np.zeros((size, size), int)
+    i2 = np.zeros((size, size), int)
+    offs = []
+    for k, (px, py) in enumerate(pts):
+        dx = (x - px + size / 2) % size - size / 2
+        dy = (y - py + size / 2) % size - size / 2
+        d = dx * dx + dy * dy
+        closer = d < d1
+        second = ~closer & (d < d2)
+        d2 = np.where(closer, d1, np.where(second, d, d2))
+        i2 = np.where(closer, i1, np.where(second, k, i2))
+        d1 = np.where(closer, d, d1)
+        i1 = np.where(closer, k, i1)
+        offs.append((dx, dy))
+    # distance to the bisector: (|p - b|^2 - |p - a|^2) / (2 |a - b|), with a and b wrapped
+    ab = pts[i2] - pts[i1]
+    ab = (ab + size / 2) % size - size / 2
+    edge = (d2 - d1) / (2 * np.maximum(np.sqrt((ab ** 2).sum(-1)), 1e-6))
+    return edge, i1
+
+
+def cracked_concrete(size=1024):
+    """Cracked Concrete over 2 x 2 blocks (texture_span 2): pale, sun-bleached concrete broken into irregular plates
+    by a web of dark cracks, the plates' edges chipped and a little raised, with pale dust in the cracks' lips."""
+    color, height = concrete_base(size, 301)
+    color = color * (np.array([206, 196, 168]) / np.array([170, 168, 160]))
+    wobble = 3 * (value_noise(size, 12, 302, 3) - 0.5)
+    edge, idx = voronoi_wrap(size, 26, 303)
+    edge = edge + wobble
+    crack = 1 - smoothstep(edge, 1.0, 3.5)
+    lip = smoothstep(edge, 2.5, 5.0) * (1 - smoothstep(edge, 5.0, 12.0))
+    fine = np.zeros((size, size))
+    for k, seed in enumerate((304, 305)):
+        n = value_noise(size, 5 + 3 * k, seed, 3)
+        fine = np.maximum(fine, (1 - smoothstep(np.abs(n - 0.5), 0.0, 0.004)) * smoothstep(value_noise(size, 6, seed + 9, 2), 0.45, 0.6))
+    rng = np.random.default_rng(306)
+    tilt = rng.uniform(-1.5, 1.5, 26)[idx]
+    height = height + 1.0 * lip - 3.5 * crack - 2 * fine
+    color = color * (1 + 0.05 * tilt / 1.5)[..., None]
+    color = color * (1 - 0.6 * crack - 0.35 * fine)[..., None] + np.array([226, 218, 196]) * (0.25 * lip)[..., None]
+    return finish(np.clip(color, 0, 255), height, 0.3)
+
+
+def concrete_slab(size=1024):
+    """Concrete Slab over 2 x 2 blocks (texture_span 2): tan cast slabs, two to a block side, set apart by deep
+    dark joints that wander a little, each slab its own shade with chipped corners and a few hairline cracks."""
+    y, x = grid(size)
+    color, height = concrete_base(size, 311)
+    color = color * (np.array([198, 150, 98]) / np.array([170, 168, 160]))
+    S = size / 4
+    jx = 5 * (value_noise(size, 6, 312, 2) - 0.5)
+    jy = 5 * (value_noise(size, 6, 313, 2) - 0.5)
+    u, v = (x + jx) % S, (y + jy) % S
+    du, dv = np.minimum(u, S - u), np.minimum(v, S - v)
+    d = np.minimum(du, dv)
+    r = S * 0.08                                   # rounded, chipped corners
+    near = (du < r) & (dv < r)
+    d = np.where(near, r - np.sqrt((r - du) ** 2 + (r - dv) ** 2), d)
+    d = d - 6 * value_noise(size, 48, 314, 2) * smoothstep(value_noise(size, 10, 318, 2), 0.55, 0.75)
+    joint = 1 - smoothstep(d, 4.0, 9.0)
+    cell = (np.floor((x + jx) / S) % 4 + 4 * (np.floor((y + jy) / S) % 4)).astype(int)
+    rng = np.random.default_rng(315)
+    shade = rng.uniform(0.9, 1.08, 16)[cell]
+    n = value_noise(size, 7, 316, 3)
+    hair = (1 - smoothstep(np.abs(n - 0.5), 0.0, 0.004)) * smoothstep(value_noise(size, 5, 317, 2), 0.5, 0.62)
+    height = height + 3 * bevel(d, 14) - 2.5 * joint - 1.5 * hair
+    color = color * shade[..., None] * (1 - 0.7 * joint - 0.4 * hair)[..., None]
+    return finish(np.clip(color, 0, 255), height, 0.32)
+
+
 # name: (drawing function, what it returns)
 TEXTURES = {
     "sand": sand,
@@ -618,6 +699,8 @@ TEXTURES = {
     "painted_wall": painted_wall,
     "worn_tile": worn_tile,
     "ice": ice,
+    "cracked_concrete": cracked_concrete,
+    "concrete_slab": concrete_slab,
 }
 
 # The textures with a see-through alpha channel.
