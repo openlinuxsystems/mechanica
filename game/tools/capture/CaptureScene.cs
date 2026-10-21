@@ -1523,7 +1523,7 @@ public partial class CaptureScene : Node
             Player.GlobalPosition = Ground(at + new Vector3(0.9f, 0f, 0.4f)) + Vector3.Up * 0.1f;
         });
         Shot("knockout_bag_10_with_player", 20, () => View(new Vector3(-1.2f, 1.3f, 2.8f), 0.6f));
-        // The bag on the compass: 40 m off and a little to the right, in first person, then its marker over it in the world.
+        // The bag on the compass: 40 m off and a little to the right, in first person.
         Shot("knockout_bag_11_compass", 40, () =>
         {
             var away = Ground(at + new Vector3(28f, 0f, 28f));
@@ -1540,7 +1540,6 @@ public partial class CaptureScene : Node
                     Waypoints = () => [.. _main.Quests.Waypoints(Player.GlobalPosition.ToNumerics()), .. _main.Survival.OwnKnockoutBags()],
                 });
         });
-        Shot("knockout_bag_12_world_marker", 20, () => View(new Vector3(-6f, 2.5f, 9f), 1.2f));
     }
 
     // Frames the loose parts matching a test from the side away from the outcrop's middle.
