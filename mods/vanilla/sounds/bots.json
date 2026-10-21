@@ -194,7 +194,7 @@
       "clips": [
         "sounds/bots/rakehand_chase.ogg"
       ],
-      "loop": true,
+      "pitch_variation": 0.05,
       "max_distance": 50
     },
     {

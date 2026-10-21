@@ -61,14 +61,19 @@ public partial class SoundPlayer : Node3D
     }
 
     /// <summary>
-    /// Plays a sound event as data names it (<see cref="SoundRegistry.Find"/>), at <paramref name="position"/>
+    /// Plays a sound event once, as data names it (<see cref="SoundRegistry.Find"/>), at <paramref name="position"/>
     /// for a positional one. Null when the id is unknown or the limiter drops the play.
     /// </summary>
     public Voice? Play(string sound, string ownerModId, Vector3 position) =>
-        Registry.Find(sound, ownerModId) is { } e ? Play(e, position) : null;
+        Registry.Find(sound, ownerModId) is { } e ? Play(e, position, once: true) : null;
 
-    /// <summary>Plays an event. <paramref name="track"/>, when given, moves a positional voice each frame; null from it keeps the last place.</summary>
-    public Voice? Play(SoundEvent sound, Vector3 position, Func<Vector3?>? track = null, IReadOnlyDictionary<string, float>? parameters = null)
+    /// <summary>
+    /// Plays an event. <paramref name="track"/>, when given, moves a positional voice each frame; null from it keeps the last place.
+    /// A loop event plays on until stopped unless <paramref name="once"/>: one-shot callers (a bot's cry, a world sound) pass
+    /// it so a loop they fire plays its clip once and ends, rather than humming on where it was played.
+    /// </summary>
+    public Voice? Play(SoundEvent sound, Vector3 position, Func<Vector3?>? track = null, IReadOnlyDictionary<string, float>? parameters = null,
+        bool once = false)
     {
         var playing = _voices.Where(v => v.Event == sound).ToList();
         switch (_limiter.Admit(sound, playing.Count, Now))
@@ -80,7 +85,8 @@ public partial class SoundPlayer : Node3D
                 break;
         }
         var roll = sound.Roll(_random);
-        var stream = Stream(sound.Clips[roll.Clip], sound.Loop);
+        var loops = sound.Loop && !once;
+        var stream = Stream(sound.Clips[roll.Clip], loops);
         if (stream is null)
             return null;
         Node player;
@@ -99,7 +105,7 @@ public partial class SoundPlayer : Node3D
         {
             player = new AudioStreamPlayer { Stream = stream, Bus = BusNames[sound.Bus] };
         }
-        var voice = new Voice(sound, player, roll, stream.GetLength(), Now, track, parameters);
+        var voice = new Voice(sound, player, roll, stream.GetLength(), Now, track, parameters, loops);
         AddChild(player);
         if (player is Node3D placed)
             placed.GlobalPosition = position;
@@ -196,9 +202,10 @@ public partial class SoundPlayer : Node3D
         private readonly double _started;
 
         internal Voice(SoundEvent sound, Node player, SoundVoice roll, double length, double now, Func<Vector3?>? track,
-            IReadOnlyDictionary<string, float>? parameters)
+            IReadOnlyDictionary<string, float>? parameters, bool loops)
         {
             Event = sound;
+            Loops = loops;
             Player = player;
             Roll = roll;
             _length = length;
@@ -211,6 +218,9 @@ public partial class SoundPlayer : Node3D
 
         /// <summary>The event playing.</summary>
         public SoundEvent Event { get; }
+
+        /// <summary>True when it plays on until stopped; false for a one-shot, a loop event played once included.</summary>
+        public bool Loops { get; }
 
         /// <summary>The <see cref="AudioStreamPlayer3D"/> (positional) or <see cref="AudioStreamPlayer"/> playing it.</summary>
         public Node Player { get; }
@@ -266,7 +276,7 @@ public partial class SoundPlayer : Node3D
                     break;
             }
             // Our own clock decides when a one-shot is over: headless runs have no audio device to report it.
-            return Event.Loop || now - _started < _length / Math.Max(0.01, Roll.Pitch * pitch) + 0.05;
+            return Loops || now - _started < _length / Math.Max(0.01, Roll.Pitch * pitch) + 0.05;
         }
 
         internal void Release()

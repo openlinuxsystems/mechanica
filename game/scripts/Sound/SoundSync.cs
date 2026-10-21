@@ -127,7 +127,7 @@ public partial class SoundSync : Node
     {
         if (Registry.Find(sound, ownerModId) is not { } e)
             return false;
-        Player.Play(e, position);
+        Player.Play(e, position, once: true);
         Played?.Invoke(e, position);
         if (!Session.IsHost)
             return true;
@@ -209,7 +209,7 @@ public partial class SoundSync : Node
     {
         if (Session.State == NetSession.SessionState.Connected && Registry.Find(sound) is { } e)
         {
-            Player.Play(e, position);
+            Player.Play(e, position, once: true);
             Played?.Invoke(e, position);
         }
     }

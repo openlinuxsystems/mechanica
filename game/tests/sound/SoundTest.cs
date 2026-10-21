@@ -97,6 +97,23 @@ public partial class SoundTest : StagedTest
             return true;
         });
 
+        // A loop fired as a one-shot (a bot's cry) plays its clip once and ends on every peer: it never hums on where it played.
+        Add("a loop played as a one-shot ends by itself on both peers", frame =>
+        {
+            var hum = _host.Main.SoundEvents!.Find("hum", "sound_test")!;
+            if (frame == 0)
+            {
+                Check(hum.Loop, "the hum is a loop");
+                Check(_host.Main.Sounds.Emit("hum", "sound_test", _client.Main.LocalPlayer!.GlobalPosition), "the host emits it");
+                var voice = _host.Main.Sounds.Player.Voices.LastOrDefault(v => v.Event == hum);
+                Check(voice is { Loops: false, Player: AudioStreamPlayer3D { Stream: AudioStreamOggVorbis { Loop: false } } }, "it plays once, not looping");
+                return false;
+            }
+            if (frame == 10)
+                Check(_client.Main.Sounds.Player.Voices.Any(v => v.Event.QualifiedId == hum.QualifiedId && !v.Loops), "the client plays it once too");
+            return frame > 10 && _host.Main.Sounds.Player.Voices.Concat(_client.Main.Sounds.Player.Voices).All(v => v.Event.QualifiedId != hum.QualifiedId);
+        });
+
         AddBuilding();
         AddEarshot();
         AddLoops();
