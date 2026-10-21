@@ -1,0 +1,19 @@
+{
+  "id": "main_pipe_compressor",
+  "name": "Pipe Compressor",
+  "description": "A finned compressor drum with its motor, inline on a main pipe.",
+  "category": "decor",
+  "mass": 7.5,
+  "durability": 5,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [5, 5, 8],
+  "mesh": "meshes/parts/main_pipe_compressor.glb",
+  "icon": "textures/items/main_pipe_compressor_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}
