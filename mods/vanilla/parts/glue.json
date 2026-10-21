@@ -1,11 +1,26 @@
 {
   "id": "glue",
   "name": "Glue",
+  "description": "A squeeze bottle of wood glue, boiled down from scrap wood and beeswax at the Fabricator. Chests, containers, logic parts and lights are glued with it. Flammable.",
   "category": "resource",
-  "mass": 0.2,
-  "stack_size": 20,
+  "mass": 6,
+  "durability": 2,
+  "friction": 0.4,
+  "buoyancy": 0.3,
+  "flammable": true,
+  "stack_size": 10,
+  "sound_material": "plastic",
+  "size": [1, 1, 1],
+  "mesh": "meshes/items/glue.glb",
+  "icon": "textures/items/glue_icon.png",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.5,
+    "metallic": 0
+  },
   "sounds": {
     "pickup": "pickup_component",
     "drop": "drop_component"
-  }
+  },
+  "loose": true
 }

@@ -5,6 +5,8 @@
   "category": "resource",
   "mass": 1,
   "stack_size": 20,
+  "mesh": "meshes/items/chemical.glb",
+  "icon": "textures/items/chemical_icon.png",
   "visual": {
     "color": "#7ee03c"
   },

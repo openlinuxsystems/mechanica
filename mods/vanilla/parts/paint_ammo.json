@@ -1,11 +1,13 @@
 {
   "id": "paint_ammo",
   "name": "Paint Ammo",
-  "description": "A cartridge of paint for the Paint Tool. Each stroke of paint uses one.",
+  "description": "A tin of paint for the Paint Tool. Each stroke of paint uses one.",
   "category": "resource",
   "tab": "consumable",
   "mass": 0.1,
   "stack_size": 100,
+  "mesh": "meshes/items/paint_ammo.glb",
+  "icon": "textures/items/paint_ammo_icon.png",
   "visual": {
     "color": "#3874dc"
   }

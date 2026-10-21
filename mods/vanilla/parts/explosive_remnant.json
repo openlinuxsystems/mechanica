@@ -1,9 +1,15 @@
 {
   "id": "explosive_remnant",
   "name": "Explosive Remnant",
+  "description": "What is left of a Red Scuttler's pressure tank: dented, its gauge cracked, still charged. Red Scuttlers drop it.",
   "category": "resource",
   "mass": 0.5,
   "stack_size": 10,
+  "mesh": "meshes/items/explosive_remnant.glb",
+  "icon": "textures/items/explosive_remnant_icon.png",
+  "visual": {
+    "color": "#d0402e"
+  },
   "sounds": {
     "pickup": "pickup_metal",
     "drop": "drop_metal"

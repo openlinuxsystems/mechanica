@@ -686,6 +686,7 @@ one place. Vanilla's groups:
 | 2400 | Tools | `connect_tool`, `weld_tool`, `paint_tool`, `paint_ammo` |
 | 2500 | Weapons | `potato_blaster`, `potato_scattergun`, `potato_launcher`, `popper` |
 | 2600 | Refined materials | `wood_rod`, `pine_rod`, `stone_rod`, `metal_rod` |
+| 2700 | Crafting materials | `glue` |
 
 ## The editor source file
 
