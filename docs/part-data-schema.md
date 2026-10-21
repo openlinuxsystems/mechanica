@@ -408,6 +408,7 @@ script's job (D2). See the [Logic and Power Tutorial](logic-power-tutorial.md).
 | `seat.offset` | [x, y, z] (m) | Where the sitter's feet go, from the part's centre, in the part's frame. Inside the part's footprint. Default [0, 0, 0]. With a `seat.cushion` only its height counts: the floor the feet rest on. |
 | `seat.cushion` | [x, y, z] (m) | The point on the cushion the sitter's bottom rests on, under the hips, from the part's centre in the part's frame. Inside the footprint and above the feet's floor (the offset's height, or the part's bottom). The player sits there and its legs fit the height: a chair-height cushion (0.39 m above the floor) bends the knees under it, a lower one stretches the legs out in front. Without it the hips go 0.53 m above the offset. |
 | `seat.hands` | `wheel` or `free` | What the sitter's hands do: hold a wheel in front of the chest, or rest on the thighs as a passenger. Default `wheel` on a seat with logic outputs, else `free`. |
+| `seat.pose` | `chair` or `saddle` | How the sitter sits: in a chair (the `sit` clips, fitted to the cushion's height), or astride a saddle (the `sit_saddle` clip with the hands on handlebars, `sit_saddle_ride` with `seat.hands` `free`; the hips land on the cushion, and a saddle higher or lower than the clip's lifts or drops the body). Default `chair`. Vanilla's Driver's Saddle and Saddle use `saddle`. |
 | `seat.bounce` | number, 0 to 4 | How much the sitter bounces and sways with the ride: the hips bob and the upper body sways with each change in the seat's own motion (bumps, braking, turns), so a smooth road barely shows. 0 is rigid, 1 a padded seat. Sitting down also sinks the body in and lets it settle. Default 1. |
 | `settings` | list | Values a player sets on each placed part in its menu (E on the part, or R with the Connect Tool), in display order. The script reads them with `part.setting(id)`. |
 
@@ -664,9 +665,9 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 |-------|-------|---------------------------|
 | 100 | Blocks | Each block then its wedge, scrap first: scrap wood, scrap metal, scrap stone, sand, Wood Blocks 1-3, cardboard, barrier, insulation, carpet, Metal Blocks 1-3, extruded metal, punched steel, net, solid net, striped net, square mesh, diamond plate, aluminum, rusted metal, worn metal, path light, hull plate, hull floor, brick, tile, worn tile, Concrete Blocks 1-3, cracked concrete, concrete slab, plaster, painted wall, glass, glass tile, armored glass, ice, plastic, bubble plastic |
 | 200 | Ramps, stairs and railings | `ramp_block`, `stairs_block`, `ladder`, `metal_railing` |
-| 300 | Beams and frames | `support_pillar`, `support_bracket`, `metal_column`, `ibeam_short`, `ibeam_long`, `door_frame`, `window_frame` |
+| 300 | Beams and frames | `ibeam_stub`, `ibeam_short`, `ibeam_long`, `ibeam_corner`, `ibeam_end`, `ibeam_holder`, `metal_column`, `support_bracket`, `support_pillar`, `support_truss_large`, `door_frame`, `window_frame` |
 | 400 | Pipes | `small_pipe_short`, `small_pipe_long`, `small_pipe_corner`, `small_pipe_tee`, `small_pipe_cross`, `large_pipe_short`, `large_pipe_long`, `large_pipe_corner`, `large_pipe_tee` |
-| 500 | Seats and controls | `scrap_seat`, `scrap_drivers_seat`, `passenger_seat`, `drivers_seat`, `controller` |
+| 500 | Seats and controls | `scrap_seat`, `scrap_drivers_seat`, `passenger_seat`, `saddle`, `drivers_seat`, `drivers_saddle`, `controller` |
 | 600 | Wheels | `scrap_wheel`, `wheel`, `big_wheel` |
 | 700 | Suspension | `sport_suspension`, `offroad_suspension` |
 | 800 | Engines | `scrap_gas_engine`, `gas_engine`, `electric_engine` |
@@ -681,7 +682,7 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 | 1700 | Storage | `chest` (Scrap Chest), `small_chest`, `large_chest`, `cargo_chest`, `barrel`, `locker`, `tool_cabinet`, `file_cabinet`, `fridge`, `chemical_container`, `water_container`, `potato_ammo_container`, `dispenser`, `broken_microwave`, `ruin_chest` |
 | 1800 | Stations | `portable_fabricator`, `refiner`, `respawn_bed` |
 | 1900 | Farming | `soil_bag`, `water_bucket`, `feeding_trough`, `lead` |
-| 2000 | Furniture | `stool`, `chair`, `wooden_table`, `metal_table`, `shelf_unit`, `pallet` |
+| 2000 | Furniture | `stool`, `chair`, `toilet`, `bathtub`, `wooden_table`, `metal_table`, `shelf_unit`, `pallet` |
 | 2100 | Road signs | `stop_sign`, `caution_sign`, `danger_sign`, `no_entry_sign`, `speed_limit_sign`, `direction_arrow_left`, `direction_arrow_straight`, `direction_arrow_right` |
 | 2200 | Road and site | `traffic_cone`, `barrier_tape`, `outpost_sign`, `warehouse_key_sign` |
 | 2300 | Nature | `fallen_log`, `tree_trunk` |

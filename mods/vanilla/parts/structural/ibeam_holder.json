@@ -1,0 +1,19 @@
+{
+  "id": "ibeam_holder",
+  "name": "I-Beam (Holder)",
+  "description": "A post on a bolted foot plate, with a cap plate for a beam to sit on.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 4,
+  "friction": 0.3,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 2, 1],
+  "mesh": "meshes/parts/ibeam_holder.glb",
+  "icon": "textures/items/ibeam_holder_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

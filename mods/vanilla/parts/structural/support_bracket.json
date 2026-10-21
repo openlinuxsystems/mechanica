@@ -1,0 +1,19 @@
+{
+  "id": "support_bracket",
+  "name": "Support Bracket",
+  "description": "A wall bracket: a back plate, an arm and a diagonal strut.",
+  "category": "decor",
+  "mass": 4.5,
+  "durability": 5,
+  "friction": 0.4,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 2, 2],
+  "mesh": "meshes/parts/support_bracket.glb",
+  "icon": "textures/items/support_bracket_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}
