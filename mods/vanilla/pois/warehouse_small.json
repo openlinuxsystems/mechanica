@@ -38,8 +38,14 @@
     { "type": "bot", "ref": "spooler_blue", "at": [0.0, 0.3, -7.5] },
     { "type": "bot", "ref": "spooler_green", "at": [-4.0, 4.3, -7.5] },
     { "type": "item", "ref": "warehouse_key", "at": [16.0, 4.3, -11.0] },
-    { "type": "item", "ref": "metal_crate", "at": [-16.0, 0.3, -11.0] },
-    { "type": "item", "ref": "wooden_crate", "at": [16.0, 4.3, -11.0] },
-    { "type": "item", "ref": "warehouse_key_sign", "at": [0.0, 0.0, 19.0] }
+    { "type": "part", "ref": "metal_crate", "at": [-16.0, 0.3, -11.0], "loot": "warehouse_crate", "loot_rolls": [2, 5] },
+    { "type": "part", "ref": "wooden_crate", "at": [16.0, 4.3, -11.0], "loot": "crate", "loot_rolls": [2, 4] },
+    { "type": "item", "ref": "warehouse_key_sign", "at": [0.0, 0.0, 19.0] },
+    { "type": "part", "ref": "locker", "at": [10.0, 0.3, -14.5], "yaw": 180.0, "loot": "locker", "loot_rolls": [1, 4] },
+    { "type": "part", "ref": "locker", "at": [9.25, 0.3, -14.5], "yaw": 180.0, "loot": "locker", "loot_rolls": [1, 4] },
+    { "type": "part", "ref": "file_cabinet", "at": [8.0, 0.3, -14.35], "yaw": 180.0, "loot": "file_cabinet", "loot_rolls": [1, 3] },
+    { "type": "part", "ref": "locker", "at": [-10.0, 4.3, -14.5], "yaw": 180.0, "loot": "locker", "loot_rolls": [1, 4] },
+    { "type": "part", "ref": "locker", "at": [-9.25, 4.3, -14.5], "yaw": 180.0, "loot": "locker", "loot_rolls": [1, 4] },
+    { "type": "part", "ref": "file_cabinet", "at": [-8.0, 4.3, -14.35], "yaw": 180.0, "loot": "file_cabinet", "loot_rolls": [1, 3] }
   ]
 }

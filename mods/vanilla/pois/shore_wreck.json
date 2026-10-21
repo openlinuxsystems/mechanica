@@ -19,6 +19,6 @@
     { "shape": "box", "size": [1.0, 0.8, 1.0], "at": [-5.0, 0.4, -3.0], "color": "#7d858c" }
   ],
   "markers": [
-    { "type": "item", "ref": "wooden_crate", "at": [0.0, 1.4, 0.0] }
+    { "type": "part", "ref": "wooden_crate", "at": [0.0, 1.4, 0.0], "loot": "crate", "loot_rolls": [2, 4] }
   ]
 }

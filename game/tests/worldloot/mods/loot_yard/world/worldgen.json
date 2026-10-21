@@ -1,0 +1,25 @@
+{
+  // A flat world (it replaces vanilla's rules, as the last whole worldgen.json in load order does) with the loot tables
+  // the yard's containers are filled from, and short days so the test's refill comes after 10 minutes of world time.
+  "terrain": { "coast_width": 0.0, "coast_biome_width": 0.0, "sea_level": -100.0, "sea_floor": -100.0 },
+  "biomes": [{ "id": "flat", "name": "Flat", "weight": 1.0, "color": "#5c7350" }],
+  "day_length": 600.0,
+  "loot_tables": {
+    "locker": {
+      "items": [
+        { "item": "vanilla:carrot", "count": 2, "count_max": 5 },
+        { "item": "vanilla:potato", "count": 3, "count_max": 8 },
+        { "item": "vanilla:component_kit", "count": 1, "count_max": 3 },
+        { "item": "vanilla:glowstick", "count": 1, "count_max": 2 }
+      ]
+    },
+    "ruin_chest": {
+      "items": [
+        { "item": "vanilla:component_kit", "count": 1, "count_max": 3, "weight": 2.0 },
+        { "item": "vanilla:scrap_metal_block", "count": 10, "count_max": 20 },
+        { "item": "vanilla:circuit_board", "count": 1 },
+        { "item": "vanilla:glue", "count": 1, "count_max": 2 }
+      ]
+    }
+  }
+}

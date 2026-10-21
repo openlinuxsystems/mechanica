@@ -51,10 +51,20 @@ public sealed record WorldGenDefinition
     public List<LiquidDefinition>? Liquids { get; init; }
 
     /// <summary>
-    /// Weighted item lists that breakable objects roll their <see cref="WorldObjectDefinition.Loot"/> from, by id
-    /// (<c>common</c>, <c>epic</c>, <c>legendary</c> for the Bloom Pods).
+    /// Weighted item lists that breakable objects roll their <see cref="WorldObjectDefinition.Loot"/> from, and POI part
+    /// markers fill containers from (<see cref="PoiMarker.Loot"/>), by id (<c>common</c>, <c>epic</c>, <c>legendary</c> for
+    /// the Bloom Pods; <c>locker</c>, <c>crate</c> and the rest for containers).
     /// </summary>
     public Dictionary<string, LootTableDefinition>? LootTables { get; init; }
+
+    /// <summary>
+    /// Seconds of world time (the scripts' clock) in an in-game day, which day counts in the data are in (a POI part
+    /// marker's <see cref="PoiMarker.RefillDays"/>). Scrap Mechanic's day is 24 minutes.
+    /// </summary>
+    public float DayLength { get; init; } = DefaultDayLength;
+
+    /// <summary>The <see cref="DayLength"/> when the rules leave it out: 1440 s, Scrap Mechanic's 24-minute day.</summary>
+    public const float DefaultDayLength = 1440f;
 
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
@@ -1477,6 +1487,25 @@ public sealed record PoiMarker
 
     /// <summary>Turn about +Y in degrees.</summary>
     public float Yaw { get; init; }
+
+    /// <summary>
+    /// For a <see cref="PartType"/> marker whose part holds items: the id of a table in
+    /// <see cref="WorldGenDefinition.LootTables"/> the host fills it from when it first places it (<see cref="WorldLoot"/>).
+    /// Omitted: it starts empty.
+    /// </summary>
+    public string? Loot { get; init; }
+
+    /// <summary>
+    /// <c>[min, max]</c>: how many different entries of <see cref="Loot"/> each fill draws, from min to max (picked from the
+    /// world seed). Omitted: one.
+    /// </summary>
+    public List<int>? LootRolls { get; init; }
+
+    /// <summary>
+    /// In-game days (<see cref="WorldGenDefinition.DayLength"/>) a looted container must stay empty before it fills again
+    /// from <see cref="Loot"/>. Omitted: it is filled once and never again.
+    /// </summary>
+    public float? RefillDays { get; init; }
 
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]

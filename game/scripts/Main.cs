@@ -75,6 +75,11 @@ public partial class Main : Node3D
 
     private Ui.LoadingScreen? _loadingScreen;
     private int _physicsSteps;
+
+    // Host: the world containers that refill (POI part markers with refill_days), by marker key, and physics steps to
+    // the next look at them.
+    private Dictionary<string, WorldPartSpot> _refillSpots = [];
+    private int _refillWait;
     private int _sceneryMost;
 
     /// <summary>Where the player profile lives.</summary>
@@ -831,6 +836,21 @@ public partial class Main : Node3D
     {
         if (Loading?.Stage == LoadStage.Physics)
             _physicsSteps++;
+        RefillWorldLoot();
+    }
+
+    // Host, about once a second: a world container that refills fills again once it has stood empty for its refill time
+    // (WorldLoot.Refill); peers with it open see the new contents.
+    private void RefillWorldLoot()
+    {
+        if (_refillSpots.Count == 0 || --_refillWait > 0 || Scripts?.Runtime is not { } runtime)
+            return;
+        _refillWait = Engine.PhysicsTicksPerSecond;
+        foreach (var creation in Creations.All)
+        {
+            if (creation.WorldPart is { } key && _refillSpots.TryGetValue(key, out var spot) && WorldLoot.Refill(creation, spot, runtime.Time))
+                GD.Print($"[world] {key} refilled from loot table '{spot.Loot!.TableId}'");
+        }
     }
 
     // Moves the load on from what the world actually has (§15): a client first reaches the host and waits for
@@ -1173,8 +1193,9 @@ public partial class Main : Node3D
         return Opening;
     }
 
-    // Host, once the world (and any save) is in: the world's own parts (POI part markers, such as a Workshop's Fabricator)
-    // are matched to their markers, so each marker has exactly one. New ones start parked like a still Creation from a
+    // Host, once the world (and any save) is in: the world's own parts (POI part markers, such as a Workshop's Fabricator
+    // or a warehouse's lockers) are matched to their markers, so each marker has exactly one; a new container comes filled
+    // with its marker's loot. New ones start parked like a still Creation from a
     // save, so the streamer brings each in with the ground under it when a player comes near.
     private void PlaceWorldParts()
     {
@@ -1184,7 +1205,9 @@ public partial class Main : Node3D
             if (WorldParts.ObjectOf(key) is { } id)
                 Streamer.State.Destroy(id);
         };
-        var plan = WorldParts.Reconcile(WorldParts.SpotsOf(Streamer.Generator), Creations.All.ToList(), new LoadedParts(this), Build.NextCreationId,
+        var spots = WorldParts.SpotsOf(Streamer.Generator);
+        _refillSpots = spots.Where(s => s.Loot?.RefillSeconds is not null).ToDictionary(s => s.Key, StringComparer.Ordinal);
+        var plan = WorldParts.Reconcile(spots, Creations.All.ToList(), new LoadedParts(this), Build.NextCreationId,
             Streamer.State.IsDestroyed);
         foreach (var id in plan.Remove)
             Creations.Remove(id);

@@ -182,7 +182,8 @@ change (usually `vanilla`). Every patch applies in load order on top of the last
 | `biomes[].scatter[].roadside` | Stands the rule's objects beside the roads: each cell a road crosses takes the centre-line point nearest its spot and puts the object `gap` metres (default 3; more than the object's `footprint` plus 1) out from the edge of the bed, turned so its front (+z) faces the road and its x axis runs along it. `road` keeps it to `road`s or `track`s (omitted: either). `side` is `left` or `right` of the road's direction, to keep a line of poles on one side, `outside`, the outside of the road's bend there (guard rails, chevron signs), or `either` (the default), the side the cell's spot falls on. `even: true` takes each cell's middle instead of a random spot, so the objects stand about a `spacing` apart, as a pole line does. `junction` (metres) keeps the rule within that distance along the road of a junction (direction signs), and `bend` (degrees) to where the road turns at least that much over the 40 m round the spot (curve signs, guard rails). Never on a bridge, nor where the ground is more than 2.5 m above or below the road. A scene's pieces turn with it, so a scene can line a road too: its `gap` need only be more than 1, since each piece keeps its own footprint plus 1 m off the road. The road is looked for within 48 m of a cell's spot, so keep `spacing` under about 90 and make rare things rare with `chance`. |
 | `biomes[].scatter[].near` | Keeps the rule close to other scattered things, as fields round the farms: a spot is used only when a spot of a rule that scatters one of `objects` (ids of objects or scenes, none of them scattered with a `near` of its own) lies within `within` metres (default 150, at most 400) on ground that suits it. `pois` (POI ids, `other_mod:id` for another mod's) does the same for POIs: the spot must lie within `within` metres of the edge of one of them. A rule needs `objects`, `pois` or both. Omitted: anywhere. |
 | `biomes[].scatter[].away` | Keeps the rule clear of POIs: no object (its `footprint` included) stands within `distance` metres (default 100, at most 1000) of the edge of one of `pois` (POI ids, `other_mod:id` for another mod's). The bot factions' sites keep 100 m from the Workshops this way. Omitted: anywhere. |
-| `loot_tables` | Weighted item lists by id that objects' `loot` picks from: each has `items[]` of `item`, `count` (default 1), `count_max` (at least `count`) and `weight` (relative odds, default 1). Vanilla has `common`, `epic` and `legendary`, for the green, purple and gold Bloom Pods. |
+| `loot_tables` | Weighted item lists by id that objects' `loot` picks from, and that the world's containers are filled from (a POI `part` marker's `loot`, see [Loot in containers](#loot-in-containers)): each has `items[]` of `item`, `count` (default 1), `count_max` (at least `count`) and `weight` (relative odds, default 1). Vanilla has `common`, `epic` and `legendary`, for the green, purple and gold Bloom Pods, and `locker`, `file_cabinet`, `microwave`, `ruin_chest`, `crate` (POI loot crates) and `warehouse_crate` for the containers. |
+| `day_length` | Seconds of world time (the scripts' clock, which saves carry on) in an in-game day, which day counts in the data are in (a `part` marker's `refill_days`). Default 1440, Scrap Mechanic's 24 minutes. |
 | `objects[]` | Destructible world objects. Use catalog ids (`birch_tree`, `rock_node`, `boulder`, ...). `footprint` is the radius other scattered objects keep clear of; `sink` lowers the object into the ground. |
 | `objects[].health` | Damage the object takes before it breaks (Sledgehammer, weapons, splash). Omitted means it cannot be broken. Damage is not saved: a part-felled tree is whole again after a restart. |
 | `objects[].sledge_damage` | Damage one Sledgehammer hit does to it: its gathering damage (a rock node, stone, takes 25). Omitted means `sledge.object_damage` from `game/data/building.json`. |
@@ -665,7 +666,7 @@ Another mod's POI is changed or removed through `overrides/<mod>/pois/`, a `.pat
 | `models[].story` | Makes the model animated and follow a quest, like the SV-04's battery bay: `quest` (a quest id, `other_mod:quest` for another mod's) and the glTF clips `waiting` (looped until the quest is done), `finish` (played once when the quest is done while the model is in view) and `done` (looped from then on). At least one clip. Each placement is its own copy of the model, so keep it for a few special pieces; its `collider` mesh (or, without one, its meshes in the file's rest pose) is what collides, and it does not move with the clips. Every peer plays the clips from the quest state the host sends. |
 | `ground[]` | Ground painted on the footprint, in order, each over the ones before: `ground` (an id from `grounds[]`), full inside `radius` of `at` (`[x, z]`, default the centre) and fading over `blend`, with an edge pushed in and out by up to `noise` metres. Must stay inside the POI radius. |
 | `flora` | Id of a biome whose flora grows on the footprint (outside bare ground). Omitted: nothing grows inside the POI. The crash site burns its middle and grows a meadow round it. |
-| `markers[]` | Points for other systems: `type` (`spawn`, `item`, `part`, `bot`, `fire`, `door`, `npc`, `core`, ...), `at` (`[x, y, z]` relative to the POI centre on its pad), `yaw` (degrees about +Y, counter-clockwise from above, added to the POI's turn; 0 faces −Z) and an optional `ref` (a catalog id, or a character id for `npc`). The first `spawn` marker of a fixed POI is where players start. A `bot` marker is a guard post: in Survival its bot (`ref`, a bot of this mod unless qualified) appears when a player comes near, leaves when everyone has gone, and is replaced some time after it is killed (distances and the wait are in the game's `data/bots.json`). [Quests](quests.md) point at markers. An `npc` marker draws the [character](characters.md#non-player-characters) its `ref` names standing there, facing the marker's `yaw`. An `object` marker places the world object `ref` names (`objects[]`, such as `oil_geyser`) on the ground under it, raised by its `at` height. A `part` marker puts a working part there that belongs to the world (see [World-owned parts](#world-owned-parts-part-markers)). An `item` marker is only a note for design work for now: nothing appears there. |
+| `markers[]` | Points for other systems: `type` (`spawn`, `item`, `part`, `bot`, `fire`, `door`, `npc`, `core`, ...), `at` (`[x, y, z]` relative to the POI centre on its pad), `yaw` (degrees about +Y, counter-clockwise from above, added to the POI's turn; 0 faces −Z) and an optional `ref` (a catalog id, or a character id for `npc`). The first `spawn` marker of a fixed POI is where players start. A `bot` marker is a guard post: in Survival its bot (`ref`, a bot of this mod unless qualified) appears when a player comes near, leaves when everyone has gone, and is replaced some time after it is killed (distances and the wait are in the game's `data/bots.json`). [Quests](quests.md) point at markers. An `npc` marker draws the [character](characters.md#non-player-characters) its `ref` names standing there, facing the marker's `yaw`. An `object` marker places the world object `ref` names (`objects[]`, such as `oil_geyser`) on the ground under it, raised by its `at` height. A `part` marker puts a working part there that belongs to the world (see [World-owned parts](#world-owned-parts-part-markers)); a container's can fill it with loot (`loot`, `loot_rolls`, `refill_days`: [Loot in containers](#loot-in-containers)), and `loot` is refused on any other marker. An `item` marker is only a note for design work: nothing appears there. Vanilla's mark things not placed yet (the warehouse key and its sign, the Workshops' respawn bed and sign, the Ruins' scrap and Component Kit) and spots quests point at (the crash site's Master Battery and Logbook); its containers are all `part` markers. |
 | `pools[]` | Round pools of a liquid (`liquid`, an id from `liquids[]`), usually laid in a `basin`: the surface is a disc of `radius` metres round `at` (`[x, z]`), `level` metres above the pad (below 0 in a basin). The liquid fills only the part of the disc where the ground is lower than the surface, so the shore follows the basin's (wobbling) bank: make the disc reach past it. Nothing grows in it. Must stay inside the POI radius. |
 
 The pad height of a spaced POI is the natural ground height at its centre.
@@ -699,3 +700,46 @@ A `part` marker puts one working part in the world: every Workshop has a Fabrica
   a world loads, each marker not taken gets exactly one: a saved one is kept (and put back on its marker if the marker moved), a
   missing one is made (an older save, or a POI a mod added), and one whose marker is gone is removed. It is never
   made twice, however often the world is loaded or the area entered.
+
+### Loot in containers
+
+A `part` marker whose part holds items (a Locker, File Cabinet, Ruin Chest, a POI's crates) can come filled with loot, as
+the lockers, file cabinets and ruin chests in Scrap Mechanic's world do:
+
+```json
+{ "type": "part", "ref": "ruin_chest", "at": [-6.4, 0.0, 0.0], "yaw": -90.0, "loot": "ruin_chest", "loot_rolls": [1, 6], "refill_days": 5.0 }
+```
+
+| Key | Meaning |
+|---|---|
+| `loot` | Id of a table in the world generation rules' `loot_tables` (the world's one `worldgen.json`, so a bare id; a mod adds a table with a `worldgen.patch.json`). The part must have an `inventory`. |
+| `loot_rolls` | `[min, max]` draws per fill (1 ≤ min ≤ max): each draw takes a different entry of the table, with odds by weight and a count from its range, as objects' `loot` does. Omitted: one. More than the table has entries, or the part has slots, is a warning: the extra draws are left out. |
+| `refill_days` | In-game days (`day_length`) it must stand empty before it fills again. Omitted: it is filled once and never again. |
+
+- The host fills it when it first places it (a new world, or a save from before the marker had a part). Draws come
+  from the world seed and the marker's key, so the same world always holds the same finds, for every peer; every
+  peer sees what it holds when they open it.
+- A container players have looted is never filled again: it is saved with what it holds (and its fill count, in its
+  Creation's `world_loot`), and a saved one is kept as it is when the world loads. One a player picks up (empty first)
+  is theirs, and its marker places no other.
+- With `refill_days`, the host looks at it about once a second: when it finds it empty it notes the time (saved as
+  `world_loot.emptied_at`), and once it has stood empty that long it fills it again with a new roll (`fills` counts
+  them, so each refill rolls differently). Putting anything back in stops the wait; emptied again, it starts over.
+- Errors at `$.markers[i].loot`, `$.markers[i].loot_rolls` or `$.markers[i].refill_days` stop the POI loading: a table
+  the rules do not have, a part without an inventory, a range that is not `[min, max]`, `refill_days` not above 0, and
+  `loot_rolls` or `refill_days` without `loot`, or on a marker that is not a `part` marker.
+
+Vanilla fills these (tables in `world/worldgen.json`):
+
+| Where | Containers | Table, draws |
+|---|---|---|
+| SV-04 crash site | A Locker in each bunk room, a Broken Microwave in the port one, a File Cabinet on the bridge | `locker` 1-4, `microwave` 1, `file_cabinet` 1-3 |
+| Warehouses (2, 3 and 4 floors) | A Metal Crate on each floor but the top one, a Wooden Crate on the top floor; two Lockers and a File Cabinet against the back wall of the ground floor and of the top floor | `warehouse_crate` 2-5, `crate` 2-4, `locker` 1-4, `file_cabinet` 1-3 |
+| Workshops | The supply Dispenser and a Scrap Chest | `crate` 2-4 |
+| Faction Outpost | A Scrap Chest | `crate` 2-4 |
+| Forest Ruin, Ruins | A Ruin Chest, refilling 5 days after it is emptied | `ruin_chest` 1-6 |
+| Camps, Forest Ruin, Roadside Kiosks, Farming Patch, Build Area, Shore Wreck | Wooden Crates | `crate` 2-4 |
+
+Lockers hold food, cloth and components; file cabinets office stock (glue, paint ammo for ink) and components; a
+broken microwave scrap metal or a circuit board; ruin chests a bit of everything. The placeholder POIs' markers are
+written by `tools/author-poi-placeholders.py` (`loot_part`), the Faction Outpost's by the story batch.

@@ -58,10 +58,16 @@
     { "type": "bot", "ref": "spooler_yellow", "at": [0.0, 8.3, -12.5] },
     { "type": "bot", "ref": "spooler_blue", "at": [-4.0, 12.3, -12.5] },
     { "type": "item", "ref": "warehouse_key", "at": [31.0, 12.3, -21.0] },
-    { "type": "item", "ref": "metal_crate", "at": [-31.0, 0.3, -21.0] },
-    { "type": "item", "ref": "metal_crate", "at": [31.0, 4.3, -21.0] },
-    { "type": "item", "ref": "metal_crate", "at": [-31.0, 8.3, -21.0] },
-    { "type": "item", "ref": "wooden_crate", "at": [31.0, 12.3, -21.0] },
-    { "type": "item", "ref": "warehouse_key_sign", "at": [0.0, 0.0, 29.0] }
+    { "type": "part", "ref": "metal_crate", "at": [-31.0, 0.3, -21.0], "loot": "warehouse_crate", "loot_rolls": [2, 5] },
+    { "type": "part", "ref": "metal_crate", "at": [31.0, 4.3, -21.0], "loot": "warehouse_crate", "loot_rolls": [2, 5] },
+    { "type": "part", "ref": "metal_crate", "at": [-31.0, 8.3, -21.0], "loot": "warehouse_crate", "loot_rolls": [2, 5] },
+    { "type": "part", "ref": "wooden_crate", "at": [31.0, 12.3, -21.0], "loot": "crate", "loot_rolls": [2, 4] },
+    { "type": "item", "ref": "warehouse_key_sign", "at": [0.0, 0.0, 29.0] },
+    { "type": "part", "ref": "locker", "at": [25.0, 0.3, -24.5], "yaw": 180.0, "loot": "locker", "loot_rolls": [1, 4] },
+    { "type": "part", "ref": "locker", "at": [24.25, 0.3, -24.5], "yaw": 180.0, "loot": "locker", "loot_rolls": [1, 4] },
+    { "type": "part", "ref": "file_cabinet", "at": [23.0, 0.3, -24.35], "yaw": 180.0, "loot": "file_cabinet", "loot_rolls": [1, 3] },
+    { "type": "part", "ref": "locker", "at": [-25.0, 12.3, -24.5], "yaw": 180.0, "loot": "locker", "loot_rolls": [1, 4] },
+    { "type": "part", "ref": "locker", "at": [-24.25, 12.3, -24.5], "yaw": 180.0, "loot": "locker", "loot_rolls": [1, 4] },
+    { "type": "part", "ref": "file_cabinet", "at": [-23.0, 12.3, -24.35], "yaw": 180.0, "loot": "file_cabinet", "loot_rolls": [1, 3] }
   ]
 }

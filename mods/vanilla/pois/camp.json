@@ -15,11 +15,10 @@
     { "shape": "box", "size": [3.0, 2.2, 4.0], "at": [-4.0, 1.1, -3.0], "yaw": 20.0, "color": "#5f8a4a" },
     { "shape": "box", "size": [3.0, 2.0, 3.5], "at": [4.0, 1.0, -2.0], "yaw": -25.0, "color": "#b8a47a" },
     { "shape": "cylinder", "radius": 0.8, "height": 0.3, "at": [0.0, 0.15, 2.0], "color": "#3a3430" },
-    { "shape": "box", "size": [2.2, 0.4, 0.5], "at": [-1.8, 0.2, 3.6], "yaw": 70.0, "color": "#8c5a3c" },
-    { "shape": "box", "size": [1.2, 0.9, 0.8], "at": [5.0, 0.45, 4.0], "color": "#8c5a3c" }
+    { "shape": "box", "size": [2.2, 0.4, 0.5], "at": [-1.8, 0.2, 3.6], "yaw": 70.0, "color": "#8c5a3c" }
   ],
   "markers": [
-    { "type": "item", "ref": "wooden_crate", "at": [5.0, 0.0, 4.0] },
-    { "type": "item", "ref": "wooden_crate", "at": [-4.0, 0.0, -1.0] }
+    { "type": "part", "ref": "wooden_crate", "at": [5.0, 0.0, 4.0], "loot": "crate", "loot_rolls": [2, 4] },
+    { "type": "part", "ref": "wooden_crate", "at": [-4.0, 0.0, 0.0], "loot": "crate", "loot_rolls": [2, 4] }
   ]
 }

@@ -31,7 +31,13 @@ public sealed class WorldPartsTests
 
     private static IPartCatalog Catalog => Vanilla.Value;
 
-    private static IReadOnlyList<WorldPartSpot> Spots => WorldParts.SpotsOf(VanillaWorld.Value);
+    // Every part marker of the vanilla world (the Workshops' Fabricators and the containers with loot)...
+    private static readonly Lazy<IReadOnlyList<WorldPartSpot>> AllSpotsOnce = new(() => WorldParts.SpotsOf(VanillaWorld.Value));
+
+    private static IReadOnlyList<WorldPartSpot> AllSpots => AllSpotsOnce.Value;
+
+    // ... and the Fabricators' alone.
+    private static IReadOnlyList<WorldPartSpot> Spots => [.. AllSpots.Where(s => s.Part == Fabricator)];
 
     // ---- Markers ----
 
@@ -39,7 +45,7 @@ public sealed class WorldPartsTests
     public void EveryWorkshopHasOneFabricatorMarker()
     {
         var world = VanillaWorld.Value;
-        var workshops = world.Pois.Where(p => p.Poi.Prefab.Markers?.Any(m => m.Type == PoiMarker.PartType) == true).ToList();
+        var workshops = world.Pois.Where(p => p.Poi.Prefab.Markers?.Any(m => m.Type == PoiMarker.PartType && m.Ref == "fabricator") == true).ToList();
 
         Assert.Contains(workshops, p => p.Poi.QualifiedId == Workshop);
         Assert.Equal(workshops.Count, Spots.Count);
@@ -54,17 +60,17 @@ public sealed class WorldPartsTests
     public void AWorldPartStandsOnItsMarkerFacingItsYaw()
     {
         var markers = VanillaWorld.Value.MarkersOfType(PoiMarker.PartType).ToList();
-        Assert.Equal(Spots.Count, markers.Count);
+        Assert.Equal(AllSpots.Count, markers.Count);
         for (var i = 0; i < markers.Count; i++)
         {
             var marker = markers[i];
-            var creation = WorldParts.Build(Spots[i], 7, Catalog, out var problem) ?? throw new InvalidOperationException(problem);
+            var creation = WorldParts.Build(AllSpots[i], 7, Catalog, out var problem) ?? throw new InvalidOperationException(problem);
 
             Assert.Equal(WorldParts.KeyOf(marker.Poi.Poi.QualifiedId, marker.Index, marker.Poi.Index), creation.WorldPart);
             Assert.True(creation.IsWorldOwned);
             Assert.Equal(Creation.HostPeer, creation.AuthorityPeer);
             var part = Assert.Single(creation.Parts);
-            Assert.Equal(Fabricator, part.Part);
+            Assert.Equal(AllSpots[i].Part, part.Part);
             Assert.True(creation.IsAnchored(part.Id));
             Assert.True(creation.IsBodyAnchored(0));
             // Its bottom face sits centred on the marker (the floor point).

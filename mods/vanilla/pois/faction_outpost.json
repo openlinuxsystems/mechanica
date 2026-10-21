@@ -90,10 +90,15 @@
       "yaw": 0
     },
     {
-      "type": "item",
+      "type": "part",
       "ref": "chest",
       "at": [-5, 0.3, -5],
-      "yaw": 0
+      "yaw": 0,
+      "loot": "crate",
+      "loot_rolls": [
+        2,
+        4
+      ]
     }
   ],
   "road": "track",

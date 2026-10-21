@@ -56,8 +56,10 @@ public partial class WorkshopTest : StagedTest
             _client.Main.Survival.Own is not null && _client.Main.LocalPlayer is { } player && player.IsOnFloor() && _host.Main.Inventory.Items is not null);
         Add("the host put one world-owned Fabricator at every Workshop marker", _ =>
         {
+            // Every part marker: the Workshops' Fabricators and the containers with loot (warehouses, the crash site, ...).
             _spots = WorldParts.SpotsOf(_host.Main.Streamer.Generator);
-            Check(_spots.Count > 0 && _spots.All(s => s.Part == Fabricator), $"the vanilla Workshops have Fabricator markers ({_spots.Count})");
+            Check(_spots.Count(s => s.Part == Fabricator) >= 3 && _spots.All(s => s.Part == Fabricator || s.Loot is not null),
+                $"the vanilla Workshops have Fabricator markers, and the other part markers are containers with loot ({_spots.Count})");
             var owned = _host.Main.Creations.All.Where(c => c.IsWorldOwned).ToList();
             Check(owned.Select(c => c.WorldPart).Order(StringComparer.Ordinal).SequenceEqual(_spots.Select(s => s.Key).Order(StringComparer.Ordinal)),
                 $"exactly one per marker ({string.Join(", ", owned.Select(c => c.WorldPart))})");

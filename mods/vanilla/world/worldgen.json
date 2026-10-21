@@ -743,7 +743,8 @@
   // (parts/stone_chunk.json, parts/metal_chunk.json); a large one into three loose boulders (parts/stone_boulder.json,
   // parts/metal_boulder.json) that break into two chunks each. Chunks break into Stone and Metal Rods.
   // Models: tools/rocks/build_rocks.py.
-  // What Bloom Pods (and any object with "loot") pick from when they break: different entries, odds by weight.
+  // What Bloom Pods (and any object with "loot") pick from when they break, and what the world's containers (POI part
+  // markers with "loot") are filled from: different entries, odds by weight.
   "loot_tables": {
     "common": {
       "items": [
@@ -781,8 +782,87 @@
         { "item": "popper", "count": 1, "count_max": 2, "weight": 2.0 },
         { "item": "potato_blaster", "count": 1, "weight": 1.0 }
       ]
+    },
+    // What the world's containers come filled with (POI part markers' "loot"; draws from "loot_rolls"), as Scrap
+    // Mechanic's: lockers hold food, cloth and components; file cabinets office stock (glue, ink) and components; a broken
+    // microwave scrap or a circuit board; ruin chests (which refill, "refill_days") a bit of everything. Resources stay
+    // plentiful.
+    "locker": {
+      "items": [
+        { "item": "carrot", "count": 2, "count_max": 5, "weight": 3.0 },
+        { "item": "potato", "count": 3, "count_max": 8, "weight": 3.0 },
+        { "item": "tomato", "count": 2, "count_max": 5, "weight": 2.0 },
+        { "item": "component_kit", "count": 1, "count_max": 3, "weight": 3.0 },
+        { "item": "cotton", "count": 2, "count_max": 4, "weight": 2.0 },
+        { "item": "glowstick", "count": 1, "count_max": 2, "weight": 2.0 },
+        { "item": "carrot_seed", "count": 2, "count_max": 4, "weight": 1.0 },
+        { "item": "battery_pack", "count": 1, "weight": 1.0 }
+      ]
+    },
+    "file_cabinet": {
+      "items": [
+        { "item": "glue", "count": 1, "count_max": 3, "weight": 3.0 },
+        { "item": "paint_ammo", "count": 10, "count_max": 20, "weight": 3.0 },
+        { "item": "component_kit", "count": 1, "count_max": 2, "weight": 3.0 },
+        { "item": "circuit_board", "count": 1, "weight": 2.0 },
+        { "item": "beeswax", "count": 1, "count_max": 2, "weight": 1.0 },
+        { "item": "battery_pack", "count": 1, "weight": 1.0 }
+      ]
+    },
+    "microwave": {
+      "items": [
+        { "item": "scrap_metal_block", "count": 8, "count_max": 16, "weight": 4.0 },
+        { "item": "circuit_board", "count": 1, "weight": 3.0 },
+        { "item": "component_kit", "count": 1, "weight": 2.0 }
+      ]
+    },
+    "ruin_chest": {
+      "items": [
+        { "item": "component_kit", "count": 1, "count_max": 3, "weight": 4.0 },
+        { "item": "scrap_wood_block", "count": 10, "count_max": 20, "weight": 3.0 },
+        { "item": "scrap_metal_block", "count": 10, "count_max": 20, "weight": 3.0 },
+        { "item": "circuit_board", "count": 1, "count_max": 2, "weight": 2.0 },
+        { "item": "glue", "count": 1, "count_max": 2, "weight": 2.0 },
+        { "item": "gasoline", "count": 1, "count_max": 3, "weight": 2.0 },
+        { "item": "potato", "count": 3, "count_max": 6, "weight": 2.0 },
+        { "item": "ember", "count": 1, "count_max": 3, "weight": 1.0 },
+        { "item": "battery_pack", "count": 1, "weight": 1.0 },
+        { "item": "tomato_seed", "count": 2, "count_max": 4, "weight": 1.0 },
+        { "item": "cotton_seed", "count": 2, "count_max": 4, "weight": 1.0 },
+        { "item": "popper", "count": 1, "weight": 1.0 }
+      ]
+    },
+    // The POI loot crates (wooden crates at camps, ruins, kiosks and the like, and the Workshops' chest and dispenser).
+    "crate": {
+      "items": [
+        { "item": "scrap_wood_block", "count": 16, "count_max": 32, "weight": 4.0 },
+        { "item": "scrap_metal_block", "count": 12, "count_max": 24, "weight": 3.0 },
+        { "item": "component_kit", "count": 1, "count_max": 2, "weight": 3.0 },
+        { "item": "potato", "count": 4, "count_max": 8, "weight": 2.0 },
+        { "item": "carrot", "count": 2, "count_max": 4, "weight": 2.0 },
+        { "item": "carrot_seed", "count": 2, "count_max": 4, "weight": 1.0 },
+        { "item": "potato_seed", "count": 2, "count_max": 4, "weight": 1.0 },
+        { "item": "gasoline", "count": 1, "count_max": 2, "weight": 1.0 },
+        { "item": "glue", "count": 1, "weight": 1.0 }
+      ]
+    },
+    // The warehouses' metal crates.
+    "warehouse_crate": {
+      "items": [
+        { "item": "scrap_metal_block", "count": 16, "count_max": 32, "weight": 4.0 },
+        { "item": "component_kit", "count": 2, "count_max": 4, "weight": 4.0 },
+        { "item": "circuit_board", "count": 1, "count_max": 2, "weight": 3.0 },
+        { "item": "battery_pack", "count": 1, "count_max": 2, "weight": 2.0 },
+        { "item": "gasoline", "count": 2, "count_max": 4, "weight": 2.0 },
+        { "item": "glue", "count": 1, "count_max": 3, "weight": 2.0 },
+        { "item": "chemical", "count": 1, "count_max": 2, "weight": 1.0 },
+        { "item": "paint_ammo", "count": 10, "count_max": 20, "weight": 1.0 },
+        { "item": "metal_rod", "count": 2, "count_max": 5, "weight": 1.0 }
+      ]
     }
   },
+  // Seconds of world time in an in-game day, which day counts in the data (refill_days) are in: Scrap Mechanic's 24 minutes.
+  "day_length": 1440.0,
   "objects": [
     {
       // In oil ponds and the Oil Pool (pois/oil_pond.json, poi_49.json): press Use for 1 to 4 Crude Oil; it wells up again an

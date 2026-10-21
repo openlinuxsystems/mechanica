@@ -80,6 +80,12 @@ public sealed class Creation
     /// </summary>
     public string? WorldPart { get; init; }
 
+    /// <summary>
+    /// For a world-owned container its marker fills with loot (<see cref="World.WorldLoot"/>): how often it has been filled
+    /// and since when it has stood empty, waiting to refill. Null for every other Creation. Saved with it.
+    /// </summary>
+    public World.WorldLootState? WorldLoot { get; set; }
+
     /// <summary>True when the world owns this Creation (<see cref="WorldPart"/>).</summary>
     public bool IsWorldOwned => WorldPart is not null;
 

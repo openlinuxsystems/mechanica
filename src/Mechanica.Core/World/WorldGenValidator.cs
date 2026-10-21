@@ -47,6 +47,8 @@ internal static class WorldGenValidator
 
         foreach (var (id, table) in definition.LootTables ?? [])
             LootTable(id, table, $"$.loot_tables.{id}", sink);
+        if (!(definition.DayLength > 0f) || !float.IsFinite(definition.DayLength))
+            sink.Error(Code, "$.day_length", $"day_length must be greater than 0 seconds (got {definition.DayLength}).");
 
         var objectIds = new HashSet<string>();
         for (var i = 0; i < (definition.Objects?.Count ?? 0); i++)
@@ -542,20 +544,56 @@ internal static class WorldGenValidator
     }
 
     // A part marker names a part the host can put down: one in the catalog that is placeable (a bare ref is the POI's mod's).
-    private static void CheckPartMarker(PoiMarker marker, string path, DiagnosticSink sink, IPartCatalog? parts, string modId)
+    private static void CheckPartMarker(PoiMarker marker, string path, DiagnosticSink sink, IPartCatalog? parts, string modId,
+        IReadOnlyDictionary<string, LootTableDefinition>? lootTables)
     {
+        const string code = DiagnosticCodes.PoiInvalid;
+        CheckMarkerLoot(marker, path, sink, lootTables);
         if (string.IsNullOrEmpty(marker.Ref))
         {
-            sink.Error(DiagnosticCodes.PoiInvalid, $"{path}.ref", "a part marker needs the id of the part it puts there.");
+            sink.Error(code, $"{path}.ref", "a part marker needs the id of the part it puts there.");
             return;
         }
         if (parts is null)
             return;
         var id = marker.Ref.Contains(':') ? marker.Ref : $"{modId}:{marker.Ref}";
         if (parts.FindDefinition(id) is not { } definition)
-            sink.Error(DiagnosticCodes.PoiInvalid, $"{path}.ref", $"a part marker needs the id of a part in the loaded mods (no part '{id}').");
+            sink.Error(code, $"{path}.ref", $"a part marker needs the id of a part in the loaded mods (no part '{id}').");
         else if (!definition.IsPlaceable)
-            sink.Error(DiagnosticCodes.PoiInvalid, $"{path}.ref", $"a part marker needs a part that can be placed ('{id}' is an inventory item).");
+            sink.Error(code, $"{path}.ref", $"a part marker needs a part that can be placed ('{id}' is an inventory item).");
+        else if (marker.Loot is not null && definition.Inventory?.Slots is not > 0)
+            sink.Error(code, $"{path}.loot", $"'{id}' has no inventory to hold loot: loot is for containers.");
+        else if (marker.Loot is not null && definition.Inventory?.Slots is { } slots && WorldLoot.RollsOf(marker).Max > slots)
+            sink.Warning(code, $"{path}.loot_rolls", $"'{id}' has only {slots} slots, so a fill of more than {slots} draws leaves some out.");
+    }
+
+    // A part marker's loot: a table that exists, a [min, max] count of draws and a refill time, the last two only with loot.
+    private static void CheckMarkerLoot(PoiMarker marker, string path, DiagnosticSink sink, IReadOnlyDictionary<string, LootTableDefinition>? lootTables)
+    {
+        const string code = DiagnosticCodes.PoiInvalid;
+        if (marker.Loot is { } table)
+        {
+            if (!Identifiers.IsValid(table))
+                sink.Error(code, $"{path}.loot", $"'{table}' is not a loot table id: name one of the loot_tables in the world generation rules.");
+            else if (lootTables is not null && !lootTables.ContainsKey(table))
+                sink.Error(code, $"{path}.loot", $"'{table}' is not one of the loot_tables in the world generation rules.");
+        }
+        if (marker.LootRolls is { } rolls)
+        {
+            if (rolls.Count != 2 || rolls[0] < 1 || rolls[1] < rolls[0])
+                sink.Error(code, $"{path}.loot_rolls", "loot_rolls must be [min, max] with 1 <= min <= max.");
+            else if (marker.Loot is { } id && lootTables?.GetValueOrDefault(id)?.Items is { } entries && rolls[1] > entries.Count)
+                sink.Warning(code, $"{path}.loot_rolls", $"the table '{id}' has only {entries.Count} entries, so at most that many are drawn.");
+            if (marker.Loot is null)
+                sink.Error(code, $"{path}.loot_rolls", "loot_rolls needs loot: the loot table the draws come from.");
+        }
+        if (marker.RefillDays is { } days)
+        {
+            if (!(days > 0f) || !float.IsFinite(days))
+                sink.Error(code, $"{path}.refill_days", $"refill_days must be greater than 0 in-game days (got {days}).");
+            if (marker.Loot is null)
+                sink.Error(code, $"{path}.refill_days", "refill_days needs loot: the loot table the container refills from.");
+        }
     }
 
     // [x, z] as fractions of the world, -0.5 (west, north) to 0.5 (east, south); rivers may reach a little past the edge.
@@ -569,9 +607,10 @@ internal static class WorldGenValidator
     /// <param name="liquidIds">Liquid ids pools may hold; null skips the check.</param>
     /// <param name="parts">The parts <c>part</c> markers may name; null skips the check.</param>
     /// <param name="modId">The mod the prefab belongs to, which a bare <c>part</c> marker ref names a part of.</param>
+    /// <param name="lootTables">The world's loot tables, which a <c>part</c> marker's <c>loot</c> names one of; null skips the check.</param>
     public static void Validate(PoiPrefab prefab, IReadOnlyList<string> biomeIds, DiagnosticSink sink, IReadOnlyCollection<string> groundIds,
         IReadOnlyCollection<string>? objectIds = null, IReadOnlyCollection<string>? liquidIds = null, IPartCatalog? parts = null,
-        string? modId = null)
+        string? modId = null, IReadOnlyDictionary<string, LootTableDefinition>? lootTables = null)
     {
         const string code = DiagnosticCodes.PoiInvalid;
         KnownKeys.WarnUnknown(prefab.Extra, "$", sink, typeof(PoiPrefab));
@@ -733,7 +772,10 @@ internal static class WorldGenValidator
             if (marker.Type == PoiMarker.ObjectType && (marker.Ref is null || objectIds?.Contains(marker.Ref) == false))
                 sink.Error(code, $"{path}.ref", $"an object marker needs the id of a world object in the world generation rules (got '{marker.Ref}').");
             if (marker.Type == PoiMarker.PartType)
-                CheckPartMarker(marker, path, sink, parts, modId ?? Identifiers.VanillaModId);
+                CheckPartMarker(marker, path, sink, parts, modId ?? Identifiers.VanillaModId, lootTables);
+            else if (marker.Loot is not null || marker.LootRolls is not null || marker.RefillDays is not null)
+                sink.Error(code, $"{path}.{(marker.Loot is not null ? "loot" : marker.LootRolls is not null ? "loot_rolls" : "refill_days")}",
+                    "loot, loot_rolls and refill_days are for part markers only (a container the world places).");
         }
         for (var i = 0; i < (prefab.Pools?.Count ?? 0); i++)
         {
