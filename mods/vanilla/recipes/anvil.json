@@ -1,0 +1,20 @@
+{
+  "id": "anvil",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block_2",
+      "count": 100
+    }
+  ],
+  "outputs": [
+    {
+      "item": "anvil",
+      "count": 1
+    }
+  ],
+  "time": 10,
+  "order": 2028
+}

@@ -75,6 +75,29 @@
       "max_distance": 30
     },
     {
+      "id": "freezer_start",
+      "clips": [
+        "sounds/stations/freezer_start.ogg"
+      ],
+      "max_distance": 30
+    },
+    {
+      "id": "freezer_work",
+      "clips": [
+        "sounds/stations/freezer_work.ogg"
+      ],
+      "loop": true,
+      "volume_db": -6,
+      "max_distance": 25
+    },
+    {
+      "id": "freezer_complete",
+      "clips": [
+        "sounds/stations/freezer_complete.ogg"
+      ],
+      "max_distance": 30
+    },
+    {
       "id": "bed_use",
       "clips": [
         "sounds/stations/bed_use.ogg"

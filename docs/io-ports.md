@@ -36,6 +36,9 @@ Machines connect to each other and to tubes, so every machine puts its ports in 
 
 A face must be at least 3 blocks wide and 3 blocks tall from the floor to carry a port.
 
+The stations do too: the Fabricator and the Refiner have an input port on the left and an output port on the right, and
+the Freezer a two-way port on its right side.
+
 Containers follow the same rule. The Small Chest (one port), Large Chest (three) and Cargo Chest (ten: three on the
 front, three on the back, two on each end) carry ports, as do the Gas, Battery, Water, Chemical and Potato Ammo
 Containers (one on the right end each). The Scrap Chest is too short for a port, and furniture and world containers

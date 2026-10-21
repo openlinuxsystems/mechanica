@@ -1132,21 +1132,18 @@
       "template": "interactive",
       "set": {
         "name": "Respawn Bed",
-        "description": "Sleep here (Use) and you respawn here when you die.",
+        "description": "The colony's wooden bunk. Sleep here (Use) and you respawn here when you die. Wood and cotton: it burns.",
         "category": "interactive",
-        "mass": 30,
-        "durability": 6,
-        "friction": 0.6,
-        "buoyancy": 0.4,
+        "mass": 4.5,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.6,
         "flammable": true,
-        "stack_size": 5,
+        "stack_size": 1,
         "sound_material": "wood",
         "size": [4, 2, 8],
-        "visual": {
-          "color": "#7a5a3a",
-          "roughness": 0.8,
-          "metallic": 0
-        },
+        "icon": "textures/items/respawn_bed_icon.png",
+        "visual": { "color": "#ffffff" },
         "respawn_point": true,
         "sockets": [
           {
@@ -1161,36 +1158,15 @@
           "set": "bed_set"
         }
       },
-      "model": [
-        {
-          "kind": "box",
-          "size": [1, 0.3, 2],
-          "position": [0, -0.1, 0]
-        },
-        {
-          "kind": "box",
-          "size": [0.9, 0.15, 1.9],
-          "position": [0, 0.125, 0]
-        },
-        {
-          "kind": "box",
-          "size": [0.7, 0.1, 0.35],
-          "position": [0, 0.2, -0.7]
-        }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/respawn_bed.glb" }],
       "recipes": [
         {
           "id": "respawn_bed",
           "stations": ["fabricator"],
           "inputs": [
-            {
-              "item": "scrap_wood_block",
-              "count": 24
-            },
-            {
-              "item": "scrap_metal_block",
-              "count": 8
-            }
+            { "item": "wood_block", "count": 50 },
+            { "item": "cotton", "count": 20 },
+            { "item": "paint_ammo", "count": 10 }
           ],
           "outputs": [
             {
@@ -1198,7 +1174,7 @@
               "count": 1
             }
           ],
-          "time": 8,
+          "time": 30,
           "order": 1830
         }
       ]

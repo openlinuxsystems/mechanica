@@ -1,0 +1,24 @@
+{
+  "id": "ice_block_freezer",
+  "stations": [
+    "freezer"
+  ],
+  "inputs": [
+    {
+      "item": "water_bucket_full",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "ice_block",
+      "count": 20
+    },
+    {
+      "item": "water_bucket",
+      "count": 1
+    }
+  ],
+  "time": 60,
+  "order": 1841
+}

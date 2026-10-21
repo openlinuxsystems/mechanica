@@ -233,6 +233,7 @@ public class VanillaBlocksTests
     [InlineData("containers_stations.json", 3)]
     [InlineData("containers.json", 19)]
     [InlineData("lights_utility.json", 27)]
+    [InlineData("parts_stations.json", 3)]
     public void PartFilesAreThePartEditorBatchOutput(string file, int parts)
     {
         var mod = Path.Combine(TestMods.RepoRoot, "mods", "vanilla");
