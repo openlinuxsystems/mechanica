@@ -37,6 +37,7 @@ public partial class BotLeads : Node3D
     public override void _Ready()
     {
         TopLevel = true;
+        ProcessPriority = 100; // after the players' and bots' poses this frame
         _material = new StandardMaterial3D { AlbedoColor = Rope, Roughness = 0.85f };
     }
 
@@ -70,7 +71,7 @@ public partial class BotLeads : Node3D
     // The hand that shows: the first-person arms when they are drawn, otherwise the body.
     private static Vector3? Hand(PlayerController player)
     {
-        var model = player.Arms is CharacterModel { Visible: true } arms ? arms : player.Character as CharacterModel;
+        var model = !player.ThirdPerson && player.Arms is CharacterModel { Visible: true } arms ? arms : player.Character as CharacterModel;
         return model?.HandPosition;
     }
 

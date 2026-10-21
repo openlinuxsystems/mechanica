@@ -71,24 +71,39 @@ public partial class BotHearts : Node3D
             QueueFree();
     }
 
-    // A heart drawn once: inside where (x² + y² - 1)³ - x² y³ < 0, with a soft edge.
+    // A heart drawn once from the heart curve (x² + y² - 1)³ <= x²y³, each pixel sampled 4 x 4 times for a smooth edge.
     private static ImageTexture Heart()
     {
         if (_heart is not null)
             return _heart;
         const int n = 64;
+        const int k = 4;
         var image = Image.CreateEmpty(n, n, false, Image.Format.Rgba8);
         for (var py = 0; py < n; py++)
         {
             for (var px = 0; px < n; px++)
             {
-                var x = (px + 0.5f) / n * 2.6f - 1.3f;
-                var y = 1.25f - (py + 0.5f) / n * 2.6f;
-                var f = Mathf.Pow(x * x + y * y - 1f, 3f) - x * x * y * y * y;
-                var alpha = Mathf.Clamp(-f * 12f, 0f, 1f);
-                image.SetPixel(px, py, new Color(1, 1, 1, alpha));
+                var inside = 0;
+                for (var sy = 0; sy < k; sy++)
+                {
+                    for (var sx = 0; sx < k; sx++)
+                    {
+                        var x = ((px + (sx + 0.5f) / k) / n * 2f - 1f) * 1.25f;
+                        var y = (1f - (py + (sy + 0.5f) / k) / n * 2f) * 1.25f + 0.12f;
+                        if (InHeart(x, y))
+                            inside++;
+                    }
+                }
+                image.SetPixel(px, py, new Color(1, 1, 1, inside / (float)(k * k)));
             }
         }
         return _heart = ImageTexture.CreateFromImage(image);
+    }
+
+    // The heart curve: about 2.3 wide and 2.2 tall, its point at (0, -1).
+    private static bool InHeart(float x, float y)
+    {
+        var a = x * x + y * y - 1f;
+        return a * a * a - x * x * y * y * y <= 0f;
     }
 }

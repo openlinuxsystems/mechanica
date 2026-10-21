@@ -338,14 +338,16 @@
           "color": "#ffffff"
         },
         "held": {
-          "mesh": "meshes/items/lead.glb"
+          "mesh": "meshes/items/lead.glb",
+          "offset": [-0.03, 0.06, 0],
+          "rotation": [-104, -1.5, -174]
         }
       },
       "model": [{ "kind": "mesh", "mesh": "meshes/items/lead.glb" }],
       "recipes": [
         {
           "id": "lead",
-          "stations": ["fabricator", "portable_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [
             { "item": "scrap_wood_block", "count": 4 },
             { "item": "scrap_metal_block", "count": 1 }

@@ -11,6 +11,8 @@
     "color": "#ffffff"
   },
   "held": {
-    "mesh": "meshes/items/lead.glb"
+    "mesh": "meshes/items/lead.glb",
+    "offset": [-0.03, 0.06, 0],
+    "rotation": [-104, -1.5, -174]
   }
 }
