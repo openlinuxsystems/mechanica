@@ -7,6 +7,9 @@
   "name": "Workshop",
   "radius": 46.0,
   "size": [34.0, 9.4, 30.0],
+  // Players are safe here: no bot appears inside the Workshop, and no hostile one within 100 m of it.
+  "bot_free_radius": 46.0,
+  "hostile_free_radius": 100.0,
   "road": "road",
   "placement": {},
   "terrain": [

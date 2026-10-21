@@ -76,8 +76,9 @@ public sealed class PoiGuards
                 }
                 continue;
             }
-            if (now < post.ReadyAt || _bots.BotFree.Contains(post.Def.Feet.X, post.Def.Feet.Z) || !Near(players, post.Def.Feet, _bots.Settings.GuardWakeDistance)
-                || _bots.Bots.Count >= _bots.Settings.MaxBots || _bots.Types.FindBot(post.Def.Bot) is not { } type)
+            if (now < post.ReadyAt || !Near(players, post.Def.Feet, _bots.Settings.GuardWakeDistance)
+                || _bots.Bots.Count >= _bots.Settings.MaxBots || _bots.Types.FindBot(post.Def.Bot) is not { } type
+                || _bots.BotFree.Contains(post.Def.Feet.X, post.Def.Feet.Z, !type.Passive))
                 continue;
             post.Bot = _bots.Spawn(type, post.Def.Feet + new Vector3(0, 0.05f, 0), post.Def.Yaw).Id;
         }

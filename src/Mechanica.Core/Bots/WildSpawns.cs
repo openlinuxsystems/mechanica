@@ -9,7 +9,8 @@ namespace Mechanica.Core.Bots;
 /// that type, at a random spot between <see cref="BotWild.MinDistance"/> and <see cref="BotWild.MaxDistance"/> away in its
 /// habitat (open water at least <see cref="BotWild.MinDepth"/> deep, or dry land), with its habitat all round it out to
 /// <see cref="BotWild.ClearRadius"/>, and in one of its <see cref="BotWild.Biomes"/> when it names any, never in a
-/// <see cref="BotActions.BotFree"/> zone. A herd
+/// <see cref="BotActions.BotFree"/> zone that keeps it out. A rare bot (<see cref="BotWild.Chance"/> under 1) comes on only
+/// that share of its tries. A herd
 /// (<see cref="BotWild.HerdMin"/> to <see cref="BotWild.HerdMax"/>) appears together a few metres apart, and a share of
 /// them appear round one of its <see cref="BotWild.Near"/> objects in reach. A wild bot every player has left farther than <see cref="BotWild.DespawnDistance"/>
 /// behind, and that is not fighting, goes away; a kept one (<see cref="BotState.Kept"/>) is no longer wild and stays. Wild bots count towards <see cref="BotSettings.MaxBots"/>.
@@ -70,6 +71,7 @@ public sealed class WildSpawns
             if (type.Wild is not { } wild || now < _nextTry.GetValueOrDefault(type.QualifiedId, double.NegativeInfinity))
                 continue;
             _nextTry[type.QualifiedId] = now + wild.Interval;
+            var hostile = !type.Passive;
             var mine = _wild.Select(_bots.Find).OfType<BotState>().Where(b => b.Type == type).ToList();
             foreach (var bot in mine.Where(b => !b.Engaged && !players.Any(p => Flat(p, b.Position) <= wild.DespawnDistance)))
             {
@@ -84,8 +86,11 @@ public sealed class WildSpawns
                     // no herd smaller than its least to fill the count up, so none is left alone
                     if (near > 0 && wild.Count - near < wild.HerdMin)
                         break;
-                    var first = (wild.Near is { } objects && _random.NextDouble() < objects.Share ? NearSpot(player, wild, objects) : null)
-                        ?? Spot(player, wild);
+                    // a rare one: most tries find none
+                    if (wild.Chance < 1 && _random.NextDouble() >= wild.Chance)
+                        break;
+                    var first = (wild.Near is { } objects && _random.NextDouble() < objects.Share ? NearSpot(player, wild, objects, hostile) : null)
+                        ?? Spot(player, wild, hostile);
                     if (first is not { } feet)
                         break;
                     var room = wild.Count - near;
@@ -95,7 +100,7 @@ public sealed class WildSpawns
                         herd = room <= wild.HerdMax ? room : Math.Max(wild.HerdMin, room - wild.HerdMin);
                     for (var k = 0; k < herd && _bots.Bots.Count < _bots.Settings.MaxBots; k++)
                     {
-                        var at = k == 0 ? feet : Around(new Vector2(feet.X, feet.Z), HerdGap, HerdSpread, wild) ?? feet;
+                        var at = k == 0 ? feet : Around(new Vector2(feet.X, feet.Z), HerdGap, HerdSpread, wild, hostile) ?? feet;
                         _wild.Add(_bots.Spawn(type, at, (float)(_random.NextDouble() * 360)).Id);
                         near++;
                     }
@@ -105,7 +110,7 @@ public sealed class WildSpawns
     }
 
     // A random spot of the habitat round the player, or null when none of the tries is one.
-    private Vector3? Spot(Vector3 player, BotWild wild)
+    private Vector3? Spot(Vector3 player, BotWild wild, bool hostile)
     {
         for (var i = 0; i < Tries; i++)
         {
@@ -113,17 +118,17 @@ public sealed class WildSpawns
             var distance = wild.MinDistance + (float)_random.NextDouble() * (wild.MaxDistance - wild.MinDistance);
             var x = player.X + (float)Math.Cos(angle) * distance;
             var z = player.Z + (float)Math.Sin(angle) * distance;
-            if (!Fits(x, z, wild))
+            if (!Fits(x, z, wild, hostile))
                 continue;
             var ring = Enumerable.Range(0, RingPoints).Select(k => k * MathF.Tau / RingPoints);
-            if (ring.All(a => Fits(x + MathF.Cos(a) * wild.ClearRadius, z + MathF.Sin(a) * wild.ClearRadius, wild)))
+            if (ring.All(a => Fits(x + MathF.Cos(a) * wild.ClearRadius, z + MathF.Sin(a) * wild.ClearRadius, wild, hostile)))
                 return new Vector3(x, _heightAt(x, z) + 0.05f, z);
         }
         return null;
     }
 
     // A spot round one of the near objects in reach, at least min_distance from the player, or null.
-    private Vector3? NearSpot(Vector3 player, BotWild wild, BotWildNear near)
+    private Vector3? NearSpot(Vector3 player, BotWild wild, BotWildNear near, bool hostile)
     {
         if (_objectsNear is null)
             return null;
@@ -133,11 +138,11 @@ public sealed class WildSpawns
         if (objects.Count == 0)
             return null;
         var at = objects[_random.Next(objects.Count)].At;
-        return Around(at, near.Radius * 0.4f, near.Radius, wild) is { } feet && Vector2.Distance(new Vector2(feet.X, feet.Z), centre) >= wild.MinDistance ? feet : null;
+        return Around(at, near.Radius * 0.4f, near.Radius, wild, hostile) is { } feet && Vector2.Distance(new Vector2(feet.X, feet.Z), centre) >= wild.MinDistance ? feet : null;
     }
 
     // A spot of its habitat between inner and outer m from a point, or null.
-    private Vector3? Around(Vector2 at, float inner, float outer, BotWild wild)
+    private Vector3? Around(Vector2 at, float inner, float outer, BotWild wild, bool hostile)
     {
         for (var i = 0; i < Tries; i++)
         {
@@ -145,15 +150,15 @@ public sealed class WildSpawns
             var distance = inner + (float)_random.NextDouble() * (outer - inner);
             var x = at.X + (float)Math.Cos(angle) * distance;
             var z = at.Y + (float)Math.Sin(angle) * distance;
-            if (Fits(x, z, wild))
+            if (Fits(x, z, wild, hostile))
                 return new Vector3(x, _heightAt(x, z) + 0.05f, z);
         }
         return null;
     }
 
-    private bool Fits(float x, float z, BotWild wild)
+    private bool Fits(float x, float z, BotWild wild, bool hostile)
     {
-        if (_bots.BotFree.Contains(x, z))
+        if (_bots.BotFree.Contains(x, z, hostile))
             return false;
         var ground = _heightAt(x, z);
         if (!(wild.Water ? _seaLevel - ground >= wild.MinDepth : ground > _seaLevel + 0.2f))

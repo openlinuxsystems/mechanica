@@ -1296,6 +1296,12 @@ public sealed record PoiPrefab
     /// </summary>
     public float? BotFreeRadius { get; init; }
 
+    /// <summary>
+    /// Metres from the POI centre inside which no hostile bot appears (a Workshop); passive ones may
+    /// (<see cref="Mechanica.Core.Bots.BotFreeZones"/>). Omitted: hostile bots may appear right up to it.
+    /// </summary>
+    public float? HostileFreeRadius { get; init; }
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
