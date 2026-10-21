@@ -11,7 +11,7 @@ namespace Mechanica.Game.Tests;
 /// <summary>
 /// The compass (UI spec §13): the story's goal is on it in a new world; waypoints sit where their bearing
 /// puts them, behind ones at an edge, distance shown within 500 m and a world diamond within 100 m. Clicking
-/// a diamond makes it primary; other players, AI agents included, are on it at any distance; the bar hides under the inventory and with Show compass off.
+/// a diamond makes it primary; a knockout bag is a bag instead of a diamond; other players, AI agents included, are on it at any distance; the bar hides under the inventory and with Show compass off.
 /// </summary>
 public partial class CompassTest : StagedTest
 {
@@ -94,6 +94,23 @@ public partial class CompassTest : StagedTest
                 return false;
             }
             Check(_compass.Primary == "right", $"the clicked one is primary ({_compass.Primary})");
+            return true;
+        });
+        Add("a knockout bag is a bag, not a diamond", frame =>
+        {
+            if (frame == 0)
+            {
+                var waypoints = _compass.Waypoints;
+                var me = _main.LocalPlayer!.GlobalPosition.ToNumerics();
+                _compass.Waypoints = () => [.. waypoints(), new Waypoint(Core.Survival.KnockoutBags.WaypointPrefix + "99", "Knockout bag", me + new Vec3(20, 0, 0))];
+                return false;
+            }
+            if (_compass.WorldMarkerOf("knockout_bag:99") is null && frame < 60)
+                return false;
+            Check(_compass.Marks.Any(m => m.Waypoint.Id == "knockout_bag:99"), "the bag is on the bar");
+            Check(_compass.WorldMarkerOf("knockout_bag:99") is Sprite3D { Texture: not null }, "a bag floats over it in the world");
+            Check(_compass.WorldMarkerOf("ahead") is Label3D { Text: "◆" }, "other waypoints keep their diamond");
+            Check(_compass.Primary == "right", "the bag does not take primary from the player's pick");
             return true;
         });
         Add("other players are on it at any distance", frame =>
