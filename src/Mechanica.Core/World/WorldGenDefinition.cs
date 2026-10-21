@@ -277,9 +277,65 @@ public sealed record ScatterRule
     /// <summary>Gathers the rule's objects into patches (groves, rock fields) with open ground between. Omitted: spread evenly.</summary>
     public ClusterDefinition? Cluster { get; init; }
 
+    /// <summary>
+    /// Keeps the rule's objects to water (<see cref="ScatterWater"/>): floating on its surface (lily pads) or standing in
+    /// the shallows along its edge (reeds). Omitted: dry land only.
+    /// </summary>
+    public ScatterWater? Water { get; init; }
+
+    /// <summary>Stands the rule's objects beside roads, facing them (pylons, signs, wrecks). Omitted: anywhere off the road.</summary>
+    public RoadsideDefinition? Roadside { get; init; }
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>Where a water scatter rule (<see cref="ScatterRule.Water"/>) puts its objects.</summary>
+public enum ScatterWater
+{
+    /// <summary>On the surface of water <c>0.5</c> to <c>3</c> m deep, at the water's level: lily pads, floating debris.</summary>
+    Surface,
+
+    /// <summary>Where the ground is between <c>0.6</c> m under the water's level and <c>0.3</c> m above it: reeds, cattails.</summary>
+    Shallows,
+}
+
+/// <summary>
+/// Stands a scatter rule's objects beside roads (<see cref="ScatterRule.Roadside"/>). Each cell a road or track crosses
+/// takes the centre-line point nearest its spot and puts the object <see cref="Gap"/> metres out from the bed on one side,
+/// turned so its front (+z) faces the road and its x axis runs along it.
+/// </summary>
+public sealed record RoadsideDefinition
+{
+    /// <summary><c>road</c> or <c>track</c>. Omitted: either.</summary>
+    public RoadKind? Road { get; init; }
+
+    /// <summary>Metres from the edge of the bed (the shoulders' outer edge) to the object's centre.</summary>
+    public float Gap { get; init; } = 3f;
+
+    /// <summary>
+    /// Which side: <c>left</c> or <c>right</c> of the road's direction keeps a line of poles on one side the whole way;
+    /// <c>either</c> (the default) takes the side the cell's spot is on.
+    /// </summary>
+    public RoadSide Side { get; init; } = RoadSide.Either;
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>Which side of a road a <see cref="RoadsideDefinition"/> stands on.</summary>
+public enum RoadSide
+{
+    /// <summary>The side the cell's spot falls on.</summary>
+    Either,
+
+    /// <summary>Left of the road's direction.</summary>
+    Left,
+
+    /// <summary>Right of the road's direction.</summary>
+    Right,
 }
 
 /// <summary>
@@ -918,6 +974,13 @@ public sealed record LiquidDefinition
     /// <summary>What an empty bucket dipped in it collects; the bucket stays empty. Omitted: nothing.</summary>
     public ObjectDrop? Collect { get; init; }
 
+    /// <summary>
+    /// Plain water, like the sea: drawn with the sea's surface (the look keys are ignored), players and bots swim in it and
+    /// buckets fill with water. Ponds above sea level are pools of it.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool Water { get; init; }
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -1131,6 +1194,13 @@ public sealed record PoiPrefab
     public string? Flora { get; init; }
 
     /// <summary>
+    /// True for a natural feature with no structure (a pond, a ravine, a mesa): the biome's flora and scattered objects
+    /// grow on its footprint as on open ground, wherever its slopes and water allow. Roads and other POIs still keep clear.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool Wild { get; init; }
+
+    /// <summary>
     /// What connects the POI to the road network (<see cref="RoadLinks"/>): <c>road</c> (only where a site places it),
     /// <c>track</c> (a dirt track to the nearest road, when one is near) or <c>none</c> (the default).
     /// </summary>
@@ -1198,9 +1268,12 @@ public enum TerrainOpKind
 
     /// <summary>Sinks a disc to <see cref="TerrainOp.Depth"/> below the pad (a pond when below sea level).</summary>
     Basin,
+
+    /// <summary>Lifts a disc to <see cref="TerrainOp.Height"/> above the pad: a mesa, or a butte with a short blend.</summary>
+    Raise,
 }
 
-/// <summary>A disc of ground shaping, full strength inside <see cref="Radius"/> and fading out over <see cref="Blend"/>.</summary>
+/// <summary>A disc (or strip) of ground shaping, full strength inside <see cref="Radius"/> and fading out over <see cref="Blend"/>.</summary>
 public sealed record TerrainOp
 {
     /// <summary>What it does.</summary>
@@ -1208,6 +1281,12 @@ public sealed record TerrainOp
 
     /// <summary>Centre <c>[x, z]</c>, relative to the POI. Omitted means the POI centre.</summary>
     public List<float>? At { get; init; }
+
+    /// <summary>
+    /// Other end <c>[x, z]</c>, relative to the POI: the op then shapes a strip from <see cref="At"/> to here, <see cref="Radius"/>
+    /// to each side (a ravine, a dyke). Omitted: a disc.
+    /// </summary>
+    public List<float>? To { get; init; }
 
     /// <summary>Full-strength radius in metres.</summary>
     public float Radius { get; init; }
@@ -1217,6 +1296,10 @@ public sealed record TerrainOp
 
     /// <summary>Basin depth below the pad, in metres.</summary>
     public float Depth { get; init; }
+
+    /// <summary>Raise height above the pad, in metres.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public float Height { get; init; }
 
     /// <summary>
     /// How far the edge wanders in and out, as a fraction of the radius (0 to 0.5): 0 is a disc, 0.3 a pond with

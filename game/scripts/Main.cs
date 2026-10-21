@@ -417,7 +417,7 @@ public partial class Main : Node3D
             Session = Session,
             PlayersRoot = players,
             // Every peer generates the same world, so each one knows where the sea is.
-            WaterLevel = () => Streamer.Generator.SeaLevel,
+            WaterLevel = at => Streamer.Generator.WaterLevelAt(at.X, at.Z),
             SpawnPoint = () => GetNodeOrNull<Node3D>("SpawnPoint")?.GlobalTransform ?? Transform3D.Identity,
         };
         Creations = new CreationWorld { Name = "Creations" };
@@ -429,7 +429,7 @@ public partial class Main : Node3D
         AddChild(Sounds);
         AddChild(new Building.SledgeImpacts { Name = "SledgeImpacts", Sounds = Sounds });
         // Before the world, so the chunks' water meshes use its spacing.
-        Water = new WaterSurface { Name = "Water", Level = () => Streamer.Generator.SeaLevel };
+        Water = new WaterSurface { Name = "Water", Level = at => Streamer.Generator.WaterLevelAt(at.X, at.Z) };
         AddChild(Water);
         // Before the players, so the spawn has ground on the first frame.
         Streamer = new WorldStreamer

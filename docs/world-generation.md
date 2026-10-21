@@ -178,6 +178,8 @@ change (usually `vanilla`). Every patch applies in load order on top of the last
 | `biomes[].scatter[]` | `spacing` is the side of the rule's grid cells; each cell holds at most one object, kept with probability `chance`. |
 | `biomes[].scatter[].perch` | Keeps the rule to hard-to-reach high ground, cliff tops and ledges: a spot is used only when it stands at least `rise` metres (default 6) above the lowest ground `within` metres (default 10) round it. The purple and gold Bloom Pods use it. Omitted: any ground. |
 | `biomes[].scatter[].cluster` | Gathers the rule's objects into patches with open ground between, as in groves, rock fields and forest clearings: `scale` (patch size in metres, default 80), `cover` (share of the ground the patches cover, default 0.3) and `outside` (share of the rule's `chance` its spots keep outside the patches, default 0). Rules that name the same `layer` share their patches, so a meadow grove's birches, leafy trees and bushes stand together; give them the same `scale` and `cover`. Since only patch spots are kept, raise `chance` or lower `spacing` to keep the count: on average a rule places about `chance × (cover + (1 − cover) × outside)` per cell. Omitted: spread evenly. |
+| `biomes[].scatter[].water` | Keeps the rule to water, the sea's or a pond's: `surface` floats each object on water 0.5 to 3 m deep, at the water's level less its `sink` (lily pads), and `shallows` stands it where the ground is from 0.6 m under the water's level to 0.3 m above it (reeds and cattails along shores and river banks). A water rule places single objects: no scene, rock outcrop, `perch` or `roadside`. Omitted: dry land only. |
+| `biomes[].scatter[].roadside` | Stands the rule's objects beside the roads: each cell a road crosses takes the centre-line point nearest its spot and puts the object `gap` metres (default 3; more than the object's `footprint` plus 1) out from the edge of the bed, turned so its front (+z) faces the road and its x axis runs along it. `road` keeps it to `road`s or `track`s (omitted: either). `side` is `left` or `right` of the road's direction, to keep a line of poles on one side, or `either` (the default), the side the cell's spot falls on. Never on a bridge, nor where the ground is more than 2.5 m above or below the road. A scene's pieces turn with it, so a scene can line a road too. |
 | `loot_tables` | Weighted item lists by id that objects' `loot` picks from: each has `items[]` of `item`, `count` (default 1), `count_max` (at least `count`) and `weight` (relative odds, default 1). Vanilla has `common`, `epic` and `legendary`, for the green, purple and gold Bloom Pods. |
 | `objects[]` | Destructible world objects. Use catalog ids (`birch_tree`, `rock_node`, `boulder`, ...). `footprint` is the radius other scattered objects keep clear of; `sink` lowers the object into the ground. |
 | `objects[].health` | Damage the object takes before it breaks (Sledgehammer, weapons, splash). Omitted means it cannot be broken. Damage is not saved: a part-felled tree is whole again after a restart. |
@@ -200,7 +202,7 @@ change (usually `vanilla`). Every patch applies in load order on top of the last
 | `objects[].max_slope` | Steepest ground it is scattered on (rise over run), if flatter than the world's own limit. |
 | `objects[].outcrop` | Makes the object a rock deposit: a cluster of mounds heaped from blocks, as in Scrap Mechanic's square rocks. `deposits[]` are the sizes (`weight`; `mounds`, `[min, max]`, at most 12; `spread`, metres from the middle the other mounds may stand; `sizes[]`, the weighted `mound` names to pick from). `mounds` maps each name to `blocks` (`[min, max]`, at most 64) and `kinds[]`, the weighted world `object`s it is heaped from; each needs a box `collider`, whose size is the block's (the deposit's own object may be one). Blocks are heaped largest first, each on the ground or with at least 45% of its underside on blocks below, turned up to 0.25 rad, and no two share space; mounds stand apart. A mound other than the first turns metal-rich with chance `rich_chance` (0 to 1): each block becomes `rich[its object]`. Each block is an object of its own (`rule.cell_x.cell_z.block`, the first `rule.cell_x.cell_z`) with its own object's look, health and `breaks_into`, so breaking one leaves the rest. Each mound sits on the lowest ground under its bottom blocks, less each block's `sink`. `footprint` is the deposit's radius: no block stands further out, and a mound that does not fit is left out. `scale` is shared by the whole deposit. |
 | `objects[].scene` | Makes the object a scene: a little set piece laid out round each spot the rule scatters it to (see [Scenes](#scenes)). `layouts[]` are the ways it can look, each with a `weight` (default 1) and `pieces[]`: the world `object` to stand (not another scene or a rock deposit), `at` (`[x, z]` metres from the spot, within `footprint`), `yaw` (degrees, added to the scene's own turn) and `chance` (0 to 1, default 1) that it stands at all. A scene needs no `collider` and never stands itself; each piece is an object of its own (`rule.cell_x.cell_z.piece`, the first `rule.cell_x.cell_z`) with its own object's look, health and drops, sunk and scaled by its own `sink` and `scale`. A piece that would land off the world, on a POI or a road, in water or on ground too steep for it is left out. |
-| `liquids[]` | What POI `pools[]` hold: `id` (a catalog id), `color` (`#rrggbb`), `glow` (how brightly the surface shines in its colour, 0 for none), `roughness` (0 to 1, default 0.1), the surface's look (`ripple_size`, metres, default 4; `ripples`, how deep they look, 0 still to 1, default 0.6; `flow`, how fast ripples and swirls drift in m/s, default 0.05; `sheen`, 0 to 1, an oil slick's drifting rainbow film; `bubbles`, 0 to 1; `edge_color`, `#rrggbb` scum or crust along the shore, omitted for none), `damage` (health a second a player standing in it loses, hurt every half second; the cause is the liquid's id) and `collect` (`item` and `count`: what an empty bucket dipped in it collects, the bucket staying empty; omitted, a bucket cannot hold it). Vanilla has `chemical` (glowing, bubbling green with pale scum, 10 a second, collects a Chemical) and `oil` (glossy black with a rainbow sheen, the ponds round oil geysers). |
+| `liquids[]` | What POI `pools[]` hold: `id` (a catalog id), `color` (`#rrggbb`), `glow` (how brightly the surface shines in its colour, 0 for none), `roughness` (0 to 1, default 0.1), the surface's look (`ripple_size`, metres, default 4; `ripples`, how deep they look, 0 still to 1, default 0.6; `flow`, how fast ripples and swirls drift in m/s, default 0.05; `sheen`, 0 to 1, an oil slick's drifting rainbow film; `bubbles`, 0 to 1; `edge_color`, `#rrggbb` scum or crust along the shore, omitted for none), `damage` (health a second a player standing in it loses, hurt every half second; the cause is the liquid's id) and `collect` (`item` and `count`: what an empty bucket dipped in it collects, the bucket staying empty; omitted, a bucket cannot hold it). `"water": true` makes it plain water like the sea: it is drawn with the sea's surface (the look keys are ignored), players and bots swim in it and buckets fill with water, so a pond can sit above sea level. Vanilla has `chemical` (glowing, bubbling green with pale scum, 10 a second, collects a Chemical), `oil` (glossy black with a rainbow sheen, the ponds round oil geysers) and `water` (the ponds). |
 
 Shapes (`collider`, `pieces`) are `box` (`size`), `sphere` (`radius`) or `cylinder` (`radius`,
 `height`, upright), centred at `at`, turned `yaw` degrees about +Y, coloured `#rrggbb`. They are
@@ -428,6 +430,37 @@ shares its `field` biome: a site's biome reaches about 0.7 × `biome_cell_size` 
 `tools/author-poi-placeholders.py` (edit its table and re-run). Six extra large slots draw a warehouse or a
 Farmbot Scrapyard from the `large_slots` pool.
 
+### Ponds, marshes and creeks
+
+Besides the lakes and rivers at sea level, small water is scattered over the land. Ponds above sea level are `wild` POIs
+(the biome grows right up to them) whose basins hold a pool of `water`, the liquid that acts like the sea: players and
+bots swim in it, buckets fill from it, and it is drawn with the sea's surface.
+
+| POI | Where | What |
+|-----|-------|------|
+| `pond` | meadow, forest, field, autumn forest; 520 to 820 m apart | A lobed pond about 25 m across in a level clearing |
+| `pond_large` | meadow, field, forest; 1300 to 1900 m apart | Two joined lobes about 60 m across, deep enough for a small boat |
+| `marsh` | meadow, forest, autumn forest; 900 to 1400 m apart | Five shallow pools among reed islands |
+
+Three creeks (`rivers[]` 4 to 10 m wide and 1.5 m deep) run down to the big lake through the north-eastern meadows, the
+western woods and the southern fields. The meadow, forest, field, autumn forest and lake biomes end their `scatter`
+with three water rules shared by every water body: `lily_pad_cluster` on the `surface`, `reed_bed` and `cattail_clump`
+in the `shallows`, gathered into patches.
+
+### Ravines, gullies, mesas and buttes
+
+Rough ground gives vehicle builders something to beat. These are `wild` POIs too, shaped only by their `terrain[]`, so
+the biome's rocks and plants carry on over them and the slope texture paints their steep sides as rock. Roads route
+round them; crossing one is the player's problem.
+
+| POI | Where | What |
+|-----|-------|------|
+| `ravine` | meadow, field, autumn and burned forest, desert; 1500 to 2300 m apart | A straight cut 160 m long and 9 m deep (a strip `basin`), its walls wandering, as steep as a player can still climb |
+| `ravine_bend` | meadow, autumn and burned forest, desert; 1700 to 2600 m apart | Two cuts meeting in a dog-leg, deepest at the bend |
+| `gully` | desert, burned forest; 1000 to 1600 m apart | A shallow wash of three cuts fanning out |
+| `mesa` | desert, burned forest; 700 to 1100 m apart | A flat top 16 m up with cliff sides (a `raise` with a short blend); the perched Bloom Pods like its top |
+| `butte` | desert, meadow, field; 900 to 1500 m apart | A lone rock tower 24 m tall that shows from far off |
+
 ## Roads
 
 ```json
@@ -486,7 +519,8 @@ Another mod's POI is changed or removed through `overrides/<mod>/pois/`, a `.pat
 
 | Key | Meaning |
 |-----|---------|
-| `radius` | Footprint, including terrain blending. POIs never overlap, and nothing is scattered inside. |
+| `radius` | Footprint, including terrain blending. POIs never overlap, and nothing is scattered inside (unless `wild`). |
+| `wild` | `true` for a natural feature with no structure: a pond, a ravine, a mesa. The biome's flora and scattered objects grow on its footprint as on open ground, wherever its slopes and water allow; roads and other POIs still keep clear of it. |
 | `placement.fixed` | `[x, z]` of a single POI, with optional `pad_height` and `yaw` (a multiple of 90). Give this, `spacing`, or neither (`"placement": {}`): then only a site places it. |
 | `placement.spacing` | `[min, max]` metres between neighbours of this kind. `min` must be at least twice the radius. Needs `biomes`. A spaced POI is turned a random quarter turn. |
 | `placement.priority` | Higher kinds are placed first and win contested ground. |
@@ -495,7 +529,7 @@ Another mod's POI is changed or removed through `overrides/<mod>/pois/`, a `.pat
 | `placement.shore` | For a spaced POI on a shore: open water (a lake or the sea) must lie within this many metres of its footprint. |
 | `size` | The footprint as built, `[width, height, depth]` in metres, for the placement manifest and design work. |
 | `road` | What joins it to the roads: `road` (only where a site places it), `track` (a dirt track) or `none` (the default). |
-| `terrain[]` | `flatten` levels a disc to the pad height; `basin` sinks it `depth` metres below the pad (below `sea_level` it fills with water). A basin's `blend` must be at least 1.5 × `depth`, so its bank is no steeper than the 45° a player can walk up and a pond is never a trap. Full strength inside `radius`, fading over `blend`, centred at `at` (`[x, z]`). `wobble` (0 to 0.5, default 0) makes the edge wander in and out by that fraction of the radius, in lobes of the POI's own, for a natural pond; it narrows the blend where the edge pulls in, so the basin rule then needs `blend` × (1 − `wobble`) ≥ 1.5 × `depth`. Must stay inside the POI radius, `wobble` included. |
+| `terrain[]` | `flatten` levels a disc to the pad height; `basin` sinks it `depth` metres below the pad (below `sea_level` it fills with water, and above it a `water` pool can fill it); `raise` lifts it `height` metres above the pad (a mesa; a short `blend` makes its sides cliffs). With `to` (`[x, z]`) an op shapes a strip from `at` to `to`, `radius` to each side, instead of a disc: a ravine is a strip `basin`, and its `wobble` makes each wall wander along its length. A basin's `blend` must be at least 1.5 × `depth`, so its bank is no steeper than the 45° a player can walk up and a pond is never a trap. Full strength inside `radius`, fading over `blend`, centred at `at` (`[x, z]`). `wobble` (0 to 0.5, default 0) makes the edge wander in and out by that fraction of the radius, in lobes of the POI's own, for a natural pond; it narrows the blend where the edge pulls in, so the basin rule then needs `blend` × (1 − `wobble`) ≥ 1.5 × `depth`. Must stay inside the POI radius, `wobble` included. |
 | `pieces[]` | Static structure, as shapes. Positions are relative to the POI centre on its pad. |
 | `models[]` | Structures as models: `file` (a `.glb` or `.gltf`, relative to the POI's mod or `other_mod:path`, usually under `meshes/structures/`), `at` (`[x, y, z]` of the model's origin, relative to the POI centre on its pad) and `yaw` (degrees, counter-clockwise from above, added to the POI's turn). A mesh named `collider` is its collision shape and is not drawn; without one the drawn meshes collide, both faces of every triangle, so walls hold from inside too. `"solid": false` makes it scenery only. Point lights in the file become room lamps. A model is placed by the terrain chunk that holds its origin and stays loaded with that chunk, so it is never cut at a chunk border. How to make one is in the [Art Direction](art-direction.md#models-in-the-game) guide. |
 | `ground[]` | Ground painted on the footprint, in order, each over the ones before: `ground` (an id from `grounds[]`), full inside `radius` of `at` (`[x, z]`, default the centre) and fading over `blend`, with an edge pushed in and out by up to `noise` metres. Must stay inside the POI radius. |

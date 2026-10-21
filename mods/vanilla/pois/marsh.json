@@ -1,0 +1,19 @@
+{
+  // A marsh: shallow pools among reed islands, wild like a pond, so the water scatter rules fill it with reeds and lilies.
+  "id": "marsh",
+  "name": "Marsh",
+  "wild": true,
+  "radius": 52.0,
+  "size": [70.0, 1.0, 70.0],
+  "placement": { "spacing": [900.0, 1400.0], "biomes": ["meadow", "forest", "autumn_forest"], "priority": 7, "clearance": 24.0 },
+  "terrain": [
+    { "op": "flatten", "radius": 40.0, "blend": 12.0 },
+    { "op": "basin", "at": [-14.0, -6.0], "radius": 8.0, "blend": 5.0, "depth": 1.0, "wobble": 0.4 },
+    { "op": "basin", "at": [10.0, -12.0], "radius": 6.0, "blend": 4.0, "depth": 0.9, "wobble": 0.4 },
+    { "op": "basin", "at": [4.0, 10.0], "radius": 9.0, "blend": 5.0, "depth": 1.1, "wobble": 0.4 },
+    { "op": "basin", "at": [-18.0, 14.0], "radius": 5.0, "blend": 4.0, "depth": 0.8, "wobble": 0.4 },
+    { "op": "basin", "at": [20.0, 6.0], "radius": 5.0, "blend": 4.0, "depth": 0.8, "wobble": 0.4 }
+  ],
+  "ground": [{ "ground": "dirt", "radius": 30.0, "blend": 8.0, "noise": 8.0 }],
+  "pools": [{ "liquid": "water", "radius": 38.0, "level": -0.35 }]
+}

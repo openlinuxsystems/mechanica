@@ -313,7 +313,7 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     /// <inheritdoc/>
     public bool IsWater(System.Numerics.Vector3 point)
     {
-        var sea = World.Generator.SeaLevel;
+        var sea = World.Generator.WaterLevelAt(point.X, point.Z);
         var floor = World.Generator.HeightAt(point.X, point.Z);
         return floor < sea && point.Y <= sea + 0.25f && point.Y >= floor - 0.25f;
     }

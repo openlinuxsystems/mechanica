@@ -1,0 +1,13 @@
+{
+  // A mesa: a flat-topped hill with cliff sides, too steep to walk up. Its top is wild ground like the rest of the desert,
+  // so rocks and the rarer Bloom Pods (perched on high ground) turn up there for anyone who can fly or climb.
+  "id": "mesa",
+  "name": "Mesa",
+  "wild": true,
+  "radius": 56.0,
+  "size": [70.0, 16.0, 70.0],
+  "placement": { "spacing": [700.0, 1100.0], "biomes": ["desert", "burned_forest"], "priority": 7, "clearance": 16.0 },
+  "terrain": [
+    { "op": "raise", "radius": 30.0, "blend": 10.0, "height": 16.0, "wobble": 0.3 }
+  ]
+}

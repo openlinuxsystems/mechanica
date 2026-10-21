@@ -172,7 +172,7 @@ public sealed class PerceptionActions(IPerceptionWorld world)
         {
             var height = generator.HeightAt(p.X, p.Z);
             return new TerrainSample(p.X, p.Z, height, generator.BiomeAt(p.X, p.Z).Id, generator.SlopeAt(p.X, p.Z),
-                MathF.Max(0f, sea - height), generator.PoisAt(p.X, p.Z).FirstOrDefault()?.Poi.QualifiedId);
+                MathF.Max(0f, generator.WaterLevelAt(p.X, p.Z) - height), generator.PoisAt(p.X, p.Z).FirstOrDefault()?.Poi.QualifiedId);
         }).ToList();
         return new TerrainSamples(sea, samples);
     }

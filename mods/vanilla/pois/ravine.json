@@ -1,0 +1,13 @@
+{
+  // A dry ravine about 160 m long: a cut you need a bridge, a climbing build or wings to cross. Wild, so the biome's rocks
+  // and plants carry on down its banks and along its floor. Its banks are as steep as a player can still climb.
+  "id": "ravine",
+  "name": "Ravine",
+  "wild": true,
+  "radius": 110.0,
+  "size": [160.0, 9.0, 50.0],
+  "placement": { "spacing": [1500.0, 2300.0], "biomes": ["meadow", "field", "autumn_forest", "burned_forest", "desert"], "priority": 6, "clearance": 12.0 },
+  "terrain": [
+    { "op": "basin", "at": [-80.0, 0.0], "to": [80.0, 0.0], "radius": 5.0, "blend": 18.0, "depth": 9.0, "wobble": 0.25 }
+  ]
+}

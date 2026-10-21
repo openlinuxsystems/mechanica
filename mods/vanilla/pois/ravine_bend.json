@@ -1,0 +1,14 @@
+{
+  // A ravine with a dog-leg: two cuts that meet at an angle, deeper at the bend.
+  "id": "ravine_bend",
+  "name": "Ravine",
+  "wild": true,
+  "radius": 104.0,
+  "size": [150.0, 10.0, 90.0],
+  "placement": { "spacing": [1700.0, 2600.0], "biomes": ["meadow", "autumn_forest", "burned_forest", "desert"], "priority": 6, "clearance": 12.0 },
+  "terrain": [
+    { "op": "basin", "at": [-64.0, -24.0], "to": [0.0, 10.0], "radius": 4.0, "blend": 18.0, "depth": 9.0, "wobble": 0.25 },
+    { "op": "basin", "at": [0.0, 10.0], "to": [66.0, -14.0], "radius": 4.0, "blend": 18.0, "depth": 9.0, "wobble": 0.25 },
+    { "op": "basin", "at": [0.0, 10.0], "radius": 6.0, "blend": 20.0, "depth": 10.0, "wobble": 0.2 }
+  ]
+}

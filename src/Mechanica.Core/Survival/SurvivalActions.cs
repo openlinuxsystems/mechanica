@@ -929,7 +929,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         }
         if (CheckReach(caller, point) is { } far)
             return far;
-        if (world.LiquidAt(point) is { } pool)
+        if (world.LiquidAt(point) is { Liquid.Water: false } pool)
         {
             if (pool.Liquid.Collect is not { Item: { } item } collect || catalog.FindDefinition(item) is null)
                 return "A bucket cannot hold that.";
@@ -954,7 +954,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         _lastWater[caller.Peer] = world.Now;
         var pockets = inventories.PlayerInventory(caller.Peer);
         var slot = EmptyBucketSlot(caller.Peer, args.Slot)!.Value;
-        if (world.LiquidAt(args.Point.ToNumerics()) is { Liquid.Collect: { } collect })
+        if (world.LiquidAt(args.Point.ToNumerics()) is { Liquid: { Water: false, Collect: { } collect } })
         {
             pockets.Add(Identifiers.Qualify(collect.Item!), collect.Count);
             PlayPickup(collect.Item!, args.Point.ToNumerics());

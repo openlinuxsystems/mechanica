@@ -1,0 +1,19 @@
+{
+  // A large natural pond with two lobes, big enough to sail a small boat on.
+  "id": "pond_large",
+  "name": "Large Pond",
+  "wild": true,
+  "radius": 72.0,
+  "size": [90.0, 3.0, 70.0],
+  "placement": { "spacing": [1300.0, 1900.0], "biomes": ["meadow", "field", "forest"], "priority": 9, "clearance": 30.0 },
+  "terrain": [
+    { "op": "flatten", "radius": 56.0, "blend": 14.0 },
+    { "op": "basin", "at": [-10.0, 0.0], "radius": 18.0, "blend": 14.0, "depth": 3.0, "wobble": 0.3 },
+    { "op": "basin", "at": [16.0, 8.0], "radius": 12.0, "blend": 11.0, "depth": 2.5, "wobble": 0.3 }
+  ],
+  "ground": [
+    { "ground": "dirt", "at": [-10.0, 0.0], "radius": 18.0, "blend": 10.0, "noise": 5.0 },
+    { "ground": "dirt", "at": [16.0, 8.0], "radius": 12.0, "blend": 8.0, "noise": 4.0 }
+  ],
+  "pools": [{ "liquid": "water", "radius": 54.0, "level": -0.6 }]
+}

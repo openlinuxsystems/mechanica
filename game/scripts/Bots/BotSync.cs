@@ -280,7 +280,7 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
     private float Swim(BotState bot, Vector3 feet)
     {
         var floor = World.Generator.HeightAt(feet.X, feet.Z);
-        var target = MathF.Max(floor, World.Generator.SeaLevel - bot.Type.SwimDepth!.Value - bot.Type.Height / 2);
+        var target = MathF.Max(floor, World.Generator.WaterLevelAt(feet.X, feet.Z) - bot.Type.SwimDepth!.Value - bot.Type.Height / 2);
         return Mathf.Clamp((target - feet.Y) * SwimFollow, -SwimVertical, SwimVertical);
     }
 
