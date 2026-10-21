@@ -365,6 +365,22 @@ public sealed class Creation
     }
 
     /// <summary>
+    /// Names a part (<see cref="PartInstance.Name"/>), or takes its name off with null or blank text. The name is cleaned
+    /// with <see cref="Items.VehicleGauges.CleanName"/>. Bumps <see cref="Revision"/> when it changes.
+    /// </summary>
+    /// <returns>True when the name changed.</returns>
+    public bool SetPartName(int partId, string? name)
+    {
+        var part = _parts.TryGetValue(partId, out var p) ? p : throw new ArgumentException($"Creation {Id} has no part {partId}.", nameof(partId));
+        name = Items.VehicleGauges.CleanName(name);
+        if (part.Name == name)
+            return false;
+        _parts[partId] = part with { Name = name };
+        Revision++;
+        return true;
+    }
+
+    /// <summary>
     /// Null when a link from <paramref name="from"/> to <paramref name="to"/> could be added, or why not: both
     /// parts exist and differ, <paramref name="from"/> has a free output and <paramref name="to"/> a free input
     /// (<see cref="PartDefinition.Logic"/>), and the link is not there yet.

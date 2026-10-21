@@ -101,7 +101,14 @@ public partial class InventoryScreen : CanvasLayer
     public override void _Ready()
     {
         Layer = 5;
-        EscapeStack.Add(this, () => IsOpen, Hide);
+        // Esc while typing a container's name cancels the name, not the window.
+        EscapeStack.Add(this, () => IsOpen, () =>
+        {
+            if (Renaming)
+                FinishRename(save: false);
+            else
+                Hide();
+        });
         _root = UiInput.KeepMouse(new PanelContainer { Name = "Panel", Visible = false });
         AddChild(_root);
         // A hotbar slot dropped anywhere on the window empties; a stack dropped on the window's background stays put.
@@ -126,6 +133,9 @@ public partial class InventoryScreen : CanvasLayer
         _status.Visible = !ContainerMode || _status.Text.Length > 0;
         if (_root.Visible)
             Layout();
+        // A name another player gives the open container shows as it comes.
+        if (ContainerMode && !Renaming && _open is { Creation: { } c, Part: { } p } && Creations?.Find(c)?.FindPart(p)?.Part is { } id)
+            RefreshName(id);
     }
 
     // Centred in the screen above the hotbar, so stacks can be dragged onto it.
@@ -210,6 +220,7 @@ public partial class InventoryScreen : CanvasLayer
     /// <summary>Hides the screen and stops watching the open container.</summary>
     public new void Hide()
     {
+        FinishRename(save: true);
         if (_open is { } where)
             Inventory.Close(where);
         CloseLinks();

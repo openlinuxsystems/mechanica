@@ -320,9 +320,37 @@ public sealed record InventoryDefinition
     /// </summary>
     public bool? CarryContents { get; init; }
 
+    /// <summary>
+    /// The HUD gauge it feeds while a player sits on its Creation (a Gas Container is <see cref="GaugeKind.Gas"/>): one row
+    /// per container, or per kind, with what it holds of the first <see cref="Accepts"/> item. Omitted shows no gauge.
+    /// </summary>
+    public GaugeKind? Gauge { get; init; }
+
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// The kinds of HUD gauge a container feeds (<see cref="InventoryDefinition.Gauge"/>), in the order they stack on the screen,
+/// top first.
+/// </summary>
+public enum GaugeKind
+{
+    /// <summary>Fuel (red, a fuel can).</summary>
+    Gas,
+
+    /// <summary>Charge (blue, a battery).</summary>
+    Electric,
+
+    /// <summary>Chemicals (green, a flask).</summary>
+    Chemical,
+
+    /// <summary>Water (aqua, a drop).</summary>
+    Water,
+
+    /// <summary>Ammunition (mustard, a potato).</summary>
+    Ammo,
 }
 
 /// <summary>A crafting station: recipes that list this part in <c>stations</c> run here.</summary>

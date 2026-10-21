@@ -31,7 +31,8 @@
     "slots": 5,
     "accepts": [
       "potato"
-    ]
+    ],
+    "gauge": "ammo"
   },
   "logic": {
     "outputs": 16,

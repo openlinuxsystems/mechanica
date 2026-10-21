@@ -52,6 +52,16 @@ public static class UiTokens
     /// <summary>The health bar's fill.</summary>
     public static readonly Color Health = From(UiPalette.Health);
 
+    /// <summary>The vehicle gauges' fills, by kind: red gas, blue charge, green chemicals, aqua water, mustard ammo.</summary>
+    public static readonly IReadOnlyDictionary<Mechanica.Core.Data.GaugeKind, Color> Gauge = new Dictionary<Mechanica.Core.Data.GaugeKind, Color>
+    {
+        [Mechanica.Core.Data.GaugeKind.Gas] = From(UiPalette.GaugeGas),
+        [Mechanica.Core.Data.GaugeKind.Electric] = From(UiPalette.GaugeElectric),
+        [Mechanica.Core.Data.GaugeKind.Chemical] = From(UiPalette.GaugeChemical),
+        [Mechanica.Core.Data.GaugeKind.Water] = From(UiPalette.GaugeWater),
+        [Mechanica.Core.Data.GaugeKind.Ammo] = From(UiPalette.GaugeAmmo),
+    };
+
     /// <summary>Behind a station window, dimming the world (at its opacity).</summary>
     public static readonly Color Scrim = From(UiPalette.Scrim, UiPalette.ScrimOpacity);
 

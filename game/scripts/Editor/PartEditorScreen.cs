@@ -903,6 +903,8 @@ public partial class PartEditorScreen : Control
                 v => Set("Set accepted items", x => x with { Inventory = x.Inventory! with { Accepts = SplitIds(v) } }), "any item, or ids: gasoline, crude_oil");
             _partGrid.AddBool("Carry contents", inventory.CarryContents == true,
                 v => Set("Set carry contents", x => x with { Inventory = x.Inventory! with { CarryContents = v == true ? true : null } }));
+            _partGrid.AddEnum("Gauge", inventory.Gauge,
+                v => Set("Set gauge", x => x with { Inventory = x.Inventory! with { Gauge = v } }), optional: true);
         }
         _partGrid.AddBool("Crafting station", d.Crafting is not null,
             v => Document?.Apply(v == true ? "Make crafting station" : "Remove crafting", x => x with { Crafting = v == true ? x.Crafting ?? new CraftingDefinition() : null }));

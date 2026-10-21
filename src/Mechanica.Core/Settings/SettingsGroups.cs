@@ -216,6 +216,9 @@ public sealed record InterfaceSettings
     /// <summary>The colour-blind filter over the screen.</summary>
     public Ui.ColorBlindMode ColorBlind { get; init; } = Ui.ColorBlindMode.Off;
 
+    /// <summary>How the HUD shows the containers of the Creation the player sits on (fuel, charge, …).</summary>
+    public Ui.VehicleGaugeMode VehicleGauges { get; init; } = Ui.VehicleGaugeMode.PerContainer;
+
     /// <summary>How opaque the chat panel's background is, 0 to 1.</summary>
     public float ChatOpacity { get; init; } = 0.6f;
 
@@ -231,6 +234,7 @@ public sealed record InterfaceSettings
         Language = string.IsNullOrWhiteSpace(Language) ? Ui.Language.English : Language.Trim(),
         ChatOpacity = float.IsFinite(ChatOpacity) ? Math.Clamp(ChatOpacity, 0f, 1f) : 0.6f,
         ColorBlind = Enum.IsDefined(ColorBlind) ? ColorBlind : Ui.ColorBlindMode.Off,
+        VehicleGauges = Enum.IsDefined(VehicleGauges) ? VehicleGauges : Ui.VehicleGaugeMode.PerContainer,
     };
 
         /// <summary>Keys this build does not know.</summary>

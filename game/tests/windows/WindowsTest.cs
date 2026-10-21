@@ -284,7 +284,8 @@ public partial class WindowsTest : StagedTest
             if (!inventory.ContainerMode || inventory.ContainerSlots.Count(s => s.Visible) != 5 || inventory.ContainerHeader.Fill.Length == 0)
                 return false;
             Check(!inventory.StationMode, "a container opens the container screen, not the Fabricator layout");
-            Check(inventory.ContainerHeader.Title == "Gas Container", $"the header names it ({inventory.ContainerHeader.Title})");
+            Check(inventory.ContainerHeader.Title == "Gas 1" && inventory.ContainerRenameButton.Visible,
+                $"the header names it with its gauge name and a rename button ({inventory.ContainerHeader.Title})");
             Check(inventory.ContainerHeader.Fill.StartsWith("16 / "), $"the header says how full it is ({inventory.ContainerHeader.Fill})");
             Check(inventory.ContainerSlots[0].Entry == "vanilla:gasoline" && inventory.ContainerSlots[0].Count == 16, "the gasoline is in the first slot");
             Check(inventory.ContainerSlots.Skip(1).Take(4).All(s => s.ShowsGhost), "the empty slots show the gasoline silhouette");

@@ -65,6 +65,7 @@ public static class CreationJson
                 Cell = p.Cell,
                 Rotation = p.Rotation,
                 Color = p.Color,
+                Name = p.Name,
                 Settings = p.Settings is null ? null : new SortedDictionary<string, JsonElement>(p.Settings.ToDictionary(), StringComparer.Ordinal),
                 Level = p.Level > 0 ? p.Level : null,
                 Damage = creation.PartDamage(p.Id) is var damage and > 0 ? damage : null,
@@ -404,6 +405,8 @@ public static class CreationJson
             sink.Error(invalid, $"{path}.part", $"'{data.Part}' cannot be placed.");
         if (data.Color is not null && !HexColor.TryParse(data.Color, out _))
             sink.Error(invalid, $"{path}.color", $"color must be \"#rrggbb\" (got \"{data.Color}\").");
+        if (data.Name is not null && Items.VehicleGauges.CheckName(data.Name) is { } badName)
+            sink.Error(invalid, $"{path}.name", badName);
         if (data.Damage is { } damage && !(float.IsFinite(damage) && damage >= 0))
             sink.Error(invalid, $"{path}.damage", $"damage must be a number of 0 or more (got {damage}).");
         if (data.Fire is { } fire && !(float.IsFinite(fire) && fire >= 0 && fire <= 1))
@@ -426,6 +429,7 @@ public static class CreationJson
             Color = data.Color?.ToLowerInvariant(),
             Settings = data.Settings is { Count: > 0 } s ? new SortedDictionary<string, JsonElement>(s, StringComparer.Ordinal) : null,
             Level = data.Level ?? 0,
+            Name = Items.VehicleGauges.CleanName(data.Name),
             Extra = data.Extra,
         };
         return (part, PartUpgrades.At(definition!, part.Level));
@@ -471,6 +475,8 @@ public static class CreationJson
         public GridRotation? Rotation { get; init; }
 
         public string? Color { get; init; }
+
+        public string? Name { get; init; }
 
         public SortedDictionary<string, JsonElement>? Settings { get; init; }
 
