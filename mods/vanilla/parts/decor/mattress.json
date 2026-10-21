@@ -1,0 +1,19 @@
+{
+  "id": "mattress",
+  "name": "Mattress",
+  "description": "A settler's buttoned cotton mattress, patched where it tore.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 1,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "fabric",
+  "size": [4, 1, 8],
+  "mesh": "meshes/parts/mattress.glb",
+  "icon": "textures/items/mattress_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

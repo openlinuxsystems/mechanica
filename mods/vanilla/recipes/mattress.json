@@ -1,0 +1,20 @@
+{
+  "id": "mattress",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "cotton",
+      "count": 5
+    }
+  ],
+  "outputs": [
+    {
+      "item": "mattress",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 2070
+}
