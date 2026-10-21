@@ -21,7 +21,8 @@ public interface IRaidWorld
 /// once the last raid's cooldown is over and someone is playing, it sums the planted crop value; when that
 /// reaches a level of the <see cref="RaidTable"/>, the raid horn sounds and after the warning the level's
 /// bots arrive in a ring <see cref="RaidTable.SpawnDistance"/> from the farm (the planted crop with the most
-/// crop value around it), scaled by the player count. Raiders go for that farm's crops. The raid ends
+/// crop value around it), scaled by the player count; a ring point in a <see cref="BotActions.BotFree"/> zone moves out
+/// past its edge. Raiders go for that farm's crops. The raid ends
 /// when every raider is dead, or after <see cref="RaidTable.Duration"/>, when the rest leave.
 /// <para>
 /// <c>StartRaid</c> sets one off now (players only in Creative, for testing), and <c>GetRaid</c> reads
@@ -144,6 +145,9 @@ public sealed class RaidDirector(RaidTable table, BotActions bots, SurvivalActio
                 continue;
             var angle = turn + 2 * MathF.PI * i / count;
             var ring = target + new Vector3(MathF.Sin(angle), 0, MathF.Cos(angle)) * table.SpawnDistance;
+            // A farm by the crash site: its raiders come in from outside the bot-free zone.
+            var outside = bots.BotFree.PushOut(new Vector2(ring.X, ring.Z), new Vector2(target.X, target.Z));
+            ring = new Vector3(outside.X, ring.Y, outside.Y);
             var feet = world.GroundBelow(ring + new Vector3(0, 50, 0)) + new Vector3(0, 0.05f, 0);
             var bot = bots.Spawn(type, feet, BotActions.YawOf(target - feet));
             bots.SetRaid(bot.Id, Current.Id);

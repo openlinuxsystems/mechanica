@@ -6,6 +6,8 @@
   // Laid out in docs/art-direction.md: the walk-in SV-04 wreck in its scar, cargo trailing north to an Old Stone court,
   // the farm and pond to the west, a dead relay beacon and burnt woods to the east, inside a ring of forest.
   "size": [90.0, 12.0, 110.0],
+  // A new player starts in peace: no wild bots, guards or raiders appear within 250 m of the wreck.
+  "bot_free_radius": 250.0,
   "road": "road",
   "placement": {},
   "terrain": [

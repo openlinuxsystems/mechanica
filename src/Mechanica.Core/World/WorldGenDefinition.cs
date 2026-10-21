@@ -1209,6 +1209,12 @@ public sealed record PoiPrefab
     /// <summary>Footprint as built, <c>[width, height, depth]</c> in metres: for the placement manifest and later design work.</summary>
     public Vec3? Size { get; init; }
 
+    /// <summary>
+    /// Metres from the POI centre inside which no bot appears: no wild spawns, guards or raiders
+    /// (<see cref="Mechanica.Core.Bots.BotFreeZones"/>). Omitted: bots may appear right up to it.
+    /// </summary>
+    public float? BotFreeRadius { get; init; }
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }

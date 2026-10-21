@@ -16,7 +16,8 @@ public sealed record GuardPost(string Poi, string Bot, Vector3 Feet, float Yaw);
 /// player comes within <see cref="BotSettings.GuardWakeDistance"/>, the post's bot appears there (and wanders
 /// round it, going for players its behaviour finds). When every player is past
 /// <see cref="BotSettings.GuardSleepDistance"/> the guard leaves until someone comes back. A guard that dies
-/// leaves its post empty for <see cref="BotSettings.GuardRespawn"/> seconds.
+/// leaves its post empty for <see cref="BotSettings.GuardRespawn"/> seconds. A post in a <see cref="BotActions.BotFree"/>
+/// zone never fields one.
 /// </summary>
 public sealed class PoiGuards
 {
@@ -75,7 +76,7 @@ public sealed class PoiGuards
                 }
                 continue;
             }
-            if (now < post.ReadyAt || !Near(players, post.Def.Feet, _bots.Settings.GuardWakeDistance)
+            if (now < post.ReadyAt || _bots.BotFree.Contains(post.Def.Feet.X, post.Def.Feet.Z) || !Near(players, post.Def.Feet, _bots.Settings.GuardWakeDistance)
                 || _bots.Bots.Count >= _bots.Settings.MaxBots || _bots.Types.FindBot(post.Def.Bot) is not { } type)
                 continue;
             post.Bot = _bots.Spawn(type, post.Def.Feet + new Vector3(0, 0.05f, 0), post.Def.Yaw).Id;
