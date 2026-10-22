@@ -90,6 +90,7 @@ public partial class DerelictAuthor : Node
         var steering = k.SteeredAxle(1, 6, "scrap_wheel");
         var driven = k.Axle(10, 6, "scrap_wheel");
         k.Drive(seat, engine, tank, steering, driven);
+        k.Note("Gone for parts.\nWorkshop has what\nwe need. - Sam", (2, 0, -1), Kit.Front);
     }
 
     // A low scrap metal frame, a seat over the back axle and the engine behind it: an early win near camps.
@@ -138,6 +139,7 @@ public partial class DerelictAuthor : Node
         var steering = k.SteeredAxle(2, 6, "wheel");
         var driven = k.Axle(11, 6, "wheel");
         k.Drive(seat, engine, tank, steering, driven);
+        k.Note("COLONY WORKS POOL\nOut of service.\nEngine sent to the\nWorkshop for repair.", (-1, 2, 8), Kit.Left);
     }
 
     // A long flatbed with a cab at the front and two rear axles.
@@ -157,6 +159,7 @@ public partial class DerelictAuthor : Node
         var driven = k.Axle(15, 6, "wheel");
         k.Axle(19, 6, "wheel");
         k.Drive(seat, engine, tank, steering, driven);
+        k.Note("Engine seized again.\nTook it to the\nWorkshop. Spare\nwheels at the\nscrapyard. - Dell", (-1, 3, 4), Kit.Left);
     }
 
     // Big wheels at the back, small steered wheels at the front, an engine under a hood and a saddle.
@@ -173,6 +176,7 @@ public partial class DerelictAuthor : Node
         var steering = k.SteeredAxle(1, 6, "scrap_wheel", depth: 3);
         var driven = k.Axle(9, 6, "big_wheel");
         k.Drive(seat, engine, tank, steering, driven);
+        k.Note("Tractor's done for.\nEngine's in the barn\nif you want it.", (0, 2, 3), Kit.Left);
     }
 
     // A wooden trailer with low sides, one axle and a hitch bar.
@@ -212,6 +216,17 @@ public partial class DerelictAuthor : Node
             creation.TryPlacePart($"vanilla:{part}", new GridCell(cell.X, cell.Y, cell.Z), rotation, out var placed, out var error)
                 ? placed.Id
                 : throw new System.InvalidOperationException($"{part} at {cell} does not fit: {error}");
+
+        /// <summary>A Paper Note with <paramref name="words"/> on it, its back on the block behind it.</summary>
+        public void Note(string words, (int X, int Y, int Z) cell, GridRotation facing)
+        {
+            var note = Place("paper_note", cell, facing);
+            creation.SetPartSettings(note, new Dictionary<string, JsonElement> { ["text"] = JsonSerializer.SerializeToElement(words) });
+        }
+
+        /// <summary>A note's words facing the front (-Z), or the left side (-X).</summary>
+        public static readonly GridRotation Front = GridRotation.FromAxes(new GridCell(-1, 0, 0), new GridCell(0, 1, 0)),
+            Left = GridRotation.FromAxes(new GridCell(0, 0, 1), new GridCell(0, 1, 0));
 
         /// <summary>Fills the box of cells from <paramref name="from"/> to <paramref name="to"/>, each block once it has a neighbour to attach to.</summary>
         public void Box(string part, (int X, int Y, int Z) from, (int X, int Y, int Z) to)

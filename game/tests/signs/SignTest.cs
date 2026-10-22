@@ -24,6 +24,7 @@ public partial class SignTest : StagedTest
     private int _world;
     private int _board;
     private readonly List<ActionResult> _results = [];
+    private bool _written;
 
     protected override string Tag => "signs";
 
@@ -72,10 +73,14 @@ public partial class SignTest : StagedTest
             _board = _results[0].Value!.Value.Deserialize<PlacePartResult>(ActionJson.Options)!.Creation;
             return true;
         });
-        Add("the client writes on it and both peers draw the words", frame =>
+        Add("the client writes on it and both peers draw the words", _ =>
         {
-            if (frame == 0)
+            // The new Signboard reaches the client a few frames after the host takes it.
+            if (_client.Main.Creations.Find(_board) is null)
+                return false;
+            if (!_written)
             {
+                _written = true;
                 _results.Clear();
                 Configure("GONE FISHING\nback at dusk");
                 return false;

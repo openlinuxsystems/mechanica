@@ -1003,6 +1003,19 @@
           9
         ],
         "rotation": "-y+x"
+      },
+      {
+        "id": 99,
+        "part": "vanilla:paper_note",
+        "cell": [
+          2,
+          0,
+          -1
+        ],
+        "rotation": "-x+y",
+        "settings": {
+          "text": "Gone for parts.\nWorkshop has what\nwe need. - Sam"
+        }
       }
     ],
     "connections": [
@@ -1690,6 +1703,11 @@
         "type": "structural",
         "a": 69,
         "b": 70
+      },
+      {
+        "type": "structural",
+        "a": 69,
+        "b": 99
       },
       {
         "type": "structural",
