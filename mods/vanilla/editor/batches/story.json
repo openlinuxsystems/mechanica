@@ -64,21 +64,21 @@
         "steps": [
           {
             "id": "extinguish_fires",
-            "text": "Put out the three fires at the crash site with water.",
+            "text": "Put out three of the fires blocking the way into the crashed ship.",
             "objective": { "type": "extinguish", "poi": "crash_site", "count": 3 },
-            "dialogue": [{ "speaker": "Logbook", "text": "Hull breach. Fires spreading. Suppress them before the core cells go." }]
+            "dialogue": [{ "speaker": "Logbook", "text": "Hull breach. Fires at every hatch. Suppress them before the core cells go." }]
           },
           {
             "id": "find_battery",
             "text": "Find the Master Battery the crash threw clear of the ship.",
             "objective": { "type": "have_item", "item": "master_battery", "poi": "crash_site", "marker": "object", "ref": "master_battery_fallen" },
-            "dialogue": [{ "speaker": "Logbook", "text": "Fires out. Master cell missing from its bay: ejected on impact. Its locator still pings, close by. Recover it." }]
+            "dialogue": [{ "speaker": "Logbook", "text": "Fires out. Master cell missing from its bay: blown out with the port engine housing. Its locator still pings, close by. Recover it." }]
           },
           {
             "id": "install_battery",
             "text": "Install the Master Battery in the Power Core in engineering.",
             "objective": { "type": "interact", "poi": "crash_site", "marker": "item", "ref": "master_battery", "item": "master_battery" },
-            "dialogue": [{ "speaker": "Logbook", "text": "Cell recovered. Seat it in the Power Core: engineering, aft of the crew quarters." }]
+            "dialogue": [{ "speaker": "Logbook", "text": "Cell recovered. Seat it in the Power Core: engineering, port side of the aft block." }]
           }
         ],
         "rewards": { "items": [{ "item": "component_kit", "count": 2 }, { "item": "battery_pack", "count": 1 }] },

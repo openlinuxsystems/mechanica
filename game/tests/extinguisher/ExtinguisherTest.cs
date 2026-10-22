@@ -19,6 +19,9 @@ public partial class ExtinguisherTest : StagedTest
 {
     private const string Extinguisher = "vanilla:fire_extinguisher";
 
+    // The crash site's fire markers: six at the wreck's hatches and four at burst containers (mods/vanilla/pois/crash_site.json).
+    private const int Fires = 10;
+
     private NetTestHarness _harness = null!;
     private Instance _host = null!;
     private Instance _client = null!;
@@ -50,12 +53,12 @@ public partial class ExtinguisherTest : StagedTest
 
         Add("both machines are in and the crash site burns", _ =>
         {
-            if (_host.Main.PlayerSync.Players.Count < 2 || ClientFire.Nodes.Count < 3 || _client.Main.Inventory.Own is null || _client.Main.Tools is null)
+            if (_host.Main.PlayerSync.Players.Count < 2 || ClientFire.Nodes.Count < Fires || _client.Main.Inventory.Own is null || _client.Main.Tools is null)
                 return false;
             var site = _host.Main.Quests.SitesOf("vanilla:crash_site")[0];
             _site = site.Index;
             _fires = [.. site.Markers.Where(m => m.Type == "fire")];
-            Check(_fires.Count == 3, $"three fires ({_fires.Count})");
+            Check(_fires.Count == Fires, $"{Fires} fires ({_fires.Count})");
             _host.Main.Inventory.Items!.PlayerInventory(Peer).Add(Extinguisher, 3);
             _host.Main.Inventory.Items!.PlayerInventory(_host.Peer).Add(Extinguisher, 2);
             return true;
@@ -95,7 +98,7 @@ public partial class ExtinguisherTest : StagedTest
                 var look = -_host.Main.PlayerSync.Players[Peer].Head.GlobalBasis.Z;
                 Check(spray.Direction.Dot(look) > 0.95f, $"the foam goes where the client looks ({spray.Direction}, {look})");
             }
-            if (HostFire.Actions!.SitesOut("vanilla:crash_site", "fire") < 1 || ClientFire.Nodes.Count != 2)
+            if (HostFire.Actions!.SitesOut("vanilla:crash_site", "fire") < 1 || ClientFire.Nodes.Count != Fires - 1)
                 return false;
             _frames = frame;
             Check(frame < 300, $"it goes out within five seconds ({frame} frames)");
@@ -152,7 +155,7 @@ public partial class ExtinguisherTest : StagedTest
                 Check(_client.Main.Sprays.IsSpraying(_host.Peer),
                     $"the client draws the host's foam (guard {shown.Pose.Guard}, body shown {shown.Character?.Visible})");
             }
-            if (HostFire.Actions!.SitesOut("vanilla:crash_site", "fire") < 2 || ClientFire.Nodes.Count != 1)
+            if (HostFire.Actions!.SitesOut("vanilla:crash_site", "fire") < 2 || ClientFire.Nodes.Count != Fires - 2)
                 return false;
             HostItem.LetGo();
             return true;
@@ -161,7 +164,8 @@ public partial class ExtinguisherTest : StagedTest
             frame > 30 && !_client.Main.Sprays.IsSpraying(_host.Peer) && !_host.Main.Scripts.Runtime.IsUsing(_host.Peer));
     }
 
-    private Vector3 Fire(int i) => _fires[i].Position.ToGodot();
+    // The burst containers' fires come last and stand in the open; the wreck's sit in its hatches.
+    private Vector3 Fire(int i) => _fires[^(i + 1)].Position.ToGodot();
 
     // Teleports a player 2.5 m from the fire (the client on the first call) and turns them to look at its foot.
     private void Face(Instance who, int peer, Vector3 fire)

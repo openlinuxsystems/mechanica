@@ -16,8 +16,8 @@ What it builds (procedurally, from scratch: no .blend inputs, no downloads):
   ``master_battery_fallen`` world object): tipped into the furrow it ploughed, earth heaped in front, its torn
   connector cable sparking. Clip ``idle`` (2 s, looped): the spark flickers and the charge window pulses.
 * ``mods/vanilla/meshes/structures/sv04_battery_bay.glb`` - the Power Core in engineering, with the slot the cell goes
-  in, and a ``collider`` box the game collides with. It shares the ship's origin like ``sv04_fore.glb`` (the crash site places both at the same point) and follows the
-  fore section's tilt. Its moving pieces are their own nodes: ``Cell``, ``ClampL`` and ``ClampR``, ``Hatch``,
+  in, and a ``collider`` box the game collides with. It shares the wreck's origin like ``sv04_aft.glb`` (the crash site places
+  both at the same point) and lies as the aft block does (tools/structures/sv04_layout.py). Its moving pieces are their own nodes: ``Cell``, ``ClampL`` and ``ClampR``, ``Hatch``,
   ``Contacts``, ``Warn``, ``Bar0``..``Bar4``, ``CoilGlow0`` and ``CoilGlow1`` and ``Cable``. glTF clips (see
   docs/world-generation.md, POI ``models[].story``):
 
@@ -50,7 +50,9 @@ sys.dont_write_bytecode = True                      # no __pycache__ next to the
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "gas_container"))
+sys.path.append(str(HERE.parent / "structures"))   # last, so its modules never shadow the part tools' own
 import build_gas_container as gc  # noqa: E402  (its imports put the bearing_engine and lift helpers on the path)
+import sv04_layout as LAYOUT  # noqa: E402
 
 bbe, bl, lt, pt = gc.bbe, gc.bl, gc.lt, gc.pt
 REPO = HERE.parents[1]
@@ -66,8 +68,8 @@ CX, CY = 0.235, 0.34          # case half width and half length
 Z0, Z1 = -0.24, 0.17          # case bottom and top
 RAIL = 0.035                  # frame rail size
 
-# ---- the bay (metres, in the fore section's frame: x across, +y towards the bow, z up from the deck) -------------
-BAY_AT = (0.0, -2.5, 0.3)     # the Power Core's foot on the engineering deck (ship.py: where the old box stood)
+# ---- the bay (metres, in the ship's frame: x across, +y towards the bow, z up from the deck) ----------------------
+BAY_AT = LAYOUT.BAY_AT        # the Power Core's foot on the engineering deck (cargo_ship.py builds its coils behind it)
 HX, HY, HZ = 0.9, 0.7, 2.4    # housing half width, half depth, height (front face +Y)
 SLOT_X, SLOT_Z0, SLOT_Z1 = 0.31, 0.38, 0.9   # slot half width, floor and roof
 BACK = -0.2                   # the slot's back wall (the contacts)
@@ -385,10 +387,10 @@ def build_bar(k):
 
 
 def build_coil_glow():
-    """Glowing bands between a coil's copper turns (ship.py: eight turns 0.18 m apart from 0.85 m on a 0.22 m core)."""
+    """Glowing bands between a coil's copper turns (cargo_ship.py: eight turns 0.18 m apart from 0.55 m on a 0.22 m core)."""
     g = Geo()
     for k in range(7):
-        z = 0.85 + 0.09 + k * 0.18 - BAY_AT[2]
+        z = 0.55 + 0.09 + k * 0.18
         cylinder(g, (0, 0, z - 0.03), (0, 0, z + 0.03), 0.235, "cyan_soft", segs=20)
     return g
 
@@ -569,13 +571,16 @@ def unbake(objs):
 # Main
 # =====================================================================================================
 
-def fore_frame():
-    """An empty with the fore section's placement under the ship's origin (ship.py: tilted -1.5 deg and 2 deg)."""
+def wreck_frame():
+    """Empties for the wreck's origin and, under it, the intact ship's frame as the aft block lies in the wreck
+    (sv04_layout.PIECES): the bay goes under the second."""
     ship = bl.make_empty("SV04")
-    fore = bl.make_empty("Fore", ship)
-    fore.rotation_mode = "XYZ"
-    fore.rotation_euler = (math.radians(-1.5), math.radians(2), 0)
-    return ship, fore
+    loc, rot = LAYOUT.PIECES["aft"]
+    aft = bl.make_empty("Aft", ship, loc)
+    aft.rotation_mode = "XYZ"
+    aft.rotation_euler = tuple(math.radians(a) for a in rot)
+    frame = bl.make_empty("AftShip", aft, tuple(-v for v in LAYOUT.PIVOTS["aft"]))
+    return ship, frame
 
 
 ICON_VIEW = (1.3, 1.7, 1.0)   # from the front (+Y): handle, hazard band and plate
@@ -600,8 +605,8 @@ def main():
 
     bbe.reset_scene()
     mats = make_materials()
-    ship, fore = fore_frame()
-    bay = build_bay(mats, fore, collider=True)
+    ship, frame = wreck_frame()
+    bay = build_bay(mats, frame, collider=True)
     bake(moving(bay), [(n, s, lambda t, p=p: p(bay, t)) for n, s, p in CLIPS])
     bbe.export(ship, MESHES / "structures" / "sv04_battery_bay.glb", animations=True)
 

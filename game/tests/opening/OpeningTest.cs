@@ -44,7 +44,8 @@ public partial class OpeningTest : StagedTest
             Check(_opening.Playing && _opening.Camera.Current, "its camera is current");
             Check(HudRoot.Hidden, "the HUD is hidden");
             Check(!Me.Visible, "the player stands unseen");
-            Check(_opening.Copies is { Fore: not null, Aft: not null, Nacelle: not null }, "copies of the three pieces fly");
+            Check(_opening.Copies.Pieces.Count == 4 && _opening.Copies.Pieces.All(p => p is not null) && _opening.Copies.Housing is not null
+                && _opening.Copies.Containers.Count == 12 && _opening.Copies.Containers.All(c => c is not null), "copies of the pieces, the housing and the containers fly");
             Check(_client.Main.Opening is null, "the client sees none of it");
             Engine.TimeScale = Speed;
             return true;
@@ -55,8 +56,8 @@ public partial class OpeningTest : StagedTest
                 return false;
             foreach (var index in _opening.Scene.HiddenModels)
                 Check(Models(index).All(m => !m.Visible), $"model {index} is hidden");
-            var (fore, _, nacelle) = _opening.Copies;
-            Check(fore!.Visible && nacelle!.Visible, "the copies are drawn");
+            var (pieces, housing, containers) = _opening.Copies;
+            Check(pieces.All(p => p!.Visible) && housing!.Visible && containers.All(c => c!.Visible), "the copies are drawn");
             Check(_opening.Camera.Current && _opening.Darkness < 0.01f, "the picture is clear");
             return true;
         });
@@ -65,10 +66,16 @@ public partial class OpeningTest : StagedTest
             if (_opening.Time < _opening.Scene.Settings.Settle + 0.3f)
                 return false;
             var scene = _opening.Scene;
-            Check(Models(scene.ForeIndex).Any() && Models(scene.ForeIndex).All(m => m.Visible), "the wreck is drawn again");
-            Check(Models(scene.ForeIndex).All(m => m.GlobalTransform.Origin.DistanceTo(_opening.Copies.Fore!.GlobalTransform.Origin) < 0.01f),
-                "the fore section's copy came to rest exactly on it");
-            Check(!_opening.Copies.Fore!.Visible, "the copies are no longer drawn");
+            foreach (var (index, i) in scene.PieceIndices.Select((index, i) => (index, i)))
+            {
+                Check(Models(index).Any() && Models(index).All(m => m.Visible), $"piece {i} of the wreck is drawn again");
+                Check(Models(index).All(m => m.GlobalTransform.Origin.DistanceTo(_opening.Copies.Pieces[i]!.GlobalTransform.Origin) < 0.01f),
+                    $"piece {i}'s copy came to rest exactly on it");
+            }
+            var landed = scene.ContainerIndices[0];
+            Check(Models(landed).All(m => m.GlobalTransform.Origin.DistanceTo(_opening.Copies.Containers[0]!.GlobalTransform.Origin) < 0.01f),
+                "the first container's copy came to rest exactly on it");
+            Check(_opening.Copies.Pieces.All(p => !p!.Visible) && !_opening.Copies.Housing!.Visible, "the copies are no longer drawn");
             return true;
         });
         Add("it cuts to the player getting up, facing the wreck", _ =>
@@ -78,7 +85,7 @@ public partial class OpeningTest : StagedTest
             Check(Me.Camera.Current && Me.Visible, "the camera is the player's own again");
             Check(Me.Character is not CharacterModel model || model.Animator.Gesture?.StartsWith("get_up", StringComparison.Ordinal) == true,
                 "the player gets up");
-            Check(_opening.Copies is { Fore: null, Aft: null, Nacelle: null }, "the copies are gone");
+            Check(_opening.Copies is { Pieces.Count: 0, Housing: null, Containers.Count: 0 }, "the copies are gone");
             CheckQuiet();
             return true;
         });

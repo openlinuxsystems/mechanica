@@ -1,7 +1,7 @@
 """Review renders of the Master Battery (run through ``build_master_battery.py --render OUT_DIR``).
 
 Writes, into OUT_DIR: the cell (three-quarter front and back, with a 1.5 m figure for scale), the fallen cell in the
-grass, the Power Core in the ship's engineering room empty, at stages of the install clip and powered, and
+grass, the Power Core in the wreck's engineering room empty, at stages of the install clip and powered, and
 review_sheet.png laying them out. ``MB_VIDEO=1`` also renders the install clip's frames (bay_install_NNN.png, MB_VIDEO_FPS, default 12:
 one second empty, the clip, one second powered) for ffmpeg. Cycles on the CPU; LIFT_SAMPLES sets the samples.
 """
@@ -52,22 +52,24 @@ def fallen_shots(out, build):
 
 
 def bay_scene(build):
-    """The review ship (structure kit materials) with the bay in its engineering room; returns the bay rig."""
+    """The wreck's aft block (structure kit materials, as crash_site.py builds it) with the bay in its engineering
+    room; returns the bay rig."""
     import kit as K  # noqa: PLC0415
-    import ship as S  # noqa: PLC0415
+    import crash_site as CS  # noqa: PLC0415
     bpy.ops.wm.read_factory_settings(use_empty=True)
     K._mats.clear()
     K.setup_render(int(os.environ.get("LIFT_SAMPLES", "48")))
     K.sky(1.0)
     K.sun((50, 0, -35), 4.0)
     K.ground(300, color="#5fae3a")
-    S.salvager_ship((0, 0, 0), fires=False)
-    fore = bpy.data.objects["fore"]
+    CS.wreck(scene=False, power_core=False)
+    _, frame = build.wreck_frame()
     mats = build.make_materials()
-    rig = build.build_bay(mats, fore)
+    rig = build.build_bay(mats, frame)
     lamp = K.point("review_fill", (0.0, 0.0, 0.0), "#dff4ff", 60, 0.4)   # a soft fill so the bay reads in review shots
-    lamp.parent = fore
-    lamp.location = (0.6, 0.4, 2.6)
+    lamp.parent = frame
+    bx, by, bz = build.BAY_AT
+    lamp.location = (bx + 1.6, by + 3.0, bz + 2.6)
     return rig, K
 
 
@@ -82,21 +84,24 @@ SHOTS = (  # name, title, pose, time, camera
 )
 
 
-def cameras(K):
-    """Cameras placed in the fore section's frame (the crew door at y 2, the Power Core's face at y -1.8)."""
+def cameras(K, build):
+    """Cameras placed in the intact ship's frame round the bay (engineering, port side of the aft block; the Power
+    Core faces the bow)."""
     bpy.context.view_layer.update()
-    m = bpy.data.objects["fore"].matrix_world
+    m = bpy.data.objects["AftShip"].matrix_world
+    bx, by, bz = build.BAY_AT
 
     def cam(name, loc, target, lens):
-        return K.camera(name, tuple(m @ Vector(loc)), tuple(m @ Vector(target)), lens=lens)
+        at = Vector((bx, by, bz))
+        return K.camera(name, tuple(m @ (at + Vector(loc))), tuple(m @ (at + Vector(target))), lens=lens)
 
-    return {"room": cam("room", (1.3, 1.6, 1.85), (-0.1, -2.2, 1.2), 20),
-            "close": cam("close", (0.85, -0.25, 1.25), (-0.05, -1.95, 0.75), 24)}
+    return {"room": cam("room", (2.0, 3.85, 1.7), (0.0, -0.15, 1.1), 18),
+            "close": cam("close", (0.8, 2.9, 1.35), (0.0, 0.4, 0.8), 24)}
 
 
 def bay_shots(out, build):
     rig, K = bay_scene(build)
-    cams = cameras(K)
+    cams = cameras(K, build)
     poses = {"empty": build.pose_empty, "install": build.pose_install, "powered": build.pose_powered}
     shots = []
     for name, title, pose, t, cam in SHOTS:

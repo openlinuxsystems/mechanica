@@ -1330,6 +1330,76 @@
       "harvest": true,
       "drops": [{ "item": "scrap_wood_block", "count": 16, "count_max": 24 }]
     },
+    // Fire Extinguishers thrown out of the SV-04's crew quarters, by the crash site's spawn: press Use to pick one up. The
+    // three hold enough foam for every fire at the site (each Fire Extinguisher sprays for two seconds).
+    {
+      "id": "dropped_extinguisher",
+      "collider": { "shape": "box", "size": [0.2, 0.47, 0.2], "at": [0.0, 0.0, 0.0] },
+      "mesh": { "file": "meshes/items/fire_extinguisher.glb" },
+      "footprint": 0.3,
+      "max_slope": 0.6,
+      "damage_from": [],
+      "harvest": true,
+      "drops": [{ "item": "fire_extinguisher", "count": 2 }]
+    },
+    // The cargo the SV-04's containers spilled where they burst (the crash site, two heaps by each): press Use to pick
+    // a heap up. The container's colour says the kind (tools/structures/crash_site.py builds the heaps): red metal, blue
+    // electronics, yellow fuel and chemicals, green farming, tan building supplies.
+    {
+      "id": "cargo_spill_metal",
+      "collider": { "shape": "box", "size": [1.8, 0.4, 1.8], "at": [0.0, 0.2, 0.0] },
+      "mesh": { "file": "meshes/world/cargo_spill_metal.glb" },
+      "footprint": 2.0,
+      "sink": 0.02,
+      "max_slope": 0.4,
+      "damage_from": [],
+      "harvest": true,
+      "drops": [{ "item": "scrap_metal_block", "count": 6, "count_max": 10 }, { "item": "metal_block", "count": 2, "count_max": 4 }, { "item": "bearing", "count": 1, "chance": 0.5 }]
+    },
+    {
+      "id": "cargo_spill_electronics",
+      "collider": { "shape": "box", "size": [1.8, 0.4, 1.8], "at": [0.0, 0.2, 0.0] },
+      "mesh": { "file": "meshes/world/cargo_spill_electronics.glb" },
+      "footprint": 2.0,
+      "sink": 0.02,
+      "max_slope": 0.4,
+      "damage_from": [],
+      "harvest": true,
+      "drops": [{ "item": "component_kit", "count": 1, "count_max": 2 }, { "item": "circuit_board", "count": 1, "count_max": 2 }, { "item": "battery_pack", "count": 1, "chance": 0.6 }]
+    },
+    {
+      "id": "cargo_spill_fuel",
+      "collider": { "shape": "box", "size": [1.8, 0.4, 1.8], "at": [0.0, 0.2, 0.0] },
+      "mesh": { "file": "meshes/world/cargo_spill_fuel.glb" },
+      "footprint": 2.0,
+      "sink": 0.02,
+      "max_slope": 0.4,
+      "damage_from": [],
+      "harvest": true,
+      "drops": [{ "item": "gasoline", "count": 2, "count_max": 4 }, { "item": "chemical", "count": 2, "count_max": 4 }]
+    },
+    {
+      "id": "cargo_spill_farming",
+      "collider": { "shape": "box", "size": [1.8, 0.4, 1.8], "at": [0.0, 0.2, 0.0] },
+      "mesh": { "file": "meshes/world/cargo_spill_farming.glb" },
+      "footprint": 2.0,
+      "sink": 0.02,
+      "max_slope": 0.4,
+      "damage_from": [],
+      "harvest": true,
+      "drops": [{ "item": "carrot_seed", "count": 2, "count_max": 4 }, { "item": "potato_seed", "count": 2, "count_max": 4 }, { "item": "tomato_seed", "count": 1, "count_max": 3, "chance": 0.7 }, { "item": "carrot", "count": 1, "count_max": 3, "chance": 0.6 }, { "item": "soil_bag", "count": 1, "chance": 0.5 }]
+    },
+    {
+      "id": "cargo_spill_building",
+      "collider": { "shape": "box", "size": [1.8, 0.4, 1.8], "at": [0.0, 0.2, 0.0] },
+      "mesh": { "file": "meshes/world/cargo_spill_building.glb" },
+      "footprint": 2.0,
+      "sink": 0.02,
+      "max_slope": 0.4,
+      "damage_from": [],
+      "harvest": true,
+      "drops": [{ "item": "scrap_wood_block", "count": 6, "count_max": 10 }, { "item": "wood_block", "count": 3, "count_max": 6 }, { "item": "concrete_block", "count": 2, "count_max": 4 }, { "item": "glass_block", "count": 1, "count_max": 3, "chance": 0.6 }]
+    },
     // Props the scenes below lay out between places (models: tools/structures/props.py). Settler wood breaks into
     // Scrap Wood Blocks and loose metal into Scrap Metal Blocks; the old colony's pipes, barriers and wrecks are too big
     // to break.

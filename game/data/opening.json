@@ -1,27 +1,60 @@
 {
   // The opening cinematic: the host sees it the first time a new world starts (docs/art-direction.md). The intact SV-04
-  // flies in from the southeast over the forest and the lone pillars, its port nacelle burns and tears off (it lies where
-  // sv04_nacelle.glb is placed), and the ship spins down into the clearing, breaking in two where the wreck lies.
+  // flies in from the southeast over the forest, its port engine housing burns, then the cargo spine blows open: the
+  // housing tears off (it lies where sv04_housing.glb is placed), the containers break off the racks and burst where they
+  // land, and the ship ploughs into the clearing, breaking in four where the wreck lies.
   // Times are seconds; places are metres from the crash site's centre on its pad (x east, y up, z south).
   // Engine settings: not moddable. Read by game/scripts/World/OpeningCinematic.cs; see
   // src/Mechanica.Core/World/OpeningSettings.cs.
   "poi": "vanilla:crash_site",
-  "fore_model": "meshes/structures/sv04_fore.glb",
-  "aft_model": "meshes/structures/sv04_aft.glb",
-  "nacelle_model": "meshes/structures/sv04_nacelle.glb",
-  // From tools/structures/ship.py (Blender's frame: x, y forward, z up; degrees): keep in step with it.
-  "fore_wreck": { "at": [0.0, 0.0, 0.0], "rotation": [-1.5, 2.0, 0.0] },
-  "aft_wreck": { "at": [-2.5, -17.5, 0.1], "rotation": [1.0, -3.0, -16.0] },
-  "aft_intact": [0.0, -14.0, 0.0],
-  "nacelle_on_aft": [-6.7, -7.5, 2.4],
-  "nacelle_lying": { "at": [0.0, 0.0, 1.45], "rotation": [4.0, -12.0, 0.0] },
+  // From tools/structures/sv04_layout.py (Blender's frame: x, y forward, z up; degrees XYZ): keep in step with it
+  // (tools/structures/print_crash_layout.py prints these). Each piece turned about its pivot and came to rest as given.
+  "pieces": [
+    { "model": "meshes/structures/sv04_aft.glb", "pivot": [0.0, -21.0, 0.0], "wreck": { "at": [-7.0, -27.0, 0.55], "rotation": [0.8, 3.0, 16.0] } },
+    { "model": "meshes/structures/sv04_spine_a.glb", "pivot": [0.0, -5.5, 0.0], "wreck": { "at": [-2.0, -9.5, 1.3], "rotation": [-3.0, -38.0, 38.0] } },
+    { "model": "meshes/structures/sv04_spine_b.glb", "pivot": [0.0, 7.5, 0.0], "wreck": { "at": [3.5, 4.0, 1.05], "rotation": [2.0, 14.0, -22.0] } },
+    { "model": "meshes/structures/sv04_bow.glb", "pivot": [0.0, 23.0, 0.0], "wreck": { "at": [6.0, 21.5, 0.55], "rotation": [-1.5, 3.0, -9.0] } }
+  ],
+  "housing_model": "meshes/structures/sv04_housing.glb",
+  "housing_on_ship": [-4.3, -24.1, 6.65],
+  "housing_lying": { "at": [-20.0, -26.0, 2.0], "rotation": [170.0, 12.0, 40.0] },
+  // The containers lost in the sky: each burst container model the POI places rides in its slot (in the POI's order)
+  // until it breaks away, as the ship passes over where it lands, and falls.
+  "containers": {
+    "models": [
+      "meshes/structures/sv04_container_red.glb", "meshes/structures/sv04_container_blue.glb", "meshes/structures/sv04_container_yellow.glb",
+      "meshes/structures/sv04_container_green.glb", "meshes/structures/sv04_container_tan.glb"
+    ],
+    "slots": [
+      [-3.95, -8.6, 2.35],
+      [3.95, -8.6, -0.3],
+      [-3.95, -2.2, -0.3],
+      [3.95, -2.2, -0.3],
+      [3.95, -2.2, 2.35],
+      [-3.95, 4.2, -0.3],
+      [3.95, 4.2, -0.3],
+      [3.95, 4.2, 2.35],
+      [-3.95, 10.6, -0.3],
+      [-3.95, 10.6, 2.35],
+      [3.95, 10.6, -0.3],
+      [3.95, 10.6, 2.35]
+    ],
+    "middle": 1.05,
+    "fall": 2.8,
+    "turns": 1,
+    "land": "impact_metal"
+  },
+  // In the cargo spine between the second and third racks, where it breaks in the wreck.
+  "explode_at": [0.0, 1.0, 3.0],
+  "hidden_models": [],
   // Kept out of sight until the ship settles, as the crash spills them; site fires within hide_radius too.
-  "hidden_models": ["meshes/structures/cargo_crate_colony.glb"],
-  "hidden_objects": ["loot_crate", "scrap_pile_metal", "scrap_pile_wood"],
-  "hide_radius": 50.0,
+  "hidden_objects": ["loot_crate", "scrap_pile_metal", "scrap_pile_wood", "cargo_spill_metal", "cargo_spill_electronics", "cargo_spill_fuel",
+    "cargo_spill_farming", "cargo_spill_building", "dropped_extinguisher"],
+  "hide_radius": 100.0,
   "duration": 31.0,
-  // The ship's origin (the bottom of the hull). Yaw as POI models turn (0 = nose north, 90 = west); positive pitch is
-  // nose up, positive roll lifts the starboard side. The last pose (at settle) is the wreck's own.
+  // The ship's origin (its deck line at mid-ship; the belly hangs 2 m under it). Yaw as POI models turn (0 = nose
+  // north, 90 = west); positive pitch is nose up, positive roll lifts the starboard side. The last pose (at settle) is
+  // the wreck's own.
   "ship": [
     { "t": 0.0, "at": [236.0, 62.0, 262.0], "yaw": 42.0, "pitch": -3.0 },
     { "t": 5.0, "at": [172.0, 50.0, 190.0], "yaw": 41.0, "pitch": -4.0, "roll": -3.0 },
@@ -36,19 +69,19 @@
   "touchdown": 19.6,
   "break": 20.2,
   "settle": 24.5,
-  "nacelle_burn": 8.0,
-  "nacelle_off": 12.0,
-  "nacelle_down": 15.0,
-  "nacelle_turns": 2,
+  "housing_burn": 8.0,
+  "explode": 12.0,
+  "housing_down": 15.0,
+  "housing_turns": 2,
   "shots": [
     // High over the forest: the ship comes out of the distance and roars past.
     { "start": 0.0, "end": 5.5, "from": [150.0, 44.0, 205.0], "fov": 55.0, "clear": 20.0 },
-    // Riding beside it on the port side: the nacelle catches fire and blows.
+    // Riding beside it on the port side: the engine housing catches fire, the spine blows and the containers tear away.
     { "start": 5.5, "end": 12.8, "follow": [-24.0, 6.0, 28.0], "ahead": [0.0, 2.0, -12.0], "fov": 50.0 },
-    // From the ground by the pillars: it lurches overhead and the nacelle comes down close by.
+    // From the ground by the pillars: it lurches overhead, shedding containers, and the housing comes down close by.
     { "start": 12.8, "end": 17.6, "from": [30.0, 1.8, 68.0], "fov": 62.0 },
-    // From the clearing's north side: it hits, slides towards the camera and breaks in two.
-    { "start": 17.6, "end": 25.5, "from": [-20.0, 3.5, -17.0], "from_end": [-18.0, 4.0, -14.0], "fov": 58.0 },
+    // From the clearing's north side: it hits, slides towards the camera and breaks in four.
+    { "start": 17.6, "end": 25.5, "from": [-30.0, 4.0, -34.0], "from_end": [-28.0, 4.5, -31.0], "fov": 58.0 },
     // Over the wreck, burning, as the picture goes dark.
     { "start": 25.5, "end": 27.5, "from": [40.0, 18.0, 52.0], "from_end": [34.0, 20.0, 44.0], "look": [0.0, 2.0, 6.0], "fov": 55.0 }
   ],
@@ -60,8 +93,9 @@
   ],
   "sounds": [
     { "at": 4.0, "event": "air_whoosh", "on": "camera" },
-    { "at": 12.0, "event": "scuttler_explode", "on": "nacelle" },
-    { "at": 15.0, "event": "impact_metal", "on": "nacelle" },
+    { "at": 12.0, "event": "scuttler_explode", "on": "explosion" },
+    { "at": 12.1, "event": "break_metal", "on": "housing" },
+    { "at": 15.0, "event": "impact_metal", "on": "housing" },
     { "at": 19.6, "event": "impact_metal", "on": "ship" },
     { "at": 20.2, "event": "break_metal", "on": "ship" },
     { "at": 22.0, "event": "impact_metal", "on": "ship" }

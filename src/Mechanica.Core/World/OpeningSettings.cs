@@ -4,12 +4,13 @@ using System.Text.Json.Serialization;
 namespace Mechanica.Core.World;
 
 /// <summary>
-/// The opening cinematic (<c>game/data/opening.json</c>): the intact SV-04 flies in over the forest and the ruins, its
-/// port nacelle catches fire and tears off, and the ship spins down into the crash site's clearing and breaks in two,
-/// coming to rest exactly as the wreck lies; then the camera cuts to the player getting up at the spawn. The host sees it
-/// the first time a new world starts. Times are seconds from its start; places are metres relative to the POI's centre
-/// on its pad (x east, y up, z south), as POI prefabs give them. Engine settings: they ship with the build and are not
-/// moddable. <see cref="OpeningScene"/> samples it.
+/// The opening cinematic (<c>game/data/opening.json</c>): the intact SV-04 flies in over the forest, its port engine
+/// housing catches fire, an explosion tears its cargo spine open and blows the housing off, the containers break off the
+/// racks and fall, bursting where they land, and the ship ploughs into the crash site's clearing and breaks in four,
+/// every piece coming to rest exactly as the wreck lies; then the camera cuts to the player getting up at the spawn. The
+/// host sees it the first time a new world starts. Times are seconds from its start; places are metres relative to the
+/// POI's centre on its pad (x east, y up, z south), as POI prefabs give them. Engine settings: they ship with the build
+/// and are not moddable. <see cref="OpeningScene"/> samples it.
 /// </summary>
 public sealed record OpeningSettings
 {
@@ -24,36 +25,30 @@ public sealed record OpeningSettings
     /// <summary>The POI it plays at (qualified).</summary>
     public string Poi { get; init; } = "vanilla:crash_site";
 
-    /// <summary>The POI model of the wreck's fore section (its <c>file</c>); the cinematic flies a copy of it.</summary>
-    public string ForeModel { get; init; } = "meshes/structures/sv04_fore.glb";
-
-    /// <summary>The POI model of the wreck's aft section.</summary>
-    public string AftModel { get; init; } = "meshes/structures/sv04_aft.glb";
-
-    /// <summary>The POI model of the nacelle that tears off, lying where it fell.</summary>
-    public string NacelleModel { get; init; } = "meshes/structures/sv04_nacelle.glb";
-
     /// <summary>
-    /// Where <c>tools/structures/ship.py</c> puts the fore section in the wreck, in Blender's frame (x, y forward, z up;
-    /// rotation in degrees, XYZ order), relative to the ship's origin. The intact ship undoes it.
+    /// The wreck's pieces (POI models): each flies as part of the intact ship until the break, then comes to rest where
+    /// its model lies.
     /// </summary>
-    public OpeningPlacement ForeWreck { get; init; } = new();
+    public List<OpeningPiece> Pieces { get; init; } = [];
 
-    /// <summary>Where the script puts the aft section in the wreck, in the same frame.</summary>
-    public OpeningPlacement AftWreck { get; init; } = new();
+    /// <summary>The POI model of the engine housing the explosion tears off, lying where it fell.</summary>
+    public string HousingModel { get; init; } = "meshes/structures/sv04_housing.glb";
 
-    /// <summary>Where the aft section's origin sits in the intact ship (Blender frame): right behind the fore section.</summary>
-    public float[] AftIntact { get; init; } = [0f, -14f, 0f];
+    /// <summary>The housing's centre on the intact ship (Blender frame: x, y forward, z up; the ship's origin).</summary>
+    public float[] HousingOnShip { get; init; } = [0f, 0f, 0f];
 
-    /// <summary>The nacelle's centre in the aft section's own frame (Blender frame), where it hangs before it tears off.</summary>
-    public float[] NacelleOnAft { get; init; } = [-6.7f, -7.5f, 2.4f];
+    /// <summary>Where the housing model holds the housing relative to its origin (Blender frame): lying upside down.</summary>
+    public OpeningPlacement HousingLying { get; init; } = new();
 
-    /// <summary>Where the nacelle model holds the nacelle relative to its origin (Blender frame): lying on its side.</summary>
-    public OpeningPlacement NacelleLying { get; init; } = new();
+    /// <summary>The containers that break off in the explosion and burst where they land.</summary>
+    public OpeningContainers Containers { get; init; } = new();
+
+    /// <summary>Where the explosion tears the cargo spine open, on the intact ship (Blender frame).</summary>
+    public float[] ExplodeAt { get; init; } = [0f, 0f, 0f];
 
     /// <summary>
-    /// Other POI models (their <c>file</c>s) kept out of sight until the ship settles, as the crash spills them: the cargo
-    /// crates. The three sections are always hidden while their copies fly.
+    /// Other POI models (their <c>file</c>s) kept out of sight until the ship settles. The pieces, the housing and the
+    /// containers are always hidden while their copies fly.
     /// </summary>
     public List<string> HiddenModels { get; init; } = [];
 
@@ -78,23 +73,23 @@ public sealed record OpeningSettings
     /// <summary>When the hull first touches the ground (dust and a heavy shake).</summary>
     public float Touchdown { get; init; } = 19.6f;
 
-    /// <summary>When the aft section starts to tear away from the fore section.</summary>
+    /// <summary>When the pieces start to tear apart.</summary>
     public float Break { get; init; } = 20.2f;
 
-    /// <summary>When both sections lie still where the wreck is.</summary>
+    /// <summary>When every piece lies still where the wreck is.</summary>
     public float Settle { get; init; } = 24.5f;
 
-    /// <summary>When the port nacelle starts to smoke and burn.</summary>
-    public float NacelleBurn { get; init; } = 8f;
+    /// <summary>When the port engine housing starts to smoke and burn.</summary>
+    public float HousingBurn { get; init; } = 8f;
 
-    /// <summary>When it blows and tears off.</summary>
-    public float NacelleOff { get; init; } = 12f;
+    /// <summary>When the spine explodes: the housing blows off and the containers start to break away.</summary>
+    public float Explode { get; init; } = 12f;
 
-    /// <summary>When it hits the ground and lies where its model lies.</summary>
-    public float NacelleDown { get; init; } = 15f;
+    /// <summary>When the housing hits the ground and lies where its model lies.</summary>
+    public float HousingDown { get; init; } = 15f;
 
-    /// <summary>Whole turns it tumbles while falling.</summary>
-    public int NacelleTurns { get; init; } = 2;
+    /// <summary>Whole turns the housing tumbles while falling.</summary>
+    public int HousingTurns { get; init; } = 2;
 
     /// <summary>Camera shots, in time order; together they cover the time until <see cref="Black"/> ends.</summary>
     public List<OpeningShot> Shots { get; init; } = [];
@@ -102,7 +97,7 @@ public sealed record OpeningSettings
     /// <summary>Camera shakes: at a time, how strong (metres) and for how long.</summary>
     public List<OpeningShake> Shakes { get; init; } = [];
 
-    /// <summary>One-shot sounds (sound events) at times, at the ship, the nacelle or the camera.</summary>
+    /// <summary>One-shot sounds (sound events) at times, at the ship, the housing, the explosion or the camera.</summary>
     public List<OpeningSound> Sounds { get; init; } = [];
 
     /// <summary>The engines' drone that follows the ship until it touches down (a looping sound event), or null.</summary>
@@ -151,8 +146,12 @@ public sealed record OpeningSettings
         }
         if (Ship.Count > 0 && Ship[^1].T >= Settle)
             problems.Add("the last ship key must come before settle");
-        if (!(NacelleBurn <= NacelleOff && NacelleOff < NacelleDown))
-            problems.Add("nacelle_burn, nacelle_off and nacelle_down must come in that order");
+        if (Pieces.Count == 0)
+            problems.Add("pieces needs at least one piece");
+        if (!(HousingBurn <= Explode && Explode < HousingDown))
+            problems.Add("housing_burn, explode and housing_down must come in that order");
+        if (Containers.Models.Count > 0 && !(Explode + Containers.Fall <= Touchdown))
+            problems.Add("the containers must have time to fall between explode and touchdown");
         if (!(Touchdown <= Break && Break < Settle && Settle <= Black[0]))
             problems.Add("touchdown, break, settle and black must come in that order");
         if (Black.Length != 2 || Black[1] <= Black[0] || Black[1] + PlayerFadeIn > Duration)
@@ -172,6 +171,44 @@ public sealed record OpeningSettings
             problems.Add($"the shots end at {at} s, before the picture is black");
         return problems;
     }
+}
+
+/// <summary>A piece of the wreck: its POI model and how <c>tools/structures</c> baked it.</summary>
+public sealed record OpeningPiece
+{
+    /// <summary>The POI model (its <c>file</c>); the cinematic flies a copy of it.</summary>
+    public string Model { get; init; } = "";
+
+    /// <summary>The point of the intact ship (Blender frame) the piece turned about.</summary>
+    public float[] Pivot { get; init; } = [0f, 0f, 0f];
+
+    /// <summary>Where the pivot came to rest and how the piece turned (Blender frame), relative to the wreck's origin.</summary>
+    public OpeningPlacement Wreck { get; init; } = new();
+}
+
+/// <summary>
+/// The containers that break off in the explosion: the POI models whose file is one of <see cref="Models"/>, in the
+/// prefab's order, ride in <see cref="Slots"/> until each breaks away and falls to where its model lies.
+/// </summary>
+public sealed record OpeningContainers
+{
+    /// <summary>The container models' files.</summary>
+    public List<string> Models { get; init; } = [];
+
+    /// <summary>Each container's middle on the intact ship (Blender frame), one per container model the POI places.</summary>
+    public List<float[]> Slots { get; init; } = [];
+
+    /// <summary>How far a container model's middle is above its origin.</summary>
+    public float Middle { get; init; } = 1.05f;
+
+    /// <summary>Seconds a container falls.</summary>
+    public float Fall { get; init; } = 2.8f;
+
+    /// <summary>Whole turns a container tumbles while falling.</summary>
+    public int Turns { get; init; } = 1;
+
+    /// <summary>The sound event each plays where it lands, or null.</summary>
+    public string? Land { get; init; }
 }
 
 /// <summary>A place and turn in Blender's frame, from <c>tools/structures</c>.</summary>
@@ -266,6 +303,6 @@ public sealed record OpeningSound
     /// <summary>The sound event (a bare id is vanilla's).</summary>
     public string Event { get; init; } = "";
 
-    /// <summary>Where: <c>ship</c>, <c>nacelle</c> or <c>camera</c>.</summary>
+    /// <summary>Where: <c>ship</c>, <c>housing</c>, <c>explosion</c> or <c>camera</c>.</summary>
     public string On { get; init; } = "ship";
 }

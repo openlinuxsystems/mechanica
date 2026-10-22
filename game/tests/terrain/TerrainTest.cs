@@ -52,7 +52,7 @@ public partial class TerrainTest : StagedTest
             Check(host.Data.Heights.SequenceEqual(client.Data.Heights), $"chunk {home} at the start has the same heights on both peers");
             var shape = host.GroundShape.Shape as HeightMapShape3D;
             Check(shape is not null && shape.MapData.SequenceEqual(host.Data.Heights), "the ground collides as a height map of those heights");
-            var spawn = Crash.ToWorld(new System.Numerics.Vector3(16, 0, 36)).ToGodot();
+            var spawn = Crash.ToWorld(new System.Numerics.Vector3(22, 0, -12)).ToGodot();
             Check(_host.Main.GetNode<Node3D>("SpawnPoint").GlobalPosition.IsEqualApprox(spawn), $"players spawn at the crash site's spawn marker ({spawn})");
             foreach (var instance in new[] { _host, _client })
             {
@@ -67,7 +67,7 @@ public partial class TerrainTest : StagedTest
             {
                 var who = world == HostWorld ? "host" : "client";
                 var markers = world.Chunks.Values.SelectMany(c => c.Markers.GetChildren().OfType<Marker3D>()).ToList();
-                Check(markers.Count(m => (string)m.GetMeta("type") == "fire") == 3, $"{who}: three fire markers");
+                Check(markers.Count(m => (string)m.GetMeta("type") == "fire") == 10, $"{who}: ten fire markers");
                 Check(markers.Any(m => (string)m.GetMeta("ref") == "master_battery"), $"{who}: a master battery marker");
                 var wreck = world.Chunks.Values.Sum(c => c.Structures.GetChildren().OfType<CollisionShape3D>().Count());
                 Check(wreck >= 6, $"{who}: the wreck's pieces collide ({wreck})");
@@ -84,7 +84,7 @@ public partial class TerrainTest : StagedTest
             var onHost = _host.Main.PlayerSync.Players[_client.Peer];
             var mine = _client.Main.LocalPlayer!;
             var sea = HostWorld.Generator.SeaLevel;
-            var spawn = Crash.ToWorld(new System.Numerics.Vector3(16, 0, 36)).ToGodot();
+            var spawn = Crash.ToWorld(new System.Numerics.Vector3(22, 0, -12)).ToGodot();
             var toSpawn = new Vector2(spawn.X - Pond.X, spawn.Z - Pond.Z).Normalized();
             var yaw = MathF.Atan2(-toSpawn.X, -toSpawn.Y);
             if (frame == 0)
