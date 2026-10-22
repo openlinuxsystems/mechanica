@@ -13,7 +13,12 @@
         "buoyancy": 0.1,
         "stack_size": 10,
         "icon": "textures/items/bearing_icon.png",
-        "collision": { "shape": "cylinder", "radius": 0.115, "height": 0.25 },
+        // Just the 8 cm disc on the face it is placed on; what goes on the rotor sits flush on the disc (inset 0.17 m).
+        "collision": { "shape": "cylinder", "radius": 0.12, "height": 0.08, "offset": [0, -0.085, 0] },
+        "sockets": [
+          { "id": "base", "type": "structural", "position": [0, -0.125, 0], "normal": [0, -1, 0] },
+          { "id": "rotor", "type": "rotational", "position": [0, 0.125, 0], "normal": [0, 1, 0], "joint": { "inset": 0.17 } }
+        ],
         "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "sounds": { "start": "bearing_start", "spin_loop": "bearing_spin_loop", "stop": "bearing_stop" },
         "logic": { "inputs": 4, "kind": "bearing", "reverse": "reverse" },

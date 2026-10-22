@@ -1285,12 +1285,14 @@ public partial class PartEditorScreen : Control
             _socketGrid.AddNumber("Pitch max", joint.PitchMax, 0, Math.PI / 2, 0.05, v => set(j => j with { PitchMax = (float?)v }), optional: true, fallback: 0.6, suffix: "rad");
             _socketGrid.AddVector("Pivot (m)", joint.Pivot ?? socket.Position ?? Vec3.Zero, PositionStep / 2, v => set(j => j with { Pivot = v }));
         }
+        if (socket.Type == SocketType.Rotational)
+            _socketGrid.AddNumber("Inset", joint.Inset, 0, MechanicaInfo.GridSize - 0.001, PositionStep / 5, v => set(j => j with { Inset = (float?)v }), optional: true, fallback: 0, suffix: "m");
         if (!rotational)
             _socketGrid.AddNumber("Shaft radius", joint.ShaftRadius, 0.001, 1, 0.005, v => set(j => j with { ShaftRadius = (float?)v }), optional: true, fallback: 0.04, suffix: "m");
     }
 
     private static JointDefinition? Normalize(JointDefinition joint) =>
-        joint is { Axis: null, Min: null, Max: null, Stiffness: null, Damping: null, ShaftRadius: null, Pivot: null, PitchAxis: null, PitchMin: null, PitchMax: null,
+        joint is { Axis: null, Min: null, Max: null, Stiffness: null, Damping: null, ShaftRadius: null, Inset: null, Pivot: null, PitchAxis: null, PitchMin: null, PitchMax: null,
             Extra: null or { Count: 0 } } ? null : joint;
 
     private static VisualDefinition? Normalize(VisualDefinition visual) =>

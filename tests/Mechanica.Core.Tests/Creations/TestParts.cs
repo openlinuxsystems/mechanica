@@ -9,6 +9,7 @@ internal static class TestParts
     public const string Block = "test:block";
     public const string Beam = "test:beam";
     public const string Bearing = "test:bearing";
+    public const string DiscBearing = "test:disc_bearing";
     public const string Capped = "test:capped";
     public const string Piston = "test:piston";
     public const string Ore = "test:ore";
@@ -23,6 +24,10 @@ internal static class TestParts
         .Add(Bearing, Part(PartCategory.Interactive, mass: 3, size: GridSize.One,
             Socket("base", SocketType.Structural, new Vec3(0, -0.125f, 0), new Vec3(0, -1, 0)),
             Socket("rotor", SocketType.Rotational, new Vec3(0, 0.125f, 0), new Vec3(0, 1, 0))))
+        // The same with a thin disc: what goes on the rotor sits 0.17 m back, flush on the disc.
+        .Add(DiscBearing, Part(PartCategory.Interactive, mass: 3, size: GridSize.One,
+            Socket("base", SocketType.Structural, new Vec3(0, -0.125f, 0), new Vec3(0, -1, 0)),
+            Socket("rotor", SocketType.Rotational, new Vec3(0, 0.125f, 0), new Vec3(0, 1, 0)) with { Joint = new JointDefinition { Inset = 0.17f } }))
         // Not a block, so only top and bottom attach.
         .Add(Capped, Part(PartCategory.Interactive, mass: 4, size: GridSize.One,
             Socket("top", SocketType.Structural, new Vec3(0, 0.125f, 0), new Vec3(0, 1, 0)),

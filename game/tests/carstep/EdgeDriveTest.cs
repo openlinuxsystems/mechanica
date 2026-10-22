@@ -18,7 +18,7 @@ namespace Mechanica.Game.Tests;
 /// </summary>
 public partial class EdgeDriveTest : StagedTest
 {
-    private const float Height = 0.25f, Bevel = 0.06f, FrontWheels = 1.32f, WheelRadius = 0.36f;
+    private const float Height = 0.25f, Bevel = 0.06f, FrontWheels = 1.21f, WheelRadius = 0.36f;
 
     // Each run: where the front wheels' centres start from the edge (at most against it), and whether W is pressed in
     // short pushes rather than held.

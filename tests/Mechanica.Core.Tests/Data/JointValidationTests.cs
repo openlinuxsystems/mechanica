@@ -22,6 +22,7 @@ public class JointValidationTests
     [Theory]
     [InlineData("""{ "id": "rotor", "type": "rotational", "position": [0, 0.125, 0], "normal": [0, 1, 0] }""")]
     [InlineData("""{ "id": "rotor", "type": "rotational", "position": [0, 0.125, 0], "normal": [0, 1, 0], "joint": { "min": -0.5, "max": 0.5 } }""")]
+    [InlineData("""{ "id": "rotor", "type": "rotational", "position": [0, 0.125, 0], "normal": [0, 1, 0], "joint": { "inset": 0.17 } }""")]
     [InlineData("""{ "id": "head", "type": "linear", "position": [0, 0.125, 0], "normal": [0, 1, 0], "joint": { "max": 1 } }""")]
     [InlineData("""{ "id": "mount", "type": "spring", "position": [0.125, 0, 0], "normal": [1, 0, 0], "joint": { "axis": [0, 1, 0], "min": -0.1, "max": 0.1, "stiffness": 8000, "damping": 500 } }""")]
     [InlineData("""{ "id": "turret", "type": "aimed", "position": [0, 0.125, 0], "normal": [0, 1, 0], "joint": { "pitch_axis": [1, 0, 0], "pitch_min": -0.3, "pitch_max": 0.8 } }""")]
@@ -52,6 +53,9 @@ public class JointValidationTests
     [InlineData("""{ "id": "s", "type": "aimed", "position": [0, 0.125, 0], "normal": [0, 1, 0], "joint": { "pitch_axis": [1, 0, 0], "pitch_min": -0.3, "pitch_max": 0.3, "pivot": [0, 0.5, 0] } }""", "$.sockets[1].joint.pivot", "within the part's")]
     [InlineData("""{ "id": "s", "type": "aimed", "position": [0, 0.125, 0], "normal": [0, 1, 0], "joint": { "min": 0.2, "max": 1, "pitch_axis": [1, 0, 0], "pitch_min": -0.3, "pitch_max": 0.3 } }""", "$.sockets[1].joint.min", "include 0")]
     [InlineData("""{ "id": "s", "type": "rotational", "position": [0, 0.125, 0], "normal": [0, 1, 0], "joint": { "pitch_max": 0.3 } }""", "$.sockets[1].joint.pitch_max", "only aimed joints")]
+    [InlineData("""{ "id": "s", "type": "rotational", "position": [0, 0.125, 0], "normal": [0, 1, 0], "joint": { "inset": 0.25 } }""", "$.sockets[1].joint.inset", "less than one block")]
+    [InlineData("""{ "id": "s", "type": "rotational", "position": [0, 0.125, 0], "normal": [0, 1, 0], "joint": { "inset": -0.1 } }""", "$.sockets[1].joint.inset", "at least 0")]
+    [InlineData("""{ "id": "s", "type": "linear", "position": [0, 0.125, 0], "normal": [0, 1, 0], "joint": { "max": 1, "inset": 0.1 } }""", "$.sockets[1].joint.inset", "only rotational joints")]
     public void BadJointsGiveClearErrors(string socket, string path, string messagePart)
     {
         var error = Assert.Single(Check(socket), d => d.Severity == DiagnosticSeverity.Error);

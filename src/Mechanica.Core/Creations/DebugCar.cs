@@ -73,13 +73,13 @@ public static class DebugCar
     public const int Length = 12;
 
     /// <summary>The cell row of the front and rear axles.</summary>
-    public const int FrontAxle = 1, RearAxle = 10;
+    public const int FrontAxle = 1, RearAxle = 9;
 
     /// <summary>
-    /// The cell under the middle of the car at wheel-bottom height: the deck's centre, two cells down for the axles and
+    /// The cell under the middle of the car at wheel-bottom height: the deck's centre, a cell down for the rear axle and
     /// one and a half for the wheel radius.
     /// </summary>
-    public static Vec3 GroundPoint => new(MechanicaInfo.FromGridCell(Width - 1) / 2f, MechanicaInfo.FromGridCell(-2) - 1.5f * MechanicaInfo.GridSize,
+    public static Vec3 GroundPoint => new(MechanicaInfo.FromGridCell(Width - 1) / 2f, MechanicaInfo.FromGridCell(-1) - 1.5f * MechanicaInfo.GridSize,
         MechanicaInfo.FromGridCell(Length - 1) / 2f);
 
     /// <summary>
@@ -98,16 +98,16 @@ public static class DebugCar
         var engine = Place(car, "vanilla:scrap_gas_engine", new GridCell(0, 1, 9));
         var container = Place(car, "vanilla:gas_container", new GridCell(2, 1, 9));
 
-        // The front axle: a Scrap Metal beam hanging off an upright bearing under the deck.
+        // The front axle: a Scrap Metal beam hanging off an upright bearing under the deck. It sits flush on the bearing's
+        // disc (the rotor's inset), 0.17 m up from the grid, so the rear axle hangs right under the deck to match it.
         var steering = Place(car, "vanilla:bearing", new GridCell(2, -1, FrontAxle), Facing(new GridCell(0, -1, 0)));
         Place(car, "vanilla:scrap_metal_block", new GridCell(2, -2, FrontAxle));
         foreach (var x in new[] { 1, 0, 3, 4, 5 })
             Place(car, "vanilla:scrap_metal_block", new GridCell(x, -2, FrontAxle));
-        // The rear axle: a beam on two posts down from the deck.
-        foreach (var x in new[] { 0, Width - 1 })
-            Place(car, "vanilla:scrap_metal_block", new GridCell(x, -1, RearAxle));
+        // The rear axle: a beam under the deck, right under the engine so the driven wheels carry its weight (they grip
+        // well enough to push the free front wheels up a step from standing).
         for (var x = 0; x < Width; x++)
-            Place(car, "vanilla:scrap_metal_block", new GridCell(x, -2, RearAxle));
+            Place(car, "vanilla:scrap_metal_block", new GridCell(x, -1, RearAxle));
 
         var free = new List<int>();
         var driven = new List<int>();
@@ -116,7 +116,7 @@ public static class DebugCar
             foreach (var side in new[] { -1, 1 })
             {
                 var outward = new GridCell(side, 0, 0);
-                var bearing = new GridCell(side < 0 ? -1 : Width, -2, z);
+                var bearing = new GridCell(side < 0 ? -1 : Width, z == FrontAxle ? -2 : -1, z);
                 var rotation = Facing(outward);
                 (z == FrontAxle ? free : driven).Add(Place(car, "vanilla:bearing", bearing, rotation));
                 Place(car, "vanilla:scrap_wheel", bearing + outward - rotation.Apply(new GridCell(1, 0, 1)), rotation);

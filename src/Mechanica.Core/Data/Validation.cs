@@ -296,6 +296,10 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             sink.Error(Code, $"{path}.shaft_radius", "shaft_radius must be more than 0 and at most 1 m.");
         else if (j.ShaftRadius is not null && type is SocketType.Rotational or SocketType.Aimed)
             sink.Error(Code, $"{path}.shaft_radius", "only linear and spring joints draw a shaft.");
+        if (j.Inset is { } inset && (!float.IsFinite(inset) || inset < 0 || inset >= MechanicaInfo.GridSize))
+            sink.Error(Code, $"{path}.inset", $"inset must be at least 0 and less than one block ({MechanicaInfo.GridSize} m).");
+        else if (j.Inset is not null && type != SocketType.Rotational)
+            sink.Error(Code, $"{path}.inset", "only rotational joints have an inset.");
         foreach (var (value, key) in new[] { (j.Min, "min"), (j.Max, "max"), (j.Stiffness, "stiffness"), (j.Damping, "damping"), (j.PitchMin, "pitch_min"), (j.PitchMax, "pitch_max") })
         {
             if (value is { } v && !float.IsFinite(v))

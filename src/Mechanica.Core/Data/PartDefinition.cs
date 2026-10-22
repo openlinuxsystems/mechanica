@@ -1483,6 +1483,13 @@ public sealed record JointDefinition
     public float? ShaftRadius { get; init; }
 
     /// <summary>
+    /// Rotational joints only: how far (m) the part built on the socket sits back from the socket's face, toward the joint
+    /// part, at the joint's zero. A bearing's disc is thinner than its block, so whatever goes on its rotor sits flush on
+    /// the disc instead of at the next grid cell. Omitted means 0 (on the grid). Less than one block.
+    /// </summary>
+    public float? Inset { get; init; }
+
+    /// <summary>
     /// Aimed joints only: the point both axes turn about, relative to the part centre in m (the turret seat's hips).
     /// Omitted means the socket's own position.
     /// </summary>

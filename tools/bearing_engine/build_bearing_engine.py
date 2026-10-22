@@ -6,10 +6,10 @@ What it builds (procedurally, from scratch: no .blend inputs, no downloads):
   bearing itself is the spec's 25 cm x 8 cm disc lying on that face: a segmented gunmetal casing in two halves with
   bolt holes round the side, a matte black band between them with a thin teal line (the turning interface), and on
   its face a black ring with a teal accent round a machined silver hub (four bolt holes, a raised boss with the axle
-  hole). Our build grid puts the turning side's parts on the next cell, so a short silver axle runs from the hub to a
-  mounting flange flush with the far face, marked with a teal notch so turning shows. Two nodes: ``Stator`` (stays
-  with the block it is placed on) and ``rotor`` (the turning half, hub, axle and flange: named after the part's
-  rotational socket, so the game turns it with what is attached there).
+  hole) with a teal notch so turning shows. Nothing else: no axle. Whatever goes on the rotor sits flush on the disc's
+  face (the rotor socket's ``inset`` of 0.17 m in the part data), as in Scrap Mechanic. Two nodes: ``Stator`` (stays
+  with the block it is placed on) and ``rotor`` (the turning half and hub: named after the part's rotational socket,
+  so the game turns it with what is attached there).
 * ``mods/vanilla/meshes/parts/scrap_gas_engine.glb`` - the Scrap Gas Engine, 2 x 2 x 2 blocks (0.5 m cube), front (+Y in
   Blender, the game's -Z) with the control panel. Mismatched rusty plates with bolts, duct tape, a fuel cap on top,
   round bearing flanges on both sides, crude copper and black pipes, loose wires, two exhaust stubs at the back,
@@ -76,9 +76,6 @@ B_BOTTOM = -0.125            # the face it is placed on
 B_THICK = 0.08               # 8 cm disc
 B_TOP = B_BOTTOM + B_THICK   # -0.045: the disc's face
 B_SPLIT0, B_SPLIT1 = B_BOTTOM + 0.027, B_TOP - 0.024   # the black band between the casing halves
-B_AXLE_R = 0.021
-B_FLANGE_R, B_FLANGE_T = 0.07, 0.018
-B_FAR = 0.125                # the rotor face, where the next cell starts
 SEGMENTS = 16                # casing segments round the edge
 
 # ---- Engine (metres; 0.5 m cube centred on the origin, front +Y) ------------------------------------
@@ -204,7 +201,7 @@ def build_bearing_stator():
     return g
 
 
-def build_bearing_rotor(with_axle=True):
+def build_bearing_rotor():
     g = Geo()
     z0, z1 = B_SPLIT1, B_TOP
     casing_half(g, z0, z1)
@@ -231,20 +228,8 @@ def build_bearing_rotor(with_axle=True):
     boss_top = hub_top + 0.007
     lathe(g, [(0.016, hub_top - 0.001), (0.03, hub_top - 0.001), (0.03, boss_top - 0.002), (0.028, boss_top), (0.016, boss_top)], "silver", steps=40)
     disc(g, (0, 0, boss_top - 0.004), (0, 0, 1), 0.0165, "hole", segs=24)
-    if with_axle:
-        # the axle up to the mounting flange flush with the far face
-        cylinder(g, (0, 0, boss_top - 0.004), (0, 0, B_FAR - B_FLANGE_T), B_AXLE_R, "silver", segs=24, cap0=False, cap1=False)
-        ring(g, B_FAR - B_FLANGE_T - 0.014, B_FAR - B_FLANGE_T, B_AXLE_R, 0.03, "gunmetal", segs=32)   # collar
-        lathe(g, [(0.0, B_FAR - B_FLANGE_T), (B_FLANGE_R - 0.004, B_FAR - B_FLANGE_T), (B_FLANGE_R, B_FAR - B_FLANGE_T + 0.004),
-                  (B_FLANGE_R, B_FAR - 0.003), (B_FLANGE_R - 0.003, B_FAR), (0.0, B_FAR)], "silver", steps=48)
-        for k in range(4):
-            a = math.pi / 4 + k * math.pi / 2
-            bolt_hole(g, (0.047 * math.cos(a), 0.047 * math.sin(a), B_FAR), (0, 0, 1), 0.0062, "silver")
-        bolt_hole(g, (0, 0, B_FAR), (0, 0, 1), 0.012, "silver")
-        # the teal notch: a mark on the flange's face and rim, so the turning (and its direction) shows
-        box(g, (0.054, 0, B_FAR + 0.0003), (0.012, 0.0035, 0.0004), "teal")
-        quad(g, [(B_FLANGE_R + 0.0003, -0.0035, B_FAR - B_FLANGE_T + 0.004), (B_FLANGE_R + 0.0003, 0.0035, B_FAR - B_FLANGE_T + 0.004),
-                 (B_FLANGE_R + 0.0003, 0.0035, B_FAR - 0.003), (B_FLANGE_R + 0.0003, -0.0035, B_FAR - 0.003)], "teal")
+    # the teal notch: a mark across the hub's rim, so the turning (and its direction) shows
+    box(g, (0.0575, 0, hub_top + 0.0003), (0.011, 0.0035, 0.0004), "teal")
     return g
 
 
@@ -496,10 +481,10 @@ def make_object(name, g, mats, parent=None, location=(0, 0, 0)):
     return bl.make_object(name, g, mats, parent, location)
 
 
-def build_bearing_scene(mats, with_axle=True):
+def build_bearing_scene(mats):
     root = bl.make_empty("Bearing")
     make_object("Stator", build_bearing_stator(), mats, root)
-    make_object("rotor", build_bearing_rotor(with_axle), mats, root)
+    make_object("rotor", build_bearing_rotor(), mats, root)
     return root
 
 
@@ -877,7 +862,7 @@ def main():
     export(rig["root"], MESHES / "parts" / "scrap_gas_engine.glb", animations=True)
 
     # icons: the engine three-quarter from the front left (panel and flange, as in the reference), the bearing disc
-    # tipped toward the camera (as in the reference's three-quarter view), without its axle
+    # tipped toward the camera (as in the reference's three-quarter view)
     bpy.context.scene.frame_set(0)
     for ob in mesh_tree(rig["root"]):
         if ob.animation_data:
@@ -886,12 +871,14 @@ def main():
     rig["lever"].rotation_euler = Euler((0.0, lever_angle(1 / 3), 0.0))
     for ob in mesh_tree(bearing):
         ob.hide_render = True
-    icon_bearing = build_bearing_scene(mats, with_axle=False)
+    icon_bearing = build_bearing_scene(mats)
     icon_bearing.name = "IconBearing"
     icon_bearing.location = (3.0, 0, 0)
     icon_bearing.rotation_euler = Euler((math.radians(62), 0, math.radians(-38)))
+    # aimed at the disc's middle, which sits below the block's centre
+    disc_mid = icon_bearing.location + icon_bearing.rotation_euler.to_matrix() @ Vector((0, 0, (B_BOTTOM + B_TOP) / 2))
     render_icon(mesh_tree(icon_bearing), ICONS / "bearing_icon.png", view=(0.9, -2.0, 1.25), ortho=0.33,
-                target=(3.0, 0, 0))
+                target=tuple(disc_mid))
     render_icon(mesh_tree(rig["root"]), ICONS / "scrap_gas_engine_icon.png", view=(1.55, 2.0, 1.45), ortho=0.98)
     for p in (MESHES / "parts" / "bearing.glb", MESHES / "parts" / "scrap_gas_engine.glb", ICONS / "bearing_icon.png", ICONS / "scrap_gas_engine_icon.png"):
         print(f"wrote {p.relative_to(REPO)} ({p.stat().st_size // 1024} KiB)")
