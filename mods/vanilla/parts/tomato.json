@@ -26,6 +26,7 @@
     "juice": "#c83a2a"
   },
   "properties": {
-    "health": 20
+    "health": 20,
+    "eat_seconds": 1.4
   }
 }

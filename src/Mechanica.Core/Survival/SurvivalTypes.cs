@@ -106,8 +106,9 @@ public sealed record SetFriendlyFireArgs(bool On);
 /// <param name="Water">Seconds of water left.</param>
 /// <param name="Capacity">Most seconds of water the soil holds.</param>
 /// <param name="Wetness">How wet the soil looks: dry, watered, wet or drying.</param>
+/// <param name="Boost">How many times faster than normal the crop grows (1 normally; Fertilizer raises it until the harvest).</param>
 public sealed record SoilView(int Creation, int Part, string? Seed = null, string? Crop = null, int Stage = 0, float Water = 0, float Capacity = 0,
-    SoilWetness Wetness = SoilWetness.Dry)
+    SoilWetness Wetness = SoilWetness.Dry, float Boost = 1f)
 {
     /// <summary>True when the crop can be harvested.</summary>
     public bool Ripe => Seed is not null && Stage >= SoilState.Stages;

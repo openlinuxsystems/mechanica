@@ -125,7 +125,7 @@ public partial class LocalPlayerInput : Node
             _yaw,
             _pitch,
             playing && !down && Input.IsActionPressed(Jump),
-            playing && Input.IsActionPressed(Sprint),
+            playing && Input.IsActionPressed(Sprint) && Target.CanSprint,
             playing && Input.IsActionPressed(Crawl));
     }
 }

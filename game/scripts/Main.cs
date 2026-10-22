@@ -166,13 +166,18 @@ public partial class Main : Node3D
         return root;
     }
 
-    /// <summary>How a bite of the held item numbered <paramref name="index"/> (<see cref="HeldItems"/>) shows: its colour and its <c>eat</c> sound.</summary>
+    /// <summary>
+    /// How a bite of the held item numbered <paramref name="index"/> (<see cref="HeldItems"/>) shows: its colour and its
+    /// <c>eat</c> sound, or for a drink (<see cref="Core.Survival.FoodUse"/>) its <c>drink</c> sound and no juice.
+    /// </summary>
     public HeldBite? HeldBite(ushort index)
     {
         if (HeldItems.IdOf(index) is not { } id || Mods?.Parts.GetValueOrDefault(id) is not { } part)
             return null;
         var juice = (part.Definition.Held?.Juice ?? part.Definition.Visual?.Color) is { } color && Color.HtmlIsValid(color) ? Color.FromHtml(color) : new Color(0.8f, 0.25f, 0.2f);
-        return new HeldBite(juice, Core.Sound.PartSounds.For(part.Definition, "eat"), part.ModId);
+        var drink = Core.Survival.FoodUse.Of(part.Definition).Drink;
+        var sound = (drink ? Core.Sound.PartSounds.For(part.Definition, "drink") : null) ?? Core.Sound.PartSounds.For(part.Definition, "eat");
+        return new HeldBite(juice, sound, part.ModId, drink);
     }
 
     /// <summary>

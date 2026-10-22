@@ -28,7 +28,7 @@ internal static class CatalogSounds
         "fabricator_work", "fabricator_complete", "refiner_start", "refiner_work", "refiner_complete", "bed_use",
         "bed_set", "radio_on", "radio_tune", "radio_off", "light_on", "light_off", "beacon_activate", "beacon_ping",
         "pickup_metal", "drop_metal", "pickup_wood", "drop_wood", "pickup_component", "drop_component", "pickup_fuel",
-        "pickup_battery", "pickup_produce", "seed_place", "seed_pickup", "eat_crunch", "eat_soft", "blaster_fire",
+        "pickup_battery", "pickup_produce", "seed_place", "seed_pickup", "eat_crunch", "eat_soft", "drink_gulp", "fertilizer_use", "blaster_fire",
         "blaster_reload", "scattergun_fire", "scattergun_pump", "launcher_fire", "popper_explode", "bucket_fill", "bucket_throw",
         "water_splash", "scuttler_idle",
         "scuttler_alert", "scuttler_attack", "scuttler_death", "rakehand_idle", "rakehand_alert", "rakehand_attack",

@@ -22,6 +22,7 @@ public partial class SoilLooks : Node3D
     private static readonly StringName WetName = SoilMaterial.Wet;
     private static readonly StringName DryingName = SoilMaterial.Drying;
     private static readonly StringName FlashName = SoilMaterial.Flash;
+    private static readonly StringName FertilizedName = SoilMaterial.Fertilized;
 
     /// <summary>Seconds a change of wetness takes to blend in.</summary>
     public const float BlendTime = 1.5f;
@@ -46,6 +47,7 @@ public partial class SoilLooks : Node3D
         public float Wet;
         public float Drying;
         public float Flash;
+        public float Fertilized;
         public float Water;
         public double SpillStart = -1;
         public Node3D? Bag;
@@ -55,7 +57,7 @@ public partial class SoilLooks : Node3D
         public Node3D? PartNode;
         public Node3D? Model;
         public MeshInstance3D[] Meshes = [];
-        public (float Wet, float Drying, float Flash) Shown = (float.NaN, 0, 0);
+        public (float Wet, float Drying, float Flash, float Fertilized) Shown = (float.NaN, 0, 0, 0);
     }
 
     /// <summary>The live Creations. Set before adding to the tree.</summary>
@@ -79,6 +81,9 @@ public partial class SoilLooks : Node3D
     /// <summary>How wet a mound looks right now (0 dry to 1 soaked) and how much drying crust it shows; null for no mound.</summary>
     public (float Wet, float Drying)? LookOf(int creation, int part) =>
         _looks.TryGetValue((creation, part), out var look) ? (look.Wet, look.Drying) : null;
+
+    /// <summary>How much of a fertilized crop's granules a mound shows right now (0 to 1); null for no mound.</summary>
+    public float? FertilizedOf(int creation, int part) => _looks.TryGetValue((creation, part), out var look) ? look.Fertilized : null;
 
     /// <summary>The look a wetness blends towards: how wet, and how much drying crust.</summary>
     public static (float Wet, float Drying) Target(SoilWetness wetness) => wetness switch
@@ -133,6 +138,7 @@ public partial class SoilLooks : Node3D
                 look.Wet = Mathf.MoveToward(look.Wet, wet, step);
                 look.Drying = Mathf.MoveToward(look.Drying, drying, step);
                 look.Flash = Mathf.MoveToward(look.Flash, 0f, (float)delta * 2f);
+                look.Fertilized = Mathf.MoveToward(look.Fertilized, view is { Seed: not null, Boost: > 1f } ? 1f : 0f, step);
                 Apply(look);
                 Settle(look, node, part, model, now);
             }
@@ -155,7 +161,7 @@ public partial class SoilLooks : Node3D
         look.PartNode = partNode;
         look.Model = model;
         look.Meshes = SoilMeshes(model);
-        look.Shown = (float.NaN, 0, 0);
+        look.Shown = (float.NaN, 0, 0, 0);
         foreach (var mesh in look.Meshes)
         {
             for (var i = 0; i < mesh.GetSurfaceOverrideMaterialCount(); i++)
@@ -181,7 +187,7 @@ public partial class SoilLooks : Node3D
     // Sets the look on the meshes when it changed.
     private static void Apply(Look look)
     {
-        var shown = (look.Wet, look.Drying, look.Flash);
+        var shown = (look.Wet, look.Drying, look.Flash, look.Fertilized);
         if (shown == look.Shown)
             return;
         look.Shown = shown;
@@ -192,6 +198,7 @@ public partial class SoilLooks : Node3D
             mesh.SetInstanceShaderParameter(WetName, look.Wet);
             mesh.SetInstanceShaderParameter(DryingName, look.Drying);
             mesh.SetInstanceShaderParameter(FlashName, look.Flash);
+            mesh.SetInstanceShaderParameter(FertilizedName, look.Fertilized);
         }
     }
 

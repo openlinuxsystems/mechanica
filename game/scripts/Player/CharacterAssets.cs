@@ -10,7 +10,7 @@ namespace Mechanica.Game.Player;
 /// How a bite of a held food shows: the juice that sprays in <paramref name="Juice"/>, and the sound id
 /// <paramref name="Sound"/> (its <c>eat</c> sound, in mod <paramref name="ModId"/>) that plays, or null for none.
 /// </summary>
-public sealed record HeldBite(Color Juice, string? Sound, string ModId);
+public sealed record HeldBite(Color Juice, string? Sound, string ModId, bool Drink = false);
 
 /// <summary>
 /// The player characters' models, the shared animation set and the hand-held props, loaded at runtime from

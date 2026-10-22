@@ -759,7 +759,9 @@
         { "item": "glowstick", "count": 1, "count_max": 2, "weight": 1.0 },
         { "item": "paint_ammo", "count": 5, "count_max": 10, "weight": 1.0 },
         { "item": "fire_extinguisher", "count": 2, "count_max": 4, "weight": 1.0 },
-        { "item": "circuit_board", "count": 1, "weight": 1.0 }
+        { "item": "circuit_board", "count": 1, "weight": 1.0 },
+        { "item": "bloom_tea", "count": 1, "count_max": 2, "weight": 2.0 },
+        { "item": "fertilizer", "count": 1, "count_max": 3, "weight": 1.0 }
       ]
     },
     "epic": {
@@ -772,7 +774,10 @@
         { "item": "chemical", "count": 2, "count_max": 3, "weight": 2.0 },
         { "item": "glowstick", "count": 2, "count_max": 4, "weight": 1.0 },
         { "item": "fire_extinguisher", "count": 2, "count_max": 4, "weight": 1.0 },
-        { "item": "popper", "count": 1, "weight": 1.0 }
+        { "item": "popper", "count": 1, "weight": 1.0 },
+        { "item": "bloom_tea", "count": 2, "count_max": 3, "weight": 2.0 },
+        { "item": "fertilizer", "count": 2, "count_max": 4, "weight": 1.0 },
+        { "item": "grazer_shake", "count": 1, "weight": 1.0 }
       ]
     },
     "legendary": {
@@ -782,13 +787,15 @@
         { "item": "component_kit", "count": 4, "count_max": 6, "weight": 3.0 },
         { "item": "chemical", "count": 3, "count_max": 5, "weight": 2.0 },
         { "item": "popper", "count": 1, "count_max": 2, "weight": 2.0 },
-        { "item": "potato_blaster", "count": 1, "weight": 1.0 }
+        { "item": "potato_blaster", "count": 1, "weight": 1.0 },
+        { "item": "grazer_shake", "count": 1, "count_max": 2, "weight": 2.0 }
       ]
     },
     // What the world's containers come filled with (POI part markers' "loot"; draws from "loot_rolls"), as Scrap
     // Mechanic's: lockers hold food, cloth and components; file cabinets office stock (glue, ink) and components; a broken
     // microwave scrap or a circuit board; ruin chests (which refill, "refill_days") a bit of everything. Resources stay
-    // plentiful.
+    // plentiful. Bloom Tea and Grazer Shake are loot only (consumables batch C2): tea in crates, lockers and Bloom Pods, the
+    // full-heal shake rarer (lockers, purple and gold pods); Fertilizer in pods, crates and ruin chests.
     "locker": {
       "items": [
         { "item": "carrot", "count": 2, "count_max": 5, "weight": 3.0 },
@@ -798,7 +805,9 @@
         { "item": "cotton", "count": 2, "count_max": 4, "weight": 2.0 },
         { "item": "glowstick", "count": 1, "count_max": 2, "weight": 2.0 },
         { "item": "carrot_seed", "count": 2, "count_max": 4, "weight": 1.0 },
-        { "item": "battery_pack", "count": 1, "weight": 1.0 }
+        { "item": "battery_pack", "count": 1, "weight": 1.0 },
+        { "item": "bloom_tea", "count": 1, "count_max": 2, "weight": 2.0 },
+        { "item": "grazer_shake", "count": 1, "weight": 0.5 }
       ]
     },
     "file_cabinet": {
@@ -832,7 +841,9 @@
         { "item": "tomato_seed", "count": 2, "count_max": 4, "weight": 1.0 },
         { "item": "cotton_seed", "count": 2, "count_max": 4, "weight": 1.0 },
         { "item": "fire_extinguisher", "count": 2, "count_max": 4, "weight": 1.0 },
-        { "item": "popper", "count": 1, "weight": 1.0 }
+        { "item": "popper", "count": 1, "weight": 1.0 },
+        { "item": "bloom_tea", "count": 1, "count_max": 2, "weight": 1.0 },
+        { "item": "fertilizer", "count": 1, "count_max": 3, "weight": 1.0 }
       ]
     },
     // The POI loot crates (wooden crates at camps, ruins, kiosks and the like, and the Workshops' chest and dispenser).
@@ -847,7 +858,9 @@
         { "item": "potato_seed", "count": 2, "count_max": 4, "weight": 1.0 },
         { "item": "gasoline", "count": 1, "count_max": 2, "weight": 1.0 },
         { "item": "fire_extinguisher", "count": 2, "count_max": 4, "weight": 1.0 },
-        { "item": "glue", "count": 1, "weight": 1.0 }
+        { "item": "glue", "count": 1, "weight": 1.0 },
+        { "item": "bloom_tea", "count": 1, "count_max": 2, "weight": 1.5 },
+        { "item": "fertilizer", "count": 1, "count_max": 2, "weight": 1.0 }
       ]
     },
     // The warehouses' metal crates.

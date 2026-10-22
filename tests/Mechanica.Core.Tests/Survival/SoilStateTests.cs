@@ -39,6 +39,33 @@ public sealed class SoilStateTests
     }
 
     [Fact]
+    public void ABoostLastsUntilTheHarvestAndNeedsACrop()
+    {
+        var soil = new SoilState();
+        Assert.Equal(1f, soil.Boost);
+        soil.Set(boost: 15);
+        Assert.Equal(1f, soil.Boost); // nothing planted
+
+        soil.Plant("vanilla:carrot_seed");
+        var revision = soil.Revision;
+        soil.Set(boost: 15);
+        Assert.Equal(15f, soil.Boost);
+        Assert.NotEqual(revision, soil.Revision); // sent to clients
+        revision = soil.Revision;
+        soil.Set(boost: 15);
+        Assert.Equal(revision, soil.Revision);
+        Assert.Throws<ArgumentOutOfRangeException>(() => soil.Set(boost: 0.5f));
+        Assert.Throws<ArgumentOutOfRangeException>(() => soil.Set(boost: SoilState.MaxBoost + 1));
+
+        soil.Clear();
+        Assert.Equal(1f, soil.Boost);
+        soil.Plant("vanilla:carrot_seed");
+        Assert.Equal(1f, soil.Boost);
+        soil.Load("vanilla:carrot_seed", 3, 10, boost: 4);
+        Assert.Equal(4f, soil.Boost);
+    }
+
+    [Fact]
     public void LoadingKeepsSoakedOnlyWithWater()
     {
         var soil = new SoilState();

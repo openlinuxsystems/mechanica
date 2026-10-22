@@ -87,6 +87,9 @@ public class VanillaCharactersTests
         Assert.Equal(CharacterGesture.Eat, settings.PoseFor("vanilla:carrot", "consumable").Gesture);
         Assert.Equal(CharacterProp.Food, settings.PoseFor("vanilla:tomato", "consumable").Prop);
         Assert.Equal([0.3f, 0.52f], settings.Eat.Bites);
+        Assert.Equal([0.25f, 0.4f], settings.Drink.Bites);
+        Assert.Equal((0.6f, 0.67f), (settings.Drink.Gone, settings.Drink.Seconds));
+        Assert.Equal(new ItemPose { Prop = CharacterProp.Item, Gesture = CharacterGesture.Plant }, settings.PoseFor("vanilla:fertilizer", "consumable"));
         Assert.Equal(CharacterGesture.FireGun, settings.PoseFor("vanilla:potato_scattergun", "weapon").Gesture);
         Assert.Equal(CharacterProp.PotatoBlaster, settings.PoseFor("vanilla:potato_blaster", "weapon").Prop);
         Assert.Equal(CharacterProp.PotatoScattergun, settings.PoseFor("vanilla:potato_scattergun", "weapon").Prop);
@@ -100,6 +103,8 @@ public class VanillaCharactersTests
     [InlineData("""{ "head_pitch_share": 2 }""")]
     [InlineData("""{ "eat": { "bites": [0.5, 0.3] } }""")]
     [InlineData("""{ "eat": { "bites": [0.3], "gone": 0.2 } }""")]
+    [InlineData("""{ "drink": { "bites": [0.4, 0.25] } }""")]
+    [InlineData("""{ "drink": { "bites": [0.3], "gone": 0.2 } }""")]
     [InlineData("""{ "item_poses": { "x": { "prop": "laser" } } }""")]
     [InlineData("""{ "nonsense": 1 }""")]
     [InlineData("""{ "first_person_offset": [0, 1] }""")]

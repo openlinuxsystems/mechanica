@@ -909,6 +909,38 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         return SoilViewOf(creation, partId);
     }
 
+    /// <summary>
+    /// Why <paramref name="caller"/> cannot make the crop in the soil part grow <paramref name="boost"/> times faster:
+    /// nothing growing, a ripe crop, or one boosted that much already; null when they can.
+    /// </summary>
+    public string? CheckBoost(ActionCaller caller, int creationId, int partId, float boost)
+    {
+        if (!(float.IsFinite(boost) && boost is > 1f and <= SoilState.MaxBoost))
+            return $"A boost must be more than 1 and at most {SoilState.MaxBoost:0}.";
+        if (CheckSoil(caller, creationId, partId) is { } bad)
+            return bad;
+        var soil = world.FindCreation(creationId)!.SoilOf(partId)!;
+        if (soil.Seed is null)
+            return "Nothing is growing there.";
+        if (soil.Ripe)
+            return "That crop is already ripe.";
+        return soil.Boost >= boost ? "That crop already grows that fast." : null;
+    }
+
+    /// <summary>
+    /// Makes the crop in the soil part grow <paramref name="boost"/> times faster until it is harvested (the soil's script
+    /// multiplies <see cref="SoilState.Boost"/> into growth). The item's script uses itself up. Throws when
+    /// <see cref="CheckBoost"/> refuses.
+    /// </summary>
+    public SoilView BoostSoil(ActionCaller caller, int creationId, int partId, float boost)
+    {
+        if (CheckBoost(caller, creationId, partId, boost) is { } bad)
+            throw new InvalidOperationException(bad);
+        var creation = world.FindCreation(creationId)!;
+        creation.SoilOf(partId)!.Set(boost: boost);
+        return SoilViewOf(creation, partId);
+    }
+
     private string? FindSoil(int creationId, int partId, out SoilState? soil, out PartDefinition? definition)
     {
         soil = null;
@@ -927,7 +959,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         var crop = soil.Seed is { } id ? CropOf(id, catalog.FindDefinition(id)?.Seed) : null;
         var definition = creation.DefinitionOf(partId).Soil;
         return new SoilView(creation.Id, partId, soil.Seed, crop, soil.Stage, soil.Water, definition?.Capacity ?? 0,
-            soil.Wetness(SoilState.WetAt(definition)));
+            soil.Wetness(SoilState.WetAt(definition)), soil.Boost);
     }
 
     // The qualified item a seed grows into: a bare id is in the seed's own mod.

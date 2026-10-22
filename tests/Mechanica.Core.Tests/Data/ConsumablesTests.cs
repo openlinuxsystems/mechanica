@@ -9,6 +9,7 @@ namespace Mechanica.Core.Tests.Data;
 /// <c>mods/vanilla/editor/batches/consumables.json</c>, and the consumables we have take the wiki's stats (1.5 kg per weight
 /// bar; durability = bars; friction and buoyancy = bars / 10), the Food page's heals and the wiki's recipes, with Ember for
 /// Glow. Emptying a Chemical Bucket at the Fabricator gives the empty Water Bucket back as the recipe's second output.
+/// Batch C2b adds the drinks (Bloom Tea, Grazer Shake: loot only) and Fertilizer, made from Ember and a full Water Bucket.
 /// </summary>
 public class ConsumablesTests
 {
@@ -27,11 +28,14 @@ public class ConsumablesTests
     [InlineData("gasoline", 20, 2, 0.4, 0.7, 20)]
     [InlineData("glowstick", 3, 2, 0.4, 0.7, 20)]
     [InlineData("paint_ammo", 3, 2, 0.4, 0.7, 50)]
-    public void TakesTheWikiStats(string id, double mass, int durability, double friction, double buoyancy, int stack)
+    [InlineData("fertilizer", 3, 2, 0.4, 0.7, 20)]
+    [InlineData("bloom_tea", 3, 1, 0.4, 0.7, 10, false)]
+    [InlineData("grazer_shake", 3, 1, 0.4, 0.7, 10, false)]
+    public void TakesTheWikiStats(string id, double mass, int durability, double friction, double buoyancy, int stack, bool flammable = true)
     {
         var part = Part(id);
 
-        Assert.Equal((mass, durability, friction, buoyancy, true, stack),
+        Assert.Equal((mass, durability, friction, buoyancy, flammable, stack),
             (Math.Round((double)part.Mass!.Value, 3), (int)part.Durability!.Value, Math.Round((double)part.Friction!.Value, 3),
                 Math.Round((double)part.Buoyancy!.Value, 3), part.Flammable!.Value, part.StackSize!.Value));
         Assert.Equal(InventoryTab.Consumable, InventoryTabs.Of(part, false));
@@ -41,12 +45,62 @@ public class ConsumablesTests
     [InlineData("carrot", 25)]
     [InlineData("tomato", 20)]
     [InlineData("potato", 8)]
+    [InlineData("bloom_tea", 20)]
+    [InlineData("grazer_shake", 100)]
     public void FoodHealsTheFoodPagesHealth(string id, int health)
     {
         var part = Part(id);
 
         Assert.Equal("scripts/food.lua", part.Script);
         Assert.Equal(health, part.Properties!["health"]!.GetValue<int>());
+    }
+
+    [Theory]
+    [InlineData("carrot", false, 1.4f)]
+    [InlineData("tomato", false, 1.4f)]
+    [InlineData("potato", false, 1.4f)]
+    [InlineData("bloom_tea", true, 0.67f)]
+    [InlineData("grazer_shake", true, 0.67f)]
+    public void DrinksAreDrunkQuicklyAndFoodIsEatenInBites(string id, bool drink, float seconds)
+    {
+        var part = Part(id);
+
+        Assert.Equal(new Mechanica.Core.Survival.FoodUse(drink, seconds), Mechanica.Core.Survival.FoodUse.Of(part));
+        if (drink)
+            Assert.Equal("drink_gulp", part.Sounds!["drink"]);
+    }
+
+    [Fact]
+    public void TheDrinksAreLootOnly()
+    {
+        var book = RecipeBook.Load(Vanilla.Value);
+        Assert.DoesNotContain(book.All, r => r.Outputs.Any(o => o.Item is "vanilla:bloom_tea" or "vanilla:grazer_shake"));
+        var worldgen = File.ReadAllText(Path.Combine(Mod, "world", "worldgen.json"));
+        Assert.Contains("\"bloom_tea\"", worldgen);
+        Assert.Contains("\"grazer_shake\"", worldgen);
+        Assert.Contains("\"fertilizer\"", worldgen);
+    }
+
+    [Fact]
+    public void FertilizerBoostsGrowthFifteenTimesAndIsMadeFromEmberAndAFullBucket()
+    {
+        var content = Vanilla.Value;
+        var part = Part("fertilizer");
+        Assert.Equal(("scripts/fertilizer.lua", 15f), (part.Script, part.Properties!["boost"]!.GetValue<float>()));
+        Assert.Equal("fertilizer_use", part.Sounds!["use"]);
+
+        var book = RecipeBook.Load(content);
+        var recipe = book.Find("fertilizer")!;
+        Assert.Equal(["vanilla:fabricator"], recipe.Stations);
+        Assert.Equal([("vanilla:ember", 10), ("vanilla:water_bucket_full", 1)], recipe.Inputs.Select(i => (i.Item, i.Count)));
+        Assert.Equal([("vanilla:fertilizer", 5), ("vanilla:water_bucket", 1)], recipe.Outputs.Select(o => (o.Item, o.Count)));
+        Assert.Equal((10f, 1960), (recipe.Time, recipe.Definition.Order));
+
+        var station = Inventory.For(content, content.FindDefinition("vanilla:fabricator")!)!;
+        var queue = new CraftingQueue();
+        queue.Enqueue(new CraftJob(recipe.QualifiedId, 1));
+        Assert.Equal(1, queue.Tick(recipe.Time, 1, book, station));
+        Assert.Equal((5, 1), (station.Count("vanilla:fertilizer"), station.Count("vanilla:water_bucket")));
     }
 
     [Theory]
@@ -93,7 +147,8 @@ public class ConsumablesTests
         var batch = PartBatch.Read(File.ReadAllText(Path.Combine(Mod, "editor", "batches", "consumables.json")), "consumables.json", []);
 
         Assert.Equal(["parts/carrot.json", "parts/tomato.json", "parts/potato.json", "parts/carrot_seed.json", "parts/tomato_seed.json",
-                "parts/potato_seed.json", "parts/cotton_seed.json", "parts/chemical.json", "parts/gasoline.json"],
+                "parts/potato_seed.json", "parts/cotton_seed.json", "parts/chemical.json", "parts/gasoline.json",
+                "parts/bloom_tea.json", "parts/grazer_shake.json", "parts/fertilizer.json"],
             batch!.Parts!.Select(e => e.File));
         // Moved, not copied: no other batch writes these files.
         foreach (var other in Directory.GetFiles(Path.Combine(Mod, "editor", "batches"), "*.json").Where(f => !f.EndsWith("consumables.json", StringComparison.Ordinal)))

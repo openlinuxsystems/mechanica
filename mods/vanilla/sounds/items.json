@@ -104,6 +104,23 @@
       "max_distance": 20
     },
     {
+      "id": "drink_gulp",
+      "clips": [
+        "sounds/items/drink_gulp.ogg",
+        "sounds/items/drink_gulp_2.ogg"
+      ],
+      "pitch_variation": 0.08,
+      "max_distance": 20
+    },
+    {
+      "id": "fertilizer_use",
+      "clips": [
+        "sounds/items/fertilizer_use.ogg"
+      ],
+      "pitch_variation": 0.08,
+      "max_distance": 20
+    },
+    {
       "id": "blaster_fire",
       "clips": [
         "sounds/items/blaster_fire.ogg",

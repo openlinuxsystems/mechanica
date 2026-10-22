@@ -60,6 +60,8 @@ namespace Mechanica.Game.Tools;
 /// (<c>tools/capture-extinguisher.sh</c>).
 /// Given <c>opening</c> it plays the opening cinematic from the spawn and saves stills through it
 /// (<c>tools/capture-opening.sh</c>, which can also record the whole of it).
+/// Given <c>consumables</c> it shows Bloom Tea and a Grazer Shake held and drunk, Fertilizer in hand, and a tomato crop
+/// beside a fertilized one (<c>tools/capture-consumables.sh</c>).
 /// </summary>
 public partial class CaptureScene : Node
 {
@@ -111,6 +113,7 @@ public partial class CaptureScene : Node
         var opening = args.Length > 1 && args[1] == "opening";
         var connectLines = args.Length > 1 && args[1] == "connect_lines";
         var husbandry = args.Length > 1 && args[1] == "husbandry";
+        var consumables = args.Length > 1 && args[1] == "consumables";
         var fields = args.Length > 1 && args[1] == "fields";
         var building = args.Length > 1 && args[1] == "parts_building";
         var formations = args.Length > 1 && args[1] == "formations";
@@ -119,12 +122,12 @@ public partial class CaptureScene : Node
         var ladder = args.Length > 1 && args[1] == "ladder";
         var beds = args.Length > 1 && args[1] == "beds";
         var extinguisher = args.Length > 1 && args[1] == "extinguisher";
-        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !factions && !ladder && !beds && !extinguisher && !connectLines && !husbandry && !fields && !gauges && !building && args[1] != "survey" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !factions && !ladder && !beds && !extinguisher && !connectLines && !husbandry && !consumables && !fields && !gauges && !building && args[1] != "survey" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         // Building the block wall needs Creative: free parts and no build reach.
-        _main.Options = LaunchOptions.Offline with { Seed = args.Length > 1 && args[1] == "survey" ? 1 : 7, GameMode = blocks || building || soil || wheels || portable || liftCapture || connectLines || husbandry ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
+        _main.Options = LaunchOptions.Offline with { Seed = args.Length > 1 && args[1] == "survey" ? 1 : 7, GameMode = blocks || building || soil || wheels || portable || liftCapture || connectLines || husbandry || consumables ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
         // The button shots show the HUD (the creation hotbar), which only a main reading the devices builds.
         _main.ReadDeviceInput = icons || wheels || button || engineMenu || connectLines || gauges;
         _main.DebugCar = debugCar;
@@ -219,6 +222,11 @@ public partial class CaptureScene : Node
         if (connectLines)
         {
             ConnectLineShots();
+            return;
+        }
+        if (consumables)
+        {
+            ConsumableShots();
             return;
         }
         if (husbandry)

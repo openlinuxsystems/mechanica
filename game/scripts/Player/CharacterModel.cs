@@ -204,7 +204,7 @@ public partial class CharacterModel : Node3D
         }
         Pose();
         ShowProp(Animator.ShowProp && Player is not null ? Animator.Prop : CharacterProp.None);
-        ShowHeld(_propShown is CharacterProp.Item or CharacterProp.Food && Player is not null ? Player.ShownHeld : (ushort)0);
+        ShowHeld(_propShown is CharacterProp.Item or CharacterProp.Food or CharacterProp.Drink && Player is not null ? Player.ShownHeld : (ushort)0);
         ShowBites();
         _bucket?.Update(HeldBucket.Target(Assets.Settings.Bucket, _propShown, Animator), (float)delta, PlayFill);
     }
@@ -402,13 +402,19 @@ public partial class CharacterModel : Node3D
     }
 
     // Food being eaten: the held model shows the bites the eat clip has reached, juice sprays and the food's eat sound
-    // plays at each one, and once it is gone the hand is empty until the clip ends.
+    // plays at each one, and once it is gone the hand is empty until the clip ends. A drink does the same with the drink
+    // clip's gulps (its sound, no juice).
     private void ShowBites()
     {
         if (_held is null)
             return;
-        var eating = _propShown == CharacterProp.Food && Animator.Gesture is "eat" or "eat_fp";
-        var bites = eating ? Assets.Settings.Eat.BitesAt(Animator.GestureTime) : 0;
+        var timing = _propShown is not (CharacterProp.Food or CharacterProp.Drink) ? null : Animator.Gesture switch
+        {
+            "eat" or "eat_fp" => Assets.Settings.Eat,
+            "drink" or "drink_fp" => Assets.Settings.Drink,
+            _ => null,
+        };
+        var bites = timing?.BitesAt(Animator.GestureTime) ?? 0;
         if (bites == _bitesShown)
             return;
         if (bites > _bitesShown && bites > 0)
@@ -436,6 +442,8 @@ public partial class CharacterModel : Node3D
         var at = _held!.GlobalPosition;
         if (bite.Sound is { } sound)
             Sounds?.PlayLocal(sound, bite.ModId, at);
+        if (bite.Drink)
+            return;
         var juice = new CpuParticles3D
         {
             Name = "Juice",

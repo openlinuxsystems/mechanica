@@ -38,6 +38,29 @@ public sealed class ItemScriptTests : IDisposable
     }
 
     [Fact]
+    public void ADrinkHealsAndTheNextWaitsUntilItIsDrunk()
+    {
+        // Consumables batch C2: eat_seconds holds the next one back (less a little slack); drink says it is a drink.
+        var tea = _rig.AddItem("tea", "scripts/food.lua", new JsonObject { ["health"] = 20, ["drink"] = true, ["eat_seconds"] = 1 });
+        var bread = _rig.AddItem("bread", "scripts/food.lua", new JsonObject { ["health"] = 5, ["eat_seconds"] = 1 });
+        F.Pockets(Me).Add(tea, 3);
+        F.Pockets(Me).Add(bread, 2);
+        F.Survival.Damage(Me.Peer, 60, "test");
+
+        var drunk = _rig.Used(Me, F.SlotOf(Me, tea));
+        Assert.Equal((60.0, true), (drunk["health"]!.GetValue<double>(), drunk["drink"]!.GetValue<bool>()));
+        Assert.Equal("You are still drinking.", _rig.Refused(Me, F.SlotOf(Me, tea)));
+        // Each food keeps its own clock.
+        Assert.False(_rig.Used(Me, F.SlotOf(Me, bread))["drink"]!.GetValue<bool>());
+        Assert.Equal("You are still eating.", _rig.Refused(Me, F.SlotOf(Me, bread)));
+
+        _rig.Runtime.Update(0.85f); // past 0.8 s: the host allows for jitter
+        Assert.Equal(85.0, _rig.Used(Me, F.SlotOf(Me, tea))["health"]!.GetValue<double>());
+        Assert.Equal(1, F.Pockets(Me).Count(tea));
+        Assert.DoesNotContain(_rig.Messages, m => m.Kind == ScriptMessageKind.Error);
+    }
+
+    [Fact]
     public void TheDeadCannotEat()
     {
         F.Pockets(Me).Add(Crop, 1);

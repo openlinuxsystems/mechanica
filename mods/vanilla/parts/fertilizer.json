@@ -1,0 +1,30 @@
+{
+  "id": "fertilizer",
+  "name": "Fertilizer",
+  "description": "A Rootwell pouch of plant feed. Use it on a growing crop and it grows 15 times faster until harvest. It still needs water. Flammable.",
+  "category": "consumable",
+  "mass": 3,
+  "durability": 2,
+  "friction": 0.4,
+  "buoyancy": 0.7,
+  "flammable": true,
+  "stack_size": 20,
+  "mesh": "meshes/items/fertilizer.glb",
+  "icon": "textures/items/fertilizer_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "script": "scripts/fertilizer.lua",
+  "sounds": {
+    "pickup": "pickup_produce",
+    "use": "fertilizer_use"
+  },
+  "held": {
+    "mesh": "meshes/items/fertilizer_held.glb",
+    "offset": [-0.028, 0.062, -0.205],
+    "rotation": [0, 90, 90]
+  },
+  "properties": {
+    "boost": 15
+  }
+}

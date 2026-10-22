@@ -196,6 +196,7 @@ public partial class SurvivalTest : StagedTest
             if (frame == 0)
             {
                 HostSurvival.Damage(Peer, 25, "test");
+                _host.Main.Scripts.Runtime.Time += 2; // past the last carrot's eat_seconds: the host refuses one while chewing
                 item.Choose(Carrot);
             }
             if (frame == 10)

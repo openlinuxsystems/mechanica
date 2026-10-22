@@ -1,6 +1,7 @@
 -- Soil (chunk 20, D2): grows the crop planted in it and hands it to the player who harvests it (Use).
 -- A crop grows only while the soil holds water, using one second of water per second of growth, at the
--- soil's soil.growth speed, through soil.get().stages stages; it is ripe after its seed's grow_time. With nothing
+-- soil's soil.growth speed times its boost (soil.get().boost: 1, or more from Fertilizer until the harvest clears it),
+-- through soil.get().stages stages; it is ripe after its seed's grow_time. With nothing
 -- planted the soil dries out instead, as in Scrap Mechanic: full soil is dry after soil.dry_time seconds. The host
 -- stores the result (seed, grown, water, stage) on the soil, where clients, bots and saves see it, and works out from
 -- the water how wet the soil looks (dry, watered, wet or drying).
@@ -88,7 +89,8 @@ local function grown_by(s, now, power)
   local elapsed = math.max(0, now - (s.updated or now))
   local used = 0
   if elapsed > 0 and water > 0 and grown < grow_time then
-    local speed = (world.item(part.type(), "soil") or {}).growth or 1
+    -- A boost (Fertilizer) multiplies the soil's own speed until the harvest; the water still goes second for second.
+    local speed = ((world.item(part.type(), "soil") or {}).growth or 1) * (s.boost or 1)
     -- Water (and power) go only on the growing still to do.
     used = math.min(elapsed, water, power or math.huge)
     if speed > 0 then

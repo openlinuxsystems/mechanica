@@ -84,6 +84,7 @@ public static class CreationJson
                         Stage = soil.Seed is null || soil.Stage == 0 ? null : soil.Stage,
                         Updated = soil.Updated,
                         Soaked = soil.Soaked ? true : null,
+                        Boost = soil.Seed is null || soil.Boost == 1f ? null : soil.Boost,
                     }
                     : null,
                 Extra = Sorted(p.Extra),
@@ -381,9 +382,11 @@ public static class CreationJson
             sink.Error(invalid, $"{path}.soil.stage", $"stage must be 0 to {SoilState.Stages}.");
         else if (soil.Updated is { } updated && !(double.IsFinite(updated) && updated >= 0))
             sink.Error(invalid, $"{path}.soil.updated", "updated must be 0 or more seconds.");
+        else if (soil.Boost is { } boost && !(float.IsFinite(boost) && boost is >= 1f and <= SoilState.MaxBoost))
+            sink.Error(invalid, $"{path}.soil.boost", $"boost must be from 1 to {SoilState.MaxBoost:0}.");
         else
             state.Load(soil.Seed is null ? null : Identifiers.Qualify(soil.Seed), soil.Grown ?? 0, soil.Water ?? 0, soil.Stage ?? 0, soil.Updated,
-                soil.Soaked == true);
+                soil.Soaked == true, soil.Boost ?? 1f);
     }
 
     private static bool IsFinite(Vec3 v) => float.IsFinite(v.X) && float.IsFinite(v.Y) && float.IsFinite(v.Z);
@@ -539,6 +542,8 @@ public static class CreationJson
         public double? Updated { get; init; }
 
         public bool? Soaked { get; init; }
+
+        public float? Boost { get; init; }
     }
 
     internal sealed record ConnectionData

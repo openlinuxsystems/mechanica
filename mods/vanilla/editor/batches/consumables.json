@@ -3,7 +3,11 @@
 // bars / 10; flammable and stack size as the wiki) and the Food page's heals (properties.health, read by food.lua).
 // Gasoline keeps 20 kg (a 2x2x2 can). The Potato stays edible until a cooking station gives it a use. The seeds keep
 // their numbers until the Crops step. Chemical is made by emptying a Chemical Bucket at the Fabricator: the recipe's
-// second output gives the empty Water Bucket back. Re-run with tools/author-vanilla.sh.
+// second output gives the empty Water Bucket back.
+// Batch C2b: Bloom Tea and Grazer Shake are drinks (properties.drink: the drink clip and sound, and the player may
+// sprint while drinking), found as loot only. Fertilizer is used on a growing crop: properties.boost multiplies its
+// growth until harvest (soil.lua; it still needs water). properties.eat_seconds is how long one eat or drink takes.
+// Re-run with tools/author-vanilla.sh.
 {
   "format_version": 1,
   "parts": [
@@ -25,7 +29,7 @@
         "held": { "mesh": "meshes/items/carrot_held.glb", "offset": [-0.04, 0.066, 0.035], "rotation": [-90, 0, 90], "juice": "#ea8430" },
         "sounds": { "pickup": "pickup_produce", "eat": "eat_crunch" },
         "script": "scripts/food.lua",
-        "properties": { "health": 25 }
+        "properties": { "health": 25, "eat_seconds": 1.4 }
       },
       "model": [{ "kind": "mesh", "mesh": "meshes/items/carrot.glb" }]
     },
@@ -47,7 +51,7 @@
         "held": { "mesh": "meshes/items/tomato_held.glb", "offset": [-0.0373, 0.0413, 0.0015], "rotation": [-3.37, -180, -45], "juice": "#c83a2a" },
         "sounds": { "pickup": "pickup_produce", "eat": "eat_soft" },
         "script": "scripts/food.lua",
-        "properties": { "health": 20 }
+        "properties": { "health": 20, "eat_seconds": 1.4 }
       },
       "model": [{ "kind": "mesh", "mesh": "meshes/items/tomato.glb" }]
     },
@@ -69,7 +73,7 @@
         "held": { "mesh": "meshes/items/potato_held.glb", "offset": [-0.04, 0.082, 0], "rotation": [180, 0, 90], "juice": "#d8c898" },
         "sounds": { "pickup": "pickup_produce", "eat": "eat_soft" },
         "script": "scripts/food.lua",
-        "properties": { "health": 8 }
+        "properties": { "health": 8, "eat_seconds": 1.4 }
       },
       "model": [{ "kind": "mesh", "mesh": "meshes/items/potato.glb" }]
     },
@@ -205,6 +209,82 @@
           "outputs": [{ "item": "gasoline", "count": 5 }],
           "time": 5,
           "order": 910
+        }
+      ]
+    },
+    {
+      "file": "parts/bloom_tea.json",
+      "template": "item",
+      "set": {
+        "name": "Bloom Tea",
+        "description": "Colony Works bottled tea. Drink it to heal a little; you can keep running while you drink.",
+        "category": "consumable",
+        "mass": 3,
+        "durability": 1,
+        "friction": 0.4,
+        "buoyancy": 0.7,
+        "flammable": false,
+        "stack_size": 10,
+        "icon": "textures/items/bloom_tea_icon.png",
+        "visual": { "color": "#ffffff" },
+        "held": { "mesh": "meshes/items/bloom_tea_held.glb", "offset": [-0.04, 0.062, -0.095], "rotation": [0, 90, 90] },
+        "sounds": { "pickup": "pickup_component", "drink": "drink_gulp" },
+        "script": "scripts/food.lua",
+        "properties": { "health": 20, "drink": true, "eat_seconds": 0.67 }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/bloom_tea.glb" }]
+    },
+    {
+      "file": "parts/grazer_shake.json",
+      "template": "item",
+      "set": {
+        "name": "Grazer Shake",
+        "description": "A Colony Works protein shake. Drink it to heal fully; you can keep running while you drink.",
+        "category": "consumable",
+        "mass": 3,
+        "durability": 1,
+        "friction": 0.4,
+        "buoyancy": 0.7,
+        "flammable": false,
+        "stack_size": 10,
+        "icon": "textures/items/grazer_shake_icon.png",
+        "visual": { "color": "#ffffff" },
+        "held": { "mesh": "meshes/items/grazer_shake_held.glb", "offset": [-0.044, 0.062, -0.105], "rotation": [0, 90, 90] },
+        "sounds": { "pickup": "pickup_component", "drink": "drink_gulp" },
+        "script": "scripts/food.lua",
+        "properties": { "health": 100, "drink": true, "eat_seconds": 0.67 }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/grazer_shake.glb" }]
+    },
+    {
+      "file": "parts/fertilizer.json",
+      "template": "item",
+      "set": {
+        "name": "Fertilizer",
+        "description": "A Rootwell pouch of plant feed. Use it on a growing crop and it grows 15 times faster until harvest. It still needs water. Flammable.",
+        "category": "consumable",
+        "mass": 3,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.7,
+        "flammable": true,
+        "stack_size": 20,
+        "icon": "textures/items/fertilizer_icon.png",
+        "visual": { "color": "#ffffff" },
+        "held": { "mesh": "meshes/items/fertilizer_held.glb", "offset": [-0.028, 0.062, -0.205], "rotation": [0, 90, 90] },
+        "sounds": { "pickup": "pickup_produce", "use": "fertilizer_use" },
+        "script": "scripts/fertilizer.lua",
+        "properties": { "boost": 15 }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/fertilizer.glb" }],
+      "recipes": [
+        {
+          "id": "fertilizer",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "ember", "count": 10 }, { "item": "water_bucket_full", "count": 1 }],
+          "outputs": [{ "item": "fertilizer", "count": 5 }, { "item": "water_bucket", "count": 1 }],
+          "time": 10,
+          "order": 1960
         }
       ]
     }

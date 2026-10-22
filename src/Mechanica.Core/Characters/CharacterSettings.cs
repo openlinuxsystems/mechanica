@@ -122,6 +122,12 @@ public sealed record CharacterSettings
     /// <summary>Food in hand: when the <c>eat</c> clip's bites land (<see cref="EatSettings"/>).</summary>
     public EatSettings Eat { get; init; } = new();
 
+    /// <summary>
+    /// A drink in hand (consumables batch C2): when the <c>drink</c> clip's gulps are taken and the drink is gone, as
+    /// <see cref="Eat"/> does for bites.
+    /// </summary>
+    public EatSettings Drink { get; init; } = new() { Bites = [0.25f, 0.4f], Gone = 0.6f, Seconds = 0.67f };
+
     /// <summary>Share of the look pitch the neck and head follow (0 to 1).</summary>
     public float HeadPitchShare { get; init; } = 0.6f;
 
@@ -195,6 +201,7 @@ public sealed record CharacterSettings
         Bucket.Validate();
         PaintTool.Validate();
         Eat.Validate();
+        Drink.Validate("drink");
         Motion.Validate();
         Seat.Validate();
         if (FirstPersonOffset is not { Length: 3 } || FirstPersonOffset.Any(v => !float.IsFinite(v) || MathF.Abs(v) > 3f))
@@ -471,7 +478,8 @@ public sealed record PaintToolSettings
 
 /// <summary>
 /// Eating (<c>eat</c> in <c>character.json</c>): the moments in the <c>eat</c> clip (and <c>eat_fp</c>) where a bite is
-/// taken and where the food is gone. A food's held model has one child per bite, <c>eat_0</c> (whole) to
+/// taken and where the food is gone. Drinking (<c>drink</c>) uses the same shape for the <c>drink</c> clip: a gulp for each
+/// bite (the drink's sound plays), and the bottle gone from the hand at <see cref="Gone"/>. A food's held model has one child per bite, <c>eat_0</c> (whole) to
 /// <c>eat_n</c> (n bites taken); the hand shows the one the clip has reached, and none once the food is gone. The clips
 /// that follow these numbers are built by <c>tools/characters/build_characters.py</c>.
 /// </summary>
@@ -499,21 +507,21 @@ public sealed record EatSettings
         return taken;
     }
 
-    /// <summary>Throws <see cref="FormatException"/> naming the first out-of-range value.</summary>
-    public void Validate()
+    /// <summary>Throws <see cref="FormatException"/> naming the first out-of-range value (under <paramref name="name"/>).</summary>
+    public void Validate(string name = "eat")
     {
         if (Bites is null)
-            throw new FormatException("eat.bites must be a list of seconds.");
+            throw new FormatException($"{name}.bites must be a list of seconds.");
         for (var i = 0; i < Bites.Length; i++)
         {
             if (!float.IsFinite(Bites[i]) || Bites[i] < 0f || (i > 0 && Bites[i] <= Bites[i - 1]))
-                throw new FormatException($"eat.bites[{i}] must be a rising number of seconds from 0.");
+                throw new FormatException($"{name}.bites[{i}] must be a rising number of seconds from 0.");
         }
-        CharacterSettings.Positive(Gone, "eat.gone");
+        CharacterSettings.Positive(Gone, $"{name}.gone");
         if (Bites.Length > 0 && Gone <= Bites[^1])
-            throw new FormatException("eat.gone must come after the last bite.");
+            throw new FormatException($"{name}.gone must come after the last bite.");
         if (!float.IsFinite(Seconds) || Seconds < Gone || Seconds > 10f)
-            throw new FormatException($"eat.seconds must be from eat.gone to 10 (got {Seconds}).");
+            throw new FormatException($"{name}.seconds must be from {name}.gone to 10 (got {Seconds}).");
     }
 }
 

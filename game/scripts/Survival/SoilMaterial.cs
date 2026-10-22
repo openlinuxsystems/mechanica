@@ -6,8 +6,9 @@ namespace Mechanica.Game.Survival;
 /// The look of a soil mound as it gets wet and dries out (Soil design spec: Dry, Lightly Watered, Fully Wet, Drying),
 /// drawn by one material parameter instead of a mesh morph. Each mound mesh keeps its model's texture; per mesh
 /// instance, <c>wet</c> (0 dry to 1 soaked) darkens damp patches that spread until they cover it, adds sheen and,
-/// near 1, puddles in the low dark hollows of the top; <c>drying</c> (0 or 1) brings up pale crusted patches; and
-/// <c>flash</c> darkens it for a moment right after it is watered. <see cref="SoilLooks"/> sets them.
+/// near 1, puddles in the low dark hollows of the top; <c>drying</c> (0 or 1) brings up pale crusted patches;
+/// <c>flash</c> darkens it for a moment right after it is watered; and <c>fertilized</c> (0 to 1) scatters pale
+/// granules over the top while its crop grows boosted (Fertilizer). <see cref="SoilLooks"/> sets them.
 /// </summary>
 public static class SoilMaterial
 {
@@ -19,6 +20,9 @@ public static class SoilMaterial
 
     /// <summary>The per-instance parameter for the moment's darkening after watering, 0 to 1.</summary>
     public const string Flash = "flash";
+
+    /// <summary>The per-instance parameter for the granules of a fertilized crop's soil, 0 to 1.</summary>
+    public const string Fertilized = "fertilized";
 
     private static readonly Shader Shader = new() { Code = Code };
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<BaseMaterial3D, ShaderMaterial> Cache = [];
@@ -56,6 +60,7 @@ public static class SoilMaterial
         instance uniform float wet = 0.0;
         instance uniform float drying = 0.0;
         instance uniform float flash = 0.0;
+        instance uniform float fertilized = 0.0;
 
         float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 
@@ -85,6 +90,13 @@ public static class SoilMaterial
             float puddle = smoothstep(0.8, 1.0, wet) * smoothstep(0.75, 0.95, up) * smoothstep(0.30, 0.22, lum)
                 * smoothstep(0.35, 0.6, noise(UV * 9.0 + 2.0));
             colour = mix(colour, colour * 0.7, puddle);
+            // Fertilized: pale granules scattered over the top, one in a few cells, each a little off its cell's middle.
+            vec2 grid = UV * 70.0;
+            vec2 cell = floor(grid);
+            vec2 off = vec2(hash(cell + 3.1), hash(cell + 8.7)) - 0.5;
+            float granule = step(0.72, hash(cell)) * smoothstep(0.26, 0.14, length(fract(grid) - 0.5 - off * 0.45));
+            granule *= fertilized * smoothstep(0.2, 0.6, up) * (1.0 - puddle);
+            colour = mix(colour, vec3(0.78, 0.84, 0.66) * (0.85 + 0.3 * hash(cell + 1.7)), granule);
             ALBEDO = colour;
             ROUGHNESS = mix(mix(base_roughness, 0.55, damp), 0.08, puddle);
             SPECULAR = 0.5 + 0.1 * damp + 0.3 * puddle;

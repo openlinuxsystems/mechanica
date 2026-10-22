@@ -1,0 +1,32 @@
+{
+  "id": "bloom_tea",
+  "name": "Bloom Tea",
+  "description": "Colony Works bottled tea. Drink it to heal a little; you can keep running while you drink.",
+  "category": "consumable",
+  "mass": 3,
+  "durability": 1,
+  "friction": 0.4,
+  "buoyancy": 0.7,
+  "flammable": false,
+  "stack_size": 10,
+  "mesh": "meshes/items/bloom_tea.glb",
+  "icon": "textures/items/bloom_tea_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "script": "scripts/food.lua",
+  "sounds": {
+    "pickup": "pickup_component",
+    "drink": "drink_gulp"
+  },
+  "held": {
+    "mesh": "meshes/items/bloom_tea_held.glb",
+    "offset": [-0.04, 0.062, -0.095],
+    "rotation": [0, 90, 90]
+  },
+  "properties": {
+    "health": 20,
+    "drink": true,
+    "eat_seconds": 0.67
+  }
+}

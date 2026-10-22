@@ -1,0 +1,28 @@
+{
+  "id": "fertilizer",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "ember",
+      "count": 10
+    },
+    {
+      "item": "water_bucket_full",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "fertilizer",
+      "count": 5
+    },
+    {
+      "item": "water_bucket",
+      "count": 1
+    }
+  ],
+  "time": 10,
+  "order": 1960
+}
