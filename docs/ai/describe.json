@@ -408,6 +408,27 @@
       }
     },
     {
+      "name": "CollectBot",
+      "kind": "action",
+      "group": "bots",
+      "scope": "play",
+      "description": "A player collecting what a tame bot gives once it has eaten enough from its home (a Grazer's milk). Arguments of the actions that name one bot (DespawnBot, GetBot).",
+      "params": {
+        "description": "Arguments of the actions that name one bot (DespawnBot, GetBot).",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "The bot's id.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "bot"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "CollectItems",
       "kind": "action",
       "group": "items",

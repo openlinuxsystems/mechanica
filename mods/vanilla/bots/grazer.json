@@ -61,6 +61,12 @@
       "cooldown": 600,
       "herd": 8,
       "radius": 8
+    },
+    "produce": {
+      "item": "grazer_milk",
+      "feeds": 5,
+      "cooldown": 300,
+      "eat_every": 30
     }
   },
   "model": {
@@ -105,6 +111,14 @@
     ]
   },
   "passive": true,
+  "drops": [
+    {
+      "item": "grazer_steak",
+      "chance": 1,
+      "count": 1,
+      "count_max": 2
+    }
+  ],
   "behavior": {
     "type": "selector",
     "children": [

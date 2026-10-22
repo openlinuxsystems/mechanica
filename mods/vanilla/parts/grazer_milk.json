@@ -1,0 +1,32 @@
+{
+  "id": "grazer_milk",
+  "name": "Grazer Milk",
+  "description": "Fresh milk in a Colony Works bottle. Drink it to heal a little; you can keep running while you drink. A tame Grazer gives a bottle once it has eaten 5 carrots from its Feeding Trough: press Use on it. Flammable.",
+  "category": "consumable",
+  "mass": 3,
+  "durability": 1,
+  "friction": 0.4,
+  "buoyancy": 0.7,
+  "flammable": true,
+  "stack_size": 5,
+  "mesh": "meshes/items/grazer_milk.glb",
+  "icon": "textures/items/grazer_milk_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "script": "scripts/food.lua",
+  "sounds": {
+    "pickup": "pickup_component",
+    "drink": "drink_gulp"
+  },
+  "held": {
+    "mesh": "meshes/items/grazer_milk_held.glb",
+    "offset": [-0.044, 0.062, -0.09],
+    "rotation": [0, 90, 90]
+  },
+  "properties": {
+    "health": 20,
+    "drink": true,
+    "eat_seconds": 0.67
+  }
+}

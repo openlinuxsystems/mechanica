@@ -1,0 +1,26 @@
+{
+  "id": "grazer_steak",
+  "name": "Grazer Steak",
+  "description": "A raw Grazer steak on a tray, wrapped in butcher paper. Not to be eaten raw: it is for cooking. Grazers drop it. Flammable.",
+  "category": "resource",
+  "tab": "consumable",
+  "mass": 6,
+  "durability": 2,
+  "friction": 0.6,
+  "buoyancy": 0.3,
+  "flammable": true,
+  "stack_size": 5,
+  "mesh": "meshes/items/grazer_steak.glb",
+  "icon": "textures/items/grazer_steak_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "sounds": {
+    "pickup": "pickup_produce"
+  },
+  "held": {
+    "mesh": "meshes/items/grazer_steak_held.glb",
+    "offset": [-0.028, 0.062, -0.008],
+    "rotation": [0, 90, 90]
+  }
+}

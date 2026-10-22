@@ -128,6 +128,34 @@ public sealed record BotTameDefinition
     /// <summary>How two tame ones have young. Omitted means they never do.</summary>
     public BotBreedDefinition? Breed { get; init; }
 
+    /// <summary>What a tame one gives once it has eaten enough from its home (a Grazer's milk). Omitted means nothing.</summary>
+    public BotProduceDefinition? Produce { get; init; }
+
+    /// <summary>Unknown keys (warned about).</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// What a tame bot gives (milk): while it lives at a home part (<see cref="BotTameDefinition.Homes"/>) it eats one of its
+/// <see cref="BotTameDefinition.Foods"/> from that part's inventory every <see cref="EatEvery"/> seconds, and once it has
+/// eaten <see cref="Feeds"/> it has one <see cref="Item"/> ready, which a player collects with Use (E). It then counts its
+/// meals again, and the next is ready no sooner than <see cref="Cooldown"/> seconds after the last was collected.
+/// </summary>
+public sealed record BotProduceDefinition
+{
+    /// <summary>The item it gives (an item id or <c>mod_id:item_id</c>).</summary>
+    public string? Item { get; init; }
+
+    /// <summary>Meals from its home before one is ready (default 5).</summary>
+    public int? Feeds { get; init; }
+
+    /// <summary>Seconds after one is collected before the next can be ready (default 300).</summary>
+    public float? Cooldown { get; init; }
+
+    /// <summary>Seconds between two meals from its home (default 30).</summary>
+    public float? EatEvery { get; init; }
+
     /// <summary>Unknown keys (warned about).</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }

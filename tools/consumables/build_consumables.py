@@ -1,4 +1,4 @@
-"""Build the item models and icons of consumables batch C2 (consumables/CONSUMABLES_MAP.md, items 1 to 3).
+"""Build the item models and icons of consumables batches C2 and C3 (consumables/CONSUMABLES_MAP.md, items 1 to 3, 7, 8).
 
 What it builds (procedurally, from scratch: no .blend inputs, no downloads), each a 1 x 1 x 1 block item standing on
 z = -0.125 inside the 0.25 m cube (front -Y, Z up):
@@ -10,12 +10,18 @@ z = -0.125 inside the 0.25 m cube (front -Y, Z up):
 * ``meshes/items/fertilizer.glb`` - a Rootwell stand-up pouch (the garden brand of the Soil Bag, tools/soil/bag_print.py):
   bright yellow, the green Rootwell band with the sprout badge across the top, FERTILIZER in big green letters, a
   seedling rising out of soil with up chevrons and pale granules; a crimped top seal with a tear notch, a zip ridge.
+* ``meshes/items/grazer_milk.glb`` (batch C3, item 8) - an old-fashioned Colony Works glass milk bottle full of milk:
+  a crimped steel-blue foil cap with a mustard pull tab, a bone label in steel-blue bands with the Grazer in a roundel
+  between two milk drops and GM-1, and on its back the heal mark and a cup.
+* ``meshes/items/grazer_steak.glb`` (batch C3, item 7) - a Settler Patchwork butcher's parcel: a raw marbled steak with
+  a fat cap on kraft butcher paper in a pressed zinc tray, the paper's far end folded over it and tied with brick-red
+  twine, and a kraft tag hand-stamped with the Grazer.
 * ``meshes/items/<id>_held.glb`` for each: the same model, its base at the origin, which the game puts in the hand.
 * ``textures/items/<id>_icon.png`` for each: 256 x 256.
 * the ``held`` offset and rotation of each, printed (they go in mods/vanilla/editor/batches/consumables.json).
 
     pip install bpy==5.2.2 numpy pillow
-    python tools/consumables/build_consumables.py [bloom_tea] [grazer_shake] [fertilizer]
+    python tools/consumables/build_consumables.py [bloom_tea] [grazer_shake] [fertilizer] [grazer_milk] [grazer_steak]
     python tools/consumables/render_consumables.py OUT_DIR    # review sheets (model, icon, held in first person)
 
 The outputs are committed; re-run this script after changing it and commit the result. The build is deterministic.
@@ -60,9 +66,9 @@ SHAKE = "#EDE3C8"              # the shake's bone plastic, a little creamier tha
 GRAZER_SLATE, GRAZER_CREAM, GRAZER_PINK = (92, 104, 118), (236, 226, 200), (226, 150, 160)
 
 # Where the fist holds each item in hand, from its base up (m): drinks round the body, the pouch by its top seal.
-GRIP = {"bloom_tea": 0.095, "grazer_shake": 0.105, "fertilizer": 0.205}
+GRIP = {"bloom_tea": 0.095, "grazer_shake": 0.105, "fertilizer": 0.205, "grazer_milk": 0.09, "grazer_steak": 0.008}
 # How far the item's axis sits from the fist's centre toward the fingers (m): a bottle is fatter than a handle.
-GRIP_OUT = {"bloom_tea": 0.012, "grazer_shake": 0.016, "fertilizer": 0.0}
+GRIP_OUT = {"bloom_tea": 0.012, "grazer_shake": 0.016, "fertilizer": 0.0, "grazer_milk": 0.016, "grazer_steak": 0.0}
 
 
 def rgb(hex_color):
@@ -465,6 +471,293 @@ def build_fertilizer():
 
 
 # =====================================================================================================================
+# Grazer Milk (batch C3)
+# =====================================================================================================================
+
+MILK = "#F3EFE2"
+
+
+def milk_drop(d, cx, cy, s, fill):
+    """A drop of milk: something to drink that comes from a Grazer."""
+    d.ellipse([cx - s, cy - s * 0.2, cx + s, cy + s * 1.6], fill=fill)
+    d.polygon([(cx - s * 0.93, cy + s * 0.45), (cx + s * 0.93, cy + s * 0.45), (cx, cy - s * 1.4)], fill=fill)
+
+
+def milk_label():
+    w, h = 1024, 400                                  # 19 x 7.4 cm round the bottle
+    blue, bone, ink = rgb(STEEL_BLUE), rgb(BONE), rgb(HULL)
+    im = Image.new("RGB", (w, h), bone)
+    d = ImageDraw.Draw(im)
+    d.rectangle([0, 0, w - 1, 48], fill=blue)
+    d.rectangle([0, h - 49, w - 1, h - 1], fill=blue)
+    d.rectangle([0, 54, w - 1, 61], fill=rgb(MUSTARD))
+    d.rectangle([0, h - 62, w - 1, h - 55], fill=rgb(MUSTARD))
+    # the front (u = 0.5): the Grazer in a steel-blue roundel, a milk drop each side, the code under it
+    d.ellipse([512 - 118, 210 - 118, 512 + 118, 210 + 118], fill=blue)
+    d.ellipse([512 - 104, 210 - 104, 512 + 104, 210 + 104], fill=bone)
+    grazer_head(im, 512, 222, 82)
+    d = ImageDraw.Draw(im)
+    for x in (330, 694):
+        milk_drop(d, x, 180, 30, blue)
+    d.text((512, h - 25), "GM-1", fill=bone, font=bm.font(34), anchor="mm")
+    cw_mark(d, 512, 24, 17, bone, blue)
+    # the back (u = 0 and 1): the heal mark and the drink mark
+    for x0 in (-w // 2, w // 2):
+        heart_plus(d, x0 + 440, 200, 52, (200, 66, 70), bone)
+        cup(d, x0 + 610, 215, 46, ink)
+    return bm.as_rgb(im)
+
+
+def build_grazer_milk():
+    mats = {
+        "glass": glass("milk_glass", "#d8e2de"),
+        "milk": pt.plain("milk_liquid", MILK, 0.28, 0.0),
+        "label": lt.decal("milk_label", milk_label(), rough=0.55),
+        "cap": pt.plain("milk_cap", STEEL_BLUE, 0.32, 0.6),
+        "tab": pt.plain("milk_tab", MUSTARD, 0.45, 0.0),
+    }
+    g = Geo()
+    R, z0 = 0.031, FLOOR
+    # an old-fashioned milk bottle: a straight body, a long round shoulder, a short neck and a thick lip
+    body = [(0.0, z0), (R - 0.005, z0), (R, z0 + 0.005), (R, z0 + 0.098), (R - 0.002, z0 + 0.112), (0.026, z0 + 0.13),
+            (0.0195, z0 + 0.148), (0.0168, z0 + 0.162), (0.0168, z0 + 0.172), (0.0186, z0 + 0.174), (0.0186, z0 + 0.181),
+            (0.0, z0 + 0.181)]
+    lathe(g, body, "glass", steps=48)
+    milk = [(0.0, z0 + 0.004), (R - 0.0025, z0 + 0.004), (R - 0.0025, z0 + 0.098), (R - 0.0045, z0 + 0.112),
+            (0.0235, z0 + 0.13), (0.0172, z0 + 0.148), (0.0, z0 + 0.148)]
+    lathe(g, milk, "milk", steps=40)
+    # the crimped foil cap over the lip, a mustard pull tab
+    cylinder(g, (0, 0, z0 + 0.170), (0, 0, z0 + 0.1855), 0.0196, "cap", segs=40)
+    for k in range(28):
+        a = 2 * math.pi * k / 28
+        box(g, (0.0199 * math.cos(a), 0.0199 * math.sin(a), z0 + 0.1745), (0.0007, 0.0013, 0.0045), "cap",
+            rot=Matrix.Rotation(a, 3, "Z"))
+    box(g, (0, -0.0225, z0 + 0.172), (0.0045, 0.0028, 0.0055), "tab", bevel=0.0012)
+    wrap(g, (0, 0, 0), (0, 0, 1), R + 0.0007, z0 + 0.024, z0 + 0.092, -math.pi / 2 - math.pi, -math.pi / 2 + math.pi,
+         "label", segs=48, ref=(1, 0, 0))
+    root = bl.make_empty("GrazerMilk")
+    bl.make_object("Bottle", g, mats, root)
+    return root
+
+
+# =====================================================================================================================
+# Grazer Steak (batch C3): a Settler Patchwork butcher's parcel
+# =====================================================================================================================
+
+ZINC = "#9AA3AB"
+KRAFT = "#D3BF98"                # butcher paper, faded bone-kraft
+MEAT, MEAT_DARK, FAT = (124, 20, 28), (80, 12, 20), (236, 222, 198)
+TWINE = "#A8473B"                # brick-red twine
+TRAY = (0.105, 0.07)             # the tray's half size
+STEAK_C, STEAK_R, STEAK_H = (-0.008, 0.0), (0.072, 0.047), 0.024
+
+
+def steak_radius(th):
+    """The steak's outline: a fat oval with a kidney notch on one long side and a lumpier far end."""
+    rx, ry = STEAK_R
+    r = 1.0 + 0.05 * math.cos(3 * th + 0.4) + 0.03 * math.sin(5 * th) - 0.11 * math.exp(-((th + math.pi / 2 - 0.25) / 0.45) ** 2)
+    return rx * r, ry * r
+
+
+def steak_s(x, y):
+    """How far (x, y) is out from the steak's middle, as a share of its outline (1 on the edge)."""
+    dx, dy = x - STEAK_C[0], y - STEAK_C[1]
+    th = math.atan2(dy / STEAK_R[1], dx / STEAK_R[0])
+    ax, ay = steak_radius(th)
+    return math.hypot(dx / ax, dy / ay)
+
+
+def steak_height(s):
+    """Height of the steak's top above its base at outline share s: flat, then a rounded edge."""
+    if s <= 0.86:
+        return STEAK_H
+    if s >= 1.0:
+        return 0.0
+    return STEAK_H * math.cos(math.asin(min(1.0, (s - 0.86) / 0.14)))
+
+
+def steak_print():
+    """The steak seen from above, over the tray's footprint: red meat with fat marbling, a fat cap along its +Y side."""
+    W, H = 640, 640
+    (x0, x1), (y0, y1) = (STEAK_C[0] - 0.08, STEAK_C[0] + 0.08), (STEAK_C[1] - 0.08, STEAK_C[1] + 0.08)
+    xs = np.linspace(x0, x1, W)
+    ys = np.linspace(y1, y0, H)                      # image rows go down; +Y is the top of the image
+    X, Y = np.meshgrid(xs, ys)
+    dx, dy = (X - STEAK_C[0]) / STEAK_R[0], (Y - STEAK_C[1]) / STEAK_R[1]
+    th = np.arctan2(dy, dx)
+    r = 1.0 + 0.05 * np.cos(3 * th + 0.4) + 0.03 * np.sin(5 * th) - 0.11 * np.exp(-((th + np.pi / 2 - 0.25) / 0.45) ** 2)
+    s = np.hypot(dx, dy) / r
+    rng = np.random.default_rng(29)
+    n = lt.fbm(31, base=6.0)
+    n = np.asarray(Image.fromarray((np.clip(n, 0, 1) * 255).astype(np.uint8)).resize((W, H)), float) / 255.0
+    meat = np.array(MEAT, float)[None, None] * (0.86 + 0.24 * n[..., None])
+    # the grain: dark streaks across, and white marbling wandering through
+    grain = 0.5 + 0.5 * np.sin((X * 0.8 + Y * 1.4) * 900 + 6 * n)
+    meat = meat * (1 - 0.12 * grain[..., None]) + np.array(MEAT_DARK, float) * 0.12 * grain[..., None]
+    marble = np.zeros((H, W))
+    for _ in range(9):
+        px, py = rng.uniform(-0.6, 0.6), rng.uniform(-0.6, 0.6)
+        ang, freq, amp = rng.uniform(0, np.pi), rng.uniform(9, 20), rng.uniform(0.03, 0.08)
+        u = (dx - px) * np.cos(ang) + (dy - py) * np.sin(ang)
+        v = -(dx - px) * np.sin(ang) + (dy - py) * np.cos(ang)
+        line = np.abs(v - amp * np.sin(u * freq + px * 5)) < rng.uniform(0.006, 0.016)
+        marble = np.maximum(marble, line * (np.abs(u) < rng.uniform(0.2, 0.5)))
+    marble = np.clip(lt.blur(marble, 2), 0, 1) * 0.7
+    out = meat * (1 - 0.8 * marble[..., None]) + np.array(FAT, float) * 0.8 * marble[..., None]
+    # the fat cap: a creamy band along part of the front (-Y) side, and the cut edge darker
+    cap = np.clip((s - 0.8) / 0.05, 0, 1) * np.clip((-0.25 - dy) / 0.3, 0, 1) * np.clip((0.3 - np.abs(dx + 0.25)) / 0.15, 0, 1)
+    out = out * (1 - cap[..., None]) + np.array(FAT, float) * (0.9 + 0.1 * n[..., None]) * cap[..., None]
+    edge = np.clip((s - 0.9) / 0.1, 0, 1) * (1 - cap)
+    out = out * (1 - 0.35 * edge[..., None])
+    return np.clip(out / 255.0, 0, 1), (x0, x1, y0, y1)
+
+
+def tag_print():
+    """The butcher's kraft tag: a brick-red stamped Grazer and three tally strokes (settler hand-stamp, no words)."""
+    w, h = 300, 200
+    im = Image.new("RGB", (w, h), (214, 192, 150))
+    d = ImageDraw.Draw(im)
+    d.rectangle([4, 4, w - 5, h - 5], outline=(150, 64, 52), width=5)
+    stamp = Image.new("RGB", (w, h), (214, 192, 150))
+    grazer_head(stamp, 105, 104, 62)
+    # recolour the stamp in one brick-red ink, as a rubber stamp would print it
+    a = np.asarray(stamp, float)
+    paper = np.array((214, 192, 150), float)
+    ink = np.clip(np.abs(a - paper).sum(-1) / 120.0, 0, 1)[..., None]
+    base = np.asarray(im, float)
+    base = base * (1 - ink * 0.9) + np.array((158, 60, 48), float) * ink * 0.9
+    im = Image.fromarray(base.astype(np.uint8))
+    d = ImageDraw.Draw(im)
+    for k in range(3):
+        d.line([(200 + k * 22, 70), (196 + k * 22, 134)], fill=(150, 56, 46), width=7)
+    d.ellipse([w - 44, h // 2 - 12, w - 20, h // 2 + 12], fill=(120, 96, 70))       # the string hole
+    return bm.as_rgb(im)
+
+
+def build_grazer_steak():
+    meat_rgb, (x0, x1, y0, y1) = steak_print()
+    mats = {
+        "tray": bm.metal("steak_tray", 871, ZINC, rough=0.5, metal_=0.8, wear=0.7),
+        "paper": lt.textured("steak_paper", gc.half_res(lt.paint_surface(873, KRAFT, "#B89C70")), normal_strength=0.6),
+        "meat": lt.decal("steak_meat", meat_rgb, rough=0.55),
+        "twine": pt.plain("steak_twine", TWINE, 0.85, 0.0),
+        "tag": lt.decal("steak_tag", tag_print(), rough=0.8),
+    }
+    g = Geo()
+    z0 = FLOOR
+    tx, ty = TRAY
+    # the pressed-tin tray: a floor, four flared walls and a rolled rim round the top
+    rim_h, flare = 0.016, 0.008
+    box(g, (0, 0, z0 + 0.0008), (tx - flare, ty - flare, 0.0008), "tray")
+
+    def rect(hx, hy, z, rad, n=6):
+        pts = []
+        for cx, cy, a0 in ((hx - rad, hy - rad, 0), (-hx + rad, hy - rad, 90), (-hx + rad, -hy + rad, 180), (hx - rad, -hy + rad, 270)):
+            for k in range(n + 1):
+                a = math.radians(a0 + 90 * k / n)
+                pts.append((cx + rad * math.cos(a), cy + rad * math.sin(a), z))
+        return pts
+    lo = rect(tx - flare, ty - flare, z0 + 0.0016, 0.012)
+    hi = rect(tx, ty, z0 + rim_h, 0.016)
+    m = len(lo)
+    verts = lo + hi
+    faces = [(k, (k + 1) % m, m + (k + 1) % m, m + k) for k in range(m)]
+    g.add(verts, faces, "tray")
+    g.add([(x, y, z - 0.0004) for x, y, z in lo] + [(x * 0.995, y * 0.995, z - 0.0006) for x, y, z in hi],
+          [(m + k, m + (k + 1) % m, (k + 1) % m, k) for k in range(m)], "tray")          # the outside of the walls
+    bl.sweep(g, hi + [hi[0], hi[1]], 0.0017, "tray", segs=8)                              # the rolled rim
+    # the butcher paper the steak lies on: a sheet a little short of the tray, its corners curling up
+    zp = z0 + 0.0022
+    px, py, n = 0.088, 0.058, 18
+
+    def under(x, y):
+        curl = max(0.0, (abs(x) / px) ** 6 + (abs(y) / py) ** 6 - 0.6) * 0.006
+        return zp + curl
+    verts, faces = [], []
+    for j in range(n + 1):
+        for i in range(n + 1):
+            x, y = -px + 2 * px * i / n, -py + 2 * py * j / n
+            verts.append((x, y, under(x, y)))
+    for j in range(n):
+        for i in range(n):
+            p = j * (n + 1) + i
+            faces.append((p, p + 1, p + n + 2, p + n + 1))
+    g.add(verts, faces, "paper")
+    # the steak: rings from its middle out to the outline and round its edge, the meat print projected from above
+    zs = zp + 0.0008
+    steak_verts, rings, segs = [], 14, 64
+    for i in range(rings + 1):
+        s = 0.86 * i / 10 if i <= 10 else 0.86 + 0.14 * math.sin(math.pi / 2 * (i - 10) / 4)
+        h = steak_height(min(s, 0.9999)) if i < rings else 0.0
+        for k in range(segs):
+            th = 2 * math.pi * k / segs
+            ax, ay = steak_radius(th)
+            wob = 0.0012 * math.sin(7 * th) * (i / rings)                                  # a little uneven, as cut meat is
+            steak_verts.append((STEAK_C[0] + (s * ax + wob) * math.cos(th), STEAK_C[1] + (s * ay + wob) * math.sin(th),
+                                zs + h + 0.0015 * math.sin(2.3 * th) * (s < 0.86)))
+    steak_faces = []
+    for i in range(rings):
+        for k in range(segs):
+            a, b = i * segs + k, i * segs + (k + 1) % segs
+            steak_faces.append((a, b, b + segs, a + segs))
+    steak_faces.append(tuple(rings * segs + k for k in reversed(range(segs))))          # its underside
+    uv_of = [((x - x0) / (x1 - x0), (y - y0) / (y1 - y0)) for x, y, _ in steak_verts]
+    g.add(steak_verts, steak_faces, "meat", [tuple(uv_of[q] for q in f) for f in steak_faces])
+    # the flap of paper folded back over the steak's far end, draped over it
+    fx0, fx1, fy = 0.018, 0.09, 0.064
+    nx, ny = 16, 22
+
+    def drape(x, y):
+        s = steak_s(x, y)
+        top = zs + steak_height(min(s, 0.9999)) + 0.0028 if s < 1 else zs
+        fall = zs + (STEAK_H + 0.0028) * math.exp(-(max(0.0, s - 1.0) / 0.12) ** 2)
+        return max(top, fall, under(x, y) + 0.001)
+    verts, faces = [], []
+    for j in range(ny + 1):
+        for i in range(nx + 1):
+            x = fx0 + (fx1 - fx0) * i / nx + (0.003 * math.sin(j * 1.7) if i == 0 else 0.0)            # the torn fold
+            y = -fy + 2 * fy * j / ny
+            verts.append((x, y, drape(x, y)))
+    for j in range(ny):
+        for i in range(nx):
+            p = j * (nx + 1) + i
+            faces.append((p, p + 1, p + nx + 2, p + nx + 1))
+    g.add(verts, faces, "paper")
+    # the fold's turned-back lip along the flap's edge
+    lip = [(fx0 - 0.002, -fy + 2 * fy * j / ny, drape(fx0, -fy + 2 * fy * j / ny) + 0.0012) for j in range(ny + 1)]
+    bl.sweep(g, lip, 0.0016, "paper", segs=6)
+    # twine round the flap and a knot on top
+    tx_ = 0.054
+    path = [(tx_, y, drape(tx_, y) + 0.0012) for y in np.linspace(-fy, fy, 28)]
+    bl.sweep(g, path, 0.0011, "twine", segs=6)
+    kz = drape(tx_, 0.0) + 0.0016
+    for side in (-1, 1):
+        loop = [(tx_ + side * 0.012 * math.sin(t) * 0.9, 0.006 * math.sin(2 * t) * side, kz + 0.0018 * math.sin(t))
+                for t in np.linspace(0, math.pi, 12)]
+        bl.sweep(g, loop, 0.0010, "twine", segs=6)
+        end = [(tx_, 0, kz), (tx_ + side * 0.006, -0.012, kz - 0.001), (tx_ + side * 0.01, -0.022, drape(tx_ + side * 0.01, -0.022) + 0.001)]
+        bl.sweep(g, end, 0.0009, "twine", segs=6)
+    dome(g, (tx_, 0, kz), (0, 0, 1), 0.0026, "twine", segs=8)
+    # the kraft tag tied to the twine, lying on the flap's front corner
+    tag = Geo()
+    tw, th_ = 0.017, 0.0115
+    tag.add([(-tw, -th_, 0), (tw, -th_, 0), (tw, th_, 0), (-tw, th_, 0)], [(0, 1, 2, 3)], "tag",
+            [((0, 0), (1, 0), (1, 1), (0, 1))])
+    box(tag, (0, 0, -0.0004), (tw, th_, 0.0004), "paper")
+    at = (0.07, -0.042)
+    place = Matrix.Translation((at[0], at[1], drape(*at) + 0.0026)) @ Matrix.Rotation(math.radians(12), 4, "Z") \
+        @ Matrix.Rotation(math.radians(-6), 4, "X")
+    g.extend(tag, place)
+    knot = Vector((tx_, -0.03, drape(tx_, -0.03) + 0.0014))
+    string = [tuple(place @ Vector((-tw + 0.004, 0, 0.0008))), tuple(knot.lerp(place @ Vector((-tw, 0, 0.002)), 0.5) + Vector((0, 0, 0.002))),
+              tuple(knot)]
+    bl.sweep(g, string, 0.0007, "twine", segs=5)
+    root = bl.make_empty("GrazerSteak")
+    bl.make_object("Parcel", g, mats, root)
+    return root
+
+
+# =====================================================================================================================
 # Held placement
 # =====================================================================================================================
 
@@ -494,6 +787,8 @@ ITEMS = {
     "bloom_tea": ("Bloom Tea", build_bloom_tea),
     "grazer_shake": ("Grazer Shake", build_grazer_shake),
     "fertilizer": ("Fertilizer", build_fertilizer),
+    "grazer_milk": ("Grazer Milk", build_grazer_milk),
+    "grazer_steak": ("Grazer Steak", build_grazer_steak),
 }
 
 

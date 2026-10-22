@@ -57,8 +57,10 @@ public sealed record StartRaidArgs(int? Level = null);
 /// <param name="LedBy">The player leading it on a Lead (<c>LeadBot</c>), or null.</param>
 /// <param name="Look">Which of its model's looks it has (0 the main mesh, n the nth variant), or null to go by its id.</param>
 /// <param name="InLove">Whether it is in the mood to pair (a player fed it its breed's treat).</param>
+/// <param name="Meals">Meals it has eaten from its home towards its produce (<c>tame.produce</c>).</param>
+/// <param name="Ready">Whether its produce is ready for a player to collect (<c>CollectBot</c>).</param>
 public sealed record BotView(int Id, string Type, Vec3 Position, float Yaw, float Health, float MaxHealth, bool Dead, int? Raid = null, bool Engaged = false,
-    bool Swimming = false, bool Kept = false, int Fed = 0, int? LedBy = null, int? Look = null, bool InLove = false);
+    bool Swimming = false, bool Kept = false, int Fed = 0, int? LedBy = null, int? Look = null, bool InLove = false, int Meals = 0, bool Ready = false);
 
 /// <summary>Arguments of <c>KeepBot</c>.</summary>
 /// <param name="Bot">The bot.</param>
@@ -92,8 +94,15 @@ public sealed record LeadBotResult(bool Led);
 /// <param name="DueIn">Seconds until its young is born, or null.</param>
 /// <param name="DueLook">The look its young will have.</param>
 /// <param name="GrowsIn">Seconds until it grows up (a young one), or null.</param>
+/// <param name="Meals">Meals it has eaten from its home towards its produce.</param>
+/// <param name="ProduceIn">Seconds until its produce's cooldown is over, or null.</param>
 public sealed record SavedBot(string Type, Vec3 Position, float Yaw, Vec3 Home, float Health, int? Look = null, float? BreedIn = null,
-    float? DueIn = null, int DueLook = 0, float? GrowsIn = null);
+    float? DueIn = null, int DueLook = 0, float? GrowsIn = null, int Meals = 0, float? ProduceIn = null);
+
+/// <summary>Value of a successful <c>CollectBot</c>: what went into the player's inventory.</summary>
+/// <param name="Item">Qualified item id.</param>
+/// <param name="Count">How many.</param>
+public sealed record CollectBotResult(string Item, int Count);
 
 /// <summary>Value of a successful <c>SpawnBot</c>.</summary>
 /// <param name="Bot">The new bot's id.</param>

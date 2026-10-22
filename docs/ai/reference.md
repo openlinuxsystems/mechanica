@@ -2,14 +2,14 @@
 
 <!-- Generated from mechanica.describe by tools/ai/gen-docs.sh. Do not edit by hand. -->
 
-Protocol version 2. 180 methods: 70 actions (change the world), 31 queries (only read it) and 79 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
+Protocol version 2. 181 methods: 71 actions (change the world), 31 queries (only read it) and 79 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
 
 ## Contents
 
 - [Endpoint built-ins (mechanica.*)](#endpoint-built-ins-mechanica) (12)
 - [Agent players](#agent-players) (2)
 - [Seeing the world and the catalog](#seeing-the-world-and-the-catalog) (15)
-- [Bots and raids](#bots-and-raids) (11)
+- [Bots and raids](#bots-and-raids) (12)
 - [Building](#building) (15)
 - [Characters](#characters) (1)
 - [Chat](#chat) (1)
@@ -346,6 +346,16 @@ A bot's attack. Arguments of BotAttack. Melee and ranged attacks name exactly on
 | `part` | integer or null |  |  | The part to hit. |
 | `target` | integer or null |  |  | The bot to hit. |
 | `object` | string or null |  |  | The world object to hit (a tree, rock or bush), by its id. |
+
+### `CollectBot`
+
+*action, play scope*
+
+A player collecting what a tame bot gives once it has eaten enough from its home (a Grazer's milk). Arguments of the actions that name one bot (DespawnBot, GetBot).
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `bot` | integer | yes |  | The bot's id. |
 
 ### `DespawnBot`
 
