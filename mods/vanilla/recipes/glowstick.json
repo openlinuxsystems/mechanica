@@ -5,20 +5,20 @@
   ],
   "inputs": [
     {
-      "item": "scrap_wood_block",
+      "item": "chemical",
       "count": 4
     },
     {
-      "item": "chemical",
-      "count": 1
+      "item": "ember",
+      "count": 4
     }
   ],
   "outputs": [
     {
       "item": "glowstick",
-      "count": 1
+      "count": 4
     }
   ],
-  "time": 2,
+  "time": 20,
   "order": 1610
 }

@@ -1,10 +1,14 @@
 {
   "id": "tomato",
   "name": "Tomato",
-  "description": "Juicy. Heals more than a carrot.",
+  "description": "Juicy. Eat it to heal. The Fabricator makes Paint Ammo from tomatoes.",
   "category": "consumable",
-  "mass": 0.2,
-  "stack_size": 20,
+  "mass": 1.5,
+  "durability": 1,
+  "friction": 0.4,
+  "buoyancy": 0.4,
+  "flammable": true,
+  "stack_size": 10,
   "mesh": "meshes/items/tomato.glb",
   "icon": "textures/items/tomato_icon.png",
   "visual": {
@@ -22,6 +26,6 @@
     "juice": "#c83a2a"
   },
   "properties": {
-    "health": 15
+    "health": 20
   }
 }

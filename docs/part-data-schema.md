@@ -706,7 +706,7 @@ writes them.
 | `name` | string | no | Display name. Omitted means the first output's name. |
 | `stations` | list of part ids | always | Parts with `crafting` that can run it. |
 | `inputs` | list of `{ item, count }` | always | Items used up. Each item once; add the counts together. |
-| `outputs` | list of `{ item, count }` | always | Items made. |
+| `outputs` | list of `{ item, count }` | always | Items made. The first is the one the station shows; later ones come with it, such as a container given back (vanilla's `chemical` makes 5 Chemical and returns the empty `water_bucket`, as the Freezer's ice recipe does). |
 | `time` | number ≥ 0 | always | Seconds for one craft at speed 1. |
 | `order` | whole number | no | Where it sits in a station's list (see Recipe order). Omitted puts it after every recipe that has one. |
 
@@ -736,7 +736,7 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 | 600 | Wheels | `scrap_wheel`, `wheel`, `big_wheel`, `sticky_wheel` |
 | 700 | Suspension | `sport_suspension`, `offroad_suspension` |
 | 800 | Engines | `scrap_gas_engine`, `gas_engine`, `electric_engine` |
-| 900 | Fuel and power | `gasoline`, `ember`, `gas_container`, `battery`, `battery_pack` |
+| 900 | Fuel and power | `gasoline`, `ember`, `gas_container`, `battery`, `battery_pack`, `chemical` (945, a Chemical Bucket emptied) |
 | 1000 | Bearings and pistons | `bearing_scrap`, `bearing`, `piston` |
 | 1100 | Flight | `thruster`, `hover_jet`, `rotor`, `wing`, `control_surface` |
 | 1200 | Logic | `switch_scrap`, `switch`, `button`, `logic_gate`, `timer`, `sensor`, `alarm_clock` |

@@ -1,0 +1,24 @@
+{
+  "id": "chemical",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "chemical_bucket",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "chemical",
+      "count": 5
+    },
+    {
+      "item": "water_bucket",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 945
+}

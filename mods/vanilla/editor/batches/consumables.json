@@ -1,0 +1,212 @@
+// Consumables batch C1 (Scrap Mechanic parity, consumables map): the produce, the four seeds, Chemical and Gasoline,
+// moved here from survival.json. The wiki's stats (1.5 kg per weight bar; durability = bars; friction and buoyancy =
+// bars / 10; flammable and stack size as the wiki) and the Food page's heals (properties.health, read by food.lua).
+// Gasoline keeps 20 kg (a 2x2x2 can). The Potato stays edible until a cooking station gives it a use. The seeds keep
+// their numbers until the Crops step. Chemical is made by emptying a Chemical Bucket at the Fabricator: the recipe's
+// second output gives the empty Water Bucket back. Re-run with tools/author-vanilla.sh.
+{
+  "format_version": 1,
+  "parts": [
+    {
+      "file": "parts/carrot.json",
+      "template": "item",
+      "set": {
+        "name": "Carrot",
+        "description": "Crunchy. Eat it to heal. Tame Grazers eat carrots from their Feeding Trough.",
+        "category": "consumable",
+        "mass": 1.5,
+        "durability": 1,
+        "friction": 0.4,
+        "buoyancy": 0.4,
+        "flammable": true,
+        "stack_size": 10,
+        "icon": "textures/items/carrot_icon.png",
+        "visual": { "color": "#ffffff" },
+        "held": { "mesh": "meshes/items/carrot_held.glb", "offset": [-0.04, 0.066, 0.035], "rotation": [-90, 0, 90], "juice": "#ea8430" },
+        "sounds": { "pickup": "pickup_produce", "eat": "eat_crunch" },
+        "script": "scripts/food.lua",
+        "properties": { "health": 25 }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/carrot.glb" }]
+    },
+    {
+      "file": "parts/tomato.json",
+      "template": "item",
+      "set": {
+        "name": "Tomato",
+        "description": "Juicy. Eat it to heal. The Fabricator makes Paint Ammo from tomatoes.",
+        "category": "consumable",
+        "mass": 1.5,
+        "durability": 1,
+        "friction": 0.4,
+        "buoyancy": 0.4,
+        "flammable": true,
+        "stack_size": 10,
+        "icon": "textures/items/tomato_icon.png",
+        "visual": { "color": "#ffffff" },
+        "held": { "mesh": "meshes/items/tomato_held.glb", "offset": [-0.0373, 0.0413, 0.0015], "rotation": [-3.37, -180, -45], "juice": "#c83a2a" },
+        "sounds": { "pickup": "pickup_produce", "eat": "eat_soft" },
+        "script": "scripts/food.lua",
+        "properties": { "health": 20 }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/tomato.glb" }]
+    },
+    {
+      "file": "parts/potato.json",
+      "template": "item",
+      "set": {
+        "name": "Potato",
+        "description": "Heals a little when eaten. Potato weapons fire them.",
+        "category": "consumable",
+        "mass": 3,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.3,
+        "flammable": true,
+        "stack_size": 50,
+        "icon": "textures/items/potato_icon.png",
+        "visual": { "color": "#ffffff" },
+        "held": { "mesh": "meshes/items/potato_held.glb", "offset": [-0.04, 0.082, 0], "rotation": [180, 0, 90], "juice": "#d8c898" },
+        "sounds": { "pickup": "pickup_produce", "eat": "eat_soft" },
+        "script": "scripts/food.lua",
+        "properties": { "health": 8 }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/potato.glb" }]
+    },
+    {
+      "file": "parts/carrot_seed.json",
+      "template": "item",
+      "set": {
+        "name": "Carrot Seed",
+        "description": "Plant in watered soil. Grows into carrots.",
+        "category": "consumable",
+        "mass": 0.05,
+        "stack_size": 50,
+        "icon": "textures/items/carrot_seed_icon.png",
+        "visual": { "color": "#ffffff" },
+        "held": { "mesh": "meshes/items/carrot_seed.glb", "offset": [-0.028, 0.062, -0.035], "rotation": [0, 90, 90] },
+        "sounds": { "pickup": "seed_pickup", "place": "seed_place" },
+        "seed": { "crop": "carrot", "grow_time": 240, "yield": 2, "seeds": 1, "value": 1, "plant": "meshes/crops/carrot_plant.glb" },
+        "script": "scripts/seed.lua"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/carrot_seed.glb" }]
+    },
+    {
+      "file": "parts/tomato_seed.json",
+      "template": "item",
+      "set": {
+        "name": "Tomato Seed",
+        "description": "Plant in watered soil. Grows into tomatoes.",
+        "category": "consumable",
+        "mass": 0.05,
+        "stack_size": 50,
+        "icon": "textures/items/tomato_seed_icon.png",
+        "visual": { "color": "#ffffff" },
+        "held": { "mesh": "meshes/items/tomato_seed.glb", "offset": [-0.028, 0.062, -0.035], "rotation": [0, 90, 90] },
+        "sounds": { "pickup": "seed_pickup", "place": "seed_place" },
+        "seed": { "crop": "tomato", "grow_time": 360, "yield": 2, "seeds": 1, "seeds_max": 2, "value": 1.5, "plant": "meshes/crops/tomato_plant.glb" },
+        "script": "scripts/seed.lua"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/tomato_seed.glb" }]
+    },
+    {
+      "file": "parts/potato_seed.json",
+      "template": "item",
+      "set": {
+        "name": "Potato Seed",
+        "description": "Plant in watered soil. Grows into potatoes, which are also blaster ammo.",
+        "category": "consumable",
+        "mass": 0.05,
+        "stack_size": 50,
+        "icon": "textures/items/potato_seed_icon.png",
+        "visual": { "color": "#ffffff" },
+        "held": { "mesh": "meshes/items/potato_seed.glb", "offset": [-0.028, 0.062, -0.035], "rotation": [0, 90, 90] },
+        "sounds": { "pickup": "seed_pickup", "place": "seed_place" },
+        "seed": { "crop": "potato", "grow_time": 300, "yield": 3, "seeds": 1, "value": 1, "plant": "meshes/crops/potato_plant.glb" },
+        "script": "scripts/seed.lua"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/potato_seed.glb" }]
+    },
+    {
+      "file": "parts/cotton_seed.json",
+      "template": "item",
+      "set": {
+        "name": "Cotton Seed",
+        "description": "Plant in watered soil. Grows into a cotton bush; pick its bolls for Cotton.",
+        "category": "consumable",
+        "mass": 0.05,
+        "stack_size": 50,
+        "icon": "textures/items/cotton_seed_icon.png",
+        "visual": { "color": "#ffffff" },
+        "held": { "mesh": "meshes/items/cotton_seed.glb", "offset": [-0.028, 0.062, -0.035], "rotation": [0, 90, 90] },
+        "sounds": { "pickup": "seed_pickup", "place": "seed_place" },
+        "seed": { "crop": "cotton", "grow_time": 300, "yield": 2, "seeds": 1, "seeds_max": 2, "value": 1, "plant": "meshes/crops/cotton_plant.glb" },
+        "script": "scripts/seed.lua"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/cotton_seed.glb" }]
+    },
+    {
+      "file": "parts/chemical.json",
+      "template": "item",
+      "set": {
+        "name": "Chemical",
+        "description": "Glowing green chemical from a chemical pool. Dip an empty Water Bucket in one, then pour it into a Chemical Container or empty it at a Fabricator for 5 Chemical (you get the bucket back). Batteries and Glowsticks need it. Flammable.",
+        "category": "resource",
+        "tab": "consumable",
+        "mass": 3,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.7,
+        "flammable": true,
+        "stack_size": 20,
+        "icon": "textures/items/chemical_icon.png",
+        "visual": { "color": "#7ee03c" },
+        "sounds": { "pickup": "pickup_fuel" }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/chemical.glb" }],
+      "recipes": [
+        {
+          "id": "chemical",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "chemical_bucket", "count": 1 }],
+          "outputs": [{ "item": "chemical", "count": 5 }, { "item": "water_bucket", "count": 1 }],
+          "time": 5,
+          "order": 945
+        }
+      ]
+    },
+    {
+      "file": "parts/gasoline.json",
+      "template": "item",
+      "set": {
+        "name": "Gasoline",
+        "description": "A red can of fuel. Load it into a Gas Container: gas engines, the Scrap Gas Engine and thrusters burn it from their creation's containers. Flammable.",
+        "category": "resource",
+        "tab": "consumable",
+        "loose": true,
+        "mass": 20,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.7,
+        "flammable": true,
+        "stack_size": 20,
+        "sound_material": "plastic",
+        "size": [2, 2, 2],
+        "icon": "textures/items/gasoline_icon.png",
+        "visual": { "color": "#ffffff", "roughness": 0.6, "metallic": 0 },
+        "sounds": { "pickup": "pickup_fuel" }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/gasoline.glb" }],
+      "recipes": [
+        {
+          "id": "gasoline",
+          "stations": ["fabricator", "refiner", "portable_fabricator"],
+          "inputs": [{ "item": "crude_oil", "count": 5 }],
+          "outputs": [{ "item": "gasoline", "count": 5 }],
+          "time": 5,
+          "order": 910
+        }
+      ]
+    }
+  ]
+}
