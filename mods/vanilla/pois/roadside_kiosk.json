@@ -21,6 +21,7 @@
   ],
   "markers": [
     { "type": "part", "ref": "wooden_crate", "at": [0.0, 0.2, -2.4], "loot": "crate", "loot_rolls": [2, 4] },
-    { "type": "part", "ref": "wooden_crate", "at": [-3.5, 0.2, 2.0], "loot": "crate", "loot_rolls": [2, 4] }
+    { "type": "part", "ref": "wooden_crate", "at": [-3.5, 0.2, 2.0], "loot": "crate", "loot_rolls": [2, 4] },
+    { "type": "part", "ref": "sale_sign", "at": [-2.6, 0.2, -3.2] }
   ]
 }

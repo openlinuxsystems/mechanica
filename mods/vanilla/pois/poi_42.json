@@ -22,5 +22,9 @@
     { "shape": "box", "size": [2.0, 3.0, 52.0], "at": [29.0, 1.8, 0.0], "color": "#d8b85a" },
     { "shape": "box", "size": [2.0, 3.0, 14.0], "at": [0.0, 1.8, -22.0], "color": "#d8b85a" },
     { "shape": "box", "size": [2.0, 3.0, 14.0], "at": [15.0, 1.8, 22.0], "color": "#d8b85a" }
+  ],
+  "markers": [
+    { "type": "part", "ref": "ruin_chest", "at": [-20.0, 0.3, -7.0], "loot": "ruin_chest", "loot_rolls": [1, 6], "refill_days": 5.0 },
+    { "type": "part", "ref": "wooden_crate", "at": [20.0, 0.3, 8.0], "loot": "crate", "loot_rolls": [2, 4] }
   ]
 }

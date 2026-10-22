@@ -21,5 +21,23 @@
     { "shape": "box", "size": [6.0, 3.0, 6.0], "at": [24.0, 1.8, -18.0], "yaw": 33.0, "color": "#6a5a52" },
     { "shape": "box", "size": [60.0, 2.0, 0.4], "at": [0.0, 1.3, -25.0], "color": "#7d858c" },
     { "shape": "box", "size": [0.4, 2.0, 50.0], "at": [30.0, 1.3, 0.0], "color": "#7d858c" }
+  ],
+  "markers": [
+    { "type": "part", "ref": "beware_bots_sign", "at": [-3.0, 0.3, 26.0], "yaw": 180.0 },
+    { "type": "part", "ref": "danger_sign", "at": [3.0, 0.3, 26.0], "yaw": 180.0 },
+    { "type": "part", "ref": "traffic_cone", "at": [-6.0, 0.3, 25.0] },
+    { "type": "part", "ref": "traffic_cone", "at": [6.0, 0.3, 25.0] },
+    { "type": "part", "ref": "ruin_chest", "at": [0.0, 0.3, 0.0], "loot": "ruin_chest", "loot_rolls": [1, 6], "refill_days": 5.0 },
+    { "type": "part", "ref": "metal_crate", "at": [-14.0, 0.3, -21.0], "loot": "warehouse_crate", "loot_rolls": [2, 4] },
+    { "type": "part", "ref": "wooden_crate", "at": [-27.0, 0.3, 0.0], "loot": "crate", "loot_rolls": [2, 4] },
+    { "type": "part", "ref": "shelf_unit", "at": [-6.0, 0.3, -24.5], "yaw": 180.0 },
+    { "type": "part", "ref": "shelf_unit", "at": [-2.0, 0.3, -24.5], "yaw": 180.0 },
+    { "type": "part", "ref": "construction_light", "at": [27.0, 0.3, -8.0] },
+    { "type": "part", "ref": "construction_light", "at": [-29.0, 0.3, 22.0] },
+    { "type": "part", "ref": "stacked_crates", "at": [26.0, 0.3, 20.0] },
+    { "type": "part", "ref": "scrap_wheel", "at": [14.0, 0.3, -5.0] },
+    { "type": "part", "ref": "scrap_wheel", "at": [-15.0, 0.3, 3.0] },
+    { "type": "part", "ref": "scrap_drivers_seat", "at": [-15.0, 0.3, -1.0], "yaw": 40.0 },
+    { "type": "part", "ref": "scrap_gas_engine", "at": [12.0, 0.3, 20.0] }
   ]
 }

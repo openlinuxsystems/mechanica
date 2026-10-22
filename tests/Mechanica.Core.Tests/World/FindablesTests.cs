@@ -6,7 +6,8 @@ namespace Mechanica.Core.Tests.World;
 
 /// <summary>
 /// Real parts to find in the vanilla world: wrecks break down into the parts a vehicle like that had, roadside signs and
-/// cones give themselves, small wrecks give wheels, seats and engines, and the containers and Bloom Pods hold parts.
+/// cones give themselves, small wrecks give wheels, seats and engines, the containers and Bloom Pods hold parts, and POIs
+/// are furnished with parts players can take.
 /// </summary>
 public sealed class FindablesTests
 {
@@ -67,6 +68,36 @@ public sealed class FindablesTests
     [InlineData("epic", "wheel")]
     [InlineData("legendary", "electric_engine")]
     public void ContainersAndBloomPodsHoldParts(string table, string part) => Assert.Contains(part, Table(table));
+
+    private static List<PoiMarker> Markers(string poi) => Data.Value.Pois.Single(p => p.Prefab.Id == poi).Prefab.Markers!;
+
+    [Theory]
+    [InlineData("farmbot_scrapyard", "beware_bots_sign")]
+    [InlineData("farmbot_scrapyard", "scrap_gas_engine")]
+    [InlineData("poi_41", "battery_pack")]
+    [InlineData("poi_50", "wheel")]
+    [InlineData("camp", "scrap_seat")]
+    [InlineData("roadside_kiosk", "sale_sign")]
+    [InlineData("warehouse", "construction_light")]
+    [InlineData("outpost", "respawn_bed")]
+    [InlineData("outpost", "outpost_sign")]
+    public void PoisAreFurnishedWithPartsToTake(string poi, string part) =>
+        Assert.Contains(Markers(poi), m => m.Type == PoiMarker.PartType && m.Ref == part);
+
+    [Theory]
+    [InlineData("warehouse_small")]
+    [InlineData("warehouse")]
+    [InlineData("warehouse_large")]
+    public void EveryWarehouseHasItsKeyInALocker(string poi)
+    {
+        Assert.Contains(Markers(poi), m => m is { Type: PoiMarker.PartType, Ref: "locker", Loot: "warehouse_office" });
+        Assert.Equal(["warehouse_key"], Table("warehouse_office"));
+    }
+
+    [Fact]
+    public void NoPoiMarkerNamesAnItemThatNeverAppears() =>
+        Assert.DoesNotContain(Data.Value.Pois.SelectMany(p => p.Prefab.Markers ?? []),
+            m => m.Type == "item" && m.Ref is "respawn_bed" or "outpost_sign" or "warehouse_key" or "warehouse_key_sign" or "scrap_metal_block" or "component_kit");
 
     [Fact]
     public void EveryDropAndLootEntryIsAPartTheModsHave()

@@ -17,5 +17,9 @@
     { "shape": "box", "size": [0.5, 7.0, 24.0], "at": [-15.0, 3.5, 0.0], "color": "#9c988c" },
     { "shape": "box", "size": [12.0, 4.0, 0.5], "at": [9.0, 2.0, 12.0], "color": "#9c988c" },
     { "shape": "box", "size": [14.0, 3.0, 12.0], "at": [6.0, 1.8, -4.0], "color": "#9c988c" }
+  ],
+  "markers": [
+    { "type": "part", "ref": "wooden_crate", "at": [-10.0, 0.3, 4.0], "loot": "crate", "loot_rolls": [2, 4] },
+    { "type": "part", "ref": "skull_sign", "at": [-14.5, 0.3, 8.0], "yaw": -90.0 }
   ]
 }

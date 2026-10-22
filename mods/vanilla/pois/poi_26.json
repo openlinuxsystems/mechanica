@@ -25,5 +25,11 @@
     { "shape": "box", "size": [24.0, 10.0, 16.0], "at": [-20.0, 5.3, 20.0], "color": "#7d858c" },
     { "shape": "box", "size": [60.0, 1.0, 1.0], "at": [-12.0, 24.0, -16.0], "color": "#3f6fa8" },
     { "shape": "box", "size": [0.3, 2.0, 30.0], "at": [44.0, 1.3, 20.0], "color": "#7d858c" }
+  ],
+  "markers": [
+    { "type": "part", "ref": "metal_crate", "at": [26.0, 0.3, 0.0], "loot": "warehouse_crate", "loot_rolls": [2, 4] },
+    { "type": "part", "ref": "wooden_crate", "at": [-20.0, 0.3, 32.0], "loot": "crate", "loot_rolls": [2, 4] },
+    { "type": "part", "ref": "construction_light", "at": [10.0, 0.3, -30.0] },
+    { "type": "part", "ref": "danger_sign", "at": [0.0, 0.3, 37.0], "yaw": 180.0 }
   ]
 }

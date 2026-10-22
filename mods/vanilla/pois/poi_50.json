@@ -17,5 +17,16 @@
     { "shape": "box", "size": [16.0, 8.0, 0.4], "at": [-12.0, 4.3, 20.2], "color": "#4a4f55" },
     { "shape": "box", "size": [16.0, 8.0, 0.4], "at": [12.0, 4.3, 20.2], "color": "#4a4f55" },
     { "shape": "cylinder", "radius": 3.0, "height": 6.0, "at": [20.0, 15.3, -10.0], "color": "#e0b52c" }
+  ],
+  "markers": [
+    { "type": "part", "ref": "metal_crate", "at": [-26.0, 0.3, 22.5], "loot": "warehouse_crate", "loot_rolls": [2, 4] },
+    { "type": "part", "ref": "stacked_crates", "at": [26.0, 0.3, 22.5] },
+    { "type": "part", "ref": "sale_sign", "at": [0.0, 0.3, 22.0], "yaw": 180.0 },
+    { "type": "part", "ref": "construction_light", "at": [-2.5, 0.3, 22.5] },
+    { "type": "part", "ref": "traffic_cone", "at": [-21.0, 0.3, 23.0] },
+    { "type": "part", "ref": "traffic_cone", "at": [21.0, 0.3, 23.0] },
+    { "type": "part", "ref": "wheel", "at": [32.0, 0.3, 2.0] },
+    { "type": "part", "ref": "wheel", "at": [32.0, 0.3, -1.0] },
+    { "type": "part", "ref": "scrap_drivers_seat", "at": [32.0, 0.3, -6.0], "yaw": -90.0 }
   ]
 }

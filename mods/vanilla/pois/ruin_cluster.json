@@ -26,8 +26,9 @@
   "markers": [
     { "type": "bot", "ref": "scuttler_green", "at": [0.0, 0.0, 0.0] },
     { "type": "bot", "ref": "scuttler_green", "at": [3.0, 0.0, 7.0] },
-    { "type": "item", "ref": "scrap_metal_block", "at": [-4.0, 0.0, -4.0] },
-    { "type": "item", "ref": "component_kit", "at": [5.0, 0.0, -3.0] },
+    // Crates of scrap and kits in the corners of the walls.
+    { "type": "part", "ref": "wooden_crate", "at": [-4.6, 0.0, -4.0], "loot": "crate", "loot_rolls": [2, 4] },
+    { "type": "part", "ref": "wooden_crate", "at": [5.0, 0.0, -4.6], "loot": "crate", "loot_rolls": [2, 4] },
     // A Ruin Chest against the north wall, facing in: it fills again 5 in-game days after it is emptied, as Scrap Mechanic's.
     { "type": "part", "ref": "ruin_chest", "at": [-1.0, 0.0, -5.2], "yaw": 180.0, "loot": "ruin_chest", "loot_rolls": [1, 6], "refill_days": 5.0 }
   ]

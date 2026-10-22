@@ -891,6 +891,12 @@
     // microwave scrap or a circuit board; ruin chests (which refill, "refill_days") a bit of everything. Resources stay
     // plentiful. Bloom Tea and Grazer Shake are loot only (consumables batch C2): tea in crates, lockers and Bloom Pods, the
     // full-heal shake rarer (lockers, purple and gold pods); Fertilizer in pods, crates and ruin chests.
+    // The Warehouse Key: one locker on each warehouse's top floor holds it (the only place the world gives one).
+    "warehouse_office": {
+      "items": [
+        { "item": "warehouse_key", "count": 1, "weight": 1.0 }
+      ]
+    },
     "locker": {
       "items": [
         { "item": "carrot", "count": 2, "count_max": 5, "weight": 3.0 },

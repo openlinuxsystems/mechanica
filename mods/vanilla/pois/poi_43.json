@@ -26,5 +26,13 @@
     { "shape": "box", "size": [2.0, 2.0, 2.0], "at": [-16.0, 1.3, 18.0], "color": "#d8b85a" },
     { "shape": "box", "size": [2.0, 2.0, 2.0], "at": [16.0, 1.3, 18.0], "color": "#d8b85a" },
     { "shape": "box", "size": [2.0, 2.0, 2.0], "at": [20.0, 1.3, 18.0], "color": "#d8b85a" }
+  ],
+  "markers": [
+    { "type": "part", "ref": "chest", "at": [0.0, 0.3, -6.0], "loot": "crate", "loot_rolls": [2, 4] },
+    { "type": "part", "ref": "wooden_crate", "at": [0.0, 0.3, 8.0], "loot": "crate", "loot_rolls": [2, 4] },
+    { "type": "part", "ref": "shack_light", "at": [-8.0, 0.3, 0.0] },
+    { "type": "part", "ref": "shack_light", "at": [8.0, 0.3, 0.0] },
+    { "type": "part", "ref": "scrap_seat", "at": [4.0, 0.3, 6.0], "yaw": 180.0 },
+    { "type": "part", "ref": "chair", "at": [-4.0, 0.3, 6.0], "yaw": 180.0 }
   ]
 }

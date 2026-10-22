@@ -18,5 +18,8 @@
     { "shape": "cylinder", "radius": 0.4, "height": 12.0, "at": [4.0, 6.3, -4.0], "color": "#7d858c" },
     { "shape": "cylinder", "radius": 0.4, "height": 12.0, "at": [4.0, 6.3, 4.0], "color": "#7d858c" },
     { "shape": "box", "size": [10.0, 2.5, 10.0], "at": [0.0, 13.5, 0.0], "color": "#9c988c" }
+  ],
+  "markers": [
+    { "type": "part", "ref": "wooden_crate", "at": [2.5, 14.75, 2.5], "loot": "crate", "loot_rolls": [2, 4] }
   ]
 }

@@ -22,5 +22,14 @@
     { "shape": "box", "size": [22.0, 30.0, 22.0], "at": [-30.0, 15.3, 48.0], "color": "#9c988c" },
     { "shape": "box", "size": [30.0, 24.0, 20.0], "at": [30.0, 12.3, 50.0], "color": "#9c988c" },
     { "shape": "box", "size": [150.0, 0.3, 10.0], "at": [0.0, 0.45, 26.0], "color": "#5a5e62" }
+  ],
+  "markers": [
+    { "type": "part", "ref": "ruin_chest", "at": [0.0, 0.3, -25.0], "loot": "ruin_chest", "loot_rolls": [1, 6], "refill_days": 5.0 },
+    { "type": "part", "ref": "wooden_crate", "at": [-40.0, 0.3, -15.0], "loot": "crate", "loot_rolls": [2, 4] },
+    { "type": "part", "ref": "metal_crate", "at": [40.0, 0.3, -20.0], "loot": "warehouse_crate", "loot_rolls": [2, 4] },
+    { "type": "part", "ref": "wooden_crate", "at": [0.0, 0.3, 40.0], "loot": "crate", "loot_rolls": [2, 4] },
+    { "type": "part", "ref": "danger_sign", "at": [0.0, 0.3, 70.0], "yaw": 180.0 },
+    { "type": "part", "ref": "traffic_cone", "at": [-12.0, 0.6, 24.0] },
+    { "type": "part", "ref": "traffic_cone", "at": [12.0, 0.6, 28.0] }
   ]
 }
