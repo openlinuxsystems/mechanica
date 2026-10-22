@@ -39,6 +39,20 @@
     "queue_size": 2,
     "link_range": 1
   },
+  "io_ports": [
+    {
+      "id": "input",
+      "position": [-1.25, -0.75, 0.125],
+      "normal": [-1, 0, 0],
+      "mode": "in"
+    },
+    {
+      "id": "output",
+      "position": [1.25, -0.75, 0.125],
+      "normal": [1, 0, 0],
+      "mode": "out"
+    }
+  ],
   "upgrades": [
     {
       "cost": [

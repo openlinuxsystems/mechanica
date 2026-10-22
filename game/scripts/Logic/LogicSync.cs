@@ -119,9 +119,11 @@ public partial class LogicSync : Node
 
     /// <summary>
     /// The seat's frame now, at the sitting player's feet (the player faces its -Z), and how fast it moves; null when
-    /// this peer does not show it.
+    /// this peer does not show it. A turret seat's frame turns with its shell (<see cref="CreationNode.AimShown"/>) unless
+    /// <paramref name="aimed"/> is false: the seat camera follows the unturned base, or the view would chase the shell
+    /// that chases it.
     /// </summary>
-    public (Transform3D Feet, Vector3 Velocity)? SeatTransform(int creationId, int partId)
+    public (Transform3D Feet, Vector3 Velocity)? SeatTransform(int creationId, int partId, bool aimed = true)
     {
         if (Creations.NodeOf(creationId) is not { } node || node.Creation.FindPart(partId) is not { } part)
             return null;
@@ -133,6 +135,8 @@ public partial class LogicSync : Node
         var local = PartGeometry.CentreMetres(definition, part.Cell, part.Rotation) + part.Rotation.Apply(SeatStyle.Anchor(definition));
         var body = node.Bodies[index];
         var frame = body.GlobalTransform * new Transform3D(part.Rotation.ToBasis(), local.ToNumerics().ToGodot());
+        if (aimed && node.AimShown(partId) is { } aim && creation.TryGetAimFrame(partId, out var turret))
+            frame = body.GlobalTransform * JointMath.AimPose(turret, aim.Yaw, aim.Pitch).ToTransform() * new Transform3D(part.Rotation.ToBasis(), local.ToNumerics().ToGodot());
         return (frame.Orthonormalized(), body.LinearVelocity);
     }
 

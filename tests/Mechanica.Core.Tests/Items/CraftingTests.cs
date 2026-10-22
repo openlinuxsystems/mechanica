@@ -82,6 +82,47 @@ public class CraftingTests
     // ---- Actions ----
 
     [Fact]
+    public void AStationCraftsFromWhatIsPipedToItsInputAndSendsItsOutputDownItsOutputPipe()
+    {
+        // Parts map E1: the Bench with an input port (-X) piped from a chest that sends out, and an output port (+X)
+        // piped to one that takes in, as a Refiner piped from a Resource Collector.
+        TransportParts.Catalog(_catalog);
+        _catalog.Add(Block, _catalog.FindDefinition(Block)! with { StackSize = 10 });
+        _catalog.Add(Bench,_catalog.FindDefinition(Bench)! with
+        {
+            IoPorts =
+            [
+                new ItemPortDefinition { Id = "input", Position = new Vec3(-0.125f, 0, 0), Normal = new Vec3(-1, 0, 0), Mode = ItemPortMode.In },
+                new ItemPortDefinition { Id = "output", Position = new Vec3(0.125f, 0, 0), Normal = new Vec3(1, 0, 0), Mode = ItemPortMode.Out },
+            ],
+        });
+        var creation = new Creation(_world.NextCreationId(), _catalog);
+        for (var x = 0; x < 5; x++)
+            Assert.True(creation.TryPlacePart(Block, new GridCell(x, -1, 0), default, out _, out var e), e);
+        var toward = GridRotation.FromAxes(new GridCell(0, 0, 1), new GridCell(0, 1, 0));
+        var place = (string part, int x, GridRotation rotation) =>
+        {
+            Assert.True(creation.TryPlacePart(part, new GridCell(x, 0, 0), rotation, out var placed, out var error), error);
+            return placed!.Id;
+        };
+        var source = place(TransportParts.OutChest, 0, TransportParts.AlongX);
+        place(TransportParts.Pipe, 1, TransportParts.AlongX);
+        var bench = place(Bench, 2, default);
+        place(TransportParts.Pipe, 3, TransportParts.AlongX);
+        var target = place(TransportParts.InChest, 4, toward);
+        creation.SetAllBodyPoses(Pose.Identity);
+        _world.Added(creation);
+        creation.InventoryOf(source)!.Add(Scrap, 1);
+
+        var result = Dispatch(Player, InventoryActions.Craft, new { creation = creation.Id, part = bench, recipe = "test:blocks" });
+        Assert.True(result.Ok, result.ToString());
+        Assert.Equal(0, creation.InventoryOf(source)!.Count(Scrap));
+        _items.Tick(1f);
+        Assert.Equal(10, creation.InventoryOf(target)!.Count(Block));
+        Assert.Equal(0, creation.InventoryOf(bench)!.Count(Block));
+    }
+
+    [Fact]
     public void CraftingTakesTheInputsAndTheStationMakesTheOutput()
     {
         var (creation, bench) = Station();

@@ -1,0 +1,19 @@
+{
+  "id": "billboard",
+  "name": "Billboard",
+  "description": "A farm billboard: a hand-painted produce poster on a plank frame and two braced legs.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 3,
+  "friction": 0.4,
+  "buoyancy": 0.6,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "wood",
+  "size": [8, 8, 2],
+  "mesh": "meshes/parts/billboard.glb",
+  "icon": "textures/items/billboard_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

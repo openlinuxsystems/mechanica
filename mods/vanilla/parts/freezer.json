@@ -43,6 +43,13 @@
       "complete": "complete"
     }
   },
+  "io_ports": [
+    {
+      "id": "port",
+      "position": [0.375, -0.125, 0],
+      "normal": [1, 0, 0]
+    }
+  ],
   "display": {
     "clips": {
       "readout": "station",

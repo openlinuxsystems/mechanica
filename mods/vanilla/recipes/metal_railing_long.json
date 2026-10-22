@@ -1,0 +1,20 @@
+{
+  "id": "metal_railing_long",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "metal_railing_long",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 242
+}

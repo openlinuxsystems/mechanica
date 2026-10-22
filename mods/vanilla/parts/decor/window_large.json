@@ -1,0 +1,19 @@
+{
+  "id": "window_large",
+  "name": "Large Window",
+  "description": "A 2 m window: clear glass in a steel-blue frame with a mullion and a bone sill.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 3,
+  "friction": 0.2,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "glass",
+  "size": [8, 4, 1],
+  "mesh": "meshes/parts/window_large.glb",
+  "icon": "textures/items/window_large_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

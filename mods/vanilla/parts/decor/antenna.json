@@ -1,20 +1,19 @@
 {
   "id": "antenna",
   "name": "Antenna",
-  "description": "A tall whip antenna.",
+  "description": "A whip antenna on a copper loading coil.",
   "category": "decor",
-  "mass": 0.5,
-  "durability": 1,
-  "friction": 0.5,
+  "mass": 3,
+  "durability": 2,
+  "friction": 0.3,
   "buoyancy": 0.3,
   "flammable": false,
   "stack_size": 20,
   "sound_material": "metal",
   "size": [1, 6, 1],
-  "mesh": "meshes/decor/antenna.glb",
+  "mesh": "meshes/parts/antenna.glb",
+  "icon": "textures/items/antenna_icon.png",
   "visual": {
-    "color": "#202020",
-    "roughness": 0.3,
-    "metallic": 0.8
+    "color": "#ffffff"
   }
 }

@@ -123,7 +123,7 @@ Settings are changed with E on the part; properties are fixed in the part's data
 
 | Part | Output | Settings | Properties |
 |------|--------|----------|------------|
-| Driver's Seat, Driver's Saddle, Scrap Driver's Seat | The driver's throttle, -1 to 1 | | `steer_angle` (°), `steer_speed` (rad/s), `steer_torque` (N·m) |
+| Driver's Seat, Driver's Saddle, Scrap Driver's Seat, Turret Seat | The driver's throttle, -1 to 1 | | `steer_angle` (°), `steer_speed` (rad/s), `steer_torque` (N·m); the Turret Seat also `aim_speed` (rad/s) and `aim_torque` (N·m) for its turret |
 | Passenger Seat, Saddle, Scrap Seat, Toilet, Bathtub | (none); its links are the rider's hotbar | | |
 | Gas Engine, Scrap Gas Engine, Electric Engine | Its throttle while it runs | `gear` (Power, Speed on the Electric Engine) 1 to `gears` (3 on the Scrap Gas Engine, 5 to 13 on Gas Engine 1 to 5, 5 to 16 on Electric Engine 1 to 5), `on` (every engine needs it) | `speed` (rad/s at full throttle), `torque` and `brake` (N·m), `slider` (`power`: every step turns `speed` with its share of `torque`, as the gas engines; `speed`, the default: every step turns its share of `speed` with the full `torque`), `fuel` (item), `fuel_time` (s per item at full throttle and power), `loop_parameter`, and the `ignition` timings |
 | Logic Gate | 1 or 0 | `mode`: and, or, xor, nand, nor, xnor | |

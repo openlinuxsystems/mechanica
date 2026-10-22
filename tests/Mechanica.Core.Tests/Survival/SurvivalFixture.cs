@@ -21,6 +21,7 @@ internal sealed class SurvivalFixture
     public const string EmptyBucket = "test:empty_bucket";
     public const string Soil = "test:soil";
     public const string Bed = "test:bed";
+    public const string Bedroll = "test:bedroll";
     public const string Blaster = "test:blaster";
     public const string Scattergun = "test:scatter";
     public const string Bomb = "test:bomb";
@@ -65,7 +66,10 @@ internal sealed class SurvivalFixture
             // Soil runs the vanilla soil script (crops grow and are harvested in Lua); the Core tests run no scripts.
             .Add(Soil, Placeable("soil", PartCategory.Decor) with { Soil = new SoilDefinition { Capacity = 60, Growth = 2 },
                 Script = "scripts/soil.lua", Properties = new JsonObject { ["interval"] = 0.5 } })
-            .Add(Bed, Placeable("bed", PartCategory.Decor) with { RespawnPoint = true });
+            .Add(Bed, Placeable("bed", PartCategory.Decor) with { RespawnPoint = true })
+            // A bed lower than its block: its collision box is 0.15 m tall, sitting on the block's bottom.
+            .Add(Bedroll, Placeable("bedroll", PartCategory.Decor) with { RespawnPoint = true,
+                Collision = new CollisionDefinition { Shape = CollisionShape.Box, Size = new Vec3(0.25f, 0.15f, 0.25f), Offset = new Vec3(0, -0.05f, 0) } });
         Settings = settings ?? new SurvivalSettings
         {
             MaxHealth = 100,

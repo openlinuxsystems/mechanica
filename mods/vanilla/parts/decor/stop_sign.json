@@ -1,20 +1,19 @@
 {
   "id": "stop_sign",
   "name": "Stop Sign",
-  "description": "A red octagonal STOP sign on a post.",
+  "description": "A red octagonal STOP sign. On a post with a bolted foot.",
   "category": "decor",
   "mass": 3,
-  "durability": 2,
-  "friction": 0.5,
-  "buoyancy": 0.3,
+  "durability": 3,
+  "friction": 0.4,
+  "buoyancy": 0.2,
   "flammable": false,
   "stack_size": 20,
   "sound_material": "metal",
   "size": [3, 6, 1],
-  "mesh": "meshes/decor/stop_sign.glb",
+  "mesh": "meshes/parts/stop_sign.glb",
+  "icon": "textures/items/stop_sign_icon.png",
   "visual": {
-    "color": "#c02020",
-    "roughness": 0.5,
-    "metallic": 0.5
+    "color": "#ffffff"
   }
 }

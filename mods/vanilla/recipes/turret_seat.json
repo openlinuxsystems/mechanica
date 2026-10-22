@@ -1,0 +1,28 @@
+{
+  "id": "turret_seat",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block_2",
+      "count": 50
+    },
+    {
+      "item": "component_kit",
+      "count": 5
+    },
+    {
+      "item": "bearing",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "turret_seat",
+      "count": 1
+    }
+  ],
+  "time": 30,
+  "order": 547
+}

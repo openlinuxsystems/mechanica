@@ -147,6 +147,7 @@ public partial class CreationWorld : Node3D
                 (node.Bodies[i].LinearVelocity, node.Bodies[i].AngularVelocity) = entry.Velocities[i];
         }
         entry.Velocities.Clear();
+        node.MatchYokes();
     }
 
     /// <summary>Puts every Body of a live, simulated Creation to sleep.</summary>

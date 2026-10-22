@@ -375,7 +375,7 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
                 if (creation.InventoryOf(part) is not { } output)
                     continue;
                 var definition = creation.DefinitionOf(part);
-                var finished = queue.Tick(seconds, SpeedOf(definition), recipes, [.. Linked(creation, part), output]);
+                var finished = queue.Tick(seconds, SpeedOf(definition), recipes, [.. Outputs(creation, part), output]);
                 var owner = BuildActions.OwnerOf(creation.FindPart(part)!.Part);
                 if (finished > 0 && PartSounds.For(definition, PartSounds.Complete) is { } complete)
                     world.PlaySound(complete, owner, BuildActions.PartCentre(creation, part));
@@ -451,15 +451,19 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
     }
 
     /// <summary>
-    /// Where a craft at a station takes its inputs from, in order: the station's linked storage, then the caller's own
-    /// inventory (a script or the host has none).
+    /// Where a craft at a station takes its inputs from, in order: the station's near storage and the containers piped to its
+    /// input ports, then the caller's own inventory (a script or the host has none).
     /// </summary>
     public IReadOnlyList<Inventory> Supplies(ActionCaller caller, Creation creation, int station) =>
-        [.. Linked(creation, station), PlayerInventory(caller.Peer)];
+        [.. Inputs(creation, station), PlayerInventory(caller.Peer)];
 
-    // The inventories of the containers linked to a station.
-    private static IEnumerable<Inventory> Linked(Creation creation, int station) =>
-        StorageLinks.Of(creation, station).Select(creation.InventoryOf).OfType<Inventory>();
+    // The inventories a station takes inputs from: its near containers and those piped to its input ports.
+    private static IEnumerable<Inventory> Inputs(Creation creation, int station) =>
+        StorageLinks.InputsOf(creation, station).Select(creation.InventoryOf).OfType<Inventory>();
+
+    // The inventories a station's crafts go to before its own: its near containers and those piped to its output ports.
+    private static IEnumerable<Inventory> Outputs(Creation creation, int station) =>
+        StorageLinks.OutputsOf(creation, station).Select(creation.InventoryOf).OfType<Inventory>();
 
     private JsonElement? ApplyCraft(ActionCaller caller, CraftArgs args)
     {
@@ -495,7 +499,7 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
 
     // Where a cancelled order's inputs go: the caller's own inventory, then the station's linked storage.
     private IReadOnlyList<Inventory> Returns(ActionCaller caller, Creation creation, int station) =>
-        [PlayerInventory(caller.Peer), .. Linked(creation, station)];
+        [PlayerInventory(caller.Peer), .. Inputs(creation, station)];
 
     // Inputs of an order's crafts that have not finished; a recipe that no longer exists returns nothing.
     private List<ItemAmount> Refund(CraftJob job) => recipes.Find(job.Recipe) is { } recipe ? [.. recipe.InputsFor(job.Count)] : [];

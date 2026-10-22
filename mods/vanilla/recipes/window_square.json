@@ -1,0 +1,24 @@
+{
+  "id": "window_square",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "glass_block",
+      "count": 10
+    },
+    {
+      "item": "metal_block",
+      "count": 10
+    }
+  ],
+  "outputs": [
+    {
+      "item": "window_square",
+      "count": 1
+    }
+  ],
+  "time": 10,
+  "order": 2910
+}

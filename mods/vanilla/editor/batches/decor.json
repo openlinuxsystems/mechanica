@@ -5,102 +5,6 @@
   "format_version": 1,
   "parts": [
     {
-      "file": "parts/decor/stop_sign.json",
-      "template": "decor",
-      "set": {
-        "name": "Stop Sign",
-        "description": "A red octagonal STOP sign on a post.",
-        "mass": 3,
-        "durability": 2,
-        "flammable": false,
-        "sound_material": "metal",
-        "stack_size": 20,
-        "size": [3, 6, 1],
-        "visual": { "color": "#c02020", "roughness": 0.5, "metallic": 0.5 }
-      },
-      "model": [
-        { "kind": "cylinder", "radius": 0.03, "height": 1.1, "position": [0, -0.2, 0] },
-        {
-          "kind": "cylinder",
-          "radius": 0.3,
-          "height": 0.03,
-          "position": [0, 0.45, -0.05],
-          "rotation": [90, 22.5, 0]
-        },
-        { "kind": "box", "size": [0.36, 0.08, 0.01], "position": [0, 0.45, -0.07] }
-      ],
-      "recipes": [
-        {
-          "id": "stop_sign",
-          "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 4 }],
-          "outputs": [{ "item": "stop_sign", "count": 1 }],
-          "time": 2,
-          "order": 2110
-        }
-      ]
-    },
-    {
-      "file": "parts/decor/caution_sign.json",
-      "template": "decor",
-      "set": {
-        "name": "Caution Sign",
-        "description": "A yellow warning triangle on a post.",
-        "mass": 3,
-        "durability": 2,
-        "flammable": false,
-        "sound_material": "metal",
-        "stack_size": 20,
-        "size": [3, 6, 1],
-        "visual": { "color": "#e0c020", "roughness": 0.5, "metallic": 0.5 }
-      },
-      "model": [
-        { "kind": "cylinder", "radius": 0.03, "height": 1.1, "position": [0, -0.2, 0] },
-        { "kind": "wedge", "size": [0.6, 0.5, 0.03], "position": [0, 0.45, -0.05], "rotation": [90, 0, 0] },
-        { "kind": "box", "size": [0.04, 0.16, 0.01], "position": [0, 0.44, -0.07] }
-      ],
-      "recipes": [
-        {
-          "id": "caution_sign",
-          "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 4 }],
-          "outputs": [{ "item": "caution_sign", "count": 1 }],
-          "time": 2,
-          "order": 2120
-        }
-      ]
-    },
-    {
-      "file": "parts/decor/danger_sign.json",
-      "template": "decor",
-      "set": {
-        "name": "Danger Sign",
-        "description": "A red and white DANGER plate on a post.",
-        "mass": 3,
-        "durability": 2,
-        "flammable": false,
-        "sound_material": "metal",
-        "stack_size": 20,
-        "size": [3, 6, 1],
-        "visual": { "color": "#d03030", "roughness": 0.5, "metallic": 0.5 }
-      },
-      "model": [
-        { "kind": "cylinder", "radius": 0.03, "height": 1.1, "position": [0, -0.2, 0] },
-        { "kind": "box", "size": [0.72, 0.4, 0.03], "position": [0, 0.45, -0.05] },
-        { "kind": "box", "size": [0.6, 0.12, 0.01], "position": [0, 0.5, -0.07] }
-      ],
-      "recipes": [
-        {
-          "id": "danger_sign",
-          "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 4 }],
-          "outputs": [{ "item": "danger_sign", "count": 1 }],
-          "time": 2,
-          "order": 2130
-        }
-      ]
-    },
-    {
       "file": "parts/decor/warehouse_key_sign.json",
       "template": "decor",
       "set": {
@@ -131,101 +35,6 @@
       ]
     },
     {
-      "file": "parts/decor/direction_arrow_left.json",
-      "template": "decor",
-      "set": {
-        "name": "Direction Arrow (Left)",
-        "description": "A sign pointing left.",
-        "mass": 3,
-        "durability": 2,
-        "flammable": false,
-        "sound_material": "metal",
-        "stack_size": 20,
-        "size": [3, 6, 1],
-        "visual": { "color": "#2a7a3a", "roughness": 0.5, "metallic": 0.5 }
-      },
-      "model": [
-        { "kind": "cylinder", "radius": 0.03, "height": 1.1, "position": [0, -0.2, 0] },
-        { "kind": "box", "size": [0.72, 0.4, 0.03], "position": [0, 0.45, -0.05] },
-        {
-          "kind": "wedge",
-          "size": [0.3, 0.3, 0.02],
-          "position": [-0.05, 0.45, -0.07],
-          "rotation": [0, 0, -90]
-        }
-      ],
-      "recipes": [
-        {
-          "id": "direction_arrow_left",
-          "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 4 }],
-          "outputs": [{ "item": "direction_arrow_left", "count": 1 }],
-          "time": 2,
-          "order": 2160
-        }
-      ]
-    },
-    {
-      "file": "parts/decor/direction_arrow_right.json",
-      "template": "decor",
-      "set": {
-        "name": "Direction Arrow (Right)",
-        "description": "A sign pointing right.",
-        "mass": 3,
-        "durability": 2,
-        "flammable": false,
-        "sound_material": "metal",
-        "stack_size": 20,
-        "size": [3, 6, 1],
-        "visual": { "color": "#2a7a3a", "roughness": 0.5, "metallic": 0.5 }
-      },
-      "model": [
-        { "kind": "cylinder", "radius": 0.03, "height": 1.1, "position": [0, -0.2, 0] },
-        { "kind": "box", "size": [0.72, 0.4, 0.03], "position": [0, 0.45, -0.05] },
-        { "kind": "wedge", "size": [0.3, 0.3, 0.02], "position": [0.05, 0.45, -0.07], "rotation": [0, 0, 90] }
-      ],
-      "recipes": [
-        {
-          "id": "direction_arrow_right",
-          "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 4 }],
-          "outputs": [{ "item": "direction_arrow_right", "count": 1 }],
-          "time": 2,
-          "order": 2180
-        }
-      ]
-    },
-    {
-      "file": "parts/decor/direction_arrow_straight.json",
-      "template": "decor",
-      "set": {
-        "name": "Direction Arrow (Straight)",
-        "description": "A sign pointing straight ahead.",
-        "mass": 3,
-        "durability": 2,
-        "flammable": false,
-        "sound_material": "metal",
-        "stack_size": 20,
-        "size": [3, 6, 1],
-        "visual": { "color": "#2a7a3a", "roughness": 0.5, "metallic": 0.5 }
-      },
-      "model": [
-        { "kind": "cylinder", "radius": 0.03, "height": 1.1, "position": [0, -0.2, 0] },
-        { "kind": "box", "size": [0.72, 0.4, 0.03], "position": [0, 0.45, -0.05] },
-        { "kind": "wedge", "size": [0.3, 0.3, 0.02], "position": [0, 0.47, -0.07], "rotation": [0, 0, 180] }
-      ],
-      "recipes": [
-        {
-          "id": "direction_arrow_straight",
-          "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 4 }],
-          "outputs": [{ "item": "direction_arrow_straight", "count": 1 }],
-          "time": 2,
-          "order": 2170
-        }
-      ]
-    },
-    {
       "file": "parts/decor/outpost_sign.json",
       "template": "decor",
       "set": {
@@ -252,42 +61,6 @@
           "outputs": [{ "item": "outpost_sign", "count": 1 }],
           "time": 2,
           "order": 2230
-        }
-      ]
-    },
-    {
-      "file": "parts/decor/no_entry_sign.json",
-      "template": "decor",
-      "set": {
-        "name": "No Entry Sign",
-        "description": "A red round sign with a white bar: keep out.",
-        "mass": 3,
-        "durability": 2,
-        "flammable": false,
-        "sound_material": "metal",
-        "stack_size": 20,
-        "size": [3, 6, 1],
-        "visual": { "color": "#c02020", "roughness": 0.5, "metallic": 0.5 }
-      },
-      "model": [
-        { "kind": "cylinder", "radius": 0.03, "height": 1.1, "position": [0, -0.2, 0] },
-        {
-          "kind": "cylinder",
-          "radius": 0.3,
-          "height": 0.03,
-          "position": [0, 0.45, -0.05],
-          "rotation": [90, 0, 0]
-        },
-        { "kind": "box", "size": [0.4, 0.08, 0.01], "position": [0, 0.45, -0.07] }
-      ],
-      "recipes": [
-        {
-          "id": "no_entry_sign",
-          "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 4 }],
-          "outputs": [{ "item": "no_entry_sign", "count": 1 }],
-          "time": 2,
-          "order": 2140
         }
       ]
     },
@@ -330,38 +103,6 @@
           "outputs": [{ "item": "speed_limit_sign", "count": 1 }],
           "time": 2,
           "order": 2150
-        }
-      ]
-    },
-    {
-      "file": "parts/decor/metal_railing.json",
-      "template": "decor",
-      "set": {
-        "name": "Metal Railing",
-        "description": "A 1 m section of railing for walkways and stairs.",
-        "mass": 6,
-        "durability": 4,
-        "flammable": false,
-        "sound_material": "metal",
-        "stack_size": 20,
-        "size": [4, 4, 1],
-        "visual": { "color": "#c8a020", "roughness": 0.5, "metallic": 0.6 }
-      },
-      "model": [
-        { "kind": "box", "size": [1, 0.04, 0.04], "position": [0, 0.48, 0] },
-        { "kind": "box", "size": [1, 0.03, 0.03], "position": [0, 0.1, 0] },
-        { "kind": "box", "size": [0.04, 1, 0.04], "position": [-0.48, 0, 0] },
-        { "kind": "box", "size": [0.04, 1, 0.04], "position": [0.48, 0, 0] },
-        { "kind": "box", "size": [0.03, 1, 0.03] }
-      ],
-      "recipes": [
-        {
-          "id": "metal_railing",
-          "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 8 }],
-          "outputs": [{ "item": "metal_railing", "count": 1 }],
-          "time": 2,
-          "order": 240
         }
       ]
     },
@@ -739,58 +480,6 @@
       ]
     },
     {
-      "file": "parts/decor/windshield.json",
-      "template": "decor",
-      "set": {
-        "name": "Windshield",
-        "description": "A sloped glass pane for the front of a cabin.",
-        "mass": 8,
-        "durability": 2,
-        "flammable": false,
-        "sound_material": "glass",
-        "stack_size": 20,
-        "size": [6, 4, 2],
-        "visual": { "color": "#a8d0e0", "roughness": 0.05, "metallic": 0, "opacity": 0.35 }
-      },
-      "model": [{ "kind": "box", "size": [1.5, 1.05, 0.03], "rotation": [-25, 0, 0] }],
-      "recipes": [
-        {
-          "id": "windshield",
-          "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 4 }, { "item": "component_kit", "count": 1 }],
-          "outputs": [{ "item": "windshield", "count": 1 }],
-          "time": 2,
-          "order": 1580
-        }
-      ]
-    },
-    {
-      "file": "parts/decor/side_window.json",
-      "template": "decor",
-      "set": {
-        "name": "Side Window",
-        "description": "A small glass pane in a frame.",
-        "mass": 4,
-        "durability": 2,
-        "flammable": false,
-        "sound_material": "glass",
-        "stack_size": 20,
-        "size": [4, 3, 1],
-        "visual": { "color": "#a8d0e0", "roughness": 0.05, "metallic": 0, "opacity": 0.35 }
-      },
-      "model": [{ "kind": "box", "size": [1, 0.75, 0.03] }],
-      "recipes": [
-        {
-          "id": "side_window",
-          "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 4 }],
-          "outputs": [{ "item": "side_window", "count": 1 }],
-          "time": 2,
-          "order": 1590
-        }
-      ]
-    },
-    {
       "file": "parts/decor/exhaust_pipe.json",
       "template": "decor",
       "set": {
@@ -822,35 +511,6 @@
           "outputs": [{ "item": "exhaust_pipe", "count": 1 }],
           "time": 2,
           "order": 1540
-        }
-      ]
-    },
-    {
-      "file": "parts/decor/antenna.json",
-      "template": "decor",
-      "set": {
-        "name": "Antenna",
-        "description": "A tall whip antenna.",
-        "mass": 0.5,
-        "durability": 1,
-        "flammable": false,
-        "sound_material": "metal",
-        "stack_size": 20,
-        "size": [1, 6, 1],
-        "visual": { "color": "#202020", "roughness": 0.3, "metallic": 0.8 }
-      },
-      "model": [
-        { "kind": "cylinder", "radius": 0.04, "height": 0.05, "position": [0, -0.725, 0] },
-        { "kind": "cylinder", "radius": 0.006, "height": 1.45, "position": [0, 0.025, 0] }
-      ],
-      "recipes": [
-        {
-          "id": "antenna",
-          "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 4 }],
-          "outputs": [{ "item": "antenna", "count": 1 }],
-          "time": 2,
-          "order": 1570
         }
       ]
     },
@@ -939,37 +599,6 @@
           "outputs": [{ "item": "license_plate", "count": 1 }],
           "time": 2,
           "order": 1550
-        }
-      ]
-    },
-    {
-      "file": "parts/decor/traffic_cone.json",
-      "template": "decor",
-      "set": {
-        "name": "Traffic Cone",
-        "description": "An orange cone with a white band.",
-        "mass": 2,
-        "durability": 2,
-        "flammable": false,
-        "sound_material": "plastic",
-        "stack_size": 20,
-        "size": [2, 3, 2],
-        "visual": { "color": "#f06010", "roughness": 0.6, "metallic": 0.0 }
-      },
-      "model": [
-        { "kind": "box", "size": [0.4, 0.04, 0.4], "position": [0, -0.355, 0] },
-        { "kind": "cylinder", "radius": 0.12, "height": 0.3, "position": [0, -0.19, 0] },
-        { "kind": "cylinder", "radius": 0.08, "height": 0.2, "position": [0, 0.06, 0] },
-        { "kind": "cylinder", "radius": 0.04, "height": 0.16, "position": [0, 0.22, 0] }
-      ],
-      "recipes": [
-        {
-          "id": "traffic_cone",
-          "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 4 }],
-          "outputs": [{ "item": "traffic_cone", "count": 1 }],
-          "time": 2,
-          "order": 2210
         }
       ]
     },
@@ -1063,33 +692,6 @@
           "outputs": [{ "item": "stairs_block", "count": 1 }],
           "time": 2,
           "order": 220
-        }
-      ]
-    },
-    {
-      "file": "parts/decor/ramp_block.json",
-      "template": "decor",
-      "set": {
-        "name": "Ramp Block",
-        "description": "A 1 m by 1 m slope for driving up.",
-        "mass": 45,
-        "durability": 6,
-        "flammable": false,
-        "sound_material": "concrete",
-        "stack_size": 20,
-        "size": [4, 4, 4],
-        "visual": { "color": "#d4d4d4", "texture": "textures/blocks/concrete.png", "roughness": 0.7, "metallic": 0.0 }
-      },
-      "model": [{ "kind": "wedge", "size": [1, 1, 1], "rotation": [0, 180, 0] }],
-      "collision_from_model": true,
-      "recipes": [
-        {
-          "id": "ramp_block",
-          "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 8 }, { "item": "scrap_wood_block", "count": 8 }],
-          "outputs": [{ "item": "ramp_block", "count": 1 }],
-          "time": 2,
-          "order": 210
         }
       ]
     },

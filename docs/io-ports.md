@@ -51,3 +51,50 @@ Logic links made with the Connect Tool are points, not ports, and don't use this
 The geometry lives in `tools/io_port/build_io_port.py`. A machine's model script imports it and calls
 `mount(parent, mode, center, normal)` with `mode` set to `"out"`, `"in"` or `"both"` and `center` the port's
 centre on the footprint boundary, rather than drawing its own port. `python tools/io_port/build_io_port.py --render OUT_DIR` re-renders the review sheet above.
+
+## Item transport
+
+Parts map E1: the ports are also data, and Vacuum Pipes join them into a network that items travel through. The host
+works everything out and every move goes through the Action API, so a client sees the result like any other change.
+
+### The data
+
+A part lists its ports in `io_ports` (see the [Part Data Schema](part-data-schema.md#item-transport)): each has an `id`,
+its `position` (m from the part's centre, part axes, front +Z) on the face its `normal` points out of, at the middle of
+a block face, and a `mode`: `in`, `out` or `both` (the default), the same direction its arrows show. The containers and
+stations above carry the ports their models show. A part with `"conduit": true` (the Vacuum Pipe and the Vacuum Pipe
+Corner) passes items from each of its ports to the others; it holds nothing itself. A part with an `intake` (the Vacuum
+Pump's mouth, the Resource Collector's funnel) reaches things in the world.
+
+### The network
+
+Two ports join when they sit on the same block face from either side and face each other: a pipe's end against a
+chest's port, two pipe ends, or two machines' ports touching directly. From a port the network runs through every pipe
+joined to it to the ports at the far ends; whatever is not a conduit is an end. Items go from one end to another only
+the way the ports point: a port whose mode is `out` sends, `in` takes, `both` does either. The network is worked out
+from the Creation's parts (`Mechanica.Core.Items.TransportNetwork`) and follows every change to the build, so taking a
+pipe away cuts it at once. Nothing about it is saved: a save keeps the parts and what the containers hold, and the
+network is worked out again when it loads.
+
+- A **station** (the Refiner, the Fabricator, the Freezer) takes a craft's inputs from the containers piped to its
+  input port, as well as from the player and the containers next to it, and puts what it makes into the containers
+  piped to its output port, then into itself. A Refiner piped from a Resource Collector refines what the collector
+  gathers.
+- The **Vacuum Pump** (on a logic signal) sucks the nearest thing in reach of its mouth into the containers its back
+  port sends to: a pile on the ground, a loose resource piece (a log, a rod, a chunk), a ripe crop (its soil's script
+  harvests it, `on_collect`) or water (only into containers that accept full Water Buckets, so a Water Container). Set
+  to Eject, it throws items from those containers out of its mouth as a pile.
+- The **Resource Collector** pulls loose resources and piles within 12 blocks of its top into itself; its output port
+  sends them on.
+
+Part scripts drive the machines with generic primitives (`part.network`, `part.pickups`, `part.collect`,
+`part.eject`; see the [Lua API](lua-api.md)), which dispatch the host's `CollectItems` and `EjectItems` actions; the
+read-only `GetNetwork` and `GetPickups` actions show the same to tools and AI clients.
+
+### Not yet
+
+- **Pipe length.** A Vacuum Pipe is a 1-block straight piece; a run is pipes placed end to end, turned with the Vacuum
+  Pipe Corner. Scrap Mechanic's drag-to-length placement (parts map E12) is not built.
+- **Other liquids.** Only water is pumped (as full Water Buckets). Chemicals and oil are left for later.
+- **Placing blocks.** An ejecting pump throws items as a pile; it does not place blocks or parts as Scrap Mechanic's
+  does.

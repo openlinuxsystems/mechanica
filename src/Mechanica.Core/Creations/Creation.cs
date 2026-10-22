@@ -886,7 +886,30 @@ public sealed class Creation
         var joint = socket.Joint;
         frame = new JointFrame(connection.Type, anchor, PartGeometry.JointAxis(socket, part.Rotation), normal,
             connection.Type == ConnectionType.Linear ? joint?.Min ?? 0f : joint?.Min, joint?.Max,
-            joint?.Stiffness, joint?.Damping, joint?.ShaftRadius);
+            joint?.Stiffness, joint?.Damping, joint?.ShaftRadius)
+        {
+            Aim = connection.Type == ConnectionType.Aimed ? PartGeometry.AimOf(definition, socket, part.Cell, part.Rotation) : null,
+        };
+        return true;
+    }
+
+    /// <summary>
+    /// The aimed joint of a part with an aimed socket (a Turret Seat), in this Creation's grid frame, whether or not
+    /// anything is built on it: what <see cref="TryGetJointFrame"/> gives its joint edge. False for any other part.
+    /// </summary>
+    public bool TryGetAimFrame(int partId, [NotNullWhen(true)] out JointFrame? frame)
+    {
+        frame = null;
+        if (!_parts.TryGetValue(partId, out var part)
+            || _definitions[partId].Sockets?.FirstOrDefault(s => s.Type == SocketType.Aimed) is not { } socket)
+            return false;
+        var definition = _definitions[partId];
+        var (anchor, normal) = PartGeometry.SocketFrame(definition, socket, part.Cell, part.Rotation);
+        var joint = socket.Joint;
+        frame = new JointFrame(ConnectionType.Aimed, anchor, PartGeometry.JointAxis(socket, part.Rotation), normal, joint?.Min, joint?.Max, null, null)
+        {
+            Aim = PartGeometry.AimOf(definition, socket, part.Cell, part.Rotation),
+        };
         return true;
     }
 
@@ -1024,6 +1047,7 @@ public sealed class Creation
         SocketType.Rotational => ConnectionType.Rotational,
         SocketType.Linear => ConnectionType.Linear,
         SocketType.Spring => ConnectionType.Spring,
+        SocketType.Aimed => ConnectionType.Aimed,
         _ => ConnectionType.Structural,
     };
 

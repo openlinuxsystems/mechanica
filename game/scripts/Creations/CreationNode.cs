@@ -35,6 +35,27 @@ public partial class CreationNode : Node3D
     // end to end each frame from the moving head back into the part, so the rod reveals segment by segment.
     private sealed record Rod(List<MeshInstance3D> Copies, JointLink Link, Transform3D Rest, Vector3 Axis, float Segment);
     private readonly List<Rod> _rods = [];
+
+    // An aimed joint (a Turret Seat's turret, parts map E8): two Jolt hinges stacked through a yoke body that belongs to
+    // no part, yaw from the joint part's Body to the yoke and pitch from the yoke to the Body built on it.
+    private sealed record AimJoint(JointLink Link, JointFrame Frame, RigidBody3D Yoke, HingeJoint3D Yaw, HingeJoint3D Pitch);
+    private readonly Dictionary<(int A, int B), AimJoint> _aimJoints = [];
+
+    // A turret part's model nodes named after its aimed socket plus "Yaw" and "Pitch" (the pitch node under the yaw node,
+    // both at the pivot), turned each frame to the turret's aim.
+    private sealed record AimVisual(int Part, Node3D? Yaw, Node3D? Pitch, Transform3D YawRest, Transform3D PitchRest, Vector3 YawAxis, Vector3 PitchAxis);
+    private readonly List<AimVisual> _aimVisuals = [];
+    private readonly Dictionary<int, (float Yaw, float Pitch)> _aimShown = [];
+
+    // How heavy a yoke is: light next to what it carries, heavy enough that the hinge pair stays stiff.
+    private const float YokeMassShare = 0.25f;
+    private const float YokeMinMass = 2f;
+    // The yoke's moment of inertia (kg·m²) per kg of the Body it carries, about each axis.
+    private const float YokeInertiaPerKg = 0.5f;
+
+    // How fast a turret drawn from its script's readouts (nothing built on it) closes on the latest one, per second: the
+    // readouts arrive 20 times a second.
+    private const float AimVisualRate = 18f;
     private readonly List<(int Part, Light3D Light, float Energy)> _lights = [];
     private readonly List<(int Part, Node3D Model, Vector3 Axis, Vector3 Pivot)> _animated = [];
     private readonly HashSet<int> _animatedParts = [];
@@ -72,6 +93,42 @@ public partial class CreationNode : Node3D
     public Joint3D? JointOf(Connection connection) =>
         _jointsByParts.GetValueOrDefault((connection.A, connection.B));
 
+    /// <summary>The yoke and the yaw and pitch hinges built for an aimed joint edge, or null when it is locked or has none.</summary>
+    public (RigidBody3D Yoke, HingeJoint3D Yaw, HingeJoint3D Pitch)? AimJointsOf(Connection connection) =>
+        _aimJoints.TryGetValue((connection.A, connection.B), out var aim) ? (aim.Yoke, aim.Yaw, aim.Pitch) : null;
+
+    /// <summary>
+    /// An aimed joint's yaw and pitch now (rad from its built pose), from its two live bodies; null when the link is
+    /// locked or has no joint.
+    /// </summary>
+    public (float Yaw, float Pitch)? AimPosition(JointLink link)
+    {
+        if (link.IsLocked || !_aimJoints.TryGetValue((link.Connection.A, link.Connection.B), out var aim)
+            || link.BodyA >= _bodies.Count || link.BodyB >= _bodies.Count)
+            return null;
+        return JointMath.Aim(aim.Frame, _bodies[link.BodyA].GlobalTransform.ToPose(), _bodies[link.BodyB].GlobalTransform.ToPose());
+    }
+
+    /// <summary>
+    /// How a turret part (one with an aimed socket) is drawn turned now: its yaw and pitch in rad, from its joint when
+    /// something is built on it, else from its script's <c>aim_yaw</c> and <c>aim_pitch</c> readouts. Null for other parts
+    /// and before the first <see cref="ApplyDisplays"/>.
+    /// </summary>
+    public (float Yaw, float Pitch)? AimShown(int part) => _aimShown.TryGetValue(part, out var aim) ? aim : null;
+
+    /// <summary>The yokes of the aimed joints (for tests).</summary>
+    public IEnumerable<RigidBody3D> Yokes => _aimJoints.Values.Select(a => a.Yoke);
+
+    /// <summary>Gives each turret's yoke the motion of the Body it carries (after a parked Creation resumes moving).</summary>
+    public void MatchYokes()
+    {
+        foreach (var aim in _aimJoints.Values)
+        {
+            if (aim.Link.BodyB < _bodies.Count && !aim.Yoke.Freeze)
+                (aim.Yoke.LinearVelocity, aim.Yoke.AngularVelocity) = (_bodies[aim.Link.BodyB].LinearVelocity, _bodies[aim.Link.BodyB].AngularVelocity);
+        }
+    }
+
     /// <summary>The joint data a built joint was made from (anchor, axis, limits, spring).</summary>
     public JointFrame FrameOf(Joint3D joint) => _frames[joint];
 
@@ -81,6 +138,8 @@ public partial class CreationNode : Node3D
     /// </summary>
     public float? JointPosition(JointLink link)
     {
+        if (link.Connection.Type == ConnectionType.Aimed)
+            return AimPosition(link)?.Yaw;
         if (link.IsLocked || JointOf(link.Connection) is not { } joint || link.BodyA >= _bodies.Count || link.BodyB >= _bodies.Count)
             return null;
         return JointMath.Position(_frames[joint], _bodies[link.BodyA].GlobalTransform.ToPose(), _bodies[link.BodyB].GlobalTransform.ToPose());
@@ -245,6 +304,44 @@ public partial class CreationNode : Node3D
             var linked = Creation.LinksFrom(display.Part).Count > 0 || Creation.LinksTo(display.Part).Count > 0;
             display.Apply(readouts, linked, connecting, _animatedParts.Contains(display.Part), delta);
         }
+        ApplyAims(readouts, delta);
+    }
+
+    // A turret part's yaw and pitch nodes, found anywhere in its model (a seat's model is its whole glTF scene).
+    private void AddAimVisual(int part, SocketDefinition socket, Node3D model)
+    {
+        var yaw = model.FindChild($"{socket.Id}Yaw", recursive: true, owned: false) as Node3D;
+        var pitch = model.FindChild($"{socket.Id}Pitch", recursive: true, owned: false) as Node3D;
+        if (yaw is null && pitch is null)
+            return;
+        var yawAxis = (socket.Joint?.Axis ?? socket.Normal ?? new Vec3(0, 1, 0)).ToGodot().Normalized();
+        var pitchAxis = (socket.Joint?.PitchAxis ?? new Vec3(1, 0, 0)).ToGodot().Normalized();
+        _aimVisuals.Add(new AimVisual(part, yaw, pitch, yaw?.Transform ?? Transform3D.Identity, pitch?.Transform ?? Transform3D.Identity, yawAxis, pitchAxis));
+    }
+
+    // Turns each turret's model nodes to its aim: from its joint while something is built on it (so the shell stays
+    // with what it carries), else from its script's readouts, eased between their updates.
+    private void ApplyAims(Core.Logic.PartReadouts readouts, double delta)
+    {
+        foreach (var visual in _aimVisuals)
+        {
+            (float Yaw, float Pitch) aim;
+            if (Creation.JointOf(visual.Part) is { Connection.Type: ConnectionType.Aimed } link && AimPosition(link) is { } measured)
+                aim = measured;
+            else
+            {
+                var target = (Yaw: readouts.Number(Creation.Id, visual.Part, "aim_yaw") ?? 0f, Pitch: readouts.Number(Creation.Id, visual.Part, "aim_pitch") ?? 0f);
+                var was = _aimShown.TryGetValue(visual.Part, out var shown) ? shown : target;
+                var k = 1f - Mathf.Exp(-AimVisualRate * (float)delta);
+                aim = (JointMath.Wrap(was.Yaw + JointMath.Wrap(target.Yaw - was.Yaw) * k), was.Pitch + (target.Pitch - was.Pitch) * k);
+            }
+            _aimShown[visual.Part] = aim;
+            // Each node turns about its own origin (the pivot), in its parent's frame.
+            if (visual.Yaw is { } yaw)
+                yaw.Transform = new Transform3D(new Basis(visual.YawAxis, aim.Yaw) * visual.YawRest.Basis, visual.YawRest.Origin);
+            if (visual.Pitch is { } pitch)
+                pitch.Transform = new Transform3D(new Basis(visual.PitchAxis, aim.Pitch) * visual.PitchRest.Basis, visual.PitchRest.Origin);
+        }
     }
 
     /// <summary>The soil parts, whose look follows how wet they are (<see cref="Survival.SoilLooks"/>).</summary>
@@ -294,6 +391,7 @@ public partial class CreationNode : Node3D
             if (states.TryGetValue(body.PartIds[0], out var state))
                 (body.LinearVelocity, body.AngularVelocity) = (state.Linear, state.Angular);
         }
+        MatchYokes();
     }
 
     /// <summary>
@@ -320,6 +418,12 @@ public partial class CreationNode : Node3D
         LocalBounds = CreationBounds.LocalBodyBounds(Creation);
         foreach (var link in Creation.Joints)
         {
+            if (link.Connection.Type == ConnectionType.Aimed)
+            {
+                if (!link.IsLocked)
+                    BuildAim(link);
+                continue;
+            }
             if (!link.IsLocked && BuildJoint(link) is { } joint)
             {
                 _joints.Add(joint);
@@ -334,11 +438,14 @@ public partial class CreationNode : Node3D
 
     private void Clear()
     {
-        foreach (var node in _joints.Cast<Node>().Concat(_bodies))
+        var aims = _aimJoints.Values.SelectMany(a => new Node[] { a.Yaw, a.Pitch, a.Yoke });
+        foreach (var node in _joints.Cast<Node>().Concat(aims).Concat(_bodies))
         {
             RemoveChild(node);
             node.QueueFree();
         }
+        _aimJoints.Clear();
+        _aimVisuals.Clear();
         _joints.Clear();
         _jointsByParts.Clear();
         _frames.Clear();
@@ -415,6 +522,8 @@ public partial class CreationNode : Node3D
             }
             if (definition.Soil is not null)
                 _soils.Add(id);
+            if (definition.Sockets?.FirstOrDefault(s => s.Type == SocketType.Aimed) is { } aimed)
+                AddAimVisual(id, aimed, shown);
             if (definition.Display is not null)
                 _displays.Add(new PartDisplayVisual(Creation.Id, id, definition, visual, shown));
             _partNodes[id] = visual;
@@ -440,7 +549,7 @@ public partial class CreationNode : Node3D
     {
         foreach (var station in body.PartIds.Where(id => Creation.DefinitionOf(id).Crafting is not null))
         {
-            foreach (var container in Core.Items.StorageLinks.Of(Creation, station).Where(body.PartIds.Contains))
+            foreach (var container in Core.Items.StorageLinks.NearOf(Creation, station).Where(body.PartIds.Contains))
             {
                 var from = Centre(station);
                 var to = Centre(container);
@@ -557,6 +666,78 @@ public partial class CreationNode : Node3D
     }
 
     private static string JointName(Connection c) => $"Joint{c.A}_{c.B}";
+
+    // Builds an aimed joint (parts map E8) as a bearing-style hinge pair: a yaw hinge from the turret part's Body to a
+    // yoke, and a pitch hinge from the yoke to the Body built on the turret, both about the joint's pivot. As with
+    // BuildJoint, every body is put back in A's grid frame (the joint's zero) while the hinges enter the tree; the yoke
+    // then takes the yaw the two Bodies stand at, so a saved, parked or rebuilt turret keeps its aim. The two Bodies
+    // never collide with each other (the turret's top sits on its own part).
+    private void BuildAim(JointLink link)
+    {
+        var c = link.Connection;
+        if (!Creation.TryGetJointFrame(c, out var frame) || frame.Aim is not { } aim)
+            return;
+        var a = _bodies[link.BodyA];
+        var b = _bodies[link.BodyB];
+        var (yaw, _) = JointMath.Aim(frame, a.Transform.ToPose(), b.Transform.ToPose());
+        var pivot = aim.Pivot.ToGodot();
+        var yoke = new RigidBody3D
+        {
+            Name = $"Yoke{c.A}_{c.B}",
+            TopLevel = true,
+            Transform = a.Transform,
+            Mass = Mathf.Max(YokeMinMass, b.Mass * YokeMassShare),
+            CollisionLayer = 0,
+            CollisionMask = 0,
+            Freeze = IsFrozen,
+            FreezeMode = RigidBody3D.FreezeModeEnum.Kinematic,
+            // A small sphere's own inertia is tiny next to what it carries: the pitch motor would shake it.
+            Inertia = Vector3.One * Mathf.Max(YokeMinMass, b.Mass) * YokeInertiaPerKg,
+        };
+        yoke.AddChild(new CollisionShape3D { Name = "Shape", Shape = new SphereShape3D { Radius = 0.2f }, Position = pivot });
+        AddChild(yoke);
+        var yawHinge = AimHinge(frame.SpinsFreely ? null : (frame.Min!.Value, frame.Max!.Value));
+        yawHinge.Name = $"Joint{c.A}_{c.B}Yaw";
+        yawHinge.TopLevel = true;
+        yawHinge.Transform = a.Transform * LocalJointTransform(frame with { Type = ConnectionType.Rotational, Anchor = aim.Pivot });
+        yawHinge.NodeA = $"../{a.Name}";
+        yawHinge.NodeB = $"../{yoke.Name}";
+        var pitchHinge = AimHinge((aim.PitchMin, aim.PitchMax));
+        pitchHinge.Name = $"Joint{c.A}_{c.B}Pitch";
+        pitchHinge.TopLevel = true;
+        pitchHinge.Transform = a.Transform * LocalJointTransform(frame with { Type = ConnectionType.Rotational, Anchor = aim.Pivot, Axis = aim.PitchAxis });
+        pitchHinge.NodeA = $"../{yoke.Name}";
+        pitchHinge.NodeB = $"../{b.Name}";
+        var actual = b.Transform;
+        b.Transform = a.Transform;
+        AddChild(yawHinge);
+        AddChild(pitchHinge);
+        b.Transform = actual;
+        yoke.Transform = a.Transform * JointMath.AimPose(frame, yaw, 0f).ToTransform();
+        (yoke.LinearVelocity, yoke.AngularVelocity) = (b.LinearVelocity, b.AngularVelocity);
+        a.AddCollisionExceptionWith(b);
+        b.AddCollisionExceptionWith(a);
+        _aimJoints[(c.A, c.B)] = new AimJoint(link, frame, yoke, yawHinge, pitchHinge);
+    }
+
+    /// <summary>
+    /// Which way Godot's hinge angle runs against a right-handed turn about the hinge's Z: its motor velocity and its
+    /// limits both count the other way (see <see cref="Motion.MotionSync"/>).
+    /// </summary>
+    public const float HingeAngleSign = -1f;
+
+    // A hinge of an aimed joint, limited to `limits` (rad, right-handed about its axis) or free.
+    private static HingeJoint3D AimHinge((float Min, float Max)? limits)
+    {
+        var hinge = new HingeJoint3D();
+        if (limits is { } l)
+        {
+            hinge.SetFlag(HingeJoint3D.Flag.UseLimit, true);
+            hinge.SetParam(HingeJoint3D.Param.LimitLower, HingeAngleSign > 0 ? l.Min : -l.Max);
+            hinge.SetParam(HingeJoint3D.Param.LimitUpper, HingeAngleSign > 0 ? l.Max : -l.Min);
+        }
+        return hinge;
+    }
 
     // Builds the Jolt joint of one link: a hinge for a bearing, a 6DOF joint free along one axis for a
     // piston (with a motor) or a suspension (with a spring). Godot takes each body's joint frame from

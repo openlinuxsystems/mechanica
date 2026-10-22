@@ -105,6 +105,16 @@ public class PartValidationTests
     [InlineData("""{ "seat": { "offset": [0, 0, 0], "cushion": [0, -0.05, 0] } }""", "$.seat.cushion", "above the floor")]
     [InlineData("""{ "seat": { "bounce": 5 } }""", "$.seat.bounce", "from 0 to 4")]
     [InlineData("""{ "seat": { "pose": "astride" } }""", "$.seat.pose", "could not be converted")]
+    [InlineData("""{ "io_ports": [{ "position": [0, 0, 0.125], "normal": [0, 0, 1] }] }""", "$.io_ports[0].id", "port id is required")]
+    [InlineData("""{ "io_ports": [{ "id": "a", "position": [0, 0, 0.125], "normal": [0, 0.6, 0.8] }] }""", "$.io_ports[0].normal", "one axis direction")]
+    [InlineData("""{ "io_ports": [{ "id": "a", "position": [0, 0, 0.1], "normal": [0, 0, 1] }] }""", "$.io_ports[0].position", "must lie on the footprint's face")]
+    [InlineData("""{ "io_ports": [{ "id": "a", "position": [0.1, 0, 0.125], "normal": [0, 0, 1] }] }""", "$.io_ports[0].position", "middle of one block face")]
+    [InlineData("""{ "io_ports": [{ "id": "a", "position": [0, 0, 0.125], "normal": [0, 0, 1], "mode": "sideways" }] }""", "$.io_ports[0].mode", "could not be converted")]
+    [InlineData("""{ "conduit": true, "io_ports": [{ "id": "a", "position": [0, 0, 0.125], "normal": [0, 0, 1] }] }""", "$.conduit", "at least two io_ports")]
+    [InlineData("""{ "intake": { "position": [0, 0, 0.125], "normal": [0, 0, 1] } }""", "$.intake.reach", "is required")]
+    [InlineData("""{ "intake": { "position": [0, 0, 0.125], "normal": [0, 0, 1], "reach": 20 } }""", "$.intake.reach", "at most 16 m")]
+    [InlineData("""{ "intake": { "position": [0, 0, 0.3], "normal": [0, 0, 1], "reach": 2 } }""", "$.intake.position", "outside the part's")]
+    [InlineData("""{ "intake": { "position": [0, 0, 0.1], "normal": [0, 0, 2], "reach": 2 } }""", "$.intake.normal", "unit direction")]
     public void BadValuesGiveClearErrors(string overrides, string path, string messagePart)
     {
         var error = Single(TestMods.Block(overrides: overrides), path);

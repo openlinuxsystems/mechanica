@@ -374,14 +374,17 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         _vitals.TryGetValue(peer, out var v) && v.Bed is { } bed && world.FindCreation(bed.Creation) is { } c
             && c.FindPart(bed.Part) is not null && c.DefinitionOf(bed.Part).RespawnPoint == true ? bed : null;
 
-    // A spot just above a bed's top face, in the world.
+    // A spot just above a bed's top face, in the world: the top of its collision box when it has one lower than its
+    // size (the Respawn Bed's sleeping bag), else the top of its size.
     private Vector3 BedTop(int creationId, int partId)
     {
         var creation = world.FindCreation(creationId)!;
         var part = creation.FindPart(partId)!;
         var definition = creation.DefinitionOf(partId);
-        var top = PartGeometry.CentreMetres(definition, part.Cell, part.Rotation).ToNumerics()
-            + new Vector3(0, (definition.Size ?? GridSize.One).Metres.Y / 2 + 0.05f, 0);
+        var up = definition.Collision is { Shape: CollisionShape.Box, Size: { } box } collision
+            ? (collision.Offset?.Y ?? 0f) + box.Y / 2
+            : (definition.Size ?? GridSize.One).Metres.Y / 2;
+        var top = PartGeometry.CentreMetres(definition, part.Cell, part.Rotation).ToNumerics() + new Vector3(0, up + 0.05f, 0);
         return creation.BodyPose(creation.BodyIndexOf(partId)).Apply(top);
     }
 
@@ -1297,6 +1300,48 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             PlayPickup(drop.Items[0].Item, drop.Position.ToNumerics());
         return Value(new PickUpResult(taken, left.Sum(s => s.Count)));
     }
+
+    /// <summary>
+    /// Moves what fits of the pile <paramref name="dropId"/> into <paramref name="into"/>, in order (a Vacuum Pump sucking
+    /// it into the containers piped to it, Parts map E1), as <c>PickUp</c> does into a player's pockets: the pile goes
+    /// when it is empty, and the pick-up sound plays where it lay. Returns what moved; empty when nothing fit or there is
+    /// no such pile.
+    /// </summary>
+    public IReadOnlyList<ItemStack> TakeDrop(int dropId, IReadOnlyList<Inventory> into)
+    {
+        if (!_drops.TryGetValue(dropId, out var drop))
+            return [];
+        var left = new List<ItemStack>();
+        var moved = new List<ItemStack>();
+        foreach (var stack in drop.Items)
+        {
+            var added = 0;
+            foreach (var inventory in into)
+            {
+                if (added == stack.Count)
+                    break;
+                added += inventory.Add(stack.Item, stack.Count - added);
+            }
+            if (added > 0)
+                moved.Add(stack with { Count = added });
+            if (added < stack.Count)
+                left.Add(stack with { Count = stack.Count - added });
+        }
+        if (moved.Count == 0)
+            return [];
+        if (left.Count == 0)
+            RemoveDrop(drop.Id);
+        else
+        {
+            _drops[drop.Id] = drop with { Items = left };
+            DropChanged?.Invoke(_drops[drop.Id]);
+        }
+        PlayPickup(moved[0].Item, drop.Position.ToNumerics());
+        return moved;
+    }
+
+    /// <summary>Plays <paramref name="item"/>'s pick-up sound at <paramref name="at"/> (something was collected there).</summary>
+    public void PlayPickupSound(string item, Vector3 at) => PlayPickup(item, at);
 
     /// <summary>
     /// Puts a pile of items on the ground below <paramref name="at"/>, or exactly at it when <paramref name="placed"/>

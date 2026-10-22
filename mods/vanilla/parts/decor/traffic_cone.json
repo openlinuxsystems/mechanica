@@ -1,20 +1,19 @@
 {
   "id": "traffic_cone",
   "name": "Traffic Cone",
-  "description": "An orange cone with a white band.",
+  "description": "A red cone with two reflective bands.",
   "category": "decor",
-  "mass": 2,
+  "mass": 3,
   "durability": 2,
-  "friction": 0.5,
-  "buoyancy": 0.3,
-  "flammable": false,
+  "friction": 0.3,
+  "buoyancy": 0.6,
+  "flammable": true,
   "stack_size": 20,
   "sound_material": "plastic",
   "size": [2, 3, 2],
-  "mesh": "meshes/decor/traffic_cone.glb",
+  "mesh": "meshes/parts/traffic_cone.glb",
+  "icon": "textures/items/traffic_cone_icon.png",
   "visual": {
-    "color": "#f06010",
-    "roughness": 0.6,
-    "metallic": 0
+    "color": "#ffffff"
   }
 }

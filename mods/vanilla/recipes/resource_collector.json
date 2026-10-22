@@ -1,0 +1,20 @@
+{
+  "id": "resource_collector",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 40
+    }
+  ],
+  "outputs": [
+    {
+      "item": "resource_collector",
+      "count": 1
+    }
+  ],
+  "time": 11,
+  "order": 1775
+}

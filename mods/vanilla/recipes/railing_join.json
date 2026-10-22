@@ -1,0 +1,20 @@
+{
+  "id": "railing_join",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "railing_join",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 244
+}

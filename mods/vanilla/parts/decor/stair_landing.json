@@ -1,0 +1,19 @@
+{
+  "id": "stair_landing",
+  "name": "Stair Landing",
+  "description": "A 2 m by 2 m grated platform for the top or bottom of a staircase.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 5,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [8, 1, 8],
+  "mesh": "meshes/parts/stair_landing.glb",
+  "icon": "textures/items/stair_landing_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}
