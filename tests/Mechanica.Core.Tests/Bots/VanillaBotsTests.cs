@@ -431,6 +431,19 @@ public class VanillaBotsTests
         Assert.True(calf.Height < grazer.Height && calf.Health < grazer.Health);
     }
 
+    [Fact]
+    public void TameGrazersGiveMilkAfterFiveCarrotsAndAllGrazersDropSteak()
+    {
+        var grazer = Book.Value.FindBot("vanilla:grazer")!;
+        Assert.Equal(new BotProduce("vanilla:grazer_milk", 5, 300, 30), grazer.Tame!.Produce);
+        Assert.Contains("vanilla:carrot", grazer.Tame.Foods);
+        Assert.Contains("vanilla:feeding_trough", grazer.Tame.Homes);
+        var steak = Assert.Single(grazer.Drops);
+        Assert.Equal(("vanilla:grazer_steak", 1f, 1, 2), (steak.Item, steak.Chance, steak.Count, steak.CountMax));
+        // calves give no milk
+        Assert.Null(Book.Value.FindBot("vanilla:grazer_calf")!.Tame!.Produce);
+    }
+
     [Theory]
     [InlineData("""{ "feeds": 2 }""", "$.tame.foods", "list one or more foods it eats.")]
     [InlineData("""{ "foods": ["no_such_food"] }""", "$.tame.foods[0]", "there is no item 'vanilla:no_such_food'.")]
@@ -443,6 +456,11 @@ public class VanillaBotsTests
     [InlineData("""{ "foods": ["carrot"], "breed": { "treat": "tomato" } }""", "$.tame.breed.calf", "calf is required.")]
     [InlineData("""{ "foods": ["carrot"], "breed": { "treat": "tomato", "calf": "grazer_calf", "herd": 1 } }""", "$.tame.breed.herd", "herd must be 2 or more.")]
     [InlineData("""{ "foods": ["carrot"], "breed": { "treat": "tomato", "calf": "grazer_calf", "seconds": 0 } }""", "$.tame.breed.seconds", "seconds must be greater than 0.")]
+    [InlineData("""{ "foods": ["carrot"], "homes": ["feeding_trough"], "produce": { "feeds": 5 } }""", "$.tame.produce.item", "item is required.")]
+    [InlineData("""{ "foods": ["carrot"], "homes": ["feeding_trough"], "produce": { "item": "no_such_milk" } }""", "$.tame.produce.item", "there is no item 'vanilla:no_such_milk'.")]
+    [InlineData("""{ "foods": ["carrot"], "homes": ["feeding_trough"], "produce": { "item": "grazer_milk", "feeds": 0 } }""", "$.tame.produce.feeds", "feeds must be 1 or more.")]
+    [InlineData("""{ "foods": ["carrot"], "homes": ["feeding_trough"], "produce": { "item": "grazer_milk", "eat_every": 0 } }""", "$.tame.produce.eat_every", "eat_every must be greater than 0.")]
+    [InlineData("""{ "foods": ["carrot"], "produce": { "item": "grazer_milk" } }""", "$.tame.produce", "a bot that gives produce eats from its home: list its homes.")]
     public void BadTamesAreReported(string tame, string path, string message)
     {
         var bot = ModelBot(null) with

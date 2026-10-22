@@ -66,15 +66,15 @@ public partial class DropPile : Node3D
 
     /// <summary>
     /// Shows <paramref name="drop"/>, naming its items from <paramref name="catalog"/>. With <paramref name="assets"/>, a
-    /// knocked-out player's pile is drawn as <paramref name="knockoutBag"/> (a <c>mod:path</c> model) and a single
-    /// item that has a mesh as itself.
+    /// knocked-out player's pile is drawn as <paramref name="knockoutBag"/> (a <c>mod:path</c> model) and a pile of
+    /// one kind of item that has a mesh as that item.
     /// </summary>
     public void Show(ItemDrop drop, IPartCatalog catalog, PartAssets? assets = null, string? knockoutBag = null)
     {
         if (drop.KnockedOut && knockoutBag is not null)
             ShowModel("bag:" + knockoutBag, () => assets?.InstantiateScene(knockoutBag, Identifiers.VanillaModId));
         else
-            ShowItem(drop.Items is [{ Count: 1 } only] ? only.Item : null, catalog, assets);
+            ShowItem(drop.Items is [var only] ? only.Item : null, catalog, assets);
         var landing = drop.Position.ToGodot();
         if (drop.TossedFrom is { } from && Drop is null)
             Toss(from.ToGodot(), landing);

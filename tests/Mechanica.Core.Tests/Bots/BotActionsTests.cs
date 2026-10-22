@@ -451,6 +451,97 @@ public sealed class BotActionsTests
     }
 
     [Fact]
+    public void Tame_animals_eat_from_their_home_and_give_produce_a_player_collects()
+    {
+        // I stand at (0, 0, 3). The critter gives one scrap after 3 meals, one every 5 s, and the next no sooner than 50 s after.
+        var critter = _f.Spawn(BotFixture.Critter, new Vector3(1, 0, 3));
+        var kit = _f.Spawn(BotFixture.Kit, new Vector3(1, 0, 4));
+        var wild = _f.Spawn(BotFixture.Critter, new Vector3(-1, 0, 3));
+        var grunt = _f.Spawn(BotFixture.Grunt, new Vector3(-1, 0, 4));
+        _f.Bots.Keep(critter);
+        _f.Bots.Keep(kit);
+        var trough = S.Add(SurvivalFixture.Chest, new Vector3(2, 0, 3));
+        var food = S.World.Creations[trough].InventoryOf(1)!;
+        food.Add(SurvivalFixture.Crop, 4);
+        Assert.Contains("0 of 3 meals", S.Refused(Me, BotActions.CollectBot, new BotArgs(critter)));
+        Assert.Contains("gives nothing", S.Refused(Me, BotActions.CollectBot, new BotArgs(kit)));
+        Assert.Contains("gives nothing", S.Refused(Me, BotActions.CollectBot, new BotArgs(grunt)));
+        Assert.Contains("not tame", S.Refused(Me, BotActions.CollectBot, new BotArgs(wild)));
+
+        // It moves in, eats one meal at once and then one every 5 s; the kit (no produce) and the wild one eat nothing.
+        _f.Advance(3);
+        Assert.Equal((1, 3), (_f.Bots.Find(critter)!.Meals, food.Count(SurvivalFixture.Crop)));
+        _f.Advance(2);
+        Assert.Equal(1, _f.Bots.Find(critter)!.Meals);
+        _f.Advance(3);
+        _f.Advance(5);
+        var view = S.Ok<BotView>(Me, BotActions.GetBot, new BotArgs(critter));
+        Assert.Equal((3, true), (view.Meals, view.Ready));
+        Assert.Equal(1, food.Count(SurvivalFixture.Crop));
+        Assert.Equal((0, false), (_f.Bots.Find(kit)!.Meals, _f.Bots.Find(kit)!.Ready));
+        _f.Advance(5);
+        Assert.Equal(1, food.Count(SurvivalFixture.Crop)); // full: it stops eating until it is collected
+
+        Assert.Contains("Only players", S.Refused(BotFixture.Brain, BotActions.CollectBot, new BotArgs(critter)));
+        Assert.Equal(new CollectBotResult(SurvivalFixture.Scrap, 1), S.Ok<CollectBotResult>(Me, BotActions.CollectBot, new BotArgs(critter)));
+        Assert.Equal(1, S.Pockets(Me).Count(SurvivalFixture.Scrap));
+        Assert.Equal((0, false), (_f.Bots.Find(critter)!.Meals, _f.Bots.Find(critter)!.Ready));
+        Assert.Contains("nothing to give", S.Refused(Me, BotActions.CollectBot, new BotArgs(critter)));
+
+        // It eats again, stops when the home is empty, and has the next only once the cooldown is over.
+        _f.Advance(5);
+        Assert.Equal((1, 0), (_f.Bots.Find(critter)!.Meals, food.Count(SurvivalFixture.Crop)));
+        _f.Advance(5);
+        Assert.Equal(1, _f.Bots.Find(critter)!.Meals);
+        food.Add(SurvivalFixture.Crop, 5);
+        _f.Advance(5);
+        _f.Advance(5);
+        var bot = _f.Bots.Find(critter)!;
+        Assert.Equal((3, false), (bot.Meals, bot.Ready));
+        Assert.Contains("nothing to give yet", S.Refused(Me, BotActions.CollectBot, new BotArgs(critter)));
+
+        // Meals and the cooldown left save with it.
+        var saved = Assert.Single(_f.Bots.SaveKept(), s => s.Type == BotFixture.Critter);
+        Assert.Equal(3, saved.Meals);
+        var left = bot.ProduceAt - _f.Now;
+        Assert.Equal(left, saved.ProduceIn!.Value, 3);
+        var again = new BotFixture();
+        Assert.True(again.Bots.Restore(saved));
+        var back = again.Bots.Bots.Values.Single();
+        Assert.Equal((3, false), (back.Meals, back.Ready));
+        again.Advance(left + 0.1);
+        Assert.True(back.Ready);
+
+        _f.Advance(left + 0.1);
+        Assert.True(_f.Bots.Find(critter)!.Ready);
+        // On a Lead it does not eat; it keeps what it has ready.
+        S.Ok<CollectBotResult>(Me, BotActions.CollectBot, new BotArgs(critter));
+        S.Pockets(Me).Add(SurvivalFixture.Connector, 1);
+        S.Ok<LeadBotResult>(Me, BotActions.LeadBot, new BotArgs(critter));
+        _f.Advance(10);
+        Assert.Equal(0, _f.Bots.Find(critter)!.Meals);
+    }
+
+    [Fact]
+    public void A_full_inventory_cannot_collect_produce()
+    {
+        var critter = _f.Spawn(BotFixture.Critter, new Vector3(1, 0, 3));
+        _f.Bots.Keep(critter);
+        var trough = S.Add(SurvivalFixture.Chest, new Vector3(2, 0, 3));
+        S.World.Creations[trough].InventoryOf(1)!.Add(SurvivalFixture.Crop, 3);
+        for (var i = 0; i < 3; i++)
+        {
+            _f.Bots.Hurry(critter);
+            _f.Advance(2);
+        }
+        Assert.True(_f.Bots.Find(critter)!.Ready);
+        var pockets = S.Pockets(Me);
+        for (var k = 0; k < 100 && pockets.SpaceFor(SurvivalFixture.Scrap) > 0; k++)
+            pockets.Add(SurvivalFixture.Block, 1000);
+        Assert.Contains("Make room", S.Refused(Me, BotActions.CollectBot, new BotArgs(critter)));
+    }
+
+    [Fact]
     public void Bubble_wrap_slows_a_player_for_a_while()
     {
         // You stand at (0, 0, 6).

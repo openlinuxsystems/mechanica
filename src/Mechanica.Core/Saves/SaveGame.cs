@@ -184,7 +184,12 @@ public sealed record SaveGame
             Quests = Quests?.ToElement(),
             Fires = Fires is null ? null : [.. Fires.OrderBy(f => f.Site).ThenBy(f => f.Marker)
                 .Select(f => new FireData { Site = f.Site, Marker = f.Marker, Strength = f.Strength })],
-            Bots = Bots.Count == 0 ? null : [.. Bots.Select(b => new BotData { Type = b.Type, Position = b.Position, Yaw = b.Yaw, Home = b.Home, Health = b.Health })],
+            Bots = Bots.Count == 0 ? null : [.. Bots.Select(b => new BotData
+            {
+                Type = b.Type, Position = b.Position, Yaw = b.Yaw, Home = b.Home, Health = b.Health, Look = b.Look, BreedIn = b.BreedIn,
+                DueIn = b.DueIn, DueLook = b.DueIn is null ? null : b.DueLook, GrowsIn = b.GrowsIn, Meals = b.Meals == 0 ? null : b.Meals,
+                ProduceIn = b.ProduceIn,
+            })],
             Extra = Extra?.OrderBy(kv => kv.Key, StringComparer.Ordinal).ToDictionary(kv => kv.Key, kv => kv.Value),
         };
         return JsonSerializer.Serialize(data, DataJson.WriteOptions) + "\n";
@@ -354,8 +359,11 @@ public sealed record SaveGame
                 sink.Error(invalid, $"$.bots[{i}]", "a bot needs a type (mod_id:bot_id), a position and health.");
             else if (!Finite(at) || b.Home is { } home && !Finite(home) || !float.IsFinite(b.Yaw ?? 0) || !(health > 0 && float.IsFinite(health)))
                 sink.Error(invalid, $"$.bots[{i}]", "a bot's position, home and yaw must be finite and its health above 0.");
+            else if (new[] { b.BreedIn, b.DueIn, b.GrowsIn, b.ProduceIn }.Any(t => t is { } s && !(s >= 0 && float.IsFinite(s))) || b.Meals is < 0)
+                sink.Error(invalid, $"$.bots[{i}]", "a bot's times left and meals must be 0 or more.");
             else
-                bots.Add(new SavedBot(type, at, b.Yaw ?? 0, b.Home ?? at, health));
+                bots.Add(new SavedBot(type, at, b.Yaw ?? 0, b.Home ?? at, health, b.Look, b.BreedIn, b.DueIn, b.DueLook ?? 0, b.GrowsIn, b.Meals ?? 0,
+                    b.ProduceIn));
         }
 
         if (sink.ErrorCount > 0)
@@ -475,6 +483,13 @@ public sealed record SaveGame
         public float? Yaw { get; init; }
         public Vec3? Home { get; init; }
         public float? Health { get; init; }
+        public int? Look { get; init; }
+        public float? BreedIn { get; init; }
+        public float? DueIn { get; init; }
+        public int? DueLook { get; init; }
+        public float? GrowsIn { get; init; }
+        public int? Meals { get; init; }
+        public float? ProduceIn { get; init; }
     }
 
     private sealed record SlotData

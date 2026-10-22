@@ -48,6 +48,12 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
 - **Drinks:** Bloom Tea heals 20 and a Grazer Shake 100. They are found in loot only (chests, lockers, crates and ruin
   chests; the Grazer Shake in the better ones). A drink is downed in two gulps in about 0.7 s, and you can keep sprinting
   while you drink.
+- **Grazer Milk and Grazer Steak:** a tame Grazer living by a Feeding Trough eats a carrot from it every 30 s; after
+  five it has a bottle of Grazer Milk ready, shown by a milk icon bobbing over its back on every peer. Press Use (E) on
+  it to take the bottle into your inventory (you need room); the next is ready after five more carrots and at least
+  5 minutes. Calves give none. Grazer Milk is a drink that heals 20 (stack 5). Every Grazer drops one or two Grazer
+  Steaks when it dies (stack 5): raw meat that cannot be eaten, kept for cooking. The numbers are the Grazer's
+  `tame.produce` and `drops` in `bots/grazer.json` ([bot-tutorial.md](bot-tutorial.md#taming)).
 - **Fertilizer:** a Rootwell pouch (Fabricator: 10 Ember and a full Water Bucket make 5 and give the bucket back; also
   found as loot). Use it on a growing crop, in a soil mound or a Growbed, and it grows 15 times faster until it is
   harvested (`properties.boost`); it still grows only while its soil holds water. Fertilized soil shows pale granules.
@@ -167,8 +173,8 @@ their item's properties.
   and its growth speed; the script reads both with `world.item`. The host keeps only what the script stores
   on the soil (seed, growth, water, stage and when growth was last worked out): that is what is saved, sent
   to clients and read by bots and raids. Vanilla's items and soil are authored by the Part Editor batch
-  `mods/vanilla/editor/batches/survival.json`; the produce, the seeds, Chemical, Gasoline, the drinks and Fertilizer by
-  `mods/vanilla/editor/batches/consumables.json` (consumables batches C1 and C2b). Soil on a Creation (the Growbed, parts map E9) is the same: its state is
+  `mods/vanilla/editor/batches/survival.json`; the produce, the seeds, Chemical, Gasoline, the drinks, Fertilizer, Grazer Milk and Grazer Steak by
+  `mods/vanilla/editor/batches/consumables.json` (consumables batches C1, C2b and C3). Soil on a Creation (the Growbed, parts map E9) is the same: its state is
   per part, so it follows the part through splits and welds and saves in the Creation. `soil.yield` and `soil.seeds` fix
   its harvest and the seeds it takes (checked by the host in `CheckPlant`, which `farm.can_plant` asks), and `soil.lua`'s
   `charge_item` / `charge_time` properties power it. The Growbed is in `mods/vanilla/editor/batches/parts_farming.json`.

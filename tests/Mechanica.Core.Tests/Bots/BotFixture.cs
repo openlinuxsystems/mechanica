@@ -56,6 +56,7 @@ internal sealed class BotFixture : IBotWorld, IRaidWorld
                 {
                     Foods = [SurvivalFixture.Crop], Feeds = 2, Lead = SurvivalFixture.Connector, Homes = [SurvivalFixture.Chest], HomeRadius = 10,
                     Breed = new BotBreedDefinition { Treat = SurvivalFixture.Seed, Calf = Kit, Seconds = 10, Cooldown = 100, Herd = 4, Radius = 5 },
+                    Produce = new BotProduceDefinition { Item = SurvivalFixture.Scrap, Feeds = 3, Cooldown = 50, EatEvery = 5 },
                 },
             }),
             ("test", new BotDefinition

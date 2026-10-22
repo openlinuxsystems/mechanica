@@ -41,7 +41,12 @@ public class SaveGameTests
             Players = [new SavedPlayer(Ada, "Ada", [new SavedSlot(2, Wood, 5)], 80f, new Vec3(4, 0, 5), 1.5f, new SavedPart(3, 1), "vanilla:scrapper_female",
                 ["vanilla:sledgehammer", null, "test:chest"], [new Mechanica.Core.Ui.MapMarker("marker:2", "Scrap pile", 12.5f, 3f, -40f)],
                 new Dictionary<string, JsonObject> { ["test:lantern"] = new() { ["fuel"] = 0.5 } })],
-            Bots = [new SavedBot("vanilla:grazer", new Vec3(10, 2, -4), 90, new Vec3(8, 2, -4), 35)],
+            Bots =
+            [
+                new SavedBot("vanilla:grazer", new Vec3(10, 2, -4), 90, new Vec3(8, 2, -4), 35),
+                new SavedBot("vanilla:grazer", new Vec3(12, 2, -4), 0, new Vec3(8, 2, -4), 50, Look: 2, BreedIn: 120.5f, DueIn: 30f, DueLook: 1,
+                    Meals: 4, ProduceIn: 75.25f),
+            ],
         };
     }
 
@@ -70,7 +75,8 @@ public class SaveGameTests
         Assert.Equal(new Mechanica.Core.Ui.MapMarker("marker:2", "Scrap pile", 12.5f, 3f, -40f), Assert.Single(player.Markers!));
         Assert.Equal(0.5, player.ItemScripts!["test:lantern"]["fuel"]!.GetValue<double>());
         Assert.Equal(2, read.Scripts[0].State["count"]!.GetValue<int>());
-        Assert.Equal(new SavedBot("vanilla:grazer", new Vec3(10, 2, -4), 90, new Vec3(8, 2, -4), 35), Assert.Single(read.Bots));
+        Assert.Equal(Sample().Bots, read.Bots); // a kept animal's look, breeding, growing up and meals carry on
+        Assert.Equal((4, 75.25f), (read.Bots[1].Meals, read.Bots[1].ProduceIn));
 
         var creation = Assert.Single(read.ReadCreations(_catalog, "my-world.json", diagnostics));
         Assert.Empty(diagnostics);

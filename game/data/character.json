@@ -100,7 +100,9 @@
     "fertilizer": { "prop": "item", "gesture": "plant" },
     "soil_bag": { "prop": "soil_bag", "gesture": "bag_spill" },
     // Held by its handle and sprayed while Use is held (held.hold_use): no gesture of its own.
-    "fire_extinguisher": { "prop": "item" }
+    "fire_extinguisher": { "prop": "item" },
+    // Not edible: held flat on its tray.
+    "grazer_steak": { "prop": "item" }
   },
   "category_poses": {
     "consumable": { "prop": "food", "gesture": "eat" },

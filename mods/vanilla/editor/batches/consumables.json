@@ -7,6 +7,8 @@
 // Batch C2b: Bloom Tea and Grazer Shake are drinks (properties.drink: the drink clip and sound, and the player may
 // sprint while drinking), found as loot only. Fertilizer is used on a growing crop: properties.boost multiplies its
 // growth until harvest (soil.lua; it still needs water). properties.eat_seconds is how long one eat or drink takes.
+// Batch C3: Grazer Milk is a drink a tame Grazer gives (bots/grazer.json tame.produce: 5 carrots from its Feeding Trough,
+// then Use on it); Grazer Steak is not edible, a cooking input that Grazers drop (bots/grazer.json drops).
 // Re-run with tools/author-vanilla.sh.
 {
   "format_version": 1,
@@ -255,6 +257,49 @@
         "properties": { "health": 100, "drink": true, "eat_seconds": 0.67 }
       },
       "model": [{ "kind": "mesh", "mesh": "meshes/items/grazer_shake.glb" }]
+    },
+    {
+      "file": "parts/grazer_milk.json",
+      "template": "item",
+      "set": {
+        "name": "Grazer Milk",
+        "description": "Fresh milk in a Colony Works bottle. Drink it to heal a little; you can keep running while you drink. A tame Grazer gives a bottle once it has eaten 5 carrots from its Feeding Trough: press Use on it. Flammable.",
+        "category": "consumable",
+        "mass": 3,
+        "durability": 1,
+        "friction": 0.4,
+        "buoyancy": 0.7,
+        "flammable": true,
+        "stack_size": 5,
+        "icon": "textures/items/grazer_milk_icon.png",
+        "visual": { "color": "#ffffff" },
+        "held": { "mesh": "meshes/items/grazer_milk_held.glb", "offset": [-0.044, 0.062, -0.09], "rotation": [0, 90, 90] },
+        "sounds": { "pickup": "pickup_component", "drink": "drink_gulp" },
+        "script": "scripts/food.lua",
+        "properties": { "health": 20, "drink": true, "eat_seconds": 0.67 }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/grazer_milk.glb" }]
+    },
+    {
+      "file": "parts/grazer_steak.json",
+      "template": "item",
+      "set": {
+        "name": "Grazer Steak",
+        "description": "A raw Grazer steak on a tray, wrapped in butcher paper. Not to be eaten raw: it is for cooking. Grazers drop it. Flammable.",
+        "category": "resource",
+        "tab": "consumable",
+        "mass": 6,
+        "durability": 2,
+        "friction": 0.6,
+        "buoyancy": 0.3,
+        "flammable": true,
+        "stack_size": 5,
+        "icon": "textures/items/grazer_steak_icon.png",
+        "visual": { "color": "#ffffff" },
+        "held": { "mesh": "meshes/items/grazer_steak_held.glb", "offset": [-0.028, 0.062, -0.008], "rotation": [0, 90, 90] },
+        "sounds": { "pickup": "pickup_produce" }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/grazer_steak.glb" }]
     },
     {
       "file": "parts/fertilizer.json",

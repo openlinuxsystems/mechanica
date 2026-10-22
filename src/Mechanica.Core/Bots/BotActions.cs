@@ -111,6 +111,21 @@ public sealed class BotState
     /// <summary>Its mother while both live: a young one wanders round her.</summary>
     public int? Mother { get; internal set; }
 
+    /// <summary>Meals it has eaten from its home towards its produce (<c>tame.produce</c>).</summary>
+    public int Meals { get; internal set; }
+
+    /// <summary>Host time its next produce can be ready at the soonest (the cooldown after the last was collected).</summary>
+    public double ProduceAt { get; internal set; }
+
+    /// <summary>Whether it has its produce ready for a player to collect (<see cref="BotActions.CollectBot"/>).</summary>
+    public bool Ready { get; internal set; }
+
+    /// <summary>Host time of its next meal from its home.</summary>
+    internal double NextMeal { get; set; }
+
+    /// <summary>The home part it lives at (a Feeding Trough), or null, as of the last home check.</summary>
+    internal (int Creation, int Part)? HomePart { get; set; }
+
     /// <summary>Whether it is fighting (see <see cref="BotActions.Engage"/>).</summary>
     public bool Engaged { get; internal set; }
 
@@ -134,7 +149,8 @@ public sealed class BotState
         LastUse.TryGetValue(attack.Id, out var last) ? (float)Math.Max(0, last + attack.Interval - now) : 0f;
 
     /// <summary>The view clients are sent.</summary>
-    public BotView View => new(Id, Type.QualifiedId, Position.ToVec3(), Yaw, Health, Type.Health, Dead, Raid, Engaged, Swimming, Kept, Fed, LedBy, Look, InLove);
+    public BotView View => new(Id, Type.QualifiedId, Position.ToVec3(), Yaw, Health, Type.Health, Dead, Raid, Engaged, Swimming, Kept, Fed, LedBy, Look, InLove,
+        Meals, Ready);
 
     /// <summary>Whether it is swimming: a swimmer (<see cref="Bot.SwimDepth"/>) in water.</summary>
     public bool Swimming => InWater && Type.SwimDepth is not null;
@@ -176,6 +192,9 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
 
     /// <summary>Action name for a player taking a tame bot on a Lead, or letting it go.</summary>
     public const string LeadBot = "LeadBot";
+
+    /// <summary>Action name for a player collecting what a tame bot gives once it has eaten enough from its home (a Grazer's milk).</summary>
+    public const string CollectBot = "CollectBot";
 
     /// <summary>Action name for listing every bot.</summary>
     public const string GetBots = "GetBots";
@@ -243,6 +262,7 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
         });
         dispatcher.Register<FeedBotArgs>(FeedBot, ValidateFeed, ApplyFeed);
         dispatcher.Register<BotArgs>(LeadBot, ValidateLead, ApplyLead);
+        dispatcher.Register<BotArgs>(CollectBot, ValidateCollect, ApplyCollect);
         dispatcher.Register<NoArgs>(GetBots, (_, _) => null, (_, _) => BotValues.Value(_bots.Values.Select(b => b.View).ToList()), readOnly: true);
         dispatcher.Register<BotArgs>(GetBot, (_, a) => _bots.ContainsKey(a.Bot) ? null : $"There is no bot {a.Bot}.",
             (_, a) => BotValues.Value(_bots[a.Bot].View), readOnly: true);
@@ -411,24 +431,100 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
         if (tame.Count == 0)
             return;
         var kinds = tame.SelectMany(b => b.Type.Tame!.Homes).ToHashSet(StringComparer.Ordinal);
-        var homes = new List<(string Part, Vector3 Centre)>();
+        var homes = new List<(string Part, Vector3 Centre, (int Creation, int Part) At)>();
         foreach (var id in survivalWorld.AllCreations.Where(c => c.Parts.Any(p => kinds.Contains(Identifiers.Qualify(p.Part)))).Select(c => c.Id).ToList())
         {
             // Finding it again brings its Bodies' poses up to date.
             if (survivalWorld.FindCreation(id) is not { } creation)
                 continue;
             foreach (var part in creation.Parts.Where(p => kinds.Contains(Identifiers.Qualify(p.Part))))
-                homes.Add((Identifiers.Qualify(part.Part), PartCentre(creation, part.Id)));
+                homes.Add((Identifiers.Qualify(part.Part), PartCentre(creation, part.Id), (creation.Id, part.Id)));
         }
         foreach (var bot in tame)
         {
             var radius = bot.Type.Tame!.HomeRadius;
             var nearest = homes.Where(h => bot.Type.Tame.Homes.Contains(h.Part))
-                .Select(h => (h.Centre, Distance: Vector3.Distance(new Vector3(h.Centre.X, bot.Position.Y, h.Centre.Z), bot.Position)))
-                .Where(h => h.Distance <= radius).OrderBy(h => h.Distance).Select(h => (Vector3?)h.Centre).FirstOrDefault();
+                .Select(h => (h.Centre, h.At, Distance: Vector3.Distance(new Vector3(h.Centre.X, bot.Position.Y, h.Centre.Z), bot.Position)))
+                .Where(h => h.Distance <= radius).OrderBy(h => h.Distance).Cast<(Vector3 Centre, (int, int) At, float Distance)?>().FirstOrDefault();
+            bot.HomePart = nearest?.At;
             if (nearest is { } home)
-                bot.Home = new Vector3(home.X, bot.Position.Y, home.Z);
+                bot.Home = new Vector3(home.Centre.X, bot.Position.Y, home.Centre.Z);
         }
+    }
+
+    // ---- Produce ----
+
+    // Tame ones that give produce eat from the home part they live at, one meal every eat_every seconds until they have
+    // eaten enough, and have it ready once they have and the cooldown since the last was collected is over.
+    private void TendProduce(double now)
+    {
+        foreach (var bot in _bots.Values)
+        {
+            if (!bot.Kept || bot.Dead || bot.Type.Tame?.Produce is not { } produce)
+                continue;
+            var changed = false;
+            if (bot.Meals < produce.Feeds && bot.LedBy is null && bot.HomePart is { } home && now >= bot.NextMeal)
+            {
+                bot.NextMeal = now + produce.EatEvery;
+                if (EatFrom(bot, home))
+                {
+                    bot.Meals++;
+                    changed = true;
+                }
+            }
+            var ready = bot.Meals >= produce.Feeds && now >= bot.ProduceAt;
+            if (ready != bot.Ready)
+            {
+                bot.Ready = ready;
+                changed = true;
+            }
+            if (changed)
+                Changed?.Invoke(bot);
+        }
+    }
+
+    // Takes one of the bot's foods from its home part's inventory; false when there is none (or the part is gone).
+    private bool EatFrom(BotState bot, (int Creation, int Part) home)
+    {
+        if (survivalWorld.FindCreation(home.Creation) is not { } creation || creation.FindPart(home.Part) is null
+            || creation.InventoryOf(home.Part) is not { } inventory)
+            return false;
+        foreach (var food in bot.Type.Tame!.Foods.Order(StringComparer.Ordinal))
+        {
+            if (inventory.Count(food) > 0)
+                return inventory.Remove(food, 1) == 1;
+        }
+        return false;
+    }
+
+    private string? ValidateCollect(ActionCaller caller, BotArgs args)
+    {
+        if (caller.Source != ActionSource.Player)
+            return "Only players collect from animals.";
+        if (!_bots.TryGetValue(args.Bot, out var bot) || bot.Dead)
+            return $"There is no bot {args.Bot}.";
+        if (bot.Type.Tame?.Produce is not { } produce)
+            return $"The {bot.Type.Name} gives nothing.";
+        if (!bot.Kept)
+            return $"The {bot.Type.Name} is not tame.";
+        if (!bot.Ready)
+            return bot.Meals < produce.Feeds
+                ? $"The {bot.Type.Name} has eaten {bot.Meals} of {produce.Feeds} meals from its home; it has nothing to give yet."
+                : $"The {bot.Type.Name} has nothing to give yet.";
+        return survival.CheckReach(caller, bot.Centre) ?? survival.CheckRoom(caller, produce.Item, 1);
+    }
+
+    // The produce goes into the caller's inventory; the bot counts its meals again and has the next no sooner than the cooldown.
+    private JsonElement? ApplyCollect(ActionCaller caller, BotArgs args)
+    {
+        var bot = _bots[args.Bot];
+        var produce = bot.Type.Tame!.Produce!;
+        survival.Give(caller, produce.Item, 1, bot.Centre);
+        bot.Meals = 0;
+        bot.Ready = false;
+        bot.ProduceAt = Now + produce.Cooldown;
+        Changed?.Invoke(bot);
+        return BotValues.Value(new CollectBotResult(produce.Item, 1));
     }
 
     // ---- Breeding ----
@@ -492,7 +588,10 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
         }
     }
 
-    /// <summary>Brings a bot's birth (it is expecting) and its growing up (a young one) forward to now (tests and tools).</summary>
+    /// <summary>
+    /// Brings a bot's birth (it is expecting), its growing up (a young one), its next meal from its home and the end of its
+    /// produce's cooldown forward to now (tests and tools).
+    /// </summary>
     public void Hurry(int id)
     {
         if (!_bots.TryGetValue(id, out var bot))
@@ -501,6 +600,8 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
             bot.DueAt = Now;
         if (bot.GrowsAt is not null)
             bot.GrowsAt = Now;
+        bot.NextMeal = Math.Min(bot.NextMeal, Now);
+        bot.ProduceAt = Math.Min(bot.ProduceAt, Now);
     }
 
     // How many tame ones live round a bot's home: its own type and its young, and young on the way.
@@ -533,7 +634,7 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
     public IReadOnlyList<SavedBot> SaveKept() =>
         [.. _bots.Values.Where(b => b.Kept && !b.Dead).Select(b => new SavedBot(b.Type.QualifiedId, b.Position.ToVec3(), b.Yaw, b.Home.ToVec3(), b.Health,
             b.Type.Model?.LookOf(b.Id, b.Look) ?? b.Look, Left(b.BreedsAt), b.DueAt is { } due ? Left(due) ?? 0f : null, b.DueLook,
-            b.GrowsAt is { } grows ? Left(grows) ?? 0f : null))];
+            b.GrowsAt is { } grows ? Left(grows) ?? 0f : null, b.Meals, Left(b.ProduceAt)))];
 
     // Seconds from now until a host time, or null when it has passed.
     private float? Left(double at) => at > Now ? (float)(at - Now) : null;
@@ -553,7 +654,10 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
             DueAt = saved.DueIn is { } due ? Now + due : null,
             DueLook = saved.DueLook,
             GrowsAt = saved.GrowsIn is { } grows ? Now + grows : type.Grow is { } grow ? Now + grow.Seconds : null,
+            Meals = type.Tame?.Produce is { } produce ? Math.Clamp(saved.Meals, 0, produce.Feeds) : 0,
+            ProduceAt = saved.ProduceIn is { } produceIn ? Now + produceIn : 0,
         };
+        bot.Ready = bot.Type.Tame?.Produce is { } gives && bot.Meals >= gives.Feeds && Now >= bot.ProduceAt;
         _bots[bot.Id] = bot;
         Spawned?.Invoke(bot);
         return true;
@@ -1006,6 +1110,7 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
         }
         TendTame(now);
         TendBreeding(now);
+        TendProduce(now);
     }
 
     // ---- Shared ----

@@ -31,6 +31,8 @@ public class ConsumablesTests
     [InlineData("fertilizer", 3, 2, 0.4, 0.7, 20)]
     [InlineData("bloom_tea", 3, 1, 0.4, 0.7, 10, false)]
     [InlineData("grazer_shake", 3, 1, 0.4, 0.7, 10, false)]
+    [InlineData("grazer_milk", 3, 1, 0.4, 0.7, 5)]
+    [InlineData("grazer_steak", 6, 2, 0.6, 0.3, 5)]
     public void TakesTheWikiStats(string id, double mass, int durability, double friction, double buoyancy, int stack, bool flammable = true)
     {
         var part = Part(id);
@@ -47,6 +49,7 @@ public class ConsumablesTests
     [InlineData("potato", 8)]
     [InlineData("bloom_tea", 20)]
     [InlineData("grazer_shake", 100)]
+    [InlineData("grazer_milk", 20)]
     public void FoodHealsTheFoodPagesHealth(string id, int health)
     {
         var part = Part(id);
@@ -61,6 +64,7 @@ public class ConsumablesTests
     [InlineData("potato", false, 1.4f)]
     [InlineData("bloom_tea", true, 0.67f)]
     [InlineData("grazer_shake", true, 0.67f)]
+    [InlineData("grazer_milk", true, 0.67f)]
     public void DrinksAreDrunkQuicklyAndFoodIsEatenInBites(string id, bool drink, float seconds)
     {
         var part = Part(id);
@@ -148,7 +152,7 @@ public class ConsumablesTests
 
         Assert.Equal(["parts/carrot.json", "parts/tomato.json", "parts/potato.json", "parts/carrot_seed.json", "parts/tomato_seed.json",
                 "parts/potato_seed.json", "parts/cotton_seed.json", "parts/chemical.json", "parts/gasoline.json",
-                "parts/bloom_tea.json", "parts/grazer_shake.json", "parts/fertilizer.json"],
+                "parts/bloom_tea.json", "parts/grazer_shake.json", "parts/grazer_milk.json", "parts/grazer_steak.json", "parts/fertilizer.json"],
             batch!.Parts!.Select(e => e.File));
         // Moved, not copied: no other batch writes these files.
         foreach (var other in Directory.GetFiles(Path.Combine(Mod, "editor", "batches"), "*.json").Where(f => !f.EndsWith("consumables.json", StringComparison.Ordinal)))

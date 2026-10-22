@@ -23,6 +23,7 @@ public partial class BotBody : CharacterBody3D
     private float _targetYaw;
     private bool _placed;
     private float _flash;
+    private float _cueTime;
 
     /// <summary>The bot's id.</summary>
     public int BotId { get; init; }
@@ -38,6 +39,15 @@ public partial class BotBody : CharacterBody3D
 
     /// <summary>Plays its model's idle sounds; null keeps it quiet.</summary>
     public Sound.SoundSync? Sounds { get; init; }
+
+    /// <summary>The picture of what it gives when tame (<c>tame.produce</c>: the Grazer's milk), shown over it when it is ready; null for none.</summary>
+    public Texture2D? ProduceIcon { get; init; }
+
+    /// <summary>
+    /// The cue over a tame animal whose produce is ready to collect (<see cref="BotView.Ready"/>): its item's picture on a
+    /// round bone badge, bobbing over its back. Shown on every peer.
+    /// </summary>
+    public Node3D ProduceCue { get; } = new() { Name = "ProduceCue", Visible = false };
 
     /// <summary>Its animated model, or null when it shows the placeholder.</summary>
     public BotModelView? Model { get; private set; }
@@ -68,7 +78,59 @@ public partial class BotBody : CharacterBody3D
             Visible = false,
         };
         AddChild(Loc.Verbatim(_label)); // names are the mods' own text
+        AddProduceCue();
         FloorSnapLength = 0.3f;
+    }
+
+    private static ImageTexture? _disc;
+
+    // A round badge, its edge smoothed over a pixel or two.
+    private static ImageTexture Disc()
+    {
+        if (_disc is not null)
+            return _disc;
+        const int n = 64;
+        var image = Image.CreateEmpty(n, n, false, Image.Format.Rgba8);
+        for (var y = 0; y < n; y++)
+        {
+            for (var x = 0; x < n; x++)
+            {
+                var d = new Vector2(x + 0.5f - n / 2f, y + 0.5f - n / 2f).Length();
+                image.SetPixel(x, y, new Color(1, 1, 1, Mathf.Clamp(n / 2f - 1f - d, 0f, 1f)));
+            }
+        }
+        return _disc = ImageTexture.CreateFromImage(image);
+    }
+
+    private void AddProduceCue()
+    {
+        ProduceCue.Position = new Vector3(0, Type.Height + 0.45f, 0);
+        AddChild(ProduceCue);
+        var badge = new StandardMaterial3D
+        {
+            AlbedoTexture = Disc(),
+            AlbedoColor = UiTokens.Text with { A = 0.92f },
+            Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+            ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+            BillboardMode = BaseMaterial3D.BillboardModeEnum.Enabled,
+        };
+        ProduceCue.AddChild(new MeshInstance3D
+        {
+            Name = "Badge",
+            Mesh = new QuadMesh { Size = new Vector2(0.42f, 0.42f), Material = badge },
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+        });
+        ProduceCue.AddChild(new Sprite3D
+        {
+            Name = "Icon",
+            Texture = ProduceIcon,
+            PixelSize = ProduceIcon is null ? 0.01f : 0.34f / Mathf.Max(1, ProduceIcon.GetWidth()),
+            Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
+            Shaded = false,
+            Position = new Vector3(0, 0, 0.01f),
+            RenderPriority = 1,
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+        });
     }
 
     private void AddPlaceholder()
@@ -95,7 +157,7 @@ public partial class BotBody : CharacterBody3D
     /// <summary>Shows a view from the host: health, death, and (on clients) where to move to.</summary>
     public void Show(BotView view, bool follow)
     {
-        // Hearts rise when a player feeds it, more when that tames it or puts it in the mood to pair.
+        // Hearts rise when a player feeds it, more when that tames it or puts it in the mood to pair, and when its produce is collected.
         if (View is { } before && !view.Dead && GetParent() is { } world)
         {
             if (view.Kept && !before.Kept)
@@ -104,8 +166,11 @@ public partial class BotBody : CharacterBody3D
                 BotHearts.Show(world, GlobalPosition + new Vector3(0, Type.Height, 0), 5);
             else if (view.Fed > before.Fed)
                 BotHearts.Show(world, GlobalPosition + new Vector3(0, Type.Height, 0), 2);
+            else if (before.Ready && !view.Ready)
+                BotHearts.Show(world, GlobalPosition + new Vector3(0, Type.Height, 0), 3); // its produce was collected
         }
         View = view;
+        ProduceCue.Visible = view.Ready && !view.Dead;
         _label.Visible = view.Health < view.MaxHealth;
         _label.Text = view.Dead ? Loc.T("{0} (destroyed)", Type.Name) : $"{Type.Name}  {view.Health:0}/{view.MaxHealth:0}";
         if (_material is not null && view.Dead)
@@ -151,6 +216,13 @@ public partial class BotBody : CharacterBody3D
 
     public override void _Process(double delta)
     {
+        if (ProduceCue.Visible)
+        {
+            // a gentle bob and pulse, so it catches the eye
+            _cueTime += (float)delta;
+            ProduceCue.Position = new Vector3(0, Type.Height + 0.45f + 0.06f * Mathf.Sin(_cueTime * 2.4f), 0);
+            ProduceCue.Scale = Vector3.One * (1f + 0.06f * Mathf.Sin(_cueTime * 4.8f));
+        }
         if (_flash <= 0 || _mesh is null)
             return;
         _flash -= (float)delta;

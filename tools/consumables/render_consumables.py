@@ -1,8 +1,8 @@
-"""Review renders of consumables batch C2 (build_consumables.py): for each item a sheet with the model three-quarter
+"""Review renders of consumables batches C2 and C3 (build_consumables.py): for each item a sheet with the model three-quarter
 from the front and from the back, its icon on a dark and a light tile, and the item in hand (third person and first
 person, as the game frames them); and for the drinks a strip of the drink clip, third and first person.
 
-    python tools/consumables/render_consumables.py OUT_DIR [bloom_tea] [grazer_shake] [fertilizer] [--no-drink]
+    python tools/consumables/render_consumables.py OUT_DIR [bloom_tea] [grazer_shake] [fertilizer] [grazer_milk] [grazer_steak] [--no-drink]
 
 Cycles on the CPU; nothing is downloaded. Writes PNGs into OUT_DIR.
 """
@@ -26,7 +26,9 @@ import render_roots_design as rrd  # noqa: E402
 
 # The pose each item is held in (hold clip, first-person clip) and the clip that uses it.
 HOLD = {"bloom_tea": (bc.clip_hold_drink, bc.clip_hold_drink_fp), "grazer_shake": (bc.clip_hold_drink, bc.clip_hold_drink_fp),
-        "fertilizer": (bc.clip_hold_item, bc.clip_hold_item)}
+        "fertilizer": (bc.clip_hold_item, bc.clip_hold_item), "grazer_milk": (bc.clip_hold_drink, bc.clip_hold_drink_fp),
+        "grazer_steak": (bc.clip_hold_item, bc.clip_hold_item)}
+DRINKS = ("bloom_tea", "grazer_shake", "grazer_milk")
 LOOK = Vector(bc.FP_LOOK)
 VIEWS = {"3q": dict(view=(0.9, -1.4, 0.25), ortho=0.75, target=(-0.1, -0.15, 1.38)),
          "fp": dict(view=tuple(-LOOK), target=tuple(Vector(bc.FP_EYE) + LOOK), distance=1.0, ground=False, clip_start=0.05,
@@ -110,7 +112,7 @@ def sheet(item, title, out):
     im = Image.new("RGB", (W, H), (245, 245, 246))
     d = ImageDraw.Draw(im)
     F = bc_items.bm.font
-    d.text((40, 24), f"{title.upper()}: design review (consumables batch C2)", fill=(30, 30, 34), font=F(44))
+    d.text((40, 24), f"{title.upper()}: design review (consumables batch {'C3' if item in ('grazer_milk', 'grazer_steak') else 'C2'})", fill=(30, 30, 34), font=F(44))
     d.text((40, 84), f"{item}.glb: {(hi - lo).x * 100:.1f} x {(hi - lo).y * 100:.1f} x {(hi - lo).z * 100:.1f} cm in the 25 cm "
            f"block, {tris} triangles", fill=(30, 30, 34), font=F(24, False))
     x = 40
@@ -161,7 +163,7 @@ def main(argv):
     only = [a for a in argv[1:] if a in bc_items.ITEMS] or list(bc_items.ITEMS)
     for item in only:
         sheet(item, bc_items.ITEMS[item][0], out)
-        if item != "fertilizer" and "--no-drink" not in argv:
+        if item in DRINKS and "--no-drink" not in argv:
             drink(item, out)
 
 

@@ -267,6 +267,29 @@ The Grazer Calf grows into a Grazer in 1200 s (one in-game day):
 
 Births and growing up carry on through saves: the time left is saved with the world.
 
+**Produce.** A `tame` block with `produce` makes a tame bot give an item (the Grazer's milk). While it lives at one of
+its `homes` (a part within `home_radius`, checked every `home_check_seconds`) and is not on a Lead, it eats one of its
+`foods` from that part's inventory every `eat_every` seconds; its model plays `eat` on every peer. Once it has eaten
+`feeds` meals it has one `item` ready and stops eating. Every peer sees a cue over it, the item's icon on a round badge
+bobbing over its back. A player presses Use (E) on it to collect it (`CollectBot`): the item goes into their inventory
+(they need room for it), hearts rise, and it starts counting its meals again. The next is ready no sooner than
+`cooldown` seconds after this one was collected. Holding its Lead or its breed's treat, Use does that instead. Young
+without `produce` (the Grazer Calf) give nothing and eat nothing from the trough. The meals eaten and the cooldown left
+are saved with the world. The Grazer gives a Grazer Milk after five carrots from its Feeding Trough:
+
+```json
+"produce": { "item": "grazer_milk", "feeds": 5, "cooldown": 300, "eat_every": 30 }
+```
+
+| Key | Type | Default | Meaning |
+|-----|------|---------|---------|
+| `item` | item id | required | What it gives. |
+| `feeds` | integer | 5 | Meals from its home before one is ready. |
+| `cooldown` | number (s) | 300 | After one is collected, before the next can be ready. |
+| `eat_every` | number (s) | 30 | Between two meals from its home. |
+
+A bot with `produce` must list `homes`. Grazers also drop one or two Grazer Steaks when they die (`drops`), tame or wild.
+
 A kept bot (`KeepBot`, see [Action API](#6-action-api)) is no longer wild: it stays when the players leave, never
 counts towards `count`, and is saved with the world (see [Saves](saves.md)).
 
@@ -534,6 +557,7 @@ and starting raids are open to players only in Creative.
 | `BotAttack` | `bot`, `attack`, `player?` / `creation?`, `part?` / `target?` / `object?` | Checked for reach, line of sight and cooldown. Returns `{hits}`. |
 | `FeedBot` | `bot`, `item` | A player feeds the bot one of its `tame` foods from their inventory, within reach. Returns `{fed, feeds, kept}`; the last feed keeps it. |
 | `LeadBot` | `bot` | A player with the bot's `tame.lead` takes a tame bot on the Lead, within reach (from anyone leading it), or lets go of the one they lead. Returns `{led}`. |
+| `CollectBot` | `bot` | A player takes what a tame bot has ready (`tame.produce`), within reach and with room in their inventory. Returns `{item, count}`. `GetBot` shows `meals` and `ready`. |
 | `KeepBot` | `bot`, `kept?` | Keeps the bot (or with `kept: false` lets it go): it never despawns and is saved with the world. |
 | `GetBots`, `GetBot` | none; `bot` | Queries. |
 | `StartRaid` | `level?` | Starts a raid now at the given (or the current) level. |

@@ -81,7 +81,17 @@ public sealed record BotTame(IReadOnlySet<string> Foods, int Feeds, string? Lead
 
     /// <summary>How two tame ones have young, or null when they never do.</summary>
     public BotBreed? Breed { get; init; }
+
+    /// <summary>What a tame one gives once it has eaten enough from its home, or null when it gives nothing.</summary>
+    public BotProduce? Produce { get; init; }
 }
+
+/// <summary>What a tame bot gives (<see cref="BotProduceDefinition"/>), with defaults filled in.</summary>
+/// <param name="Item">Qualified item it gives.</param>
+/// <param name="Feeds">Meals from its home before one is ready.</param>
+/// <param name="Cooldown">Seconds after one is collected before the next can be ready.</param>
+/// <param name="EatEvery">Seconds between two meals from its home.</param>
+public sealed record BotProduce(string Item, int Feeds, float Cooldown, float EatEvery);
 
 /// <summary>How two tame bots of a type have young (<see cref="BotBreedDefinition"/>), with defaults filled in.</summary>
 /// <param name="Treat">Qualified item that puts one in the mood.</param>
@@ -299,6 +309,15 @@ public sealed class BotBook : IBotCatalog
 
     /// <summary>How near two must be to pair, m, when a breed does not say.</summary>
     public const float DefaultBreedRadius = 8f;
+
+    /// <summary>Meals before a tame bot's produce is ready, when its data does not say.</summary>
+    public const int DefaultProduceFeeds = 5;
+
+    /// <summary>Seconds after a tame bot's produce is collected before the next can be ready, when its data does not say.</summary>
+    public const float DefaultProduceCooldown = 300f;
+
+    /// <summary>Seconds between two of a tame bot's meals from its home, when its data does not say.</summary>
+    public const float DefaultProduceEatEvery = 30f;
 
     /// <summary>Deepest behaviour tree accepted.</summary>
     public const int MaxBehaviorDepth = 24;
@@ -791,7 +810,30 @@ public sealed class BotBook : IBotCatalog
         }
         Positive(t.HomeRadius, "$.tame.home_radius", "home_radius", false, sink);
         var breed = t.Breed is { } b ? CheckBreed(b, catalog, sink) : null;
-        return sink.ErrorCount > errors ? null : new BotTame(foods, t.Feeds ?? DefaultTameFeeds, lead, homes, t.HomeRadius ?? DefaultHomeRadius) { Breed = breed };
+        var produce = t.Produce is { } p ? CheckProduce(p, catalog, sink) : null;
+        if (t.Produce is not null && homes.Count == 0)
+            sink.Error(code, "$.tame.produce", "a bot that gives produce eats from its home: list its homes.");
+        return sink.ErrorCount > errors ? null
+            : new BotTame(foods, t.Feeds ?? DefaultTameFeeds, lead, homes, t.HomeRadius ?? DefaultHomeRadius) { Breed = breed, Produce = produce };
+    }
+
+    private static BotProduce? CheckProduce(BotProduceDefinition p, IPartCatalog catalog, DiagnosticSink sink)
+    {
+        const string code = DiagnosticCodes.BotInvalid;
+        var errors = sink.ErrorCount;
+        KnownKeys.WarnUnknown(p.Extra, "$.tame.produce", sink, typeof(BotProduceDefinition));
+        if (p.Item is null)
+            sink.Error(code, "$.tame.produce.item", "item is required.");
+        else if (!PartValidator.IsItemRef(p.Item))
+            sink.Error(code, "$.tame.produce.item", $"'{p.Item}' must be an item id or 'mod_id:item_id'.");
+        else if (catalog.FindDefinition(Identifiers.Qualify(p.Item)) is null)
+            sink.Error(code, "$.tame.produce.item", $"there is no item '{Identifiers.Qualify(p.Item)}'.");
+        if (p.Feeds is < 1)
+            sink.Error(code, "$.tame.produce.feeds", "feeds must be 1 or more.");
+        NonNegative(p.Cooldown, "$.tame.produce.cooldown", "cooldown", false, sink);
+        Positive(p.EatEvery, "$.tame.produce.eat_every", "eat_every", false, sink);
+        return sink.ErrorCount > errors ? null
+            : new BotProduce(Identifiers.Qualify(p.Item!), p.Feeds ?? DefaultProduceFeeds, p.Cooldown ?? DefaultProduceCooldown, p.EatEvery ?? DefaultProduceEatEvery);
     }
 
     private static BotBreed? CheckBreed(BotBreedDefinition b, IPartCatalog catalog, DiagnosticSink sink)

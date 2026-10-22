@@ -903,6 +903,7 @@
     "break": "break",
     "by {0}": "by {0}",
     "collect {0}": "collect {0}",
+    "collect {0} from the {1}": "collect {0} from the {1}",
     "container": "container",
     "damage {0}": "damage {0}",
     "east": "east",

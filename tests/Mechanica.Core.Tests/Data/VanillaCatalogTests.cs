@@ -35,7 +35,7 @@ public class VanillaCatalogTests
         "component_kit", "circuit_board", "glue", "gasoline", "crude_oil", "battery_pack",
         "master_battery", "warehouse_key", "explosive_remnant", "scuttler_head", "carrot_seed", "potato_seed", "tomato_seed",
         "cotton_seed", "carrot", "potato", "tomato", "cotton", "beeswax", "ember", "water_bucket", "chemical_bucket", "glowstick", "popper", "potato_blaster", "potato_scattergun",
-        "potato_launcher", "bloom_tea", "grazer_shake", "fertilizer",
+        "potato_launcher", "bloom_tea", "grazer_shake", "fertilizer", "grazer_milk", "grazer_steak",
         // World / farming parts
         "soil_bag",
         // Decorative props

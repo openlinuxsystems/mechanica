@@ -494,7 +494,8 @@ public partial class SurvivalHud : CanvasLayer
     }
 
     /// <summary>
-    /// What Use (E) would do now: harvest the ripe crop or sleep in the bed under the crosshair, or else pick up
+    /// What Use (E) would do now: collect what a tame animal has ready (its milk), harvest the ripe crop or sleep in the bed
+    /// under the crosshair, or else pick up
     /// the nearest pile in reach. With logic parts (chunk 10) it also stands a seated player up, sits in the
     /// seat under the crosshair, or uses a part that says how (<see cref="LogicDefinition.Use"/>). Null when
     /// there is nothing.
@@ -507,6 +508,14 @@ public partial class SurvivalHud : CanvasLayer
             return (Loc.T("stand up"), () => Request(LogicActions.LeaveSeat, new NoArgs()));
         if (ToolInteraction() is { } tool)
             return tool;
+        // A tame animal with its produce ready (a Grazer's milk): Use takes it.
+        if (HandTool.CastShown(player, settings.Reach)?.Collider is Bots.BotBody { View: { Ready: true, Dead: false } } animal
+            && animal.Type.Tame?.Produce is { } produce)
+        {
+            var gives = Loc.Mod(Catalog.FindDefinition(produce.Item)?.Name ?? produce.Item);
+            return (Loc.T("collect {0} from the {1}", gives, Loc.Mod(animal.Type.Name)),
+                () => Request(Core.Bots.BotActions.CollectBot, new Core.Bots.BotArgs(animal.BotId)));
+        }
         if (HandTool.PartHit(HandTool.CastShown(player, settings.Reach)) is { } aimed)
         {
             var creation = aimed.Node.Creation;

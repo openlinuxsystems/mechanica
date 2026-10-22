@@ -1552,6 +1552,25 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             inventories.PlayerInventory(caller.Peer).Remove(item, count);
     }
 
+    /// <summary>Whether a player caller has room for <paramref name="count"/> of <paramref name="item"/>; other callers always have.</summary>
+    public string? CheckRoom(ActionCaller caller, string item, int count) =>
+        caller.Source != ActionSource.Player || inventories.PlayerInventory(caller.Peer).SpaceFor(item) >= count ? null
+        : "Make room in your inventory first.";
+
+    /// <summary>
+    /// Puts <paramref name="count"/> of <paramref name="item"/> in a player caller's inventory (what does not fit lands on
+    /// the ground at <paramref name="at"/>) and plays its pickup sound there.
+    /// </summary>
+    public void Give(ActionCaller caller, string item, int count, Vector3 at)
+    {
+        if (count <= 0)
+            return;
+        var left = caller.Source == ActionSource.Player ? count - inventories.PlayerInventory(caller.Peer).Add(item, count) : count;
+        if (left > 0)
+            AddDrop(at, [new ItemStack(item, left)]);
+        PlayPickup(item, at);
+    }
+
     private string NameOf(string item) => catalog.FindDefinition(item)?.Name ?? item;
 
     private static JsonElement Value<T>(T value) => JsonSerializer.SerializeToElement(value, ActionJson.Options);

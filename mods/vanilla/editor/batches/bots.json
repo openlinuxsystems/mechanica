@@ -1926,8 +1926,13 @@
         },
         "tame": {
           "foods": ["carrot"], "feeds": 3, "lead": "lead", "homes": ["feeding_trough"], "home_radius": 20,
-          "breed": { "treat": "tomato", "calf": "grazer_calf", "seconds": 60, "cooldown": 600, "herd": 8, "radius": 8 }
+          "breed": { "treat": "tomato", "calf": "grazer_calf", "seconds": 60, "cooldown": 600, "herd": 8, "radius": 8 },
+          // A carrot from its Feeding Trough every 30 s; after 5 a bottle of milk is ready (Use on it), at most one every 5 minutes.
+          "produce": { "item": "grazer_milk", "feeds": 5, "cooldown": 300, "eat_every": 30 }
         },
+        "drops": [
+          { "item": "grazer_steak", "chance": 1, "count": 1, "count_max": 2 }
+        ],
         "wild": {
           "habitat": "land",
           "count": 4,
