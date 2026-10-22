@@ -1,0 +1,20 @@
+{
+  "id": "stair_baluster",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "stair_baluster",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 248
+}

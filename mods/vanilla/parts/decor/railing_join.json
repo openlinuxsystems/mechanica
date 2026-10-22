@@ -1,0 +1,19 @@
+{
+  "id": "railing_join",
+  "name": "Railing Join",
+  "description": "A one-block knuckle where railings meet at a corner.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 4,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/parts/railing_join.glb",
+  "icon": "textures/items/railing_join_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

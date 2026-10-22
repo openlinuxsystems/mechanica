@@ -1,0 +1,19 @@
+{
+  "id": "net_fence",
+  "name": "Net Fence",
+  "description": "A 1.75 m chain-link fence panel between two posts. Panels line up end to end.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 4,
+  "friction": 0.6,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [7, 4, 1],
+  "mesh": "meshes/parts/net_fence.glb",
+  "icon": "textures/items/net_fence_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

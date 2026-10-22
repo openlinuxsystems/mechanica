@@ -468,6 +468,446 @@
           "order": 2930
         }
       ]
+    },
+    {
+      "file": "parts/decor/net_fence.json",
+      "template": "decor",
+      "set": {
+        "name": "Net Fence",
+        "description": "A 1.75 m chain-link fence panel between two posts. Panels line up end to end.",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.6,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          7,
+          4,
+          1
+        ],
+        "icon": "textures/items/net_fence_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/net_fence.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "net_fence",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "net_block",
+              "count": 5
+            }
+          ],
+          "outputs": [
+            {
+              "item": "net_fence",
+              "count": 1
+            }
+          ],
+          "time": 5,
+          "order": 2950
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/window_square.json",
+      "template": "decor",
+      "set": {
+        "name": "Square Window",
+        "description": "A 1 m square window: clear glass in a steel-blue frame with a bone sill.",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.2,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "glass",
+        "size": [
+          4,
+          4,
+          1
+        ],
+        "icon": "textures/items/window_square_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/window_square.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "window_square",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "glass_block",
+              "count": 10
+            },
+            {
+              "item": "metal_block",
+              "count": 10
+            }
+          ],
+          "outputs": [
+            {
+              "item": "window_square",
+              "count": 1
+            }
+          ],
+          "time": 10,
+          "order": 2910
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/stair_baluster.json",
+      "template": "decor",
+      "set": {
+        "name": "Stair Baluster",
+        "description": "The post under a level railing, with a saddle on top for the rail.",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          1,
+          4,
+          1
+        ],
+        "icon": "textures/items/stair_baluster_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/stair_baluster.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "stair_baluster",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "stair_baluster",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 248
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/stair_banister.json",
+      "template": "decor",
+      "set": {
+        "name": "Stair Banister",
+        "description": "The post under a stair's sloping handrail, with a 45-degree rail stub.",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          1,
+          4,
+          1
+        ],
+        "icon": "textures/items/stair_banister_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/stair_banister.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "stair_banister",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "stair_banister",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 246
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/stair_landing.json",
+      "template": "decor",
+      "set": {
+        "name": "Stair Landing",
+        "description": "A 2 m by 2 m grated platform for the top or bottom of a staircase.",
+        "mass": 6,
+        "durability": 5,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          8,
+          1,
+          8
+        ],
+        "icon": "textures/items/stair_landing_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/stair_landing.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "stair_landing",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 6
+            },
+            {
+              "item": "net_block",
+              "count": 2
+            }
+          ],
+          "outputs": [
+            {
+              "item": "stair_landing",
+              "count": 1
+            }
+          ],
+          "time": 5,
+          "order": 214
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/metal_railing_long.json",
+      "template": "decor",
+      "set": {
+        "name": "Metal Railing (Long)",
+        "description": "A 2 m Colony handrail on three posts.",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          8,
+          4,
+          1
+        ],
+        "icon": "textures/items/metal_railing_long_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/metal_railing_long.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "metal_railing_long",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 2
+            }
+          ],
+          "outputs": [
+            {
+              "item": "metal_railing_long",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 242
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/railing_join.json",
+      "template": "decor",
+      "set": {
+        "name": "Railing Join",
+        "description": "A one-block knuckle where railings meet at a corner.",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          1,
+          1,
+          1
+        ],
+        "icon": "textures/items/railing_join_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/railing_join.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "railing_join",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "railing_join",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 244
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/stair_step.json",
+      "template": "decor",
+      "set": {
+        "name": "Stair Step",
+        "description": "A 1.5 m grated stair tread with a mustard nosing. Step them up one block at a time.",
+        "mass": 6,
+        "durability": 5,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          6,
+          1,
+          1
+        ],
+        "icon": "textures/items/stair_step_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/stair_step.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "stair_step",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "stair_step",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 212
+        }
+      ]
     }
   ]
 }

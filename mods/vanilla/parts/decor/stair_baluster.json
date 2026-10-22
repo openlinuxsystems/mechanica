@@ -1,0 +1,19 @@
+{
+  "id": "stair_baluster",
+  "name": "Stair Baluster",
+  "description": "The post under a level railing, with a saddle on top for the rail.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 4,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 4, 1],
+  "mesh": "meshes/parts/stair_baluster.glb",
+  "icon": "textures/items/stair_baluster_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}
