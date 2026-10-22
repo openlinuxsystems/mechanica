@@ -355,6 +355,12 @@ public class WorldGenTests
         Assert.All(scrap, o => Assert.True(o.Definition.Harvest && o.Definition.Regrow is null));
         Assert.Contains(scrap, o => o.Definition.Drops!.Any(d => d.Item == "scrap_metal_block"));
         Assert.Contains(scrap, o => o.Definition.Drops!.Any(d => d.Item == "scrap_wood_block"));
+        // Fire Extinguishers lie by the spawn, enough for every fire (one sprays long enough for two).
+        var spawn = crash.Poi.Prefab.Markers!.First(m => m.Type == "spawn").At;
+        var extinguishers = crash.Poi.Prefab.Markers!.Select((m, k) => (m, k)).Where(e => e.m.Ref == "dropped_extinguisher")
+            .Select(e => (e.m, Object: gen.Find(WorldObjectId.ForPoi(crash.Index, e.k))!)).ToList();
+        Assert.All(extinguishers, e => Assert.True(Vector2.Distance(new(e.m.At.X, e.m.At.Z), new(spawn.X, spawn.Z)) < 5f, "by the spawn"));
+        Assert.True(extinguishers.Sum(e => e.Object.Definition.Drops!.Single(d => d.Item == "fire_extinguisher").Count) * 2 >= 10, "enough for every fire");
         // Its road heads north to the first Workshop (spec §1).
         var station = Assert.Single(gen.Pois, p => p.Site?.Id == "poi_37");
         Assert.True(station.Centre.Y < crash.Centre.Y, "the first Workshop is north of the crash site");

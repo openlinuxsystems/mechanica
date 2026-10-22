@@ -49,7 +49,7 @@
   "hidden_models": [],
   // Kept out of sight until the ship settles, as the crash spills them; site fires within hide_radius too.
   "hidden_objects": ["loot_crate", "scrap_pile_metal", "scrap_pile_wood", "cargo_spill_metal", "cargo_spill_electronics", "cargo_spill_fuel",
-    "cargo_spill_farming", "cargo_spill_building"],
+    "cargo_spill_farming", "cargo_spill_building", "dropped_extinguisher"],
   "hide_radius": 100.0,
   "duration": 31.0,
   // The ship's origin (its deck line at mid-ship; the belly hangs 2 m under it). Yaw as POI models turn (0 = nose

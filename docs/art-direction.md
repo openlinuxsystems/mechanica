@@ -120,7 +120,8 @@ the clearing and broke in four. What lies there:
   object (`cargo_spill_<kind>`) the player empties with Use: red metal, blue electronics, yellow fuel, green farming,
   tan building materials. The drops are in `world/worldgen.json`.
 - **Ten fires**: one in each of the wreck's hatches and openings, and four at burst containers. They burn until water
-  puts them out; the first quest asks for three.
+  puts them out; the first quest asks for three. Three Fire Extinguishers (`dropped_extinguisher`, two each) lie by the
+  spawn, enough foam for all ten.
 - The crew's things inside (lockers, a microwave in the mess, a file cabinet on the bridge, a loot crate in cargo
   control), scrap piles round the hull, and the older site round it: the Old Stone court, the farm and pond, the dead
   relay beacon and the burnt woods.

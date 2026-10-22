@@ -115,6 +115,10 @@
   "markers": [
     // East of the wreck, between the bow's burning airlock and the burnt woods.
     { "type": "spawn", "at": [22.0, 0.0, -12.0], "yaw": 120.0 },
+    // Fire Extinguishers lying by the spawn, for the fires at the wreck's hatches (the item's origin is its middle).
+    { "type": "object", "ref": "dropped_extinguisher", "at": [19.8, 0.24, -11.0], "yaw": 20.0 },
+    { "type": "object", "ref": "dropped_extinguisher", "at": [20.3, 0.24, -10.5], "yaw": 75.0 },
+    { "type": "object", "ref": "dropped_extinguisher", "at": [19.6, 0.24, -10.3], "yaw": 140.0 },
     // The farmer, in his stall behind the trade counter by the shack.
     { "type": "npc", "ref": "farmer", "at": [-44.77, 0.0, -40.1], "yaw": -15.0 },
     // Outside the bow's starboard airlock, the way in to the bridge (one of the three that block the ways in).

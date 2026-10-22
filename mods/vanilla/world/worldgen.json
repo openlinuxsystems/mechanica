@@ -1330,6 +1330,18 @@
       "harvest": true,
       "drops": [{ "item": "scrap_wood_block", "count": 16, "count_max": 24 }]
     },
+    // Fire Extinguishers thrown out of the SV-04's crew quarters, by the crash site's spawn: press Use to pick one up. The
+    // three hold enough foam for every fire at the site (each Fire Extinguisher sprays for two seconds).
+    {
+      "id": "dropped_extinguisher",
+      "collider": { "shape": "box", "size": [0.2, 0.47, 0.2], "at": [0.0, 0.0, 0.0] },
+      "mesh": { "file": "meshes/items/fire_extinguisher.glb" },
+      "footprint": 0.3,
+      "max_slope": 0.6,
+      "damage_from": [],
+      "harvest": true,
+      "drops": [{ "item": "fire_extinguisher", "count": 2 }]
+    },
     // The cargo the SV-04's containers spilled where they burst (the crash site, two heaps by each): press Use to pick
     // a heap up. The container's colour says the kind (tools/structures/crash_site.py builds the heaps): red metal, blue
     // electronics, yellow fuel and chemicals, green farming, tan building supplies.
