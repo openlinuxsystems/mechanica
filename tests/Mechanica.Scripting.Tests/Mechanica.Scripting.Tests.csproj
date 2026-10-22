@@ -14,6 +14,8 @@
   <ItemGroup>
     <!-- The survival test world, shared with the Core tests: item scripts run in it. -->
     <Compile Include="../Mechanica.Core.Tests/Survival/SurvivalFixture.cs" Link="Survival/SurvivalFixture.cs" />
+    <!-- Item transport test parts (parts map E1), for the pump scripts. -->
+    <Compile Include="../Mechanica.Core.Tests/Items/TransportParts.cs" Link="Items/TransportParts.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Mechanica.Scripting/Mechanica.Scripting.csproj" />

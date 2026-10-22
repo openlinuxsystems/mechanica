@@ -2,10 +2,9 @@
 
 Everything is numpy on texel grids, seeded, so the build is deterministic. Lengths are metres.
 
-* ``bag_surface`` - the Soil Bag's burlap: an over-under weave of slightly uneven threads in muted tan-brown, piped
-  seams along every edge with a row of stitches beside them, a little soil ground into the seams and the bottom, and a
-  sprout stamped in darker brown on both long sides (no printed label, no greens).
-* ``rope`` - the twine tied round the bag: three twisted strands.
+* ``PrintedBag`` - the Soil Bag's printed plastic: the Rootwell artwork from ``bag_print.py`` with creases out of the
+  sealed ends, a faint crinkle, scuffed edges and a little soil dust.
+* ``rope`` - a twisted cord (three strands), used by other props' builds.
 * ``mound`` - the soil mound in its dry state: pale tan crumbly clods with dark crevices between them, faint dry
   cracks and grit. The game darkens and glosses it for water (the wetness states are a material parameter).
 """
@@ -18,8 +17,6 @@ import rock_textures as rt
 from rock_textures import smoothstep, srgb
 
 # ---- Palettes ---------------------------------------------------------------------------------------
-BURLAP_LIGHT, BURLAP, BURLAP_DARK = srgb("#a88a60"), srgb("#8c7150"), srgb("#5f4a32")
-STAMP = srgb("#4a3622")
 TWINE_LIGHT, TWINE_DARK = srgb("#b59a6c"), srgb("#7a6243")
 GRIME = srgb("#4b3826")
 
@@ -55,13 +52,6 @@ def worley2(x, y, cell, seed):
 # The Soil Bag
 # =====================================================================================================
 
-def sprout_mask(a, b, centre_b=0.0):
-    """1 inside the stamped sprout (centred on the face, its stem top at b = centre_b), 0 outside, 0.8 mm soft edge."""
-    bb = b - centre_b
-    d = sprout_sdf_up(a, bb)
-    return 1.0 - smoothstep(-0.0008, 0.0008, d)
-
-
 def sprout_sdf_up(a, b):
     """The sprout standing up: stem from b = -0.052 to 0, leaves rising left and right from the stem top."""
     stem = np.maximum(np.abs(a) - 0.0072, np.maximum(b - 0.004, -0.052 - b))
@@ -80,8 +70,10 @@ def sprout_sdf_up(a, b):
     return out
 
 
-class BagSurface:
-    """Surface callback for rock_textures.bake: the Soil Bag's burlap."""
+class PrintedBag:
+    """Surface callback for rock_textures.bake: the Soil Bag's printed plastic (the artwork from bag_print), with soft
+    creases running out of the sealed ends, a faint crinkle all over, scuffs on the edges and a little soil dust
+    on the bottom and round the seals."""
 
     def __init__(self, half, seed):
         self.half = np.asarray(half, float)
@@ -90,58 +82,42 @@ class BagSurface:
         self.stain = rt.Noise3(seed + 2)
 
     def __call__(self, P, n, edge_d):
-        k = int(np.argmax(np.abs(n)))
-        ia, ib = [i for i in range(3) if i != k]
-        a, b = P[:, ia], P[:, ib]
-        N = len(P)
+        import bag_print
+        x, y = P[:, 0], P[:, 1]
+        col = bag_print.print_colour(P, n)
 
-        # ---- the weave: warp along a, weft along b, over-under in a checker -----------------------------
-        lam = 0.0062
-        wob = self.noise.fbm(P, 22.0, octaves=2) * 0.0012
-        ga, gb = (a + wob) / lam, (b - wob) / lam
-        ja, jb = np.floor(ga), np.floor(gb)
-        fa, fb = ga - ja, gb - jb
-        over = ((ja + jb) % 2) == 0
-        warp = np.sin(np.pi * fa) ** 0.6                  # across a warp thread (running along b)
-        weft = np.sin(np.pi * fb) ** 0.6
-        thread = np.where(over, warp, weft)
-        height = 0.0006 * thread
-        tone_t = np.where(over, _hash2(ja.astype(np.int64), np.zeros(N, np.int64) + 7 * k, 11),
-                          _hash2(jb.astype(np.int64), np.zeros(N, np.int64) + 5 * k, 23))
-        fibre = self.fine.fbm(P, 320.0, octaves=2)
-        slub = smoothstep(0.55, 0.9, 0.5 + 0.5 * self.fine.fbm(P * np.array([1.0, 1.0, 1.0]), 40.0, octaves=2))
-        col = BURLAP[None] * (0.95 + 0.06 * tone_t[:, None] + 0.06 * fibre[:, None])
-        gap = 1.0 - smoothstep(0.05, 0.5, thread)
-        col = col + (BURLAP_DARK - col) * (0.45 * gap)[:, None]
-        col = col + (BURLAP_LIGHT - col) * ((0.25 * smoothstep(0.7, 1.0, thread) + 0.2 * slub) * (0.6 + 0.4 * fibre))[:, None]
-        height = height + 0.0003 * slub
+        # creases fanning out of each sealed end, fading toward the middle of the bag
+        ends = smoothstep(0.36, 0.6, np.abs(x))
+        wob = self.noise.fbm(P, 6.0, octaves=2)
+        crease = np.sin(y * 70.0 + wob * 2.5 + np.sign(x) * 1.3) * ends
+        crinkle = self.fine.fbm(P, 28.0, octaves=3)
+        height = 0.0016 * crease + 0.00035 * crinkle
+        col = col * (1.0 + 0.05 * crease * ends)[:, None]
 
-        # ---- large mottling and wear -------------------------------------------------------------------
-        mott = self.noise.fbm(P, 3.0, octaves=3)
-        col = col * (1.0 + 0.08 * mott)[:, None]
-
-        # ---- soil ground in near the edges (where the seams are) and on the underside -----------------
-        de = np.minimum(self.half[ia] - np.abs(a), self.half[ib] - np.abs(b))
+        # the print scuffs pale on the edges, and soil dust gathers underneath and at the seals
         st = 0.5 + 0.5 * self.stain.fbm(P, 9.0, octaves=3)
-        seam_dirt = smoothstep(0.08, 0.03, de) * smoothstep(0.5, 0.85, st)
-        low = smoothstep(-0.03, -0.12, P[:, 2]) * (0.3 + 0.6 * st)
-        under = (n[2] < -0.5) * (0.35 + 0.4 * st)
-        dirt = np.clip(np.maximum(np.maximum(seam_dirt * 0.55, low * 0.4), under), 0, 0.8)
-        col = col + (GRIME - col) * dirt[:, None]
-
-        # ---- the stamped sprout on both long sides ---------------------------------------------------
-        if k == 1:
-            s = 1 if n[1] > 0 else -1
-            m = sprout_mask(a * -s / 1.25, b / 1.25, centre_b=0.002)
-            ink = 0.82 + 0.18 * (0.5 + 0.5 * self.fine.fbm(P, 90.0, octaves=2))
-            col = col + (STAMP - col) * (m * ink * 0.85)[:, None]
-            height = height - 0.0009 * m                  # pressed in: an embossed stamp
+        scuff = smoothstep(0.03, 0.0, edge_d) * smoothstep(0.55, 0.85, st) * 0.35
+        col = col + (np.array([0.93, 0.9, 0.82]) - col) * scuff[:, None]
+        under = (n[2] < -0.5) * (0.15 + 0.3 * st)
+        seal = smoothstep(0.52, 0.62, np.abs(x)) * smoothstep(0.45, 0.8, st) * 0.3
+        dust = np.clip(np.maximum(under, seal), 0, 0.5)
+        col = col + (GRIME - col) * dust[:, None]
         return {"albedo": np.clip(col, 0, 1), "height": height}
 
 
+def seal_texture(w=512, h=16):
+    """Albedo and height of the heat seals: u 0..0.5 is the yellow end's seal, 0.5..1 the green end's, each with fine
+    crimp ridges across it (the ripple in the geometry is the coarse crimp)."""
+    import bag_print
+    u = (np.arange(w) + 0.5) / w
+    col = np.where((u < 0.5)[:, None], np.asarray(bag_print.YELLOW_DEEP) / 255.0, np.asarray(bag_print.GREEN) / 255.0)
+    ridge = 0.5 + 0.5 * np.sin(u * 2 * np.pi * 96)
+    col = col * (0.9 + 0.1 * ridge)[:, None]
+    return np.repeat(np.clip(col, 0, 1)[None], h, 0), np.repeat(ridge[None], h, 0)
+
+
 def rope_texture(w=256, h=256, seed=31, light=TWINE_LIGHT, dark=TWINE_DARK, strands=3):
-    """Albedo and height of a cord, tiling: u round the cord (0..1), v along it (one repeat per 0.05 m): the twine,
-    or in the burlap's own colours the piping sewn along the bag's edges."""
+    """Albedo and height of a cord, tiling: u round the cord (0..1), v along it (one repeat per 0.05 m)."""
     jj, ii = np.mgrid[0:h, 0:w]
     u, v = (ii + 0.5) / w, (jj + 0.5) / h
     phase = np.mod((u + v * 1.0) * strands, 1.0)          # three strands spiralling along the rope

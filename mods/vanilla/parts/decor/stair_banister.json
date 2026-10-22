@@ -1,0 +1,19 @@
+{
+  "id": "stair_banister",
+  "name": "Stair Banister",
+  "description": "The post under a stair's sloping handrail, with a 45-degree rail stub.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 4,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 4, 1],
+  "mesh": "meshes/parts/stair_banister.glb",
+  "icon": "textures/items/stair_banister_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

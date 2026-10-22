@@ -10,6 +10,12 @@
 -- someone sits, then "seated_loop", or "seated_rattle_loop" while an engine runs, and "exit" as they get up; a model
 -- without those clips ignores it. ENTER_TIME is how long "enter" plays before the loop takes over. A seat that binds a
 -- "creak" sound creaks now and then while someone sits in it, twice as often while an engine runs.
+-- A turret seat (properties.aim_speed, and an aimed socket: part.aim_limits) turns its shell toward where the seated
+-- player looks: yaw about its upright axis and pitch about its side axis, within the limits of its level, at up to
+-- properties.aim_speed rad/s about each with at most properties.aim_torque N·m. Whatever is built on its top turns
+-- with the shell (part.set_aim drives the turret's joint; the host does it for everyone). It shows how far the shell
+-- has turned as "aim_yaw" and "aim_pitch" (rad), which every peer draws the shell and its rider at while nothing is
+-- built on it. An empty turret holds where it was left.
 
 local RESEND = 30
 local ENGINE_EVERY = 10
@@ -84,6 +90,71 @@ local function show(id, on)
   end
 end
 
+-- The yaw and pitch (rad, in the seat's own frame: yaw about +Y from its front -Z, pitch up about +X) that point the
+-- shell where the seated player looks, within the turret's limits.
+local function look_angles(input, limits)
+  local cp = math.cos(input.pitch)
+  local d = part.to_local(vec3(-math.sin(input.yaw) * cp, math.sin(input.pitch), -math.cos(input.yaw) * cp))
+  local yaw = math.atan2(-d.x, -d.z)
+  local pitch = math.atan2(d.y, math.sqrt(d.x * d.x + d.z * d.z))
+  if limits.min then
+    yaw = math.max(limits.min, math.min(limits.max, yaw))
+  end
+  return yaw, math.max(limits.pitch_min, math.min(limits.pitch_max, pitch))
+end
+
+-- One step from `from` toward `to`, at most `step`; `wrap` goes the short way round a circle.
+local function toward(from, to, step, wrap)
+  local d = to - from
+  if wrap then
+    d = (d + math.pi) % (2 * math.pi) - math.pi
+  end
+  if math.abs(d) <= step then
+    return to
+  end
+  local next = from + (d > 0 and step or -step)
+  if wrap and next > math.pi then
+    next = next - 2 * math.pi
+  elseif wrap and next <= -math.pi then
+    next = next + 2 * math.pi
+  end
+  return next
+end
+
+local function aim(input, dt)
+  local limits = part.aim_limits()
+  if not limits then
+    return
+  end
+  local a = state.aim
+  local joint = part.joint()
+  local live = joint and joint.type == "aimed" and not joint.locked
+  -- Built on and loaded (or just placed on): start from where the turret stands.
+  if live and not a.synced and joint.position and joint.pitch then
+    a.yaw, a.pitch, a.yaw_target, a.pitch_target = joint.position, joint.pitch, joint.position, joint.pitch
+  end
+  a.synced = live and joint.position ~= nil
+  if input then
+    a.yaw_target, a.pitch_target = look_angles(input, limits)
+  end
+  local step = properties.aim_speed * dt
+  a.yaw = toward(a.yaw, a.yaw_target, step, limits.min == nil)
+  a.pitch = toward(a.pitch, a.pitch_target, step, false)
+  local shown_yaw = math.floor(a.yaw * 1000 + 0.5) / 1000
+  local shown_pitch = math.floor(a.pitch * 1000 + 0.5) / 1000
+  show("aim_yaw", shown_yaw)
+  show("aim_pitch", shown_pitch)
+  if live then
+    local key = a.yaw_target .. ":" .. a.pitch_target
+    if key ~= a.sent or world.tick() % RESEND == 0 then
+      -- Refused (the Creation is not moving yet): try again next step.
+      a.sent = part.set_aim(a.yaw_target, a.pitch_target, properties.aim_speed, properties.aim_torque) and key or nil
+    end
+  else
+    a.sent = nil
+  end
+end
+
 -- Plays a model clip; the count after "#" restarts a clip shown again.
 local function clip(name)
   state.clips = (state.clips or 0) + 1
@@ -110,11 +181,16 @@ function on_create()
   state.steer = state.steer or {}
   state.shown = {}
   state.throttle = 0
+  state.aim = state.aim or { yaw = 0, pitch = 0, yaw_target = 0, pitch_target = 0 }
+  -- Loaded from a save: aim the turret again where it was left straight away.
+  state.aim.sent = nil
 end
 
 function on_reload()
   state.steer = {}
   state.shown = {}
+  state.aim = state.aim or { yaw = 0, pitch = 0, yaw_target = 0, pitch_target = 0 }
+  state.aim.sent = nil
 end
 
 function on_update(dt)
@@ -126,6 +202,9 @@ function on_update(dt)
   if properties.steer_angle then
     state.throttle = math.max(-1, math.min(1, z))
     steer(math.max(-1, math.min(1, x)))
+  end
+  if properties.aim_speed then
+    aim(input, dt)
   end
   show("passenger", not properties.steer_angle)
   local seated = part.occupant() ~= nil

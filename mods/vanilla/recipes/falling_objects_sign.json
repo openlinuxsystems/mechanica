@@ -1,0 +1,20 @@
+{
+  "id": "falling_objects_sign",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal_block",
+      "count": 4
+    }
+  ],
+  "outputs": [
+    {
+      "item": "falling_objects_sign",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 2126
+}

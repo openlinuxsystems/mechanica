@@ -5,8 +5,12 @@
   ],
   "inputs": [
     {
-      "item": "scrap_metal_block",
-      "count": 4
+      "item": "metal_block",
+      "count": 10
+    },
+    {
+      "item": "paint_ammo",
+      "count": 1
     }
   ],
   "outputs": [
@@ -15,6 +19,6 @@
       "count": 1
     }
   ],
-  "time": 2,
+  "time": 15,
   "order": 2210
 }

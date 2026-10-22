@@ -1,0 +1,51 @@
+{
+  "id": "resource_collector",
+  "name": "Resource Collector",
+  "description": "Pulls loose resources and piles within 12 blocks of its top into itself. Pipe its port to a Refiner's input and the Refiner refines from it.",
+  "category": "container",
+  "mass": 7.5,
+  "durability": 5,
+  "friction": 0.6,
+  "buoyancy": 0.3,
+  "flammable": true,
+  "stack_size": 5,
+  "sound_material": "metal",
+  "size": [4, 4, 4],
+  "mesh": "meshes/parts/resource_collector.glb",
+  "icon": "textures/items/resource_collector_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.5, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/resource_collector.lua",
+  "sounds": {
+    "open": "container_open",
+    "place": "place_metal"
+  },
+  "inventory": {
+    "slots": 10
+  },
+  "io_ports": [
+    {
+      "id": "port",
+      "position": [0.5, -0.125, 0.125],
+      "normal": [1, 0, 0],
+      "mode": "out"
+    }
+  ],
+  "intake": {
+    "position": [0, 0.5, 0],
+    "normal": [0, 1, 0],
+    "reach": 3
+  },
+  "properties": {
+    "interval": 1
+  }
+}

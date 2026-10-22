@@ -1,0 +1,36 @@
+{
+  "id": "vacuum_pipe_corner",
+  "name": "Vacuum Pipe Corner",
+  "description": "A quarter bend of Vacuum Pipe: joins its back to its right side, so a pipe run can turn.",
+  "category": "interactive",
+  "mass": 4.5,
+  "durability": 3,
+  "friction": 0.2,
+  "buoyancy": 0.6,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "glass",
+  "size": [1, 1, 1],
+  "mesh": "meshes/parts/vacuum_pipe_corner.glb",
+  "icon": "textures/items/vacuum_pipe_corner_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "sockets": [],
+  "sounds": {
+    "place": "place_metal"
+  },
+  "io_ports": [
+    {
+      "id": "back",
+      "position": [0, 0, -0.125],
+      "normal": [0, 0, -1]
+    },
+    {
+      "id": "side",
+      "position": [0.125, 0, 0],
+      "normal": [1, 0, 0]
+    }
+  ],
+  "conduit": true
+}

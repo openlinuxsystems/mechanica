@@ -117,6 +117,7 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             ValidateCollision(collision, sink);
         ValidateSockets(part, placeable, sink);
         ValidateStorage(part, placeable, sink);
+        ValidateTransport(part, placeable, sink);
         ValidateSurvival(part, placeable, sink);
         ValidateLogic(part, placeable, sink);
         ValidateLight(part, placeable, sink);
@@ -256,32 +257,46 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             else if (MathF.Abs(n.Length - 1) > 1e-3f)
                 sink.Error(Code, $"{path}.normal", $"socket normal {n} must have length 1.");
             if (s.Joint is { } joint)
-                ValidateJoint(joint, s.Type, $"{path}.joint", sink);
+                ValidateJoint(joint, s.Type, $"{path}.joint", sink, s.Normal);
             else if (s.Type == SocketType.Spring)
                 sink.Error(Code, $"{path}.joint", "a spring socket needs a joint with min, max and stiffness.");
             else if (s.Type == SocketType.Linear)
                 sink.Error(Code, $"{path}.joint", "a linear socket needs a joint with max (its travel in m).");
+            else if (s.Type == SocketType.Aimed)
+                sink.Error(Code, $"{path}.joint", "an aimed socket needs a joint with pitch_axis, pitch_min and pitch_max.");
+            if (s.Joint?.Pivot is { } pivot && half is { } box
+                && (!float.IsFinite(pivot.X) || !float.IsFinite(pivot.Y) || !float.IsFinite(pivot.Z)
+                    || MathF.Abs(pivot.X) > box.X / 2 + Epsilon || MathF.Abs(pivot.Y) > box.Y / 2 + Epsilon || MathF.Abs(pivot.Z) > box.Z / 2 + Epsilon))
+                sink.Error(Code, $"{path}.joint.pivot", $"pivot {pivot} must lie within the part's {part.Size} footprint.");
             KnownKeys.WarnUnknown(s.Extra, path, sink, typeof(SocketDefinition));
         }
     }
 
-    private static void ValidateJoint(JointDefinition j, SocketType? type, string path, DiagnosticSink sink)
+    private static void ValidateJoint(JointDefinition j, SocketType? type, string path, DiagnosticSink sink, Vec3? normal = null)
     {
         KnownKeys.WarnUnknown(j.Extra, path, sink, typeof(JointDefinition));
         if (type is null)
             return;
         if (type == SocketType.Structural)
         {
-            sink.Error(Code, path, "only rotational, linear and spring sockets have a joint.");
+            sink.Error(Code, path, "only rotational, linear, spring and aimed sockets have a joint.");
             return;
         }
         if (j.Axis is { } axis && !IsGridDirection(axis))
             sink.Error(Code, $"{path}.axis", $"axis {axis} must be a grid direction like [0, 1, 0].");
+        if (type != SocketType.Aimed)
+        {
+            foreach (var (set, key) in new[] { (j.Pivot is not null, "pivot"), (j.PitchAxis is not null, "pitch_axis"), (j.PitchMin is not null, "pitch_min"), (j.PitchMax is not null, "pitch_max") })
+            {
+                if (set)
+                    sink.Error(Code, $"{path}.{key}", $"only aimed joints have {key}.");
+            }
+        }
         if (j.ShaftRadius is { } shaft && (!float.IsFinite(shaft) || shaft <= 0 || shaft > 1))
             sink.Error(Code, $"{path}.shaft_radius", "shaft_radius must be more than 0 and at most 1 m.");
-        else if (j.ShaftRadius is not null && type == SocketType.Rotational)
+        else if (j.ShaftRadius is not null && type is SocketType.Rotational or SocketType.Aimed)
             sink.Error(Code, $"{path}.shaft_radius", "only linear and spring joints draw a shaft.");
-        foreach (var (value, key) in new[] { (j.Min, "min"), (j.Max, "max"), (j.Stiffness, "stiffness"), (j.Damping, "damping") })
+        foreach (var (value, key) in new[] { (j.Min, "min"), (j.Max, "max"), (j.Stiffness, "stiffness"), (j.Damping, "damping"), (j.PitchMin, "pitch_min"), (j.PitchMax, "pitch_max") })
         {
             if (value is { } v && !float.IsFinite(v))
                 sink.Error(Code, $"{path}.{key}", $"{key} must be a finite number.");
@@ -296,6 +311,7 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
         switch (type)
         {
             case SocketType.Rotational:
+            case SocketType.Aimed:
                 if ((j.Min is null) != (j.Max is null))
                     sink.Error(Code, j.Min is null ? $"{path}.min" : $"{path}.max", "a rotational joint has both min and max (a limited hinge) or neither (it spins freely).");
                 else if (j.Min is { } lo && j.Max is { } hi)
@@ -307,6 +323,8 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
                     else if (lo > Epsilon || hi < -Epsilon)
                         sink.Error(Code, $"{path}.min", "a hinge's range must include 0, the angle it is built at.");
                 }
+                if (type == SocketType.Aimed)
+                    ValidateAim(j, path, sink, j.Axis ?? normal);
                 break;
             case SocketType.Linear:
                 if (j.Max is not { } max)
@@ -328,6 +346,30 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
                 if (j.Damping is < 0)
                     sink.Error(Code, $"{path}.damping", "damping must be 0 or more.");
                 break;
+        }
+    }
+
+    // An aimed joint's pitch: an axis square to the yaw axis, and a range within ±π/2 that includes 0.
+    private static void ValidateAim(JointDefinition j, string path, DiagnosticSink sink, Vec3? axis)
+    {
+        if (j.PitchAxis is not { } pitch)
+            sink.Error(Code, $"{path}.pitch_axis", "pitch_axis (the grid direction the joint tilts about, like [1, 0, 0]) is required for an aimed joint.");
+        else if (!IsGridDirection(pitch))
+            sink.Error(Code, $"{path}.pitch_axis", $"pitch_axis {pitch} must be a grid direction like [1, 0, 0].");
+        else if (axis is { } yaw && IsGridDirection(yaw) && MathF.Abs(yaw.X * pitch.X + yaw.Y * pitch.Y + yaw.Z * pitch.Z) > Epsilon)
+            sink.Error(Code, $"{path}.pitch_axis", $"pitch_axis {pitch} must be square to the axis {yaw}.");
+        if (j.PitchMin is not { } lo)
+            sink.Error(Code, $"{path}.pitch_min", "pitch_min (rad, 0 or less) is required for an aimed joint.");
+        if (j.PitchMax is not { } hi)
+            sink.Error(Code, $"{path}.pitch_max", "pitch_max (rad, 0 or more) is required for an aimed joint.");
+        if (j.PitchMin is { } a && j.PitchMax is { } b && float.IsFinite(a) && float.IsFinite(b))
+        {
+            if (a < -MathF.PI / 2 - Epsilon || b > MathF.PI / 2 + Epsilon)
+                sink.Error(Code, $"{path}.pitch_min", $"pitch limits must be within ±π/2 rad (±90°); got {JsonNumbers.Format(a)} to {JsonNumbers.Format(b)}.");
+            else if (a >= b)
+                sink.Error(Code, $"{path}.pitch_max", "pitch_max must be more than pitch_min.");
+            else if (a > Epsilon || b < -Epsilon)
+                sink.Error(Code, $"{path}.pitch_min", "the pitch range must include 0, the tilt it is built at.");
         }
     }
 
@@ -393,6 +435,89 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             }
             KnownKeys.WarnUnknown(crafting.Extra, p, sink, typeof(CraftingDefinition));
         }
+    }
+
+    // IO ports, conduits and intakes (Parts map E1, docs/io-ports.md).
+    private static void ValidateTransport(PartDefinition part, bool placeable, DiagnosticSink sink)
+    {
+        if (part.IoPorts is { } ports)
+        {
+            if (!placeable)
+                sink.Error(Code, "$.io_ports", "only placeable parts can have io_ports.");
+            var extent = (part.Size ?? GridSize.One).Metres;
+            var ids = new HashSet<string>(StringComparer.Ordinal);
+            for (var i = 0; i < ports.Count; i++)
+            {
+                var port = ports[i];
+                var path = $"$.io_ports[{i}]";
+                if (!Identifiers.IsValid(port.Id))
+                    sink.Error(Code, $"{path}.id", port.Id is null ? "port id is required." : $"port id '{port.Id}' must be lowercase snake_case.");
+                else if (!ids.Add(port.Id))
+                    sink.Error(Code, $"{path}.id", $"port id '{port.Id}' is used twice in this part.");
+                if (port.Normal is not { } n || AxisOf(n) is not { } axis)
+                    sink.Error(Code, $"{path}.normal", "normal must be one axis direction, like [1, 0, 0].");
+                else if (port.Position is not { } pos)
+                    sink.Error(Code, $"{path}.position", "port position [x, y, z] in metres is required.");
+                else if (PortFaceError(pos, n, axis, extent) is { } bad)
+                    sink.Error(Code, $"{path}.position", $"port position {pos} {bad}.");
+                KnownKeys.WarnUnknown(port.Extra, path, sink, typeof(ItemPortDefinition));
+            }
+        }
+        if (part.Conduit == true)
+        {
+            if (!placeable)
+                sink.Error(Code, "$.conduit", "only placeable parts can be conduits.");
+            if (part.IoPorts is not { Count: >= 2 })
+                sink.Error(Code, "$.conduit", "a conduit needs at least two io_ports for items to pass between.");
+            if (part.Inventory is not null)
+                sink.Error(Code, "$.conduit", "a conduit holds nothing: it cannot have an inventory.");
+        }
+        if (part.Intake is { } intake)
+        {
+            const string p = "$.intake";
+            if (!placeable)
+                sink.Error(Code, p, "only placeable parts can have an intake.");
+            var half = (part.Size ?? GridSize.One).Metres;
+            if (intake.Position is not { } pos)
+                sink.Error(Code, $"{p}.position", "position [x, y, z] in metres is required.");
+            else if (MathF.Abs(pos.X) > half.X / 2 + Epsilon || MathF.Abs(pos.Y) > half.Y / 2 + Epsilon || MathF.Abs(pos.Z) > half.Z / 2 + Epsilon)
+                sink.Error(Code, $"{p}.position", $"position {pos} is outside the part's {part.Size ?? GridSize.One} footprint.");
+            if (intake.Normal is not { } normal || MathF.Abs(normal.Length - 1) > 1e-3f)
+                sink.Error(Code, $"{p}.normal", "normal (a unit direction like [0, 0, 1]) is required.");
+            if (intake.Reach is not { } reach || !(reach > 0 && reach <= IntakeDefinition.MaxReach))
+                sink.Error(Code, $"{p}.reach", $"reach (more than 0, at most {IntakeDefinition.MaxReach:0} m) is required.");
+            if (intake.Throw is { } toss && !(toss >= 0 && toss <= IntakeDefinition.MaxReach))
+                sink.Error(Code, $"{p}.throw", $"throw must be 0 to {IntakeDefinition.MaxReach:0} m.");
+            KnownKeys.WarnUnknown(intake.Extra, p, sink, typeof(IntakeDefinition));
+        }
+    }
+
+    // 0, 1 or 2 for a unit normal along x, y or z; null for any other direction.
+    private static int? AxisOf(Vec3 n)
+    {
+        var values = new[] { n.X, n.Y, n.Z };
+        var axis = Array.FindIndex(values, v => MathF.Abs(MathF.Abs(v) - 1) < 1e-3f);
+        return axis >= 0 && values.Where((v, i) => i != axis).All(v => MathF.Abs(v) < 1e-3f) ? axis : null;
+    }
+
+    // Why a port's middle is not on the face it looks out of, at the middle of one block face; null when it is.
+    private static string? PortFaceError(Vec3 position, Vec3 normal, int axis, Vec3 extent)
+    {
+        var pos = new[] { position.X, position.Y, position.Z };
+        var size = new[] { extent.X, extent.Y, extent.Z };
+        var sign = new[] { normal.X, normal.Y, normal.Z }[axis];
+        if (MathF.Abs(pos[axis] - MathF.Sign(sign) * size[axis] / 2) > Epsilon)
+            return $"must lie on the footprint's face its normal points out of ({JsonNumbers.Format(MathF.Sign(sign) * size[axis] / 2)} m along that axis)";
+        for (var i = 0; i < 3; i++)
+        {
+            if (i == axis)
+                continue;
+            // Along the face it sits on the middle of a block: half a block in from a block edge.
+            var fromEdge = (pos[i] + size[i] / 2) / MechanicaInfo.GridSize - 0.5f;
+            if (MathF.Abs(pos[i]) > size[i] / 2 || MathF.Abs(fromEdge - MathF.Round(fromEdge)) > 1e-3f)
+                return "must be the middle of one block face on the footprint (on the 0.25 m grid, half a block in)";
+        }
+        return null;
     }
 
     // A clip a station or a display names: optional, 1 to 64 characters, without the readout's '#' and '>' marks.

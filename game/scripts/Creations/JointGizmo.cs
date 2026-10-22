@@ -21,7 +21,7 @@ public static class JointGizmo
     /// <summary>The colour of each joint type, matching the socket colours.</summary>
     public static Color ColorOf(ConnectionType type) => type switch
     {
-        ConnectionType.Rotational => UiTokens.JointHinge,
+        ConnectionType.Rotational or ConnectionType.Aimed => UiTokens.JointHinge,
         ConnectionType.Linear => UiTokens.JointSlider,
         ConnectionType.Spring => UiTokens.JointSpring,
         _ => UiTokens.JointRigid,
@@ -38,6 +38,7 @@ public static class JointGizmo
             SocketType.Rotational => ConnectionType.Rotational,
             SocketType.Linear => ConnectionType.Linear,
             SocketType.Spring => ConnectionType.Spring,
+            SocketType.Aimed => ConnectionType.Aimed,
             _ => (ConnectionType?)null,
         };
         if (type is not { } t)
@@ -53,7 +54,7 @@ public static class JointGizmo
         var anchor = frame.Anchor.ToGodot();
         var axis = Axis(frame);
         var lines = new List<(Vector3, Vector3)>();
-        if (frame.Type == ConnectionType.Rotational)
+        if (frame.Type is ConnectionType.Rotational or ConnectionType.Aimed)
         {
             lines.Add((anchor - axis * AxisLength * 0.5f, anchor + axis * AxisLength));
             var (from, to) = frame.SpinsFreely ? (-Mathf.Pi, Mathf.Pi) : (frame.Min!.Value, frame.Max!.Value);
@@ -93,7 +94,7 @@ public static class JointGizmo
     public static List<(Vector3 A, Vector3 B)> PositionLines(JointFrame frame, float position)
     {
         var anchor = frame.Anchor.ToGodot();
-        if (frame.Type == ConnectionType.Rotational)
+        if (frame.Type is ConnectionType.Rotational or ConnectionType.Aimed)
             return [(anchor, anchor + (ArcPoint(frame, position) - anchor) * 1.25f)];
         var axis = Axis(frame);
         var at = anchor + axis * position;

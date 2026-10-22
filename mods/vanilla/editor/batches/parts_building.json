@@ -1,0 +1,1951 @@
+{
+  // The parts map's batches 11 and 12 (/mnt/project-files parts/PARTS_MAP.md): stairs, railings, the Net Fence,
+  // windows, windshields, the Concave Wedge, road and farm signs, the Antenna, the Traffic Cone, the Banner Holder and
+  // the Billboard, with the Scrap Mechanic wiki's stats and recipes. Models and icons are built by
+  // tools/parts_building/build_parts.py. Re-run with tools/author-vanilla.sh.
+  "format_version": 1,
+  "parts": [
+    {
+      "file": "parts/decor/ramp_block.json",
+      "template": "decor",
+      "set": {
+        "name": "Ramp Block",
+        "description": "A 45-degree steel ramp, 1 m on a side, low at the front: grated deck, cleats and a mustard nosing.",
+        "mass": 6,
+        "durability": 5,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          4,
+          4,
+          4
+        ],
+        "icon": "textures/items/ramp_block_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        },
+        "collision": {
+          "shape": "convex",
+          "mesh": "meshes/parts/ramp_block.glb"
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/ramp_block.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "ramp_block",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "scrap_metal_block",
+              "count": 8
+            },
+            {
+              "item": "scrap_wood_block",
+              "count": 8
+            }
+          ],
+          "outputs": [
+            {
+              "item": "ramp_block",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 210
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/metal_railing.json",
+      "template": "decor",
+      "set": {
+        "name": "Metal Railing",
+        "description": "A 1 m Colony handrail for walkways and stairs: two posts, a mustard rail, a mid rail and a toe board.",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          4,
+          4,
+          1
+        ],
+        "icon": "textures/items/metal_railing_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/metal_railing.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "metal_railing",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "scrap_metal_block",
+              "count": 8
+            }
+          ],
+          "outputs": [
+            {
+              "item": "metal_railing",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 240
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/windshield.json",
+      "template": "decor",
+      "set": {
+        "name": "Windshield",
+        "description": "A wrapped, tinted glass windshield on a gunmetal cowl, for the front of a cabin.",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.2,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "glass",
+        "size": [
+          6,
+          4,
+          2
+        ],
+        "icon": "textures/items/windshield_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/windshield.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "windshield",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "glass_block",
+              "count": 10
+            },
+            {
+              "item": "metal_block",
+              "count": 5
+            }
+          ],
+          "outputs": [
+            {
+              "item": "windshield",
+              "count": 1
+            }
+          ],
+          "time": 10,
+          "order": 1580
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/side_window.json",
+      "template": "decor",
+      "set": {
+        "name": "Side Window",
+        "description": "A tinted vehicle window in a gunmetal frame with a rubber seal.",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.2,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "glass",
+        "size": [
+          4,
+          3,
+          1
+        ],
+        "icon": "textures/items/side_window_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/side_window.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "side_window",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "glass_block",
+              "count": 5
+            },
+            {
+              "item": "metal_block",
+              "count": 5
+            }
+          ],
+          "outputs": [
+            {
+              "item": "side_window",
+              "count": 1
+            }
+          ],
+          "time": 10,
+          "order": 1590
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/concave_wedge.json",
+      "template": "decor",
+      "set": {
+        "name": "Concave Wedge",
+        "description": "A one-block wedge with a quarter-circle scoop, high at the back. Rounds off a body.",
+        "mass": 7.5,
+        "durability": 4,
+        "friction": 0.5,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          1,
+          1,
+          1
+        ],
+        "icon": "textures/items/concave_wedge_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        },
+        "collision": {
+          "shape": "convex",
+          "mesh": "meshes/parts/concave_wedge.glb"
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/concave_wedge.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "concave_wedge",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "concave_wedge",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 190
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/window_large.json",
+      "template": "decor",
+      "set": {
+        "name": "Large Window",
+        "description": "A 2 m window: clear glass in a steel-blue frame with a mullion and a bone sill.",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.2,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "glass",
+        "size": [
+          8,
+          4,
+          1
+        ],
+        "icon": "textures/items/window_large_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/window_large.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "window_large",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "glass_block",
+              "count": 15
+            },
+            {
+              "item": "metal_block",
+              "count": 10
+            }
+          ],
+          "outputs": [
+            {
+              "item": "window_large",
+              "count": 1
+            }
+          ],
+          "time": 10,
+          "order": 2920
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/windshield_large.json",
+      "template": "decor",
+      "set": {
+        "name": "Large Windshield",
+        "description": "A big wrapped windshield for a cabin, with a centre divider.",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.2,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "glass",
+        "size": [
+          8,
+          5,
+          3
+        ],
+        "icon": "textures/items/windshield_large_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/windshield_large.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "windshield_large",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "glass_block",
+              "count": 20
+            },
+            {
+              "item": "metal_block",
+              "count": 10
+            }
+          ],
+          "outputs": [
+            {
+              "item": "windshield_large",
+              "count": 1
+            }
+          ],
+          "time": 10,
+          "order": 1585
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/window_metal.json",
+      "template": "decor",
+      "set": {
+        "name": "Metal Window",
+        "description": "A storm window: fixed graphite louvres over dark glass in a steel-blue frame.",
+        "mass": 10.5,
+        "durability": 5,
+        "friction": 0.7,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          4,
+          4,
+          1
+        ],
+        "icon": "textures/items/window_metal_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/window_metal.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "window_metal",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 5
+            },
+            {
+              "item": "glass_block",
+              "count": 2
+            }
+          ],
+          "outputs": [
+            {
+              "item": "window_metal",
+              "count": 1
+            }
+          ],
+          "time": 5,
+          "order": 2930
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/net_fence.json",
+      "template": "decor",
+      "set": {
+        "name": "Net Fence",
+        "description": "A 1.75 m chain-link fence panel between two posts. Panels line up end to end.",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.6,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          7,
+          4,
+          1
+        ],
+        "icon": "textures/items/net_fence_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/net_fence.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "net_fence",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "net_block",
+              "count": 5
+            }
+          ],
+          "outputs": [
+            {
+              "item": "net_fence",
+              "count": 1
+            }
+          ],
+          "time": 5,
+          "order": 2950
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/window_square.json",
+      "template": "decor",
+      "set": {
+        "name": "Square Window",
+        "description": "A 1 m square window: clear glass in a steel-blue frame with a bone sill.",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.2,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "glass",
+        "size": [
+          4,
+          4,
+          1
+        ],
+        "icon": "textures/items/window_square_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/window_square.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "window_square",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "glass_block",
+              "count": 10
+            },
+            {
+              "item": "metal_block",
+              "count": 10
+            }
+          ],
+          "outputs": [
+            {
+              "item": "window_square",
+              "count": 1
+            }
+          ],
+          "time": 10,
+          "order": 2910
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/stair_baluster.json",
+      "template": "decor",
+      "set": {
+        "name": "Stair Baluster",
+        "description": "The post under a level railing, with a saddle on top for the rail.",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          1,
+          4,
+          1
+        ],
+        "icon": "textures/items/stair_baluster_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/stair_baluster.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "stair_baluster",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "stair_baluster",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 248
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/stair_banister.json",
+      "template": "decor",
+      "set": {
+        "name": "Stair Banister",
+        "description": "The post under a stair's sloping handrail, with a 45-degree rail stub.",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          1,
+          4,
+          1
+        ],
+        "icon": "textures/items/stair_banister_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/stair_banister.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "stair_banister",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "stair_banister",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 246
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/stair_landing.json",
+      "template": "decor",
+      "set": {
+        "name": "Stair Landing",
+        "description": "A 2 m by 2 m grated platform for the top or bottom of a staircase.",
+        "mass": 6,
+        "durability": 5,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          8,
+          1,
+          8
+        ],
+        "icon": "textures/items/stair_landing_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/stair_landing.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "stair_landing",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 6
+            },
+            {
+              "item": "net_block",
+              "count": 2
+            }
+          ],
+          "outputs": [
+            {
+              "item": "stair_landing",
+              "count": 1
+            }
+          ],
+          "time": 5,
+          "order": 214
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/metal_railing_long.json",
+      "template": "decor",
+      "set": {
+        "name": "Metal Railing (Long)",
+        "description": "A 2 m Colony handrail on three posts.",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          8,
+          4,
+          1
+        ],
+        "icon": "textures/items/metal_railing_long_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/metal_railing_long.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "metal_railing_long",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 2
+            }
+          ],
+          "outputs": [
+            {
+              "item": "metal_railing_long",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 242
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/railing_join.json",
+      "template": "decor",
+      "set": {
+        "name": "Railing Join",
+        "description": "A one-block knuckle where railings meet at a corner.",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          1,
+          1,
+          1
+        ],
+        "icon": "textures/items/railing_join_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/railing_join.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "railing_join",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "railing_join",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 244
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/stair_step.json",
+      "template": "decor",
+      "set": {
+        "name": "Stair Step",
+        "description": "A 1.5 m grated stair tread with a mustard nosing. Step them up one block at a time.",
+        "mass": 6,
+        "durability": 5,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          6,
+          1,
+          1
+        ],
+        "icon": "textures/items/stair_step_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/stair_step.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "stair_step",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "stair_step",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 212
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/antenna.json",
+      "template": "decor",
+      "set": {
+        "name": "Antenna",
+        "description": "A whip antenna on a copper loading coil.",
+        "mass": 3,
+        "durability": 2,
+        "friction": 0.3,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          1,
+          6,
+          1
+        ],
+        "icon": "textures/items/antenna_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/antenna.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "antenna",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "scrap_metal_block",
+              "count": 4
+            }
+          ],
+          "outputs": [
+            {
+              "item": "antenna",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 1570
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/direction_arrow_left.json",
+      "template": "decor",
+      "set": {
+        "name": "Direction Arrow (Left)",
+        "description": "A road sign pointing left. On a post with a bolted foot.",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          3,
+          6,
+          1
+        ],
+        "icon": "textures/items/direction_arrow_left_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/direction_arrow_left.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "direction_arrow_left",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "scrap_metal_block",
+              "count": 4
+            }
+          ],
+          "outputs": [
+            {
+              "item": "direction_arrow_left",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 2160
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/direction_arrow_straight.json",
+      "template": "decor",
+      "set": {
+        "name": "Direction Arrow (Straight)",
+        "description": "A road sign pointing straight on. On a post with a bolted foot.",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          3,
+          6,
+          1
+        ],
+        "icon": "textures/items/direction_arrow_straight_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/direction_arrow_straight.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "direction_arrow_straight",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "scrap_metal_block",
+              "count": 4
+            }
+          ],
+          "outputs": [
+            {
+              "item": "direction_arrow_straight",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 2170
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/direction_arrow_right.json",
+      "template": "decor",
+      "set": {
+        "name": "Direction Arrow (Right)",
+        "description": "A road sign pointing right. On a post with a bolted foot.",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          3,
+          6,
+          1
+        ],
+        "icon": "textures/items/direction_arrow_right_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/direction_arrow_right.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "direction_arrow_right",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "scrap_metal_block",
+              "count": 4
+            }
+          ],
+          "outputs": [
+            {
+              "item": "direction_arrow_right",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 2180
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/caution_sign.json",
+      "template": "decor",
+      "set": {
+        "name": "Caution Sign",
+        "description": "A yellow warning triangle. On a post with a bolted foot.",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          3,
+          6,
+          1
+        ],
+        "icon": "textures/items/caution_sign_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/caution_sign.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "caution_sign",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "scrap_metal_block",
+              "count": 4
+            }
+          ],
+          "outputs": [
+            {
+              "item": "caution_sign",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 2120
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/danger_sign.json",
+      "template": "decor",
+      "set": {
+        "name": "Danger Sign",
+        "description": "A red warning plate with hazard stripes. On a post with a bolted foot.",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          3,
+          6,
+          1
+        ],
+        "icon": "textures/items/danger_sign_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/danger_sign.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "danger_sign",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "scrap_metal_block",
+              "count": 4
+            }
+          ],
+          "outputs": [
+            {
+              "item": "danger_sign",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 2130
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/stop_sign.json",
+      "template": "decor",
+      "set": {
+        "name": "Stop Sign",
+        "description": "A red octagonal STOP sign. On a post with a bolted foot.",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          3,
+          6,
+          1
+        ],
+        "icon": "textures/items/stop_sign_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/stop_sign.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "stop_sign",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "scrap_metal_block",
+              "count": 4
+            }
+          ],
+          "outputs": [
+            {
+              "item": "stop_sign",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 2110
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/no_entry_sign.json",
+      "template": "decor",
+      "set": {
+        "name": "No Entry Sign",
+        "description": "A red round sign with a white bar: keep out. On a post with a bolted foot.",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          3,
+          6,
+          1
+        ],
+        "icon": "textures/items/no_entry_sign_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/no_entry_sign.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "no_entry_sign",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "scrap_metal_block",
+              "count": 4
+            }
+          ],
+          "outputs": [
+            {
+              "item": "no_entry_sign",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 2140
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/traffic_cone.json",
+      "template": "decor",
+      "set": {
+        "name": "Traffic Cone",
+        "description": "A red cone with two reflective bands.",
+        "mass": 3,
+        "durability": 2,
+        "friction": 0.3,
+        "buoyancy": 0.6,
+        "flammable": true,
+        "stack_size": 20,
+        "sound_material": "plastic",
+        "size": [
+          2,
+          3,
+          2
+        ],
+        "icon": "textures/items/traffic_cone_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/traffic_cone.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "traffic_cone",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 10
+            },
+            {
+              "item": "paint_ammo",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "traffic_cone",
+              "count": 1
+            }
+          ],
+          "time": 15,
+          "order": 2210
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/banner_holder.json",
+      "template": "decor",
+      "set": {
+        "name": "Banner Holder",
+        "description": "A wall bar with hooks for hanging a banner.",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.6,
+        "buoyancy": 0.5,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          4,
+          1,
+          1
+        ],
+        "icon": "textures/items/banner_holder_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/banner_holder.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "banner_holder",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 10
+            }
+          ],
+          "outputs": [
+            {
+              "item": "banner_holder",
+              "count": 1
+            }
+          ],
+          "time": 10,
+          "order": 2250
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/billboard.json",
+      "template": "decor",
+      "set": {
+        "name": "Billboard",
+        "description": "A farm billboard: a hand-painted produce poster on a plank frame and two braced legs.",
+        "mass": 6,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.6,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "wood",
+        "size": [
+          8,
+          8,
+          2
+        ],
+        "icon": "textures/items/billboard_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/billboard.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "billboard",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "wood_block",
+              "count": 10
+            },
+            {
+              "item": "paint_ammo",
+              "count": 10
+            }
+          ],
+          "outputs": [
+            {
+              "item": "billboard",
+              "count": 1
+            }
+          ],
+          "time": 10,
+          "order": 2260
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/beware_bots_sign.json",
+      "template": "decor",
+      "set": {
+        "name": "Beware of Bots Sign",
+        "description": "A warning that bots roam here. On a post with a bolted foot.",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          3,
+          6,
+          1
+        ],
+        "icon": "textures/items/beware_bots_sign_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/beware_bots_sign.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "beware_bots_sign",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "scrap_metal_block",
+              "count": 4
+            }
+          ],
+          "outputs": [
+            {
+              "item": "beware_bots_sign",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 2136
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/construction_sign.json",
+      "template": "decor",
+      "set": {
+        "name": "Construction Sign",
+        "description": "Work in progress: a worker digging. On a post with a bolted foot.",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          3,
+          6,
+          1
+        ],
+        "icon": "textures/items/construction_sign_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/construction_sign.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "construction_sign",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "scrap_metal_block",
+              "count": 4
+            }
+          ],
+          "outputs": [
+            {
+              "item": "construction_sign",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 2123
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/exit_sign.json",
+      "template": "decor",
+      "set": {
+        "name": "Exit Sign",
+        "description": "A lit EXIT box for a wall, glowing cyan.",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.5,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          3,
+          1,
+          1
+        ],
+        "icon": "textures/items/exit_sign_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/exit_sign.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "exit_sign",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 2
+            },
+            {
+              "item": "glass_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "exit_sign",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 2185
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/falling_objects_sign.json",
+      "template": "decor",
+      "set": {
+        "name": "Falling Objects Sign",
+        "description": "A warning of things falling from above. On a post with a bolted foot.",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          3,
+          6,
+          1
+        ],
+        "icon": "textures/items/falling_objects_sign_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/falling_objects_sign.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "falling_objects_sign",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "scrap_metal_block",
+              "count": 4
+            }
+          ],
+          "outputs": [
+            {
+              "item": "falling_objects_sign",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 2126
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/hard_work_sign.json",
+      "template": "decor",
+      "set": {
+        "name": "Hard Work Sign",
+        "description": "A painted plank sign on stakes: a hammer and wrench over a rising sun.",
+        "mass": 3,
+        "durability": 1,
+        "friction": 0.5,
+        "buoyancy": 0.4,
+        "flammable": true,
+        "stack_size": 20,
+        "sound_material": "wood",
+        "size": [
+          4,
+          3,
+          1
+        ],
+        "icon": "textures/items/hard_work_sign_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/hard_work_sign.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "hard_work_sign",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "scrap_wood_block",
+              "count": 4
+            }
+          ],
+          "outputs": [
+            {
+              "item": "hard_work_sign",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 2193
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/sale_sign.json",
+      "template": "decor",
+      "set": {
+        "name": "Sale Sign",
+        "description": "A two-sided plank sign: SALE on one side, a price tag on the other.",
+        "mass": 3,
+        "durability": 1,
+        "friction": 0.5,
+        "buoyancy": 0.4,
+        "flammable": true,
+        "stack_size": 20,
+        "sound_material": "wood",
+        "size": [
+          4,
+          3,
+          1
+        ],
+        "icon": "textures/items/sale_sign_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/sale_sign.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "sale_sign",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "scrap_wood_block",
+              "count": 4
+            }
+          ],
+          "outputs": [
+            {
+              "item": "sale_sign",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 2196
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/skull_sign.json",
+      "template": "decor",
+      "set": {
+        "name": "Skull Sign",
+        "description": "A skull and crossed wrenches: keep away. On a post with a bolted foot.",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          3,
+          6,
+          1
+        ],
+        "icon": "textures/items/skull_sign_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/skull_sign.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "skull_sign",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "scrap_metal_block",
+              "count": 4
+            }
+          ],
+          "outputs": [
+            {
+              "item": "skull_sign",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 2133
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/welcome_sign.json",
+      "template": "decor",
+      "set": {
+        "name": "Welcome Sign",
+        "description": "A painted plank sign on stakes: WELCOME.",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "wood",
+        "size": [
+          6,
+          3,
+          1
+        ],
+        "icon": "textures/items/welcome_sign_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/welcome_sign.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "welcome_sign",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "scrap_wood_block",
+              "count": 4
+            }
+          ],
+          "outputs": [
+            {
+              "item": "welcome_sign",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 2190
+        }
+      ]
+    }
+  ]
+}

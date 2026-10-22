@@ -2,7 +2,7 @@
 
 <!-- Generated from mechanica.describe by tools/ai/gen-docs.sh. Do not edit by hand. -->
 
-Protocol version 2. 174 methods: 66 actions (change the world), 29 queries (only read it) and 79 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
+Protocol version 2. 179 methods: 69 actions (change the world), 31 queries (only read it) and 79 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
 
 ## Contents
 
@@ -15,10 +15,10 @@ Protocol version 2. 174 methods: 66 actions (change the world), 29 queries (only
 - [Chat](#chat) (1)
 - [Debug and general](#debug-and-general) (2)
 - [Fire](#fire) (1)
-- [Items, inventories and crafting](#items-inventories-and-crafting) (10)
+- [Items, inventories and crafting](#items-inventories-and-crafting) (14)
 - [Logic, seats and part menus](#logic-seats-and-part-menus) (9)
 - [Map markers](#map-markers) (3)
-- [Motion and physics primitives](#motion-and-physics-primitives) (6)
+- [Motion and physics primitives](#motion-and-physics-primitives) (7)
 - [Quests](#quests) (3)
 - [Survival](#survival) (12)
 - [Using held items](#using-held-items) (4)
@@ -694,6 +694,21 @@ Cancelling an order. Arguments of CancelCraft: drop an order and get its unfinis
 | `part` | integer | yes |  | The station part. |
 | `job` | integer | yes |  | Index of the order in the station's queue (0 is the one being worked). |
 
+### `CollectItems`
+
+*action, play scope*
+
+Taking one thing in through a part's intake (CollectItemsArgs); part scripts only. Arguments of CollectItems: the part whose intake collects, and what (one of GetPickups' entries).
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `creation` | integer | yes |  | The collecting part's Creation. |
+| `part` | integer | yes |  | The collecting part (it has an intake). |
+| `kind` | one of "drop", "loose", "crop", "water" | yes |  | What it collects: drop, loose, crop or water. |
+| `drop` | integer or null |  |  | The pile, for drop. |
+| `target_creation` | integer or null |  |  | The loose part's or the soil's Creation, for loose and crop. |
+| `target_part` | integer or null |  |  | The soil part, for crop. |
+
 ### `Craft`
 
 *action, play scope*
@@ -706,6 +721,19 @@ Queueing a craft. Arguments of Craft: queue Count crafts of a recipe at a statio
 | `part` | integer | yes |  | The station part. |
 | `recipe` | string | yes |  | Recipe id (id means vanilla, or mod_id:id). |
 | `count` | integer |  | `1` | How many crafts (1 or more). |
+
+### `EjectItems`
+
+*action, play scope*
+
+Putting items out of a part's intake (EjectItemsArgs); part scripts only. Arguments of EjectItems: the part whose intake puts items out, and what.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `creation` | integer | yes |  | The ejecting part's Creation. |
+| `part` | integer | yes |  | The ejecting part (it has an intake). |
+| `item` | string or null |  |  | The item to put out; omitted takes the first item the containers piped to it hold. |
+| `count` | integer |  | `1` | How many, 1 to the item's stack size. |
 
 ### `GetHotbar`
 
@@ -727,6 +755,28 @@ Reading an inventory. Arguments of GetInventory.
 | `inventory.player` | integer or null |  |  | Peer id of the player whose inventory it is. |
 | `inventory.creation` | integer or null |  |  | Creation holding the part. |
 | `inventory.part` | integer or null |  |  | Part id inside that Creation. |
+
+### `GetNetwork`
+
+*query, observe scope*
+
+Reading what a part's IO ports reach through Vacuum Pipes. Arguments of GetNetwork and GetPickups: one part of a Creation.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `creation` | integer | yes |  | The Creation. |
+| `part` | integer | yes |  | The part. |
+
+### `GetPickups`
+
+*query, observe scope*
+
+Reading what a part's intake reaches: piles, loose parts, ripe crops and water. Arguments of GetNetwork and GetPickups: one part of a Creation.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `creation` | integer | yes |  | The Creation. |
+| `part` | integer | yes |  | The part. |
 
 ### `GiveItems`
 
@@ -990,6 +1040,21 @@ Reading the pushes on a Creation (the aero force overlay's query). Arguments of 
 Listing Creations.
 
 No params.
+
+### `SetAimTarget`
+
+*action, play scope*
+
+Aiming a turret. Arguments of SetAimTarget.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `creation` | integer | yes |  | Creation holding the turret. |
+| `part` | integer | yes |  | The turret's part id (the part that owns the aimed joint, a Turret Seat). |
+| `yaw` | number | yes |  | Turn in rad about the joint's axis to move to and hold, from the pose it was built in; within ±π and its limits. |
+| `pitch` | number | yes |  | Tilt in rad about the joint's pitch axis to move to and hold; within its pitch limits. |
+| `speed` | number or null |  |  | Most speed in rad/s about either axis; null uses the default bearing speed from data. |
+| `max_torque` | number or null |  |  | Motor torque limit of either axis in N·m; null uses the default bearing torque from data. |
 
 ### `SetBearingTarget`
 

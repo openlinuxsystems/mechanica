@@ -182,3 +182,16 @@ function on_activate(peer)
   soil.clear()
   return { items = items }
 end
+
+-- A machine (a Vacuum Pump, E1) collects the ripe crop: the same harvest as on_activate, into the containers piped to
+-- it instead of a player's inventory (the host drops what does not fit). Nothing when the crop is not ripe.
+function on_collect()
+  local s = settle(world.time())
+  local seed = s.seed and world.item(s.seed, "seed")
+  if not seed or s.stage < s.stages then
+    return nil
+  end
+  local items = harvest_of(s.seed, seed)
+  soil.clear()
+  return items
+end

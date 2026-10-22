@@ -1,0 +1,23 @@
+{
+  "id": "concave_wedge",
+  "name": "Concave Wedge",
+  "description": "A one-block wedge with a quarter-circle scoop, high at the back. Rounds off a body.",
+  "category": "decor",
+  "mass": 7.5,
+  "durability": 4,
+  "friction": 0.5,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/parts/concave_wedge.glb",
+  "icon": "textures/items/concave_wedge_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/parts/concave_wedge.glb"
+  }
+}

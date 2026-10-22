@@ -173,6 +173,12 @@ public sealed partial class ScriptRuntime
 
         /// <summary>A placed part took damage: <c>on_damage(amount, kind, broken, at)</c> (see <c>docs/lua-api.md</c>).</summary>
         public const string OnDamage = "on_damage";
+
+        /// <summary>
+        /// <c>on_collect()</c>: a machine (a Vacuum Pump) collects this ripe crop. Harvest, clear the soil and return the
+        /// items as <c>{ {item = id, count = n}, ... }</c>, or nil when there is nothing to take.
+        /// </summary>
+        public const string OnCollect = "on_collect";
     }
 
     /// <summary>Creates a runtime over the host's world.</summary>

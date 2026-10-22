@@ -1,0 +1,32 @@
+{
+  "id": "vacuum_pump",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 20
+    },
+    {
+      "item": "component_kit",
+      "count": 1
+    },
+    {
+      "item": "circuit_board",
+      "count": 1
+    },
+    {
+      "item": "glue",
+      "count": 3
+    }
+  ],
+  "outputs": [
+    {
+      "item": "vacuum_pump",
+      "count": 1
+    }
+  ],
+  "time": 30,
+  "order": 1778
+}

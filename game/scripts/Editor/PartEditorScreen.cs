@@ -811,7 +811,7 @@ public partial class PartEditorScreen : Control
             _socketGrid.AddEnum<SocketType>("Type", socket.Type, v => SetSocket("Set socket type", s => s with { Type = v }));
             _socketGrid.AddVector("Position (m)", socket.Position ?? Vec3.Zero, PositionStep / 2, v => SetSocket("Move socket", s => s with { Position = v }));
             _socketGrid.AddVector("Normal", socket.Normal ?? new Vec3(0, 1, 0), 1, v => SetSocket("Turn socket", s => s with { Normal = v }), -1, 1);
-            if (socket.Type is SocketType.Rotational or SocketType.Linear or SocketType.Spring)
+            if (socket.Type is SocketType.Rotational or SocketType.Linear or SocketType.Spring or SocketType.Aimed)
                 AddJointFields(socket, change => SetSocket("Edit joint", s => s with { Joint = Normalize(change(s.Joint ?? new JointDefinition())) }));
         }
 
@@ -1240,16 +1240,18 @@ public partial class PartEditorScreen : Control
     }
 
     // An empty visual block is dropped from the data instead of writing "visual": {}.
-    // The joint section of a rotational, linear or spring socket: axis, travel and (for springs) rate and damping.
+    // The joint section of a rotational, linear, spring or aimed socket: axis, travel, (for springs) rate and damping
+    // and (for a turret) its pitch and pivot.
     private void AddJointFields(SocketDefinition socket, Action<Func<JointDefinition, JointDefinition>> set)
     {
         var joint = socket.Joint ?? new JointDefinition();
-        var rotational = socket.Type == SocketType.Rotational;
+        var rotational = socket.Type is SocketType.Rotational or SocketType.Aimed;
         var normal = socket.Normal ?? new Vec3(0, 1, 0);
         _socketGrid.AddHeading(socket.Type switch
         {
             SocketType.Rotational => "Joint: hinge (no limits spins freely)",
             SocketType.Linear => "Joint: slider (piston)",
+            SocketType.Aimed => "Joint: turret (yaw limits; none turns all the way round)",
             _ => "Joint: spring (suspension)",
         });
         _socketGrid.AddVector("Axis", joint.Axis ?? normal, 1, v => set(j => j with { Axis = v == normal ? null : v }), -1, 1);
@@ -1261,12 +1263,20 @@ public partial class PartEditorScreen : Control
             _socketGrid.AddNumber("Stiffness", joint.Stiffness, 0.001, 1e7, 100, v => set(j => j with { Stiffness = (float?)v }), optional: true, fallback: 5000, suffix: "N/m");
             _socketGrid.AddNumber("Damping", joint.Damping, 0, 1e7, 10, v => set(j => j with { Damping = (float?)v }), optional: true, fallback: 300, suffix: "N·s/m");
         }
+        if (socket.Type == SocketType.Aimed)
+        {
+            _socketGrid.AddVector("Pitch axis", joint.PitchAxis ?? new Vec3(1, 0, 0), 1, v => set(j => j with { PitchAxis = v }), -1, 1);
+            _socketGrid.AddNumber("Pitch min", joint.PitchMin, -Math.PI / 2, 0, 0.05, v => set(j => j with { PitchMin = (float?)v }), optional: true, fallback: -0.3, suffix: "rad");
+            _socketGrid.AddNumber("Pitch max", joint.PitchMax, 0, Math.PI / 2, 0.05, v => set(j => j with { PitchMax = (float?)v }), optional: true, fallback: 0.6, suffix: "rad");
+            _socketGrid.AddVector("Pivot (m)", joint.Pivot ?? socket.Position ?? Vec3.Zero, PositionStep / 2, v => set(j => j with { Pivot = v }));
+        }
         if (!rotational)
             _socketGrid.AddNumber("Shaft radius", joint.ShaftRadius, 0.001, 1, 0.005, v => set(j => j with { ShaftRadius = (float?)v }), optional: true, fallback: 0.04, suffix: "m");
     }
 
     private static JointDefinition? Normalize(JointDefinition joint) =>
-        joint is { Axis: null, Min: null, Max: null, Stiffness: null, Damping: null, ShaftRadius: null, Extra: null or { Count: 0 } } ? null : joint;
+        joint is { Axis: null, Min: null, Max: null, Stiffness: null, Damping: null, ShaftRadius: null, Pivot: null, PitchAxis: null, PitchMin: null, PitchMax: null,
+            Extra: null or { Count: 0 } } ? null : joint;
 
     private static VisualDefinition? Normalize(VisualDefinition visual) =>
         visual is { Color: null, Roughness: null, Metallic: null, Opacity: null, Emission: null, Texture: null, TextureSpan: null, EmissionTexture: null, Paintable: null, Variants: null or { Count: 0 }, Extra: null } ? null : visual;

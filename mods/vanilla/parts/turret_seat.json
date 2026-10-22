@@ -1,0 +1,346 @@
+{
+  "id": "turret_seat",
+  "name": "Turret Seat 1",
+  "description": "A gunner's seat on an armoured turret ring. Sit in it with E: the seat turns and tilts to where you look, and whatever is built on the hardpoint plate on top turns with it. W and S are its output (link it to engines; a controller starts on W and stops on S, a thruster burns while you hold W), A and D steer the upright bearings it is linked to. Switches and buttons it is linked to go on your hotbar while you sit: 1 to 9 and 0 use them, Left and Right click the first two. Upgrade it in place with Component Kits (U) to turn further and faster, and for more links.",
+  "category": "interactive",
+  "mass": 3,
+  "durability": 5,
+  "friction": 0.3,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 10,
+  "sound_material": "metal",
+  "size": [4, 6, 4],
+  "mesh": "meshes/parts/turret_seat_1.glb",
+  "icon": "textures/items/turret_seat_1_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.75, 0],
+      "normal": [0, -1, 0]
+    },
+    {
+      "id": "turret",
+      "type": "aimed",
+      "position": [0, 0.75, 0],
+      "normal": [0, 1, 0],
+      "joint": {
+        "min": -1.5708,
+        "max": 1.5708,
+        "pivot": [0, -0.28, 0],
+        "pitch_axis": [1, 0, 0],
+        "pitch_min": -0.1396,
+        "pitch_max": 0.5236
+      }
+    }
+  ],
+  "script": "scripts/seat.lua",
+  "sounds": {
+    "enter": "seat_enter",
+    "exit": "seat_exit"
+  },
+  "logic": {
+    "outputs": 6
+  },
+  "seat": {
+    "offset": [0, -0.6, 0],
+    "cushion": [0, -0.28, 0],
+    "hands": "wheel",
+    "bounce": 1
+  },
+  "upgrades": [
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 2
+        }
+      ],
+      "set": {
+        "name": "Turret Seat 2",
+        "durability": 5,
+        "sockets": [
+          {
+            "id": "base",
+            "type": "structural",
+            "position": [
+              0,
+              -0.75,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ]
+          },
+          {
+            "id": "turret",
+            "type": "aimed",
+            "position": [
+              0,
+              0.75,
+              0
+            ],
+            "normal": [
+              0,
+              1,
+              0
+            ],
+            "joint": {
+              "min": -2.0944,
+              "max": 2.0944,
+              "pivot": [
+                0,
+                -0.28,
+                0
+              ],
+              "pitch_axis": [
+                1,
+                0,
+                0
+              ],
+              "pitch_min": -0.1745,
+              "pitch_max": 0.6109
+            }
+          }
+        ],
+        "logic": {
+          "outputs": 8
+        },
+        "properties": {
+          "steer_angle": 27,
+          "steer_speed": 2.5,
+          "steer_torque": 1500,
+          "aim_speed": 1.6,
+          "aim_torque": 900
+        },
+        "mesh": "meshes/parts/turret_seat_2.glb",
+        "icon": "textures/items/turret_seat_2_icon.png"
+      }
+    },
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 4
+        }
+      ],
+      "set": {
+        "name": "Turret Seat 3",
+        "durability": 6,
+        "sockets": [
+          {
+            "id": "base",
+            "type": "structural",
+            "position": [
+              0,
+              -0.75,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ]
+          },
+          {
+            "id": "turret",
+            "type": "aimed",
+            "position": [
+              0,
+              0.75,
+              0
+            ],
+            "normal": [
+              0,
+              1,
+              0
+            ],
+            "joint": {
+              "min": -2.618,
+              "max": 2.618,
+              "pivot": [
+                0,
+                -0.28,
+                0
+              ],
+              "pitch_axis": [
+                1,
+                0,
+                0
+              ],
+              "pitch_min": -0.2094,
+              "pitch_max": 0.6981
+            }
+          }
+        ],
+        "logic": {
+          "outputs": 12
+        },
+        "properties": {
+          "steer_angle": 27,
+          "steer_speed": 2.5,
+          "steer_torque": 1500,
+          "aim_speed": 2.4,
+          "aim_torque": 1200
+        },
+        "mesh": "meshes/parts/turret_seat_3.glb",
+        "icon": "textures/items/turret_seat_3_icon.png"
+      }
+    },
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 6
+        }
+      ],
+      "set": {
+        "name": "Turret Seat 4",
+        "durability": 6,
+        "sockets": [
+          {
+            "id": "base",
+            "type": "structural",
+            "position": [
+              0,
+              -0.75,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ]
+          },
+          {
+            "id": "turret",
+            "type": "aimed",
+            "position": [
+              0,
+              0.75,
+              0
+            ],
+            "normal": [
+              0,
+              1,
+              0
+            ],
+            "joint": {
+              "pivot": [
+                0,
+                -0.28,
+                0
+              ],
+              "pitch_axis": [
+                1,
+                0,
+                0
+              ],
+              "pitch_min": -0.2443,
+              "pitch_max": 0.8727
+            }
+          }
+        ],
+        "logic": {
+          "outputs": 16
+        },
+        "properties": {
+          "steer_angle": 27,
+          "steer_speed": 2.5,
+          "steer_torque": 1500,
+          "aim_speed": 3.2,
+          "aim_torque": 1600
+        },
+        "mesh": "meshes/parts/turret_seat_4.glb",
+        "icon": "textures/items/turret_seat_4_icon.png"
+      }
+    },
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 10
+        }
+      ],
+      "set": {
+        "name": "Turret Seat 5",
+        "durability": 7,
+        "sockets": [
+          {
+            "id": "base",
+            "type": "structural",
+            "position": [
+              0,
+              -0.75,
+              0
+            ],
+            "normal": [
+              0,
+              -1,
+              0
+            ]
+          },
+          {
+            "id": "turret",
+            "type": "aimed",
+            "position": [
+              0,
+              0.75,
+              0
+            ],
+            "normal": [
+              0,
+              1,
+              0
+            ],
+            "joint": {
+              "pivot": [
+                0,
+                -0.28,
+                0
+              ],
+              "pitch_axis": [
+                1,
+                0,
+                0
+              ],
+              "pitch_min": -0.2618,
+              "pitch_max": 1.0472
+            }
+          }
+        ],
+        "logic": {
+          "outputs": 20
+        },
+        "properties": {
+          "steer_angle": 27,
+          "steer_speed": 2.5,
+          "steer_torque": 1500,
+          "aim_speed": 4.0,
+          "aim_torque": 2000
+        },
+        "mesh": "meshes/parts/turret_seat_5.glb",
+        "icon": "textures/items/turret_seat_5_icon.png",
+        "description": "A racing gunner's seat on a black chrome turret ring. Sit in it with E: the seat turns and tilts to where you look, and whatever is built on the hardpoint plate on top turns with it. W and S are its output (link it to engines; a controller starts on W and stops on S, a thruster burns while you hold W), A and D steer the upright bearings it is linked to. Switches and buttons it is linked to go on your hotbar while you sit: 1 to 9 and 0 use them, Left and Right click the first two."
+      }
+    }
+  ],
+  "display": {
+    "clips": {
+      "readout": "clip"
+    }
+  },
+  "properties": {
+    "steer_angle": 27,
+    "steer_speed": 2.5,
+    "steer_torque": 1500,
+    "aim_speed": 0.8,
+    "aim_torque": 600
+  }
+}

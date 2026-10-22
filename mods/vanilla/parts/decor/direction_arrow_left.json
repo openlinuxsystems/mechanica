@@ -1,20 +1,19 @@
 {
   "id": "direction_arrow_left",
   "name": "Direction Arrow (Left)",
-  "description": "A sign pointing left.",
+  "description": "A road sign pointing left. On a post with a bolted foot.",
   "category": "decor",
   "mass": 3,
-  "durability": 2,
-  "friction": 0.5,
-  "buoyancy": 0.3,
+  "durability": 3,
+  "friction": 0.4,
+  "buoyancy": 0.2,
   "flammable": false,
   "stack_size": 20,
   "sound_material": "metal",
   "size": [3, 6, 1],
-  "mesh": "meshes/decor/direction_arrow_left.glb",
+  "mesh": "meshes/parts/direction_arrow_left.glb",
+  "icon": "textures/items/direction_arrow_left_icon.png",
   "visual": {
-    "color": "#2a7a3a",
-    "roughness": 0.5,
-    "metallic": 0.5
+    "color": "#ffffff"
   }
 }

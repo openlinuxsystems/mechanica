@@ -1,0 +1,24 @@
+{
+  "id": "window_metal",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 5
+    },
+    {
+      "item": "glass_block",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "window_metal",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 2930
+}

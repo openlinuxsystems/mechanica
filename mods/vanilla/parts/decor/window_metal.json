@@ -1,0 +1,19 @@
+{
+  "id": "window_metal",
+  "name": "Metal Window",
+  "description": "A storm window: fixed graphite louvres over dark glass in a steel-blue frame.",
+  "category": "decor",
+  "mass": 10.5,
+  "durability": 5,
+  "friction": 0.7,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [4, 4, 1],
+  "mesh": "meshes/parts/window_metal.glb",
+  "icon": "textures/items/window_metal_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

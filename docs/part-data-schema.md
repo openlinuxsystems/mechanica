@@ -183,10 +183,10 @@ A socket is an attachment point on the surface of the footprint.
 | Key | Type | Meaning |
 |-----|------|---------|
 | `id` | string | Snake_case, unique in the part. Lua and the Connect Tool refer to sockets by id. |
-| `type` | enum | `structural` (rigid), `rotational` (bearing hinge side), `linear` (piston slider side) or `spring` (suspension side). |
+| `type` | enum | `structural` (rigid), `rotational` (bearing hinge side), `linear` (piston slider side), `spring` (suspension side) or `aimed` (a turret: turns and tilts, the Turret Seat's top). |
 | `position` | `[x, y, z]` m | From the part centre. Must lie within the footprint, normally on a face. |
 | `normal` | `[x, y, z]` | Outward unit direction, normally an axis such as `[0, 1, 0]`. |
-| `joint` | object | `rotational`, `linear` and `spring` sockets only: the joint's axis, travel and spring. Required for `linear` and `spring`. See [joint](#joint). |
+| `joint` | object | `rotational`, `linear`, `spring` and `aimed` sockets only: the joint's axis, travel and spring. Required for `linear`, `spring` and `aimed`. See [joint](#joint). |
 
 How parts attach when they are placed touching each other:
 
@@ -196,7 +196,7 @@ How parts attach when they are placed touching each other:
   normal points out of that face and its position is on that face square (edges count, so one socket
   centred on a 2-cell side covers both cells).
 - Structural meets structural: a rigid link, both parts join the same Body.
-- A `rotational`, `linear` or `spring` socket meeting a structural face makes a joint of that kind
+- A `rotational`, `linear`, `spring` or `aimed` socket meeting a structural face makes a joint of that kind
   between two Bodies. Two joint sockets never connect to each other.
 
 A mesh node in the part's model named after one of its joint sockets (the bearing's `rotor`) is drawn on the
@@ -207,28 +207,44 @@ A mesh node named after a `linear` socket plus `Rod` (the piston's `headRod`: on
 retracted inside the part with its outer end just under the head) is repeated along the joint's axis as it slides out:
 copies stacked end to end hang from the moving head back into the part, so the rod reveals segment by segment rather than
 stretching. Like a shaft, the rod has no collision.
+A part with an `aimed` socket draws mesh nodes named after the socket plus `Yaw` and `Pitch` (the Turret Seat's
+`turretYaw`, and its `turretPitch` inside it, both with their origin at the joint's `pivot` and unturned) turned to the
+turret's aim: the yaw node about the joint's axis, the pitch node about its `pitch_axis` inside it. With something built on
+the turret they follow the joint; with nothing on it, the script's `aim_yaw` and `aim_pitch` readouts (rad).
 
 The Part Editor's connection preview shows the result on every face: green for rigid, blue for a
 joint, red where nothing attaches.
 
 ### joint
 
-How the joint at a `rotational`, `linear` or `spring` socket moves. Positions are measured from where
+How the joint at a `rotational`, `linear`, `spring` or `aimed` socket moves. Positions are measured from where
 the two sides were built on the grid: an angle in rad, right-handed about `axis`, or a distance in m
 along it. The [Socket and Joint Guide](socket-joint-guide.md) walks through each kind.
 
 | Key | Type | Meaning |
 |-----|------|---------|
 | `axis` | `[x, y, z]` | Grid direction the joint turns about or slides along, in the part's frame. Omitted means the socket's `normal`. |
-| `min` | number | Lowest position, rad or m. A `rotational` joint with neither `min` nor `max` spins freely; with both, it is a limited hinge within ±π whose range includes 0. A `linear` joint defaults to 0. A `spring` needs it (0 or less). |
+| `min` | number | Lowest position, rad or m. A `rotational` or `aimed` joint (its yaw) with neither `min` nor `max` spins freely; with both, it is a limited hinge within ±π whose range includes 0. A `linear` joint defaults to 0. A `spring` needs it (0 or less). |
 | `max` | number | Highest position, rad or m. Required for `linear` and `spring` (0 or more). Travel (`max` − `min`) is at most 16 m. |
 | `stiffness` | number > 0 | `spring` only, required: spring rate in N/m. A load of `m` kg sags it by about `m × 9.81 / stiffness` m. |
 | `damping` | number ≥ 0 | `spring` only: damping in N·s/m. Omitted means 0. |
 | `shaft_radius` | number, m | `linear` and `spring` only: draws a rod of this radius, in the part's colour, from the socket to where the far side is now, so an extended piston shows its shaft. |
+| `pitch_axis` | `[x, y, z]` | `aimed` only, required: the grid direction, square to `axis`, that the turret tilts about once it has turned. Positive pitch turns the part's front (−Z) toward `axis`. |
+| `pitch_min`, `pitch_max` | number, rad | `aimed` only, required: how far it tilts down and up, within ±π/2, with 0 between them. |
+| `pivot` | `[x, y, z]` m | `aimed` only: the point it turns and tilts about, from the part centre, within the footprint. Omitted means the socket's position. |
 
 ```json
 { "id": "mount", "type": "spring", "position": [0.125, 0, 0], "normal": [1, 0, 0],
   "joint": { "axis": [0, 1, 0], "min": -0.08, "max": 0.08, "stiffness": 25000, "damping": 1500 } }
+```
+
+An `aimed` joint (the Turret Seat, engine item E8) is two axes in one part: whatever is built on the socket turns about
+`axis` (yaw, limited by `min` and `max` or free) and tilts about `pitch_axis` (pitch, always limited), both about
+`pivot`. A script drives it with `part.set_aim`; an upgrade may change its limits.
+
+```json
+{ "id": "turret", "type": "aimed", "position": [0, 0.75, 0], "normal": [0, 1, 0],
+  "joint": { "min": -1.5708, "max": 1.5708, "pivot": [0, -0.28, 0], "pitch_axis": [1, 0, 0], "pitch_min": -0.1396, "pitch_max": 0.5236 } }
 ```
 
 ## inventory and crafting
@@ -249,7 +265,8 @@ rather than in Lua.
 
 Each slot holds one stack of one item, up to that item's `stack_size`. A station runs every recipe that
 lists its part id in `stations`: when an order is queued its inputs come from the station's linked
-storage first, then the crafting player's inventory, and finished crafts land in linked storage first,
+storage and the containers piped to its input ports first (see [item transport](#item-transport)), then the crafting
+player's inventory, and finished crafts land in linked storage and the containers piped to its output ports first,
 then the station's own inventory, where any player in reach can take them. A linked container can be
 opened from the station's screen while the station is in reach. A container or station that holds items, or has orders queued, can't be picked up
 (right click), unless it has `carry_contents`. Its contents are saved with the Creation; if it is broken (Sledgehammer, weapons, fire) they
@@ -282,6 +299,33 @@ At most 10 levels. The Part Editor lists them under Upgrades.
   { "cost": [{ "item": "component_kit", "count": 2 }], "set": { "crafting": { "speed": 1.25 }, "inventory": { "slots": 12 } } },
   { "cost": [{ "item": "component_kit", "count": 4 }], "set": { "crafting": { "speed": 1.5 } } }
 ]
+```
+
+## item transport
+
+Parts map E1 (see [IO Ports](io-ports.md#item-transport)): IO ports in data, Vacuum Pipes that join them, and intakes
+that reach into the world. Only placeable parts take these keys.
+
+| Key | Type | Meaning |
+|-----|------|---------|
+| `io_ports` | list | The part's IO ports, where pipes and other ports join it. Each is `{id, position, normal, mode}`. |
+| `io_ports[].id` | string | Lowercase snake_case, unique on the part (`input`, `output`, `port`). |
+| `io_ports[].position` | `[x, y, z]` m | The port's centre, from the part's centre in its own axes (front +Z): on the face `normal` points out of, at the middle of a block face (so a 2 x 2 port's collar sits on one block of it). |
+| `io_ports[].normal` | `[x, y, z]` | The way the port faces: one grid axis. |
+| `io_ports[].mode` | `in`, `out` or `both` | Which way items go through it: `in` takes them in, `out` sends them out, `both` (the default) does either. Its model's arrows show the same. |
+| `conduit` | boolean | `true` for a pipe: items pass from each of its ports to the others, and it holds nothing. Needs at least two `io_ports` and no `inventory`. |
+| `intake` | object | Where the part reaches into the world (a pump's mouth, a collector's funnel), for `part.pickups()`, `part.collect` and `part.eject`. |
+| `intake.position` | `[x, y, z]` m | Its centre, from the part's centre, inside the part's box. |
+| `intake.normal` | `[x, y, z]` | The way it faces, a unit vector. |
+| `intake.reach` | number 0–16 (m) | How far it reaches. Required. |
+| `intake.throw` | number 0–16 (m) | How far along `normal` an ejected pile lands. Default half the reach. |
+
+A pipe is one block long and chains end to end; there is no drag-to-length placement (parts map E12, not built).
+The network is worked out from the parts, so nothing about it is saved; containers keep their contents as always.
+
+```json
+"io_ports": [{ "id": "port", "position": [0, 0, -0.5], "normal": [0, 0, -1] }],
+"intake": { "position": [0, 0, 0.5], "normal": [0, 0, 1], "reach": 2, "throw": 1 }
 ```
 
 ## survival
@@ -467,6 +511,7 @@ The vanilla scripts read these properties:
 |--------|----------|---------|
 | `scripts/seat.lua` | `steer_angle` (°) | How far A and D turn the upright bearings the seat feeds. |
 | | `steer_speed` (rad/s), `steer_torque` (N·m) | How fast and how hard they turn. |
+| | `aim_speed` (rad/s), `aim_torque` (N·m) | A turret seat (one with an `aimed` socket): how fast its shell, and what is built on it, turns and tilts toward where the seated player looks (each axis), and how hard. Without `aim_speed` the seat does not aim. |
 | `scripts/engine.lua` | `speed` (rad/s) | Wheel bearing speed at full throttle at full power. `gears` (default 5) is how many steps the `gear` setting (shown as Power) has, each giving that share. With no control linked in (a seat, switch, button or gate) it does not run; the `on` setting stops it whatever its controls do. |
 | | `torque`, `brake` (N·m) | Most torque while driving, and while holding the wheels with no throttle or while it is not running (nobody seated, switched off, out of fuel), so a parked car stays put. |
 | | `fuel`, `fuel_time` (s) | Item burned from the creation's containers, and seconds of full throttle per item. Creative needs none. |
@@ -683,11 +728,11 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 
 | Order | Group | Vanilla recipes, in order |
 |-------|-------|---------------------------|
-| 100 | Blocks | Each block then its wedge, scrap first: scrap wood, scrap metal, scrap stone, sand, Wood Blocks 1-3, cardboard, barrier, insulation, carpet, Metal Blocks 1-3, extruded metal, punched steel, net, solid net, striped net, square mesh, diamond plate, aluminum, rusted metal, worn metal, path light, hull plate, hull floor, brick, tile, worn tile, Concrete Blocks 1-3, cracked concrete, concrete slab, plaster, painted wall, glass, glass tile, armored glass, ice, plastic, bubble plastic |
-| 200 | Ramps, stairs and railings | `ramp_block`, `stairs_block`, `ladder`, `metal_railing` |
+| 100 | Blocks | Each block then its wedge, scrap first: scrap wood, scrap metal, scrap stone, sand, Wood Blocks 1-3, cardboard, barrier, insulation, carpet, Metal Blocks 1-3, extruded metal, punched steel, net, solid net, striped net, square mesh, diamond plate, aluminum, rusted metal, worn metal, path light, hull plate, hull floor, brick, tile, worn tile, Concrete Blocks 1-3, cracked concrete, concrete slab, plaster, painted wall, glass, glass tile, armored glass, ice, plastic, bubble plastic; then `concave_wedge` (190-199, a shape part) |
+| 200 | Ramps, stairs and railings | `ramp_block`, `stairs_block`, `stair_step`, `stair_landing`, `ladder`, `metal_railing`, `metal_railing_long`, `railing_join`, `stair_banister`, `stair_baluster` |
 | 300 | Beams and frames | `ibeam_stub`, `ibeam_short`, `ibeam_long`, `ibeam_corner`, `ibeam_end`, `ibeam_holder`, `u_beam`, `metal_column_short`, `metal_column`, `metal_support`, `support_bracket`, `stand_support`, `support_pillar`, `lattice_pillar`, `support_pillar_stand`, `support_truss_small`, `support_truss`, `support_truss_large`, `tower_pole`, `tower_pole_top`, `door_frame`, `window_frame` |
 | 400 | Pipes | `small_pipe_short`, `small_pipe_long`, `small_pipe_bend`, `small_pipe_corner`, `small_pipe_tee`, `small_pipe_cross`, `small_pipe_four_way_tee`, `small_pipe_five_way`, `small_pipe_six_way`, `valve`, `large_pipe_short`, `large_pipe_long`, `large_pipe_corner`, `large_pipe_tee`, `main_pipe_short`, `main_pipe_long`, `main_pipe_corner`, `main_pipe_tee`, `main_pipe_extension`, `main_pipe_mount`, `main_pipe_cap`, `main_pipe_compressor` |
-| 500 | Seats and controls | `scrap_seat`, `scrap_drivers_seat`, `passenger_seat`, `saddle`, `drivers_seat`, `drivers_saddle`, `controller` |
+| 500 | Seats and controls | `scrap_seat`, `scrap_drivers_seat`, `passenger_seat`, `saddle`, `drivers_seat`, `drivers_saddle`, `turret_seat` (547), `controller` |
 | 600 | Wheels | `scrap_wheel`, `wheel`, `big_wheel`, `sticky_wheel` |
 | 700 | Suspension | `sport_suspension`, `offroad_suspension` |
 | 800 | Engines | `scrap_gas_engine`, `gas_engine`, `electric_engine` |
@@ -697,20 +742,21 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 | 1200 | Logic | `switch_scrap`, `switch`, `button`, `logic_gate`, `timer`, `sensor`, `alarm_clock` |
 | 1300 | Working parts | `drill`, `plasma_drill`, `saw_blade`, `water_cannon`, `potato_blaster_mounted`, `explosive_canister_small`, `explosive_canister_large` |
 | 1400 | Sound | `horn`, `radio` |
-| 1500 | Vehicle body | `bumper_front`, `bumper_rear`, `mud_flap`, `exhaust_pipe`, `license_plate`, `roof_rack`, `antenna`, `windshield`, `side_window` |
+| 1500 | Vehicle body | `bumper_front`, `bumper_rear`, `mud_flap`, `exhaust_pipe`, `license_plate`, `roof_rack`, `antenna`, `windshield`, `windshield_large`, `side_window` (new windshields take 1580-1599) |
 | 1600 | Lights | `shack_light`, `glowstick`, `fluorescent_light`, `packing_lamp`, `interior_light`, `headlight`, `spotlight`, `construction_light`, `warning_light`, `beacon_scrap`, `beacon`, `warehouse_spotlight`, `frame_beam_light`, `neon_sign`, `protector_sign` |
-| 1700 | Storage | `chest` (Scrap Chest), `small_chest`, `large_chest`, `cargo_chest`, `barrel`, `locker`, `tool_cabinet`, `file_cabinet`, `fridge`, `chemical_container`, `water_container`, `potato_ammo_container`, `dispenser`, `broken_microwave`, `ruin_chest` |
+| 1700 | Storage | `chest` (Scrap Chest), `small_chest`, `large_chest`, `cargo_chest`, `barrel`, `locker`, `tool_cabinet`, `file_cabinet`, `fridge`, `chemical_container`, `water_container`, `potato_ammo_container`, `resource_collector`, `vacuum_pipe`, `vacuum_pipe_corner`, `vacuum_pump`, `dispenser`, `broken_microwave`, `ruin_chest` |
 | 1800 | Stations | `portable_fabricator`, `refiner`, `respawn_bed`, `fancy_bed`, `freezer`, `ice_block_freezer` (the Freezer's one recipe) |
 | 1900 | Farming | `soil_bag`, `water_bucket`, `feeding_trough`, `lead`, `growbed` |
 | 2000 | Furniture | `stool`, `chair`, `toilet`, `bathtub`, `anvil`, `cash_register`, `wooden_table`, `metal_table`, `office_table`, `table_support`, `office_chair_base`, `cubicle_wall`, `shelf_unit`, `shelf_pillar`, `shelf_support`, `shelf_support_tall`, `pallet`, `stall_door`, `sink`, `mattress`, `pillow`, `mug`, `calendar`, `toilet_paper` |
-| 2100 | Road signs | `stop_sign`, `caution_sign`, `danger_sign`, `no_entry_sign`, `speed_limit_sign`, `direction_arrow_left`, `direction_arrow_straight`, `direction_arrow_right` |
-| 2200 | Road and site | `traffic_cone`, `barrier_tape`, `outpost_sign`, `warehouse_key_sign` |
+| 2100 | Road signs | `stop_sign`, `caution_sign`, `construction_sign`, `falling_objects_sign`, `danger_sign`, `skull_sign`, `beware_bots_sign`, `no_entry_sign`, `speed_limit_sign`, `direction_arrow_left`, `direction_arrow_straight`, `direction_arrow_right`, `exit_sign`, `welcome_sign`, `hard_work_sign`, `sale_sign` |
+| 2200 | Road and site | `traffic_cone`, `barrier_tape`, `outpost_sign`, `warehouse_key_sign`, `banner_holder`, `billboard` |
 | 2300 | Nature | `fallen_log`, `tree_trunk` |
 | 2400 | Tools | `connect_tool`, `weld_tool`, `paint_tool`, `paint_ammo` |
 | 2500 | Weapons | `potato_blaster`, `potato_scattergun`, `potato_launcher`, `popper` |
 | 2600 | Refined materials | `wood_rod`, `pine_rod`, `stone_rod`, `metal_rod` |
 | 2700 | Crafting materials | `glue` |
 | 2800 | Ducts, conduits and cables | `duct_short`, `duct_long`, `duct_corner`, `duct_tee`, `duct_end`, `duct_holder`, `metal_tube`, `tubes_short`, `tubes_long`, `tubes_corner`, `tubes_tee`, `wires_short`, `wires_long`, `wires_bend`, `wires_concave_bend`, `wires_convex_bend` |
+| 2900 | Windows and fences | `window_square`, `window_large`, `window_metal`, `net_fence` |
 | 3000 | Farm and shack decor | `produce_box_carrot`, `produce_box_potato`, `produce_box_tomato`, `produce_box_mixed`, `stacked_crates`, `grass_planter`, `plant_container`, `plant_container_open`, `vending_machine`, `grazer_head_topper`, `duck_statuette`, `mannequin_hand`, `mannequin_boot`, `shack_awning` |
 | 3100 | Industrial and site decor | `tank_small`, `tank_medium`, `tank_large`, `juice_drum`, `coil_segment`, `coil_corner`, `fuse_box`, `air_conditioner`, `vent_grid`, `crane_body`, `crane_hook`, `broken_concrete_medium`, `broken_concrete_large`, `hull_door`, `nut`, `screw`, `steel_pallet`, `dish_antenna`, `reflector_dish`, `reflector_antenna` |
 

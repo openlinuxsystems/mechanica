@@ -49,6 +49,20 @@ public sealed partial class ScriptRuntime
         Fn(part, "mass", _ => Here() is { } h && h.Creation.DefinitionOf(h.Instance.Part).Mass is { } m
             ? DynValue.NewNumber(m)
             : DynValue.Nil);
+        Fn(part, "aim_limits", _ =>
+        {
+            if (Here() is not { } h || h.Creation.DefinitionOf(h.Instance.Part).Sockets?.FirstOrDefault(s => s.Type == SocketType.Aimed) is not { } socket)
+                return DynValue.Nil;
+            var limits = new Table(script);
+            if (socket.Joint?.Min is { } min && socket.Joint.Max is { } max)
+            {
+                limits.Set("min", DynValue.NewNumber(min));
+                limits.Set("max", DynValue.NewNumber(max));
+            }
+            limits.Set("pitch_min", DynValue.NewNumber(socket.Joint?.PitchMin ?? 0f));
+            limits.Set("pitch_max", DynValue.NewNumber(socket.Joint?.PitchMax ?? 0f));
+            return DynValue.NewTable(limits);
+        });
         Fn(part, "body_mass", _ => Here() is { } h ? DynValue.NewNumber(h.State.BodyMass) : DynValue.Nil);
         Fn(part, "socket", args =>
         {
@@ -80,6 +94,14 @@ public sealed partial class ScriptRuntime
         {
             var instance = Current();
             return Piston(instance, instance.Part, args, "part.set_piston", 0);
+        });
+        Fn(part, "set_aim", args =>
+        {
+            var instance = Current();
+            var result = _dispatcher.Dispatch(Caller, MotionActions.SetAimTarget, new SetAimTargetArgs(instance.Creation, instance.Part,
+                LuaValues.Number(args[0], "part.set_aim", 1), LuaValues.Number(args[1], "part.set_aim", 2),
+                LuaValues.OptionalNumber(args[2], "part.set_aim", 3), LuaValues.OptionalNumber(args[3], "part.set_aim", 4)));
+            return result.Ok ? DynValue.True : Refused(instance, result.Message ?? result.Code ?? "refused");
         });
         Fn(part, "joint", _ => Joint(script, Vec, Current(), Current().Part));
         globals.Set("part", DynValue.NewTable(part));
@@ -249,6 +271,7 @@ public sealed partial class ScriptRuntime
         AddLogicLibrary(script, part, creation, world, Vec);
         AddItemLibraries(context);
         AddSoilLibraries(script, world);
+        AddTransportLibrary(context, part);
         AddFireLibrary(context);
         AddDamageLibrary(part, world);
         AddModLibraries(context);
@@ -369,6 +392,14 @@ public sealed partial class ScriptRuntime
             table.Set("min", DynValue.NewNumber(min));
         if (frame.Max is { } max)
             table.Set("max", DynValue.NewNumber(max));
+        if (frame.Aim is { } aim)
+        {
+            table.Set("pitch_axis", vec(Vector3.Transform(aim.PitchAxis.ToNumerics(), creation.BodyPose(link.BodyA).Rotation)));
+            table.Set("pitch_min", DynValue.NewNumber(aim.PitchMin));
+            table.Set("pitch_max", DynValue.NewNumber(aim.PitchMax));
+            if ((link.IsLocked ? (0f, 0f) : _motion.AimPosition(creation, link)) is { } at)
+                table.Set("pitch", DynValue.NewNumber(at.Pitch));
+        }
         return DynValue.NewTable(table);
     }
 

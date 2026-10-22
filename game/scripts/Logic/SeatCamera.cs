@@ -68,7 +68,8 @@ public partial class SeatCamera : Node3D
     {
         var player = Players.LocalPlayer;
         var seat = player is null ? null : Logic.Seats.SeatOf(player.PeerId);
-        var pose = seat is { } s ? Logic.SeatTransform(s.Creation, s.Part) : null;
+        // A turret seat's base, not its turning shell: the shell follows the view, so the view must not follow it.
+        var pose = seat is { } s ? Logic.SeatTransform(s.Creation, s.Part, aimed: false) : null;
         if (player is null || pose is not { } at)
         {
             if (_seated)

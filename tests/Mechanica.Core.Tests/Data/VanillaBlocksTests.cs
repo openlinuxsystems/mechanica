@@ -229,13 +229,16 @@ public class VanillaBlocksTests
     [InlineData("structural_blocks.json", 86)]
     [InlineData("survival.json", 34)]
     [InlineData("joints.json", 4)]
-    [InlineData("decor.json", 39)]
+    [InlineData("decor.json", 26)]
+    [InlineData("parts_building.json", 35)]
     [InlineData("containers_stations.json", 3)]
     [InlineData("containers.json", 18)]
     [InlineData("lights_utility.json", 27)]
     [InlineData("parts_stations.json", 3)]
     [InlineData("parts_farming.json", 1)]
     [InlineData("parts_engine.json", 1)]
+    [InlineData("parts_transport.json", 4)]
+    [InlineData("parts_turret.json", 1)]
     public void PartFilesAreThePartEditorBatchOutput(string file, int parts)
     {
         var mod = Path.Combine(TestMods.RepoRoot, "mods", "vanilla");

@@ -1,21 +1,19 @@
 {
   "id": "side_window",
   "name": "Side Window",
-  "description": "A small glass pane in a frame.",
+  "description": "A tinted vehicle window in a gunmetal frame with a rubber seal.",
   "category": "decor",
-  "mass": 4,
-  "durability": 2,
-  "friction": 0.5,
+  "mass": 3,
+  "durability": 3,
+  "friction": 0.2,
   "buoyancy": 0.3,
   "flammable": false,
   "stack_size": 20,
   "sound_material": "glass",
   "size": [4, 3, 1],
-  "mesh": "meshes/decor/side_window.glb",
+  "mesh": "meshes/parts/side_window.glb",
+  "icon": "textures/items/side_window_icon.png",
   "visual": {
-    "color": "#a8d0e0",
-    "roughness": 0.05,
-    "metallic": 0,
-    "opacity": 0.35
+    "color": "#ffffff"
   }
 }

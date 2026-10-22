@@ -1,0 +1,19 @@
+{
+  "id": "window_square",
+  "name": "Square Window",
+  "description": "A 1 m square window: clear glass in a steel-blue frame with a bone sill.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 3,
+  "friction": 0.2,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "glass",
+  "size": [4, 4, 1],
+  "mesh": "meshes/parts/window_square.glb",
+  "icon": "textures/items/window_square_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}
