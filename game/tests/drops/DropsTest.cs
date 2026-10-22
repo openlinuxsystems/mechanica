@@ -29,6 +29,8 @@ public partial class DropsTest : StagedTest
     private SurvivalHud _hud = null!;
     private Vector3 _at;
     private int _weld;
+    // The first of the three piles the bot's drop lies as; anything else on the ground (a world drop nearby) is left out.
+    private int _first = -1;
 
     protected override string Tag => "drops";
 
@@ -74,12 +76,12 @@ public partial class DropsTest : StagedTest
             {
                 var player = _client.Main.LocalPlayer!;
                 _at = player.GlobalPosition + new Vector3(0, 0, -2.2f);
-                HostSurvival.AddDrop(_at.ToNumerics() + new System.Numerics.Vector3(0, 0.8f, 0), [new ItemStack(Kit, 1), new ItemStack(Gas, 3), new ItemStack(Scrap, 8)]);
+                _first = HostSurvival.AddDrop(_at.ToNumerics() + new System.Numerics.Vector3(0, 0.8f, 0), [new ItemStack(Kit, 1), new ItemStack(Gas, 3), new ItemStack(Scrap, 8)])!.Id;
             }
-            if (HostSurvival.Drops.Count != 3 || _client.Main.Survival.DropNodes.Count != 3 || _client.Main.Survival.DropNodes.Values.Any(p => p.Model is null))
+            if (Ours(HostSurvival.Drops).Count() != 3 || Ours(_client.Main.Survival.DropNodes).Count() != 3 || Ours(_client.Main.Survival.DropNodes).Any(p => p.Model is null))
                 return false;
-            Check(HostSurvival.Drops.Values.Select(d => d.Items.Single().Item).SequenceEqual([Kit, Gas, Scrap]), "the host lays one pile per kind");
-            foreach (var pile in _client.Main.Survival.DropNodes.Values)
+            Check(Ours(HostSurvival.Drops).Select(d => d.Items.Single().Item).SequenceEqual([Kit, Gas, Scrap]), "the host lays one pile per kind");
+            foreach (var pile in Ours(_client.Main.Survival.DropNodes))
             {
                 var item = pile.Drop!.Items.Single().Item;
                 Check(!pile.Text.Contains('\n') && !pile.FindChild("Label", false, false)!.Get("visible").AsBool(), $"{item} has no floating label");
@@ -90,14 +92,14 @@ public partial class DropsTest : StagedTest
                 var middle = Middle(pile.Model!) - pile.GlobalPosition;
                 Check(Mathf.Abs(middle.Y - DropAim.Middle) < 0.05f, $"{item} floats in the middle of its glow ({middle.Y:0.###} m up)");
             }
-            var piles = _client.Main.Survival.DropNodes.Values.Select(p => p.Position).ToList();
+            var piles = Ours(_client.Main.Survival.DropNodes).Select(p => p.Position).ToList();
             Check(piles.SelectMany((a, i) => piles.Skip(i + 1).Select(b => a.DistanceTo(b))).All(d => d > SurvivalActions.StackSpacing - 0.05f), "the piles lie apart");
             return true;
         });
         Add("the Use prompt names the pile under the crosshair", frame =>
         {
-            var gas = _client.Main.Survival.Drops.Values.Single(d => d.Items[0].Item == Gas);
-            var kit = _client.Main.Survival.Drops.Values.Single(d => d.Items[0].Item == Kit);
+            var gas = Ours(_client.Main.Survival.Drops).Single(d => d.Items[0].Item == Gas);
+            var kit = Ours(_client.Main.Survival.Drops).Single(d => d.Items[0].Item == Kit);
             var aimed = frame < 30 ? gas : kit;
             LookAt(aimed.Position.ToGodot() + new Vector3(0, DropAim.Middle, 0));
             if (frame == 25)
@@ -110,9 +112,9 @@ public partial class DropsTest : StagedTest
         {
             if (frame == 0)
                 _hud.Interaction()!.Value.Run();
-            if (Count(Kit) != 1 || _client.Main.Survival.DropNodes.Count != 2)
+            if (Count(Kit) != 1 || Ours(_client.Main.Survival.DropNodes).Count() != 2)
                 return false;
-            Check(HostSurvival.Drops.Count == 2 && Count(Scrap) == 0 && Count(Gas) == 0, "the other two still lie there");
+            Check(Ours(HostSurvival.Drops).Count() == 2 && Count(Scrap) == 0 && Count(Gas) == 0, "the other two still lie there");
             return true;
         });
         Add("a dropped Weld Tool shows its prop in the glow", frame =>
@@ -141,6 +143,8 @@ public partial class DropsTest : StagedTest
     }
 
     private static Vector3 Middle(Node3D model) => Bounds(model).GetCenter();
+
+    private IEnumerable<T> Ours<T>(IReadOnlyDictionary<int, T> all) => all.Where(p => p.Key >= _first && p.Key < _first + 3).OrderBy(p => p.Key).Select(p => p.Value);
 
     private int Count(string item) => _client.Main.Inventory.Own?.Items.Where(s => s.Item == item).Sum(s => s.Count) ?? 0;
 
