@@ -704,7 +704,7 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 | 1900 | Farming | `soil_bag`, `water_bucket`, `feeding_trough`, `lead`, `growbed` |
 | 2000 | Furniture | `stool`, `chair`, `toilet`, `bathtub`, `anvil`, `cash_register`, `wooden_table`, `metal_table`, `office_table`, `table_support`, `office_chair_base`, `cubicle_wall`, `shelf_unit`, `shelf_pillar`, `shelf_support`, `shelf_support_tall`, `pallet`, `stall_door`, `sink`, `mattress`, `pillow`, `mug`, `calendar`, `toilet_paper` |
 | 2100 | Road signs | `stop_sign`, `caution_sign`, `danger_sign`, `no_entry_sign`, `speed_limit_sign`, `direction_arrow_left`, `direction_arrow_straight`, `direction_arrow_right` |
-| 2200 | Road and site | `traffic_cone`, `barrier_tape`, `outpost_sign`, `warehouse_key_sign` |
+| 2200 | Road and site | `traffic_cone`, `barrier_tape`, `outpost_sign`, `warehouse_key_sign`, `banner_holder`, `billboard` |
 | 2300 | Nature | `fallen_log`, `tree_trunk` |
 | 2400 | Tools | `connect_tool`, `weld_tool`, `paint_tool`, `paint_ammo` |
 | 2500 | Weapons | `potato_blaster`, `potato_scattergun`, `potato_launcher`, `popper` |

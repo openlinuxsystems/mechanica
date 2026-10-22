@@ -2,16 +2,8 @@
   "format_version": 1,
   "model": [
     {
-      "kind": "cylinder",
-      "radius": 0.04,
-      "height": 0.05,
-      "position": [0, -0.725, 0]
-    },
-    {
-      "kind": "cylinder",
-      "radius": 0.006,
-      "height": 1.45,
-      "position": [0, 0.025, 0]
+      "kind": "mesh",
+      "mesh": "meshes/parts/antenna.glb"
     }
   ]
 }

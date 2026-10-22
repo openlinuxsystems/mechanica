@@ -4,7 +4,7 @@ using Mechanica.Core.Items;
 namespace Mechanica.Core.Tests.Data;
 
 /// <summary>
-/// The parts map's batches 11 and 12 (stairs, railings, windows, windshields and signs; batches 11a, 11b so far): each
+/// The parts map's batches 11 and 12 (stairs, railings, windows, windshields and signs; batches 11a, 11b, 12a so far): each
 /// part has the wiki's stats and recipe, its own model and icon (tools/parts_building/build_parts.py) and its place in
 /// the Fabricator's list.
 /// </summary>
@@ -33,6 +33,17 @@ public class PartsBuildingTests
     [InlineData("metal_railing_long", 6, 4, 0.5, 0.2, false, 8, 4, 1)]
     [InlineData("railing_join", 6, 4, 0.5, 0.2, false, 1, 1, 1)]
     [InlineData("stair_step", 6, 5, 0.5, 0.2, false, 6, 1, 1)]
+    [InlineData("antenna", 3, 2, 0.3, 0.3, false, 1, 6, 1)]
+    [InlineData("direction_arrow_left", 3, 3, 0.4, 0.2, false, 3, 6, 1)]
+    [InlineData("direction_arrow_straight", 3, 3, 0.4, 0.2, false, 3, 6, 1)]
+    [InlineData("direction_arrow_right", 3, 3, 0.4, 0.2, false, 3, 6, 1)]
+    [InlineData("caution_sign", 3, 3, 0.4, 0.2, false, 3, 6, 1)]
+    [InlineData("danger_sign", 3, 3, 0.4, 0.2, false, 3, 6, 1)]
+    [InlineData("stop_sign", 3, 3, 0.4, 0.2, false, 3, 6, 1)]
+    [InlineData("no_entry_sign", 3, 3, 0.4, 0.2, false, 3, 6, 1)]
+    [InlineData("traffic_cone", 3, 2, 0.3, 0.6, true, 2, 3, 2)]
+    [InlineData("banner_holder", 3, 3, 0.6, 0.5, false, 4, 1, 1)]
+    [InlineData("billboard", 6, 3, 0.4, 0.6, false, 8, 8, 2)]
     public void TakesTheWikiStatsAtOurSize(string id, double mass, int durability, double friction, double buoyancy,
         bool flammable, int x, int y, int z)
     {
@@ -61,6 +72,17 @@ public class PartsBuildingTests
     [InlineData("metal_railing_long", 2, 242, "metal_block:2")]
     [InlineData("railing_join", 2, 244, "metal_block:1")]
     [InlineData("stair_step", 2, 212, "metal_block:1")]
+    [InlineData("antenna", 2, 1570, "scrap_metal_block:4")]
+    [InlineData("direction_arrow_left", 2, 2160, "scrap_metal_block:4")]
+    [InlineData("direction_arrow_straight", 2, 2170, "scrap_metal_block:4")]
+    [InlineData("direction_arrow_right", 2, 2180, "scrap_metal_block:4")]
+    [InlineData("caution_sign", 2, 2120, "scrap_metal_block:4")]
+    [InlineData("danger_sign", 2, 2130, "scrap_metal_block:4")]
+    [InlineData("stop_sign", 2, 2110, "scrap_metal_block:4")]
+    [InlineData("no_entry_sign", 2, 2140, "scrap_metal_block:4")]
+    [InlineData("traffic_cone", 15, 2210, "metal_block:10", "paint_ammo:1")]
+    [InlineData("banner_holder", 10, 2250, "metal_block:10")]
+    [InlineData("billboard", 10, 2260, "wood_block:10", "paint_ammo:10")]
     public void TakesTheWikiRecipeInItsGroup(string id, float time, int order, params string[] inputs)
     {
         var book = RecipeBook.Load(Vanilla.Value);
@@ -91,6 +113,17 @@ public class PartsBuildingTests
     [InlineData("metal_railing_long")]
     [InlineData("railing_join")]
     [InlineData("stair_step")]
+    [InlineData("antenna")]
+    [InlineData("direction_arrow_left")]
+    [InlineData("direction_arrow_straight")]
+    [InlineData("direction_arrow_right")]
+    [InlineData("caution_sign")]
+    [InlineData("danger_sign")]
+    [InlineData("stop_sign")]
+    [InlineData("no_entry_sign")]
+    [InlineData("traffic_cone")]
+    [InlineData("banner_holder")]
+    [InlineData("billboard")]
     public void HasItsOwnModelAndIcon(string id)
     {
         var part = Part(id);
