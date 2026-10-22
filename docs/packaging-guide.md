@@ -15,7 +15,7 @@ mods/
     parts/              part and item definitions (*.json, any subfolders)
       wheels/sport_wheel.json
     overrides/          changes to other mods' content, one folder per mod id: part files, recipes/, bots/,
-                        quests/, pois/, characters/, *.patch.json merge patches and remove.json
+                        quests/, pois/, characters/, derelicts/, *.patch.json merge patches and remove.json
       vanilla/wheel.json
     scripts/            Lua behaviour (*.lua): part and item scripts, mod scripts listed in mod.json, require()d modules
     meshes/             glTF models (*.glb, *.gltf)
@@ -26,6 +26,7 @@ mods/
     world/worldgen.json world generation rules; the last mod in load order that ships one wins
     world/worldgen.patch.json  additions and changes to it that stack across mods
     pois/               POI prefabs (*.json; a `part` marker places a working, world-owned part), see world-generation.md
+    derelicts/          derelict vehicles (*.json) that POIs' `derelict` markers leave, see world-generation.md
     bots/               bot types (*.json), see bot-tutorial.md
     raids/raids.json    the raid table; the last mod in load order that ships one wins
     raids/raids.patch.json  additions and changes to it that stack across mods
@@ -181,6 +182,7 @@ mods/tough_bots/overrides/vanilla/bots/scuttler_red.json        replaces the bot
 mods/my_story/overrides/vanilla/quests/first_farm.json          replaces the quest vanilla:first_farm
 mods/my_world/overrides/vanilla/pois/camp.json                  replaces the POI vanilla:camp
 mods/my_look/overrides/vanilla/characters/scrapper_male.json    replaces the character vanilla:scrapper_male
+mods/my_world/overrides/vanilla/derelicts/old_tractor.json      replaces the derelict vehicle vanilla:old_tractor
 ```
 
 A quest's id is its file name, as in `quests/`; the others use their `id`. Relative asset paths resolve
@@ -205,7 +207,7 @@ entry. Patches stack: a mod that depends on another mod's override or patch buil
 ### Removing content
 
 `overrides/<mod_id>/remove.json` takes entries out of the game, listed by id under `parts`, `recipes`,
-`bots`, `quests`, `pois` and `characters`:
+`bots`, `quests`, `pois`, `characters` and `derelicts`:
 
 ```json
 { "parts": ["antenna"], "recipes": ["barrel"], "bots": ["scuttler_blue"] }

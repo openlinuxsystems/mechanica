@@ -1,0 +1,5737 @@
+{
+  "id": "flatbed_hauler",
+  "name": "Flatbed Hauler",
+  "missing": [
+    {
+      "part": "gas_engine",
+      "chance": 0.9
+    },
+    {
+      "part": "wheel",
+      "chance": 0.85,
+      "count_max": 3
+    },
+    {
+      "part": "gas_container",
+      "chance": 0.5
+    }
+  ],
+  "creation": {
+    "format_version": 1,
+    "id": 0,
+    "parts": [
+      {
+        "id": 1,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          0,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 2,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          0,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 3,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          0,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 4,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          0,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 5,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          0,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 6,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          0,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 7,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          0,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 8,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          0,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 9,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          0,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 10,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          0,
+          9
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 11,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          0,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 12,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          0,
+          11
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 13,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          0,
+          12
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 14,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          0,
+          13
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 15,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          0,
+          14
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 16,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          0,
+          15
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 17,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          0,
+          16
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 18,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          0,
+          17
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 19,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          0,
+          18
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 20,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          0,
+          19
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 21,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          0,
+          20
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 22,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          0,
+          21
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 23,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          0,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 24,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          0,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 25,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          0,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 26,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          0,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 27,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          0,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 28,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          0,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 29,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          0,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 30,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          0,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 31,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          0,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 32,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          0,
+          9
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 33,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          0,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 34,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          0,
+          11
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 35,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          0,
+          12
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 36,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          0,
+          13
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 37,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          0,
+          14
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 38,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          0,
+          15
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 39,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          0,
+          16
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 40,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          0,
+          17
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 41,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          0,
+          18
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 42,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          0,
+          19
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 43,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          0,
+          20
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 44,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          0,
+          21
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 45,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          0,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 46,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          0,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 47,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          0,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 48,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          0,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 49,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          0,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 50,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          0,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 51,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          0,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 52,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          0,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 53,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          0,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 54,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          0,
+          9
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 55,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          0,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 56,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          0,
+          11
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 57,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          0,
+          12
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 58,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          0,
+          13
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 59,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          0,
+          14
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 60,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          0,
+          15
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 61,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          0,
+          16
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 62,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          0,
+          17
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 63,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          0,
+          18
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 64,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          0,
+          19
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 65,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          0,
+          20
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 66,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          0,
+          21
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 67,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          0,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 68,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          0,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 69,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          0,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 70,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          0,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 71,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          0,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 72,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          0,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 73,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          0,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 74,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          0,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 75,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          0,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 76,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          0,
+          9
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 77,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          0,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 78,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          0,
+          11
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 79,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          0,
+          12
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 80,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          0,
+          13
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 81,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          0,
+          14
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 82,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          0,
+          15
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 83,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          0,
+          16
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 84,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          0,
+          17
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 85,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          0,
+          18
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 86,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          0,
+          19
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 87,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          0,
+          20
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 88,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          0,
+          21
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 89,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          0,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 90,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          0,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 91,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          0,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 92,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          0,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 93,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          0,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 94,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          0,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 95,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          0,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 96,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          0,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 97,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          0,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 98,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          0,
+          9
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 99,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          0,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 100,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          0,
+          11
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 101,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          0,
+          12
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 102,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          0,
+          13
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 103,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          0,
+          14
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 104,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          0,
+          15
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 105,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          0,
+          16
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 106,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          0,
+          17
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 107,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          0,
+          18
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 108,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          0,
+          19
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 109,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          0,
+          20
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 110,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          0,
+          21
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 111,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          0,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 112,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          0,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 113,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          0,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 114,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          0,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 115,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          0,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 116,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          0,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 117,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          0,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 118,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          0,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 119,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          0,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 120,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          0,
+          9
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 121,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          0,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 122,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          0,
+          11
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 123,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          0,
+          12
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 124,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          0,
+          13
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 125,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          0,
+          14
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 126,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          0,
+          15
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 127,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          0,
+          16
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 128,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          0,
+          17
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 129,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          0,
+          18
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 130,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          0,
+          19
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 131,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          0,
+          20
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 132,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          0,
+          21
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 133,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          1,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 134,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          1,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 135,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          1,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 136,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          1,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 137,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          1,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 138,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          1,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 139,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          1,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 140,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          1,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 141,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          1,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 142,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          1,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 143,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          1,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 144,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          1,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 145,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          2,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 146,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          2,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 147,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          2,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 148,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          2,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 149,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          2,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 150,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          2,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 151,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          3,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 152,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          3,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 153,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          3,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 154,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          3,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 155,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          3,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 156,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          3,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 157,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          4,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 158,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          4,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 159,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          4,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 160,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          4,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 161,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          4,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 162,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          4,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 163,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          1,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 164,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          1,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 165,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          1,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 166,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          1,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 167,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          1,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 168,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          1,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 169,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          2,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 170,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          2,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 171,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          2,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 172,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          2,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 173,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          2,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 174,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          2,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 175,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          3,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 176,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          3,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 177,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          3,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 178,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          3,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 179,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          3,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 180,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          3,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 181,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          4,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 182,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          4,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 183,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          4,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 184,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          4,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 185,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          4,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 186,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          4,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 187,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          1,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 188,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          2,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 189,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          3,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 190,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          4,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 191,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          1,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 192,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          2,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 193,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          3,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 194,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          4,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 195,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          1,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 196,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          2,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 197,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          3,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 198,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          4,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 199,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          1,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 200,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          2,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 201,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          3,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 202,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          4,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 203,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          5,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 204,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          5,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 205,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          5,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 206,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          5,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 207,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          5,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 208,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          5,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 209,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          5,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 210,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          5,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 211,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          5,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 212,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          5,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 213,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          5,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 214,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          5,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 215,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          5,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 216,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          5,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 217,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          5,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 218,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          5,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 219,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          5,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 220,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          5,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 221,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          5,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 222,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          5,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 223,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          5,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 224,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          5,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 225,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          5,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 226,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          5,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 227,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          5,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 228,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          5,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 229,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          5,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 230,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          5,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 231,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          5,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 232,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          5,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 233,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          5,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 234,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          5,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 235,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          5,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 236,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          5,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 237,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          5,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 238,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          5,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 239,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          5,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 240,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          5,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 241,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          5,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 242,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          5,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 243,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          5,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 244,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          5,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 245,
+        "part": "vanilla:metal_block",
+        "cell": [
+          0,
+          5,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 246,
+        "part": "vanilla:metal_block",
+        "cell": [
+          1,
+          5,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 247,
+        "part": "vanilla:metal_block",
+        "cell": [
+          2,
+          5,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 248,
+        "part": "vanilla:metal_block",
+        "cell": [
+          3,
+          5,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 249,
+        "part": "vanilla:metal_block",
+        "cell": [
+          4,
+          5,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 250,
+        "part": "vanilla:metal_block",
+        "cell": [
+          5,
+          5,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 251,
+        "part": "vanilla:glass_block",
+        "cell": [
+          1,
+          2,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 252,
+        "part": "vanilla:glass_block",
+        "cell": [
+          1,
+          3,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 253,
+        "part": "vanilla:glass_block",
+        "cell": [
+          1,
+          4,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 254,
+        "part": "vanilla:glass_block",
+        "cell": [
+          2,
+          2,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 255,
+        "part": "vanilla:glass_block",
+        "cell": [
+          2,
+          3,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 256,
+        "part": "vanilla:glass_block",
+        "cell": [
+          2,
+          4,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 257,
+        "part": "vanilla:glass_block",
+        "cell": [
+          3,
+          2,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 258,
+        "part": "vanilla:glass_block",
+        "cell": [
+          3,
+          3,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 259,
+        "part": "vanilla:glass_block",
+        "cell": [
+          3,
+          4,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 260,
+        "part": "vanilla:glass_block",
+        "cell": [
+          4,
+          2,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 261,
+        "part": "vanilla:glass_block",
+        "cell": [
+          4,
+          3,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 262,
+        "part": "vanilla:glass_block",
+        "cell": [
+          4,
+          4,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 263,
+        "part": "vanilla:drivers_seat",
+        "cell": [
+          1,
+          1,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 264,
+        "part": "vanilla:gas_engine",
+        "cell": [
+          1,
+          1,
+          9
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 265,
+        "part": "vanilla:gas_container",
+        "cell": [
+          3,
+          1,
+          9
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 266,
+        "part": "vanilla:bearing",
+        "cell": [
+          2,
+          -1,
+          2
+        ],
+        "rotation": "+x-y"
+      },
+      {
+        "id": 267,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          2,
+          -2,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 268,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          1,
+          -2,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 269,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          0,
+          -2,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 270,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          3,
+          -2,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 271,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          4,
+          -2,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 272,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          5,
+          -2,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 273,
+        "part": "vanilla:bearing",
+        "cell": [
+          -1,
+          -2,
+          2
+        ],
+        "rotation": "+y-x"
+      },
+      {
+        "id": 274,
+        "part": "vanilla:wheel",
+        "cell": [
+          -2,
+          -3,
+          1
+        ],
+        "rotation": "+y-x"
+      },
+      {
+        "id": 275,
+        "part": "vanilla:bearing",
+        "cell": [
+          6,
+          -2,
+          2
+        ],
+        "rotation": "-y+x"
+      },
+      {
+        "id": 276,
+        "part": "vanilla:wheel",
+        "cell": [
+          7,
+          -1,
+          1
+        ],
+        "rotation": "-y+x"
+      },
+      {
+        "id": 277,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          0,
+          -1,
+          15
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 278,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          5,
+          -1,
+          15
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 279,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          0,
+          -2,
+          15
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 280,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          1,
+          -2,
+          15
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 281,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          2,
+          -2,
+          15
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 282,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          3,
+          -2,
+          15
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 283,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          4,
+          -2,
+          15
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 284,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          5,
+          -2,
+          15
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 285,
+        "part": "vanilla:bearing",
+        "cell": [
+          -1,
+          -2,
+          15
+        ],
+        "rotation": "+y-x"
+      },
+      {
+        "id": 286,
+        "part": "vanilla:wheel",
+        "cell": [
+          -2,
+          -3,
+          14
+        ],
+        "rotation": "+y-x"
+      },
+      {
+        "id": 287,
+        "part": "vanilla:bearing",
+        "cell": [
+          6,
+          -2,
+          15
+        ],
+        "rotation": "-y+x"
+      },
+      {
+        "id": 288,
+        "part": "vanilla:wheel",
+        "cell": [
+          7,
+          -1,
+          14
+        ],
+        "rotation": "-y+x"
+      },
+      {
+        "id": 289,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          0,
+          -1,
+          19
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 290,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          5,
+          -1,
+          19
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 291,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          0,
+          -2,
+          19
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 292,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          1,
+          -2,
+          19
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 293,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          2,
+          -2,
+          19
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 294,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          3,
+          -2,
+          19
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 295,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          4,
+          -2,
+          19
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 296,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          5,
+          -2,
+          19
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 297,
+        "part": "vanilla:bearing",
+        "cell": [
+          -1,
+          -2,
+          19
+        ],
+        "rotation": "+y-x"
+      },
+      {
+        "id": 298,
+        "part": "vanilla:wheel",
+        "cell": [
+          -2,
+          -3,
+          18
+        ],
+        "rotation": "+y-x"
+      },
+      {
+        "id": 299,
+        "part": "vanilla:bearing",
+        "cell": [
+          6,
+          -2,
+          19
+        ],
+        "rotation": "-y+x"
+      },
+      {
+        "id": 300,
+        "part": "vanilla:wheel",
+        "cell": [
+          7,
+          -1,
+          18
+        ],
+        "rotation": "-y+x"
+      }
+    ],
+    "connections": [
+      {
+        "type": "structural",
+        "a": 1,
+        "b": 2
+      },
+      {
+        "type": "structural",
+        "a": 1,
+        "b": 23
+      },
+      {
+        "type": "structural",
+        "a": 1,
+        "b": 133
+      },
+      {
+        "type": "structural",
+        "a": 2,
+        "b": 3
+      },
+      {
+        "type": "structural",
+        "a": 2,
+        "b": 24
+      },
+      {
+        "type": "structural",
+        "a": 2,
+        "b": 139
+      },
+      {
+        "type": "structural",
+        "a": 3,
+        "b": 4
+      },
+      {
+        "type": "structural",
+        "a": 3,
+        "b": 25
+      },
+      {
+        "type": "structural",
+        "a": 3,
+        "b": 140
+      },
+      {
+        "type": "structural",
+        "a": 4,
+        "b": 5
+      },
+      {
+        "type": "structural",
+        "a": 4,
+        "b": 26
+      },
+      {
+        "type": "structural",
+        "a": 4,
+        "b": 141
+      },
+      {
+        "type": "structural",
+        "a": 5,
+        "b": 6
+      },
+      {
+        "type": "structural",
+        "a": 5,
+        "b": 27
+      },
+      {
+        "type": "structural",
+        "a": 5,
+        "b": 142
+      },
+      {
+        "type": "structural",
+        "a": 6,
+        "b": 7
+      },
+      {
+        "type": "structural",
+        "a": 6,
+        "b": 28
+      },
+      {
+        "type": "structural",
+        "a": 6,
+        "b": 143
+      },
+      {
+        "type": "structural",
+        "a": 7,
+        "b": 8
+      },
+      {
+        "type": "structural",
+        "a": 7,
+        "b": 29
+      },
+      {
+        "type": "structural",
+        "a": 7,
+        "b": 144
+      },
+      {
+        "type": "structural",
+        "a": 8,
+        "b": 9
+      },
+      {
+        "type": "structural",
+        "a": 8,
+        "b": 30
+      },
+      {
+        "type": "structural",
+        "a": 9,
+        "b": 10
+      },
+      {
+        "type": "structural",
+        "a": 9,
+        "b": 31
+      },
+      {
+        "type": "structural",
+        "a": 10,
+        "b": 11
+      },
+      {
+        "type": "structural",
+        "a": 10,
+        "b": 32
+      },
+      {
+        "type": "structural",
+        "a": 11,
+        "b": 12
+      },
+      {
+        "type": "structural",
+        "a": 11,
+        "b": 33
+      },
+      {
+        "type": "structural",
+        "a": 12,
+        "b": 13
+      },
+      {
+        "type": "structural",
+        "a": 12,
+        "b": 34
+      },
+      {
+        "type": "structural",
+        "a": 13,
+        "b": 14
+      },
+      {
+        "type": "structural",
+        "a": 13,
+        "b": 35
+      },
+      {
+        "type": "structural",
+        "a": 14,
+        "b": 15
+      },
+      {
+        "type": "structural",
+        "a": 14,
+        "b": 36
+      },
+      {
+        "type": "structural",
+        "a": 15,
+        "b": 16
+      },
+      {
+        "type": "structural",
+        "a": 15,
+        "b": 37
+      },
+      {
+        "type": "structural",
+        "a": 16,
+        "b": 17
+      },
+      {
+        "type": "structural",
+        "a": 16,
+        "b": 38
+      },
+      {
+        "type": "structural",
+        "a": 16,
+        "b": 277
+      },
+      {
+        "type": "structural",
+        "a": 17,
+        "b": 18
+      },
+      {
+        "type": "structural",
+        "a": 17,
+        "b": 39
+      },
+      {
+        "type": "structural",
+        "a": 18,
+        "b": 19
+      },
+      {
+        "type": "structural",
+        "a": 18,
+        "b": 40
+      },
+      {
+        "type": "structural",
+        "a": 19,
+        "b": 20
+      },
+      {
+        "type": "structural",
+        "a": 19,
+        "b": 41
+      },
+      {
+        "type": "structural",
+        "a": 20,
+        "b": 21
+      },
+      {
+        "type": "structural",
+        "a": 20,
+        "b": 42
+      },
+      {
+        "type": "structural",
+        "a": 20,
+        "b": 289
+      },
+      {
+        "type": "structural",
+        "a": 21,
+        "b": 22
+      },
+      {
+        "type": "structural",
+        "a": 21,
+        "b": 43
+      },
+      {
+        "type": "structural",
+        "a": 22,
+        "b": 44
+      },
+      {
+        "type": "structural",
+        "a": 23,
+        "b": 24
+      },
+      {
+        "type": "structural",
+        "a": 23,
+        "b": 45
+      },
+      {
+        "type": "structural",
+        "a": 23,
+        "b": 134
+      },
+      {
+        "type": "structural",
+        "a": 24,
+        "b": 25
+      },
+      {
+        "type": "structural",
+        "a": 24,
+        "b": 46
+      },
+      {
+        "type": "structural",
+        "a": 25,
+        "b": 26
+      },
+      {
+        "type": "structural",
+        "a": 25,
+        "b": 47
+      },
+      {
+        "type": "structural",
+        "a": 26,
+        "b": 27
+      },
+      {
+        "type": "structural",
+        "a": 26,
+        "b": 48
+      },
+      {
+        "type": "structural",
+        "a": 27,
+        "b": 28
+      },
+      {
+        "type": "structural",
+        "a": 27,
+        "b": 49
+      },
+      {
+        "type": "structural",
+        "a": 28,
+        "b": 29
+      },
+      {
+        "type": "structural",
+        "a": 28,
+        "b": 50
+      },
+      {
+        "type": "structural",
+        "a": 29,
+        "b": 30
+      },
+      {
+        "type": "structural",
+        "a": 29,
+        "b": 51
+      },
+      {
+        "type": "structural",
+        "a": 30,
+        "b": 31
+      },
+      {
+        "type": "structural",
+        "a": 30,
+        "b": 52
+      },
+      {
+        "type": "structural",
+        "a": 30,
+        "b": 187
+      },
+      {
+        "type": "structural",
+        "a": 31,
+        "b": 32
+      },
+      {
+        "type": "structural",
+        "a": 31,
+        "b": 53
+      },
+      {
+        "type": "structural",
+        "a": 32,
+        "b": 33
+      },
+      {
+        "type": "structural",
+        "a": 32,
+        "b": 54
+      },
+      {
+        "type": "structural",
+        "a": 32,
+        "b": 264
+      },
+      {
+        "type": "structural",
+        "a": 33,
+        "b": 34
+      },
+      {
+        "type": "structural",
+        "a": 33,
+        "b": 55
+      },
+      {
+        "type": "structural",
+        "a": 33,
+        "b": 264
+      },
+      {
+        "type": "structural",
+        "a": 34,
+        "b": 35
+      },
+      {
+        "type": "structural",
+        "a": 34,
+        "b": 56
+      },
+      {
+        "type": "structural",
+        "a": 35,
+        "b": 36
+      },
+      {
+        "type": "structural",
+        "a": 35,
+        "b": 57
+      },
+      {
+        "type": "structural",
+        "a": 36,
+        "b": 37
+      },
+      {
+        "type": "structural",
+        "a": 36,
+        "b": 58
+      },
+      {
+        "type": "structural",
+        "a": 37,
+        "b": 38
+      },
+      {
+        "type": "structural",
+        "a": 37,
+        "b": 59
+      },
+      {
+        "type": "structural",
+        "a": 38,
+        "b": 39
+      },
+      {
+        "type": "structural",
+        "a": 38,
+        "b": 60
+      },
+      {
+        "type": "structural",
+        "a": 39,
+        "b": 40
+      },
+      {
+        "type": "structural",
+        "a": 39,
+        "b": 61
+      },
+      {
+        "type": "structural",
+        "a": 40,
+        "b": 41
+      },
+      {
+        "type": "structural",
+        "a": 40,
+        "b": 62
+      },
+      {
+        "type": "structural",
+        "a": 41,
+        "b": 42
+      },
+      {
+        "type": "structural",
+        "a": 41,
+        "b": 63
+      },
+      {
+        "type": "structural",
+        "a": 42,
+        "b": 43
+      },
+      {
+        "type": "structural",
+        "a": 42,
+        "b": 64
+      },
+      {
+        "type": "structural",
+        "a": 43,
+        "b": 44
+      },
+      {
+        "type": "structural",
+        "a": 43,
+        "b": 65
+      },
+      {
+        "type": "structural",
+        "a": 44,
+        "b": 66
+      },
+      {
+        "type": "structural",
+        "a": 45,
+        "b": 46
+      },
+      {
+        "type": "structural",
+        "a": 45,
+        "b": 67
+      },
+      {
+        "type": "structural",
+        "a": 45,
+        "b": 135
+      },
+      {
+        "type": "structural",
+        "a": 46,
+        "b": 47
+      },
+      {
+        "type": "structural",
+        "a": 46,
+        "b": 68
+      },
+      {
+        "type": "structural",
+        "a": 47,
+        "b": 48
+      },
+      {
+        "type": "structural",
+        "a": 47,
+        "b": 69
+      },
+      {
+        "type": "structural",
+        "a": 47,
+        "b": 266
+      },
+      {
+        "type": "structural",
+        "a": 48,
+        "b": 49
+      },
+      {
+        "type": "structural",
+        "a": 48,
+        "b": 70
+      },
+      {
+        "type": "structural",
+        "a": 48,
+        "b": 263
+      },
+      {
+        "type": "structural",
+        "a": 49,
+        "b": 50
+      },
+      {
+        "type": "structural",
+        "a": 49,
+        "b": 71
+      },
+      {
+        "type": "structural",
+        "a": 49,
+        "b": 263
+      },
+      {
+        "type": "structural",
+        "a": 50,
+        "b": 51
+      },
+      {
+        "type": "structural",
+        "a": 50,
+        "b": 72
+      },
+      {
+        "type": "structural",
+        "a": 51,
+        "b": 52
+      },
+      {
+        "type": "structural",
+        "a": 51,
+        "b": 73
+      },
+      {
+        "type": "structural",
+        "a": 52,
+        "b": 53
+      },
+      {
+        "type": "structural",
+        "a": 52,
+        "b": 74
+      },
+      {
+        "type": "structural",
+        "a": 52,
+        "b": 191
+      },
+      {
+        "type": "structural",
+        "a": 53,
+        "b": 54
+      },
+      {
+        "type": "structural",
+        "a": 53,
+        "b": 75
+      },
+      {
+        "type": "structural",
+        "a": 54,
+        "b": 55
+      },
+      {
+        "type": "structural",
+        "a": 54,
+        "b": 76
+      },
+      {
+        "type": "structural",
+        "a": 54,
+        "b": 264
+      },
+      {
+        "type": "structural",
+        "a": 55,
+        "b": 56
+      },
+      {
+        "type": "structural",
+        "a": 55,
+        "b": 77
+      },
+      {
+        "type": "structural",
+        "a": 55,
+        "b": 264
+      },
+      {
+        "type": "structural",
+        "a": 56,
+        "b": 57
+      },
+      {
+        "type": "structural",
+        "a": 56,
+        "b": 78
+      },
+      {
+        "type": "structural",
+        "a": 57,
+        "b": 58
+      },
+      {
+        "type": "structural",
+        "a": 57,
+        "b": 79
+      },
+      {
+        "type": "structural",
+        "a": 58,
+        "b": 59
+      },
+      {
+        "type": "structural",
+        "a": 58,
+        "b": 80
+      },
+      {
+        "type": "structural",
+        "a": 59,
+        "b": 60
+      },
+      {
+        "type": "structural",
+        "a": 59,
+        "b": 81
+      },
+      {
+        "type": "structural",
+        "a": 60,
+        "b": 61
+      },
+      {
+        "type": "structural",
+        "a": 60,
+        "b": 82
+      },
+      {
+        "type": "structural",
+        "a": 61,
+        "b": 62
+      },
+      {
+        "type": "structural",
+        "a": 61,
+        "b": 83
+      },
+      {
+        "type": "structural",
+        "a": 62,
+        "b": 63
+      },
+      {
+        "type": "structural",
+        "a": 62,
+        "b": 84
+      },
+      {
+        "type": "structural",
+        "a": 63,
+        "b": 64
+      },
+      {
+        "type": "structural",
+        "a": 63,
+        "b": 85
+      },
+      {
+        "type": "structural",
+        "a": 64,
+        "b": 65
+      },
+      {
+        "type": "structural",
+        "a": 64,
+        "b": 86
+      },
+      {
+        "type": "structural",
+        "a": 65,
+        "b": 66
+      },
+      {
+        "type": "structural",
+        "a": 65,
+        "b": 87
+      },
+      {
+        "type": "structural",
+        "a": 66,
+        "b": 88
+      },
+      {
+        "type": "structural",
+        "a": 67,
+        "b": 68
+      },
+      {
+        "type": "structural",
+        "a": 67,
+        "b": 89
+      },
+      {
+        "type": "structural",
+        "a": 67,
+        "b": 136
+      },
+      {
+        "type": "structural",
+        "a": 68,
+        "b": 69
+      },
+      {
+        "type": "structural",
+        "a": 68,
+        "b": 90
+      },
+      {
+        "type": "structural",
+        "a": 69,
+        "b": 70
+      },
+      {
+        "type": "structural",
+        "a": 69,
+        "b": 91
+      },
+      {
+        "type": "structural",
+        "a": 70,
+        "b": 71
+      },
+      {
+        "type": "structural",
+        "a": 70,
+        "b": 92
+      },
+      {
+        "type": "structural",
+        "a": 70,
+        "b": 263
+      },
+      {
+        "type": "structural",
+        "a": 71,
+        "b": 72
+      },
+      {
+        "type": "structural",
+        "a": 71,
+        "b": 93
+      },
+      {
+        "type": "structural",
+        "a": 71,
+        "b": 263
+      },
+      {
+        "type": "structural",
+        "a": 72,
+        "b": 73
+      },
+      {
+        "type": "structural",
+        "a": 72,
+        "b": 94
+      },
+      {
+        "type": "structural",
+        "a": 73,
+        "b": 74
+      },
+      {
+        "type": "structural",
+        "a": 73,
+        "b": 95
+      },
+      {
+        "type": "structural",
+        "a": 74,
+        "b": 75
+      },
+      {
+        "type": "structural",
+        "a": 74,
+        "b": 96
+      },
+      {
+        "type": "structural",
+        "a": 74,
+        "b": 195
+      },
+      {
+        "type": "structural",
+        "a": 75,
+        "b": 76
+      },
+      {
+        "type": "structural",
+        "a": 75,
+        "b": 97
+      },
+      {
+        "type": "structural",
+        "a": 76,
+        "b": 77
+      },
+      {
+        "type": "structural",
+        "a": 76,
+        "b": 98
+      },
+      {
+        "type": "structural",
+        "a": 77,
+        "b": 78
+      },
+      {
+        "type": "structural",
+        "a": 77,
+        "b": 99
+      },
+      {
+        "type": "structural",
+        "a": 78,
+        "b": 79
+      },
+      {
+        "type": "structural",
+        "a": 78,
+        "b": 100
+      },
+      {
+        "type": "structural",
+        "a": 79,
+        "b": 80
+      },
+      {
+        "type": "structural",
+        "a": 79,
+        "b": 101
+      },
+      {
+        "type": "structural",
+        "a": 80,
+        "b": 81
+      },
+      {
+        "type": "structural",
+        "a": 80,
+        "b": 102
+      },
+      {
+        "type": "structural",
+        "a": 81,
+        "b": 82
+      },
+      {
+        "type": "structural",
+        "a": 81,
+        "b": 103
+      },
+      {
+        "type": "structural",
+        "a": 82,
+        "b": 83
+      },
+      {
+        "type": "structural",
+        "a": 82,
+        "b": 104
+      },
+      {
+        "type": "structural",
+        "a": 83,
+        "b": 84
+      },
+      {
+        "type": "structural",
+        "a": 83,
+        "b": 105
+      },
+      {
+        "type": "structural",
+        "a": 84,
+        "b": 85
+      },
+      {
+        "type": "structural",
+        "a": 84,
+        "b": 106
+      },
+      {
+        "type": "structural",
+        "a": 85,
+        "b": 86
+      },
+      {
+        "type": "structural",
+        "a": 85,
+        "b": 107
+      },
+      {
+        "type": "structural",
+        "a": 86,
+        "b": 87
+      },
+      {
+        "type": "structural",
+        "a": 86,
+        "b": 108
+      },
+      {
+        "type": "structural",
+        "a": 87,
+        "b": 88
+      },
+      {
+        "type": "structural",
+        "a": 87,
+        "b": 109
+      },
+      {
+        "type": "structural",
+        "a": 88,
+        "b": 110
+      },
+      {
+        "type": "structural",
+        "a": 89,
+        "b": 90
+      },
+      {
+        "type": "structural",
+        "a": 89,
+        "b": 111
+      },
+      {
+        "type": "structural",
+        "a": 89,
+        "b": 137
+      },
+      {
+        "type": "structural",
+        "a": 90,
+        "b": 91
+      },
+      {
+        "type": "structural",
+        "a": 90,
+        "b": 112
+      },
+      {
+        "type": "structural",
+        "a": 91,
+        "b": 92
+      },
+      {
+        "type": "structural",
+        "a": 91,
+        "b": 113
+      },
+      {
+        "type": "structural",
+        "a": 92,
+        "b": 93
+      },
+      {
+        "type": "structural",
+        "a": 92,
+        "b": 114
+      },
+      {
+        "type": "structural",
+        "a": 93,
+        "b": 94
+      },
+      {
+        "type": "structural",
+        "a": 93,
+        "b": 115
+      },
+      {
+        "type": "structural",
+        "a": 94,
+        "b": 95
+      },
+      {
+        "type": "structural",
+        "a": 94,
+        "b": 116
+      },
+      {
+        "type": "structural",
+        "a": 95,
+        "b": 96
+      },
+      {
+        "type": "structural",
+        "a": 95,
+        "b": 117
+      },
+      {
+        "type": "structural",
+        "a": 96,
+        "b": 97
+      },
+      {
+        "type": "structural",
+        "a": 96,
+        "b": 118
+      },
+      {
+        "type": "structural",
+        "a": 96,
+        "b": 199
+      },
+      {
+        "type": "structural",
+        "a": 97,
+        "b": 98
+      },
+      {
+        "type": "structural",
+        "a": 97,
+        "b": 119
+      },
+      {
+        "type": "structural",
+        "a": 98,
+        "b": 99
+      },
+      {
+        "type": "structural",
+        "a": 98,
+        "b": 120
+      },
+      {
+        "type": "structural",
+        "a": 99,
+        "b": 100
+      },
+      {
+        "type": "structural",
+        "a": 99,
+        "b": 121
+      },
+      {
+        "type": "structural",
+        "a": 99,
+        "b": 265
+      },
+      {
+        "type": "structural",
+        "a": 100,
+        "b": 101
+      },
+      {
+        "type": "structural",
+        "a": 100,
+        "b": 122
+      },
+      {
+        "type": "structural",
+        "a": 101,
+        "b": 102
+      },
+      {
+        "type": "structural",
+        "a": 101,
+        "b": 123
+      },
+      {
+        "type": "structural",
+        "a": 102,
+        "b": 103
+      },
+      {
+        "type": "structural",
+        "a": 102,
+        "b": 124
+      },
+      {
+        "type": "structural",
+        "a": 103,
+        "b": 104
+      },
+      {
+        "type": "structural",
+        "a": 103,
+        "b": 125
+      },
+      {
+        "type": "structural",
+        "a": 104,
+        "b": 105
+      },
+      {
+        "type": "structural",
+        "a": 104,
+        "b": 126
+      },
+      {
+        "type": "structural",
+        "a": 105,
+        "b": 106
+      },
+      {
+        "type": "structural",
+        "a": 105,
+        "b": 127
+      },
+      {
+        "type": "structural",
+        "a": 106,
+        "b": 107
+      },
+      {
+        "type": "structural",
+        "a": 106,
+        "b": 128
+      },
+      {
+        "type": "structural",
+        "a": 107,
+        "b": 108
+      },
+      {
+        "type": "structural",
+        "a": 107,
+        "b": 129
+      },
+      {
+        "type": "structural",
+        "a": 108,
+        "b": 109
+      },
+      {
+        "type": "structural",
+        "a": 108,
+        "b": 130
+      },
+      {
+        "type": "structural",
+        "a": 109,
+        "b": 110
+      },
+      {
+        "type": "structural",
+        "a": 109,
+        "b": 131
+      },
+      {
+        "type": "structural",
+        "a": 110,
+        "b": 132
+      },
+      {
+        "type": "structural",
+        "a": 111,
+        "b": 112
+      },
+      {
+        "type": "structural",
+        "a": 111,
+        "b": 138
+      },
+      {
+        "type": "structural",
+        "a": 112,
+        "b": 113
+      },
+      {
+        "type": "structural",
+        "a": 112,
+        "b": 163
+      },
+      {
+        "type": "structural",
+        "a": 113,
+        "b": 114
+      },
+      {
+        "type": "structural",
+        "a": 113,
+        "b": 164
+      },
+      {
+        "type": "structural",
+        "a": 114,
+        "b": 115
+      },
+      {
+        "type": "structural",
+        "a": 114,
+        "b": 165
+      },
+      {
+        "type": "structural",
+        "a": 115,
+        "b": 116
+      },
+      {
+        "type": "structural",
+        "a": 115,
+        "b": 166
+      },
+      {
+        "type": "structural",
+        "a": 116,
+        "b": 117
+      },
+      {
+        "type": "structural",
+        "a": 116,
+        "b": 167
+      },
+      {
+        "type": "structural",
+        "a": 117,
+        "b": 118
+      },
+      {
+        "type": "structural",
+        "a": 117,
+        "b": 168
+      },
+      {
+        "type": "structural",
+        "a": 118,
+        "b": 119
+      },
+      {
+        "type": "structural",
+        "a": 119,
+        "b": 120
+      },
+      {
+        "type": "structural",
+        "a": 120,
+        "b": 121
+      },
+      {
+        "type": "structural",
+        "a": 121,
+        "b": 122
+      },
+      {
+        "type": "structural",
+        "a": 121,
+        "b": 265
+      },
+      {
+        "type": "structural",
+        "a": 122,
+        "b": 123
+      },
+      {
+        "type": "structural",
+        "a": 123,
+        "b": 124
+      },
+      {
+        "type": "structural",
+        "a": 124,
+        "b": 125
+      },
+      {
+        "type": "structural",
+        "a": 125,
+        "b": 126
+      },
+      {
+        "type": "structural",
+        "a": 126,
+        "b": 127
+      },
+      {
+        "type": "structural",
+        "a": 126,
+        "b": 278
+      },
+      {
+        "type": "structural",
+        "a": 127,
+        "b": 128
+      },
+      {
+        "type": "structural",
+        "a": 128,
+        "b": 129
+      },
+      {
+        "type": "structural",
+        "a": 129,
+        "b": 130
+      },
+      {
+        "type": "structural",
+        "a": 130,
+        "b": 131
+      },
+      {
+        "type": "structural",
+        "a": 130,
+        "b": 290
+      },
+      {
+        "type": "structural",
+        "a": 131,
+        "b": 132
+      },
+      {
+        "type": "structural",
+        "a": 133,
+        "b": 134
+      },
+      {
+        "type": "structural",
+        "a": 133,
+        "b": 139
+      },
+      {
+        "type": "structural",
+        "a": 134,
+        "b": 135
+      },
+      {
+        "type": "structural",
+        "a": 134,
+        "b": 251
+      },
+      {
+        "type": "structural",
+        "a": 135,
+        "b": 136
+      },
+      {
+        "type": "structural",
+        "a": 135,
+        "b": 254
+      },
+      {
+        "type": "structural",
+        "a": 136,
+        "b": 137
+      },
+      {
+        "type": "structural",
+        "a": 136,
+        "b": 257
+      },
+      {
+        "type": "structural",
+        "a": 137,
+        "b": 138
+      },
+      {
+        "type": "structural",
+        "a": 137,
+        "b": 260
+      },
+      {
+        "type": "structural",
+        "a": 138,
+        "b": 163
+      },
+      {
+        "type": "structural",
+        "a": 139,
+        "b": 140
+      },
+      {
+        "type": "structural",
+        "a": 139,
+        "b": 145
+      },
+      {
+        "type": "structural",
+        "a": 140,
+        "b": 141
+      },
+      {
+        "type": "structural",
+        "a": 140,
+        "b": 146
+      },
+      {
+        "type": "structural",
+        "a": 141,
+        "b": 142
+      },
+      {
+        "type": "structural",
+        "a": 141,
+        "b": 147
+      },
+      {
+        "type": "structural",
+        "a": 142,
+        "b": 143
+      },
+      {
+        "type": "structural",
+        "a": 142,
+        "b": 148
+      },
+      {
+        "type": "structural",
+        "a": 143,
+        "b": 144
+      },
+      {
+        "type": "structural",
+        "a": 143,
+        "b": 149
+      },
+      {
+        "type": "structural",
+        "a": 144,
+        "b": 150
+      },
+      {
+        "type": "structural",
+        "a": 145,
+        "b": 146
+      },
+      {
+        "type": "structural",
+        "a": 145,
+        "b": 151
+      },
+      {
+        "type": "structural",
+        "a": 146,
+        "b": 147
+      },
+      {
+        "type": "structural",
+        "a": 146,
+        "b": 152
+      },
+      {
+        "type": "structural",
+        "a": 147,
+        "b": 148
+      },
+      {
+        "type": "structural",
+        "a": 147,
+        "b": 153
+      },
+      {
+        "type": "structural",
+        "a": 148,
+        "b": 149
+      },
+      {
+        "type": "structural",
+        "a": 148,
+        "b": 154
+      },
+      {
+        "type": "structural",
+        "a": 149,
+        "b": 150
+      },
+      {
+        "type": "structural",
+        "a": 149,
+        "b": 155
+      },
+      {
+        "type": "structural",
+        "a": 150,
+        "b": 156
+      },
+      {
+        "type": "structural",
+        "a": 151,
+        "b": 152
+      },
+      {
+        "type": "structural",
+        "a": 151,
+        "b": 157
+      },
+      {
+        "type": "structural",
+        "a": 152,
+        "b": 153
+      },
+      {
+        "type": "structural",
+        "a": 152,
+        "b": 158
+      },
+      {
+        "type": "structural",
+        "a": 153,
+        "b": 154
+      },
+      {
+        "type": "structural",
+        "a": 153,
+        "b": 159
+      },
+      {
+        "type": "structural",
+        "a": 154,
+        "b": 155
+      },
+      {
+        "type": "structural",
+        "a": 154,
+        "b": 160
+      },
+      {
+        "type": "structural",
+        "a": 155,
+        "b": 156
+      },
+      {
+        "type": "structural",
+        "a": 155,
+        "b": 161
+      },
+      {
+        "type": "structural",
+        "a": 156,
+        "b": 162
+      },
+      {
+        "type": "structural",
+        "a": 157,
+        "b": 158
+      },
+      {
+        "type": "structural",
+        "a": 157,
+        "b": 203
+      },
+      {
+        "type": "structural",
+        "a": 158,
+        "b": 159
+      },
+      {
+        "type": "structural",
+        "a": 158,
+        "b": 204
+      },
+      {
+        "type": "structural",
+        "a": 159,
+        "b": 160
+      },
+      {
+        "type": "structural",
+        "a": 159,
+        "b": 205
+      },
+      {
+        "type": "structural",
+        "a": 160,
+        "b": 161
+      },
+      {
+        "type": "structural",
+        "a": 160,
+        "b": 206
+      },
+      {
+        "type": "structural",
+        "a": 161,
+        "b": 162
+      },
+      {
+        "type": "structural",
+        "a": 161,
+        "b": 207
+      },
+      {
+        "type": "structural",
+        "a": 162,
+        "b": 208
+      },
+      {
+        "type": "structural",
+        "a": 163,
+        "b": 164
+      },
+      {
+        "type": "structural",
+        "a": 163,
+        "b": 169
+      },
+      {
+        "type": "structural",
+        "a": 164,
+        "b": 165
+      },
+      {
+        "type": "structural",
+        "a": 164,
+        "b": 170
+      },
+      {
+        "type": "structural",
+        "a": 165,
+        "b": 166
+      },
+      {
+        "type": "structural",
+        "a": 165,
+        "b": 171
+      },
+      {
+        "type": "structural",
+        "a": 166,
+        "b": 167
+      },
+      {
+        "type": "structural",
+        "a": 166,
+        "b": 172
+      },
+      {
+        "type": "structural",
+        "a": 167,
+        "b": 168
+      },
+      {
+        "type": "structural",
+        "a": 167,
+        "b": 173
+      },
+      {
+        "type": "structural",
+        "a": 168,
+        "b": 174
+      },
+      {
+        "type": "structural",
+        "a": 169,
+        "b": 170
+      },
+      {
+        "type": "structural",
+        "a": 169,
+        "b": 175
+      },
+      {
+        "type": "structural",
+        "a": 170,
+        "b": 171
+      },
+      {
+        "type": "structural",
+        "a": 170,
+        "b": 176
+      },
+      {
+        "type": "structural",
+        "a": 171,
+        "b": 172
+      },
+      {
+        "type": "structural",
+        "a": 171,
+        "b": 177
+      },
+      {
+        "type": "structural",
+        "a": 172,
+        "b": 173
+      },
+      {
+        "type": "structural",
+        "a": 172,
+        "b": 178
+      },
+      {
+        "type": "structural",
+        "a": 173,
+        "b": 174
+      },
+      {
+        "type": "structural",
+        "a": 173,
+        "b": 179
+      },
+      {
+        "type": "structural",
+        "a": 174,
+        "b": 180
+      },
+      {
+        "type": "structural",
+        "a": 175,
+        "b": 176
+      },
+      {
+        "type": "structural",
+        "a": 175,
+        "b": 181
+      },
+      {
+        "type": "structural",
+        "a": 176,
+        "b": 177
+      },
+      {
+        "type": "structural",
+        "a": 176,
+        "b": 182
+      },
+      {
+        "type": "structural",
+        "a": 177,
+        "b": 178
+      },
+      {
+        "type": "structural",
+        "a": 177,
+        "b": 183
+      },
+      {
+        "type": "structural",
+        "a": 178,
+        "b": 179
+      },
+      {
+        "type": "structural",
+        "a": 178,
+        "b": 184
+      },
+      {
+        "type": "structural",
+        "a": 179,
+        "b": 180
+      },
+      {
+        "type": "structural",
+        "a": 179,
+        "b": 185
+      },
+      {
+        "type": "structural",
+        "a": 180,
+        "b": 186
+      },
+      {
+        "type": "structural",
+        "a": 181,
+        "b": 182
+      },
+      {
+        "type": "structural",
+        "a": 181,
+        "b": 238
+      },
+      {
+        "type": "structural",
+        "a": 182,
+        "b": 183
+      },
+      {
+        "type": "structural",
+        "a": 182,
+        "b": 239
+      },
+      {
+        "type": "structural",
+        "a": 183,
+        "b": 184
+      },
+      {
+        "type": "structural",
+        "a": 183,
+        "b": 240
+      },
+      {
+        "type": "structural",
+        "a": 184,
+        "b": 185
+      },
+      {
+        "type": "structural",
+        "a": 184,
+        "b": 241
+      },
+      {
+        "type": "structural",
+        "a": 185,
+        "b": 186
+      },
+      {
+        "type": "structural",
+        "a": 185,
+        "b": 242
+      },
+      {
+        "type": "structural",
+        "a": 186,
+        "b": 243
+      },
+      {
+        "type": "structural",
+        "a": 187,
+        "b": 188
+      },
+      {
+        "type": "structural",
+        "a": 187,
+        "b": 191
+      },
+      {
+        "type": "structural",
+        "a": 188,
+        "b": 189
+      },
+      {
+        "type": "structural",
+        "a": 188,
+        "b": 192
+      },
+      {
+        "type": "structural",
+        "a": 189,
+        "b": 190
+      },
+      {
+        "type": "structural",
+        "a": 189,
+        "b": 193
+      },
+      {
+        "type": "structural",
+        "a": 190,
+        "b": 194
+      },
+      {
+        "type": "structural",
+        "a": 190,
+        "b": 216
+      },
+      {
+        "type": "structural",
+        "a": 191,
+        "b": 192
+      },
+      {
+        "type": "structural",
+        "a": 191,
+        "b": 195
+      },
+      {
+        "type": "structural",
+        "a": 192,
+        "b": 193
+      },
+      {
+        "type": "structural",
+        "a": 192,
+        "b": 196
+      },
+      {
+        "type": "structural",
+        "a": 193,
+        "b": 194
+      },
+      {
+        "type": "structural",
+        "a": 193,
+        "b": 197
+      },
+      {
+        "type": "structural",
+        "a": 194,
+        "b": 198
+      },
+      {
+        "type": "structural",
+        "a": 194,
+        "b": 223
+      },
+      {
+        "type": "structural",
+        "a": 195,
+        "b": 196
+      },
+      {
+        "type": "structural",
+        "a": 195,
+        "b": 199
+      },
+      {
+        "type": "structural",
+        "a": 196,
+        "b": 197
+      },
+      {
+        "type": "structural",
+        "a": 196,
+        "b": 200
+      },
+      {
+        "type": "structural",
+        "a": 197,
+        "b": 198
+      },
+      {
+        "type": "structural",
+        "a": 197,
+        "b": 201
+      },
+      {
+        "type": "structural",
+        "a": 198,
+        "b": 202
+      },
+      {
+        "type": "structural",
+        "a": 198,
+        "b": 230
+      },
+      {
+        "type": "structural",
+        "a": 199,
+        "b": 200
+      },
+      {
+        "type": "structural",
+        "a": 200,
+        "b": 201
+      },
+      {
+        "type": "structural",
+        "a": 201,
+        "b": 202
+      },
+      {
+        "type": "structural",
+        "a": 202,
+        "b": 237
+      },
+      {
+        "type": "structural",
+        "a": 203,
+        "b": 204
+      },
+      {
+        "type": "structural",
+        "a": 203,
+        "b": 210
+      },
+      {
+        "type": "structural",
+        "a": 203,
+        "b": 245
+      },
+      {
+        "type": "structural",
+        "a": 204,
+        "b": 205
+      },
+      {
+        "type": "structural",
+        "a": 204,
+        "b": 211
+      },
+      {
+        "type": "structural",
+        "a": 205,
+        "b": 206
+      },
+      {
+        "type": "structural",
+        "a": 205,
+        "b": 212
+      },
+      {
+        "type": "structural",
+        "a": 206,
+        "b": 207
+      },
+      {
+        "type": "structural",
+        "a": 206,
+        "b": 213
+      },
+      {
+        "type": "structural",
+        "a": 207,
+        "b": 208
+      },
+      {
+        "type": "structural",
+        "a": 207,
+        "b": 214
+      },
+      {
+        "type": "structural",
+        "a": 208,
+        "b": 209
+      },
+      {
+        "type": "structural",
+        "a": 208,
+        "b": 215
+      },
+      {
+        "type": "structural",
+        "a": 209,
+        "b": 216
+      },
+      {
+        "type": "structural",
+        "a": 210,
+        "b": 211
+      },
+      {
+        "type": "structural",
+        "a": 210,
+        "b": 217
+      },
+      {
+        "type": "structural",
+        "a": 210,
+        "b": 246
+      },
+      {
+        "type": "structural",
+        "a": 211,
+        "b": 212
+      },
+      {
+        "type": "structural",
+        "a": 211,
+        "b": 218
+      },
+      {
+        "type": "structural",
+        "a": 212,
+        "b": 213
+      },
+      {
+        "type": "structural",
+        "a": 212,
+        "b": 219
+      },
+      {
+        "type": "structural",
+        "a": 213,
+        "b": 214
+      },
+      {
+        "type": "structural",
+        "a": 213,
+        "b": 220
+      },
+      {
+        "type": "structural",
+        "a": 214,
+        "b": 215
+      },
+      {
+        "type": "structural",
+        "a": 214,
+        "b": 221
+      },
+      {
+        "type": "structural",
+        "a": 215,
+        "b": 216
+      },
+      {
+        "type": "structural",
+        "a": 215,
+        "b": 222
+      },
+      {
+        "type": "structural",
+        "a": 216,
+        "b": 223
+      },
+      {
+        "type": "structural",
+        "a": 217,
+        "b": 218
+      },
+      {
+        "type": "structural",
+        "a": 217,
+        "b": 224
+      },
+      {
+        "type": "structural",
+        "a": 217,
+        "b": 247
+      },
+      {
+        "type": "structural",
+        "a": 218,
+        "b": 219
+      },
+      {
+        "type": "structural",
+        "a": 218,
+        "b": 225
+      },
+      {
+        "type": "structural",
+        "a": 219,
+        "b": 220
+      },
+      {
+        "type": "structural",
+        "a": 219,
+        "b": 226
+      },
+      {
+        "type": "structural",
+        "a": 220,
+        "b": 221
+      },
+      {
+        "type": "structural",
+        "a": 220,
+        "b": 227
+      },
+      {
+        "type": "structural",
+        "a": 221,
+        "b": 222
+      },
+      {
+        "type": "structural",
+        "a": 221,
+        "b": 228
+      },
+      {
+        "type": "structural",
+        "a": 222,
+        "b": 223
+      },
+      {
+        "type": "structural",
+        "a": 222,
+        "b": 229
+      },
+      {
+        "type": "structural",
+        "a": 223,
+        "b": 230
+      },
+      {
+        "type": "structural",
+        "a": 224,
+        "b": 225
+      },
+      {
+        "type": "structural",
+        "a": 224,
+        "b": 231
+      },
+      {
+        "type": "structural",
+        "a": 224,
+        "b": 248
+      },
+      {
+        "type": "structural",
+        "a": 225,
+        "b": 226
+      },
+      {
+        "type": "structural",
+        "a": 225,
+        "b": 232
+      },
+      {
+        "type": "structural",
+        "a": 226,
+        "b": 227
+      },
+      {
+        "type": "structural",
+        "a": 226,
+        "b": 233
+      },
+      {
+        "type": "structural",
+        "a": 227,
+        "b": 228
+      },
+      {
+        "type": "structural",
+        "a": 227,
+        "b": 234
+      },
+      {
+        "type": "structural",
+        "a": 228,
+        "b": 229
+      },
+      {
+        "type": "structural",
+        "a": 228,
+        "b": 235
+      },
+      {
+        "type": "structural",
+        "a": 229,
+        "b": 230
+      },
+      {
+        "type": "structural",
+        "a": 229,
+        "b": 236
+      },
+      {
+        "type": "structural",
+        "a": 230,
+        "b": 237
+      },
+      {
+        "type": "structural",
+        "a": 231,
+        "b": 232
+      },
+      {
+        "type": "structural",
+        "a": 231,
+        "b": 238
+      },
+      {
+        "type": "structural",
+        "a": 231,
+        "b": 249
+      },
+      {
+        "type": "structural",
+        "a": 232,
+        "b": 233
+      },
+      {
+        "type": "structural",
+        "a": 232,
+        "b": 239
+      },
+      {
+        "type": "structural",
+        "a": 233,
+        "b": 234
+      },
+      {
+        "type": "structural",
+        "a": 233,
+        "b": 240
+      },
+      {
+        "type": "structural",
+        "a": 234,
+        "b": 235
+      },
+      {
+        "type": "structural",
+        "a": 234,
+        "b": 241
+      },
+      {
+        "type": "structural",
+        "a": 235,
+        "b": 236
+      },
+      {
+        "type": "structural",
+        "a": 235,
+        "b": 242
+      },
+      {
+        "type": "structural",
+        "a": 236,
+        "b": 237
+      },
+      {
+        "type": "structural",
+        "a": 236,
+        "b": 243
+      },
+      {
+        "type": "structural",
+        "a": 237,
+        "b": 244
+      },
+      {
+        "type": "structural",
+        "a": 238,
+        "b": 239
+      },
+      {
+        "type": "structural",
+        "a": 238,
+        "b": 250
+      },
+      {
+        "type": "structural",
+        "a": 239,
+        "b": 240
+      },
+      {
+        "type": "structural",
+        "a": 240,
+        "b": 241
+      },
+      {
+        "type": "structural",
+        "a": 241,
+        "b": 242
+      },
+      {
+        "type": "structural",
+        "a": 242,
+        "b": 243
+      },
+      {
+        "type": "structural",
+        "a": 243,
+        "b": 244
+      },
+      {
+        "type": "structural",
+        "a": 245,
+        "b": 246
+      },
+      {
+        "type": "structural",
+        "a": 246,
+        "b": 247
+      },
+      {
+        "type": "structural",
+        "a": 246,
+        "b": 253
+      },
+      {
+        "type": "structural",
+        "a": 247,
+        "b": 248
+      },
+      {
+        "type": "structural",
+        "a": 247,
+        "b": 256
+      },
+      {
+        "type": "structural",
+        "a": 248,
+        "b": 249
+      },
+      {
+        "type": "structural",
+        "a": 248,
+        "b": 259
+      },
+      {
+        "type": "structural",
+        "a": 249,
+        "b": 250
+      },
+      {
+        "type": "structural",
+        "a": 249,
+        "b": 262
+      },
+      {
+        "type": "structural",
+        "a": 251,
+        "b": 252
+      },
+      {
+        "type": "structural",
+        "a": 251,
+        "b": 254
+      },
+      {
+        "type": "structural",
+        "a": 252,
+        "b": 253
+      },
+      {
+        "type": "structural",
+        "a": 252,
+        "b": 255
+      },
+      {
+        "type": "structural",
+        "a": 253,
+        "b": 256
+      },
+      {
+        "type": "structural",
+        "a": 254,
+        "b": 255
+      },
+      {
+        "type": "structural",
+        "a": 254,
+        "b": 257
+      },
+      {
+        "type": "structural",
+        "a": 255,
+        "b": 256
+      },
+      {
+        "type": "structural",
+        "a": 255,
+        "b": 258
+      },
+      {
+        "type": "structural",
+        "a": 256,
+        "b": 259
+      },
+      {
+        "type": "structural",
+        "a": 257,
+        "b": 258
+      },
+      {
+        "type": "structural",
+        "a": 257,
+        "b": 260
+      },
+      {
+        "type": "structural",
+        "a": 258,
+        "b": 259
+      },
+      {
+        "type": "structural",
+        "a": 258,
+        "b": 261
+      },
+      {
+        "type": "structural",
+        "a": 259,
+        "b": 262
+      },
+      {
+        "type": "structural",
+        "a": 260,
+        "b": 261
+      },
+      {
+        "type": "structural",
+        "a": 261,
+        "b": 262
+      },
+      {
+        "type": "rotational",
+        "a": 266,
+        "a_socket": "rotor",
+        "b": 267
+      },
+      {
+        "type": "structural",
+        "a": 267,
+        "b": 268
+      },
+      {
+        "type": "structural",
+        "a": 267,
+        "b": 270
+      },
+      {
+        "type": "structural",
+        "a": 268,
+        "b": 269
+      },
+      {
+        "type": "structural",
+        "a": 269,
+        "b": 273
+      },
+      {
+        "type": "structural",
+        "a": 270,
+        "b": 271
+      },
+      {
+        "type": "structural",
+        "a": 271,
+        "b": 272
+      },
+      {
+        "type": "structural",
+        "a": 272,
+        "b": 275
+      },
+      {
+        "type": "rotational",
+        "a": 273,
+        "a_socket": "rotor",
+        "b": 274,
+        "b_socket": "hub"
+      },
+      {
+        "type": "rotational",
+        "a": 275,
+        "a_socket": "rotor",
+        "b": 276,
+        "b_socket": "hub"
+      },
+      {
+        "type": "structural",
+        "a": 277,
+        "b": 279
+      },
+      {
+        "type": "structural",
+        "a": 278,
+        "b": 284
+      },
+      {
+        "type": "structural",
+        "a": 279,
+        "b": 280
+      },
+      {
+        "type": "structural",
+        "a": 279,
+        "b": 285
+      },
+      {
+        "type": "structural",
+        "a": 280,
+        "b": 281
+      },
+      {
+        "type": "structural",
+        "a": 281,
+        "b": 282
+      },
+      {
+        "type": "structural",
+        "a": 282,
+        "b": 283
+      },
+      {
+        "type": "structural",
+        "a": 283,
+        "b": 284
+      },
+      {
+        "type": "structural",
+        "a": 284,
+        "b": 287
+      },
+      {
+        "type": "rotational",
+        "a": 285,
+        "a_socket": "rotor",
+        "b": 286,
+        "b_socket": "hub"
+      },
+      {
+        "type": "rotational",
+        "a": 287,
+        "a_socket": "rotor",
+        "b": 288,
+        "b_socket": "hub"
+      },
+      {
+        "type": "structural",
+        "a": 289,
+        "b": 291
+      },
+      {
+        "type": "structural",
+        "a": 290,
+        "b": 296
+      },
+      {
+        "type": "structural",
+        "a": 291,
+        "b": 292
+      },
+      {
+        "type": "structural",
+        "a": 291,
+        "b": 297
+      },
+      {
+        "type": "structural",
+        "a": 292,
+        "b": 293
+      },
+      {
+        "type": "structural",
+        "a": 293,
+        "b": 294
+      },
+      {
+        "type": "structural",
+        "a": 294,
+        "b": 295
+      },
+      {
+        "type": "structural",
+        "a": 295,
+        "b": 296
+      },
+      {
+        "type": "structural",
+        "a": 296,
+        "b": 299
+      },
+      {
+        "type": "rotational",
+        "a": 297,
+        "a_socket": "rotor",
+        "b": 298,
+        "b_socket": "hub"
+      },
+      {
+        "type": "rotational",
+        "a": 299,
+        "a_socket": "rotor",
+        "b": 300,
+        "b_socket": "hub"
+      }
+    ],
+    "links": [
+      {
+        "from": 263,
+        "to": 264
+      },
+      {
+        "from": 263,
+        "to": 266
+      },
+      {
+        "from": 264,
+        "to": 285
+      },
+      {
+        "from": 264,
+        "to": 287
+      },
+      {
+        "from": 265,
+        "to": 264
+      }
+    ]
+  }
+}

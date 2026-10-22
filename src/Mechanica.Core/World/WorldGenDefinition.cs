@@ -1479,6 +1479,12 @@ public sealed record PoiMarker
     public const string PartType = "part";
 
     /// <summary>
+    /// Marker type that leaves a derelict vehicle there, once, for anyone to take (<see cref="Ref"/> is its id; see
+    /// <see cref="Derelicts"/>).
+    /// </summary>
+    public const string DerelictType = "derelict";
+
+    /// <summary>
     /// <paramref name="id"/> qualified as a marker's <see cref="Ref"/> means it: a bare id names something of the mod of
     /// the POI <paramref name="poi"/> (<c>mod_id:poi_id</c>), a <c>mod_id:id</c> is kept.
     /// </summary>

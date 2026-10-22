@@ -27,6 +27,8 @@
     { "type": "part", "ref": "traffic_cone", "at": [21.0, 0.3, 23.0] },
     { "type": "part", "ref": "wheel", "at": [32.0, 0.3, 2.0] },
     { "type": "part", "ref": "wheel", "at": [32.0, 0.3, -1.0] },
-    { "type": "part", "ref": "scrap_drivers_seat", "at": [32.0, 0.3, -6.0], "yaw": -90.0 }
+    { "type": "part", "ref": "scrap_drivers_seat", "at": [32.0, 0.3, -6.0], "yaw": -90.0 },
+    { "type": "derelict", "ref": "colony_runabout", "at": [-12.0, 0.3, 22.2], "yaw": 90.0 },
+    { "type": "derelict", "ref": "flatbed_hauler", "at": [32.0, 0.3, 11.0] }
   ]
 }

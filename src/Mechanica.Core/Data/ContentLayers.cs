@@ -47,7 +47,7 @@ public static class ContentLayers
     /// Folders inside <c>overrides/&lt;other_mod&gt;/</c> that hold other content than parts, with the key each uses in
     /// <see cref="RemoveFile"/>. Part overrides may sit anywhere else under <c>overrides/&lt;other_mod&gt;/</c>.
     /// </summary>
-    public static IReadOnlyList<string> ReservedFolders { get; } = ["recipes", "bots", "quests", "pois", "characters"];
+    public static IReadOnlyList<string> ReservedFolders { get; } = ["recipes", "bots", "quests", "pois", "characters", "derelicts"];
 
     /// <summary>Keys <see cref="RemoveFile"/> accepts: <c>parts</c> plus every reserved folder.</summary>
     public static IReadOnlyList<string> RemoveKeys { get; } = ["parts", .. ReservedFolders];

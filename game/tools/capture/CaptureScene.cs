@@ -63,6 +63,8 @@ namespace Mechanica.Game.Tools;
 /// (<c>tools/capture-opening.sh</c>, which can also record the whole of it).
 /// Given <c>drops</c> it kills a Rakehand and shows its loot lying as glowing piles, the Use prompt naming the one aimed at,
 /// and a row of items of every kind (<c>tools/capture-drops.sh</c>).
+/// Given <c>derelicts</c> it shows each derelict vehicle whole and as a world leaves it, then the roadside and field sites
+/// that hold them (<c>tools/capture-derelicts.sh</c>).
 /// Given <c>consumables</c> it shows Bloom Tea and a Grazer Shake held and drunk, Fertilizer in hand, and a tomato crop
 /// beside a fertilized one (<c>tools/capture-consumables.sh</c>); given <c>grazer_products</c>, a tame Grazer eating from its
 /// Feeding Trough until its milk is ready, the milk collected and held, and Grazer Steak dropped by a Grazer and held.
@@ -128,7 +130,8 @@ public partial class CaptureScene : Node
         var beds = args.Length > 1 && args[1] == "beds";
         var extinguisher = args.Length > 1 && args[1] == "extinguisher";
         var drops = args.Length > 1 && args[1] == "drops";
-        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !factions && !ladder && !beds && !extinguisher && !drops && !connectLines && !husbandry && !consumables && !grazerProducts && !fields && !gauges && !building && args[1] != "survey" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        var derelicts = args.Length > 1 && args[1] == "derelicts";
+        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !factions && !ladder && !beds && !extinguisher && !drops && !derelicts && !connectLines && !husbandry && !consumables && !grazerProducts && !fields && !gauges && !building && args[1] != "survey" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
@@ -318,6 +321,11 @@ public partial class CaptureScene : Node
         if (beds)
         {
             BedShots();
+            return;
+        }
+        if (derelicts)
+        {
+            DerelictShots();
             return;
         }
         if (borders)

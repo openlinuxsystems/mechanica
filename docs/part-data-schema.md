@@ -808,7 +808,7 @@ where you write it decides which mod it means:
 
 | Where | Bare id (`wheel`) means | Another mod's |
 |-------|-------------------------|---------------|
-| Mod data files (`parts/`, `recipes/`, `bots/`, `quests/`, `pois/`, `characters/`, `raids/`) | The mod the file is in | `other_mod:id` |
+| Mod data files (`parts/`, `recipes/`, `bots/`, `quests/`, `pois/`, `derelicts/`, `characters/`, `raids/`) | The mod the file is in | `other_mod:id` |
 | A part's `sounds` and other sound event ids | The file's own mod's event if it has one, otherwise vanilla's | `other_mod:sound_id` |
 | Asset paths (`mesh`, `icon`, `script`, sound files) | A file in the file's own mod, relative to its root (`meshes/wheel.glb`) | `other_mod:meshes/wheel.glb` (that mod must be a dependency, `MD0303`) |
 | Lua functions that take item or part ids | The script's own mod | `other_mod:id` |
@@ -830,9 +830,9 @@ The folders where a mod changes what another mod owns:
 |------------------|--------------|
 | `overrides/<other_mod>/<any name>.json` | Replaces that mod's part with the same `id`. |
 | `overrides/<other_mod>/recipes/**/*.json` | Replaces its recipe with the same `id`. |
-| `overrides/<other_mod>/bots/`, `quests/`, `pois/`, `characters/` | Replaces its bot, quest (by file name), POI or character. |
+| `overrides/<other_mod>/bots/`, `quests/`, `pois/`, `characters/`, `derelicts/` | Replaces its bot, quest (by file name), POI, character or derelict vehicle. |
 | `overrides/<other_mod>/**/<id>.patch.json` | A merge patch on one entry, in any of the folders above. |
-| `overrides/<other_mod>/remove.json` | Takes entries out, by id under `parts`, `recipes`, `bots`, `quests`, `pois` and `characters`. |
+| `overrides/<other_mod>/remove.json` | Takes entries out, by id under `parts`, `recipes`, `bots`, `quests`, `pois`, `characters` and `derelicts`. |
 | `world/worldgen.patch.json`, `raids/raids.patch.json` | Adds to and changes the world generation rules and the raid table, stacking across mods. |
 | `rules/survival.patch.json`, `rules/fire.patch.json`, `rules/building.patch.json` | Changes the game rules (not the locked keys). |
 

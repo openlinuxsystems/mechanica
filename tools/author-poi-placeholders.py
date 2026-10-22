@@ -122,6 +122,14 @@ def part(ref, at, yaw=None):
     return marker
 
 
+def derelict(ref, at, yaw=None):
+    """A derelict vehicle (derelicts/<ref>.json) the world leaves here once, missing some parts, for anyone to take."""
+    marker = {"type": "derelict", "ref": ref, "at": [float(v) for v in at]}
+    if yaw is not None:
+        marker["yaw"] = float(yaw)
+    return marker
+
+
 def silos(count, radius, height, spread):
     return ring(count, spread, lambda x, z: cylinder(radius, height, [x, height / 2, z], YELLOW)) if count > 1 else \
         [cylinder(radius, height, [0, height / 2, 0], YELLOW)]
@@ -166,23 +174,28 @@ add("small_ruin", "Small Ruin", [14, 5, 12], "track", placeholder(14, 12, 5, RUI
     [loot_part("wooden_crate", [-9.0, 0.3, 2.0], "crate", [2, 4])], flora="meadow", ground=None)
 add("farmer_shack", "Farmer Shack", [12, 5, 10], "track",
     placeholder(12, 10, 5, WOOD, [box([5, 2.5, 4], [10, 1.25, 4], HAY)]),
-    [loot_part("wooden_crate", [-8.0, 0.3, 2.0], "crate", [2, 4]), part("barrel", [-8.0, 0.3, -2.0])], flora="meadow", ground=None)
+    [loot_part("wooden_crate", [-8.0, 0.3, 2.0], "crate", [2, 4]), part("barrel", [-8.0, 0.3, -2.0]),
+     derelict("farm_cart", [8.0, 0.3, -6.0], yaw=20.0)], flora="meadow", ground=None)
 add("packing_station_vegetable", "Packing Station (Vegetable)", [36, 8, 24], "road",
     placeholder(36, 24, 8, METAL, [box([3, 3, 0.4], [0, 10, 12.2], "#5fa83a"), box([20, 1.2, 3], [0, 1.0, 15], ROOF)]),
-    [loot_part("wooden_crate", [-15.0, 0.3, 14.5], "crate", [2, 4]), part("stacked_crates", [15.0, 0.3, 14.5])])
+    [loot_part("wooden_crate", [-15.0, 0.3, 14.5], "crate", [2, 4]), part("stacked_crates", [15.0, 0.3, 14.5]),
+     derelict("farm_trailer", [-15.0, 0.3, -14.5], yaw=90.0)])
 add("packing_station_fruit", "Packing Station (Fruit)", [36, 8, 24], "road",
     placeholder(36, 24, 8, METAL, [box([3, 3, 0.4], [0, 10, 12.2], "#c8402f"), box([20, 1.2, 3], [0, 1.0, 15], ROOF)]),
-    [loot_part("wooden_crate", [-15.0, 0.3, 14.5], "crate", [2, 4]), part("stacked_crates", [15.0, 0.3, 14.5])])
+    [loot_part("wooden_crate", [-15.0, 0.3, 14.5], "crate", [2, 4]), part("stacked_crates", [15.0, 0.3, 14.5]),
+     derelict("farm_trailer", [-15.0, 0.3, -14.5], yaw=90.0)])
 add("silo_cluster", "Silo Cluster", [30, 18, 30], "road",
     [box([38, 0.3, 38], [0, 0.15, 0], PAD), *silos(4, 4, 18, 8), volume(10, 8, 6, METAL, x=-10, z=12, y=0.3)],
-    [loot_part("metal_crate", [2.0, 0.3, 14.0], "crate", [2, 4]), part("warning_light", [17.0, 0.3, 17.0])])
+    [loot_part("metal_crate", [2.0, 0.3, 14.0], "crate", [2, 4]), part("warning_light", [17.0, 0.3, 17.0]),
+     derelict("old_tractor", [-10.0, 0.3, -15.0], yaw=80.0)])
 add("silo_district", "Silo District", [90, 26, 70], "road",
     [box([98, 0.3, 78], [0, 0.15, 0], PAD),
      *[cylinder(5, 26, [x, 13.3, z], YELLOW) for x in (-30, -18, -6, 6) for z in (-22, -10)],
      volume(30, 20, 12, METAL, x=26, z=-14, y=0.3), volume(24, 16, 10, METAL, x=-20, z=20, y=0.3),
      box([60, 1, 1], [-12, 24, -16], "#3f6fa8"), box([0.3, 2, 30], [44, 1.3, 20], METAL)],
     [loot_part("metal_crate", [26.0, 0.3, 0.0], "warehouse_crate", [2, 4]), loot_part("wooden_crate", [-20.0, 0.3, 32.0], "crate", [2, 4]),
-     part("construction_light", [10.0, 0.3, -30.0]), part("danger_sign", [0.0, 0.3, 37.0], yaw=180.0)])
+     part("construction_light", [10.0, 0.3, -30.0]), part("danger_sign", [0.0, 0.3, 37.0], yaw=180.0),
+     derelict("farm_trailer", [30.0, 0.3, 20.0], yaw=10.0), derelict("old_tractor", [30.0, 0.3, 28.0], yaw=10.0)])
 add("ruin", "Ruin", [30, 10, 24], "track",
     [box([34, 0.3, 28], [0, 0.15, 0], RUIN), volume(30, 0.5, 10, RUIN, z=-12), volume(0.5, 24, 7, RUIN, x=-15),
      volume(12, 0.5, 4, RUIN, x=9, z=12), volume(14, 12, 3, RUIN, x=6, z=-4, y=0.3)],
@@ -204,7 +217,7 @@ add("large_camp", "Large Camp", [50, 4, 40], "track",
      volume(12, 8, 4, WOOD, y=0.3), *[box([2, 2, 2], [x, 1.3, 18], HAY) for x in (-20, -16, 16, 20)]],
     [loot_part("chest", [0.0, 0.3, -6.0], "crate", [2, 4]), loot_part("wooden_crate", [0.0, 0.3, 8.0], "crate", [2, 4]),
      part("shack_light", [-8.0, 0.3, 0.0]), part("shack_light", [8.0, 0.3, 0.0]), part("scrap_seat", [4.0, 0.3, 6.0], yaw=180.0),
-     part("chair", [-4.0, 0.3, 6.0], yaw=180.0)])
+     part("chair", [-4.0, 0.3, 6.0], yaw=180.0), derelict("go_kart", [0.0, 0.3, 14.0], yaw=90.0)])
 add("growlab", "Growlab", [30, 8, 20], "road",
     placeholder(30, 20, 8, GLASS, [volume(10, 8, 6, METAL, x=-20, y=0.3)]),
     [loot_part("metal_crate", [12.0, 0.3, 12.5], "crate", [2, 4])])
@@ -278,6 +291,25 @@ add("shore_wreck", "Shore Wreck", [12, 3, 8], "none",
     ground="sand", margin=10,
     spacing={"spacing": [480.0, 760.0], "biomes": ["meadow", "forest", "field", "desert", "autumn_forest", "burned_forest", "coastal"],
              "priority": 31, "clearance": 32.0, "shore": 24.0})
+# Derelict vehicles left by the road and in the fields (things-to-find plan, 2026-10-22): each a car or a tractor of real
+# parts, found without its engine, a wheel or two or its fuel, for anyone to strip or bring back to life.
+add("roadside_breakdown", "Roadside Breakdown", [6, 2, 6], "none",
+    [box([0.3, 0.6, 0.3], [-3.2, 0.3, 2.8], METAL)],
+    [derelict("scrap_buggy", [0.0, 0.0, 0.0], yaw=8.0), part("traffic_cone", [-2.5, 0.0, 3.0]), part("caution_sign", [2.6, 0.0, 3.2], yaw=180.0)],
+    ground=None, margin=6,
+    spacing={"spacing": [1100.0, 1600.0], "biomes": ["meadow", "field", "desert", "forest", "autumn_forest"],
+             "priority": 41, "clearance": 0.0, "roadside": 9.0})
+add("abandoned_runabout", "Abandoned Runabout", [6, 2, 6], "none",
+    [box([1.2, 0.5, 0.8], [-3.0, 0.25, -2.0], METAL, 25)],
+    [derelict("colony_runabout", [0.0, 0.0, 0.0], yaw=-12.0), loot_part("wooden_crate", [3.0, 0.0, -2.5], "crate", [2, 4])],
+    ground=None, margin=6,
+    spacing={"spacing": [1200.0, 1800.0], "biomes": ["meadow", "field", "desert", "autumn_forest"],
+             "priority": 42, "clearance": 0.0, "roadside": 10.0})
+add("abandoned_tractor", "Abandoned Tractor", [10, 2, 8], "none",
+    [box([2, 2, 2], [-4.5, 1.0, 3.0], HAY)],
+    [derelict("old_tractor", [-1.0, 0.0, -1.0], yaw=30.0), derelict("farm_trailer", [2.5, 0.0, 2.5], yaw=30.0)],
+    flora="meadow", ground=None, margin=8,
+    spacing={"spacing": [1500.0, 2100.0], "biomes": ["field", "meadow"], "priority": 43, "clearance": 24.0})
 add("farmbot_scrapyard", "Farmbot Scrapyard", [60, 6, 50], "none",
     [box([64, 0.3, 54], [0, 0.15, 0], BURNT),
      *[box([s, s / 2, s], [x, s / 4 + 0.3, z], "#6a5a52", (x * 7) % 45) for s, x, z in
@@ -292,7 +324,9 @@ add("farmbot_scrapyard", "Farmbot Scrapyard", [60, 6, 50], "none",
      part("shelf_unit", [-6.0, 0.3, -24.5], yaw=180.0), part("shelf_unit", [-2.0, 0.3, -24.5], yaw=180.0),
      part("construction_light", [27.0, 0.3, -8.0]), part("construction_light", [-29.0, 0.3, 22.0]),
      part("stacked_crates", [26.0, 0.3, 20.0]), part("scrap_wheel", [14.0, 0.3, -5.0]), part("scrap_wheel", [-15.0, 0.3, 3.0]),
-     part("scrap_drivers_seat", [-15.0, 0.3, -1.0], yaw=40.0), part("scrap_gas_engine", [12.0, 0.3, 20.0])],
+     part("scrap_drivers_seat", [-15.0, 0.3, -1.0], yaw=40.0), part("scrap_gas_engine", [12.0, 0.3, 20.0]),
+     derelict("old_tractor", [20.0, 0.3, -6.0], yaw=15.0), derelict("flatbed_hauler", [-5.0, 0.3, -10.0], yaw=90.0),
+     derelict("scrap_buggy", [5.0, 0.3, -5.0], yaw=-10.0)],
     ground="burnt")
 add("capsule_scrapyard", "Capsule Scrapyard", [50, 6, 40], "track",
     [box([54, 0.3, 44], [0, 0.15, 0], PAD),
@@ -303,7 +337,8 @@ add("capsule_scrapyard", "Capsule Scrapyard", [50, 6, 40], "track",
      loot_part("metal_crate", [-22.0, 0.3, 0.0], "warehouse_crate", [2, 4]), loot_part("wooden_crate", [22.0, 0.3, 0.0], "crate", [2, 4]),
      part("shelf_unit", [-6.0, 0.3, -19.5], yaw=180.0), part("shelf_unit", [6.0, 0.3, -19.5], yaw=180.0),
      part("construction_light", [-24.0, 0.3, -18.0]), part("construction_light", [24.0, 0.3, -18.0]),
-     part("battery", [-4.0, 0.3, 0.0]), part("scrap_wheel", [4.0, 0.3, 0.0]), part("warning_light", [0.0, 0.3, -18.5])])
+     part("battery", [-4.0, 0.3, 0.0]), part("scrap_wheel", [4.0, 0.3, 0.0]), part("warning_light", [0.0, 0.3, -18.5]),
+     derelict("rover_frame", [12.0, 0.3, 0.0], yaw=90.0)])
 add("ruin_city", "Ruin City", [160, 40, 140], "road",
     [box([168, 0.3, 148], [0, 0.15, 0], RUIN),
      *[volume(w, d, h, RUIN, x=x, z=z, y=0.3) for w, d, h, x, z in
@@ -327,7 +362,8 @@ add("scrap_city_garage", "Scrap City Garage", [60, 12, 40], "road",
     [loot_part("metal_crate", [-26.0, 0.3, 22.5], "warehouse_crate", [2, 4]), part("stacked_crates", [26.0, 0.3, 22.5]),
      part("sale_sign", [0.0, 0.3, 22.0], yaw=180.0), part("construction_light", [-2.5, 0.3, 22.5]),
      part("traffic_cone", [-21.0, 0.3, 23.0]), part("traffic_cone", [21.0, 0.3, 23.0]),
-     part("wheel", [32.0, 0.3, 2.0]), part("wheel", [32.0, 0.3, -1.0]), part("scrap_drivers_seat", [32.0, 0.3, -6.0], yaw=-90.0)])
+     part("wheel", [32.0, 0.3, 2.0]), part("wheel", [32.0, 0.3, -1.0]), part("scrap_drivers_seat", [32.0, 0.3, -6.0], yaw=-90.0),
+     derelict("colony_runabout", [-12.0, 0.3, 22.2], yaw=90.0), derelict("flatbed_hauler", [32.0, 0.3, 11.0])])
 
 
 def inline(value):
@@ -410,7 +446,7 @@ SITES = [
 
 # Types the extra large slots draw by seed (worldgen.json pools), and the spaced ones, keep a prefab of their own.
 POOLED = ["warehouse_small", "warehouse", "warehouse_large", "farmbot_scrapyard", "chemical_pool", "oil_pond", "camp", "forest_ruin",
-          "roadside_kiosk", "farming_patch", "build_area", "shore_wreck"]
+          "roadside_kiosk", "farming_patch", "build_area", "shore_wreck", "roadside_breakdown", "abandoned_runabout", "abandoned_tractor"]
 
 POIS = [TYPES[t] for t in POOLED]
 for number, type_id, name in SITES:

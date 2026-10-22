@@ -101,6 +101,11 @@ public sealed class WorldGenData
     /// <summary>Where a mod keeps its POI prefabs.</summary>
     public const string PoiFolder = "pois";
 
+    /// <summary>
+    /// Every mod's derelict vehicles (<c>derelicts/*.json</c>, <see cref="global::Mechanica.Core.World.Derelicts"/>) that loaded, by game-wide id.
+    /// </summary>
+    public IReadOnlyDictionary<string, LoadedDerelict> Derelicts { get; private init; } = new Dictionary<string, LoadedDerelict>();
+
     private WorldGenData(WorldGenDefinition definition, IReadOnlyList<LoadedPoi> pois, IReadOnlyList<DataDiagnostic> diagnostics, string fingerprint,
         Func<string, string, AssetKind, string?>? assetFile = null, IReadOnlyList<LoadedSite>? sites = null, string definitionMod = "")
     {
@@ -322,6 +327,21 @@ public sealed class WorldGenData
             return FromDefinition(Flat.Definition, diagnostics);
         }
 
+        // Derelicts first: POI markers name them.
+        var derelicts = new Dictionary<string, LoadedDerelict>(StringComparer.Ordinal);
+        foreach (var entry in ContentLayers.Collect(content, global::Mechanica.Core.World.Derelicts.Folder, ContentLayers.IdMember, diagnostics,
+            new LayerCodes(DiagnosticCodes.WorldGenInvalid, DiagnosticCodes.WorldGenInvalid)))
+        {
+            var sink = new DiagnosticSink(entry.DisplayFile, diagnostics);
+            if (ModLoader.ParseJson<DerelictDefinition>(entry.Json, sink) is not { } read)
+                continue;
+            var derelict = new LoadedDerelict(entry.QualifiedId, entry.OwnerModId, read);
+            var found = global::Mechanica.Core.World.Derelicts.Validate(derelict, content, entry.DisplayFile);
+            diagnostics.AddRange(found);
+            if (sink.ErrorCount == 0 && found.All(d => d.Severity != DiagnosticSeverity.Error))
+                derelicts[derelict.QualifiedId] = derelict;
+        }
+
         var pois = new List<LoadedPoi>();
         var biomeIds = (definition.Biomes ?? []).Select(b => b.Id!).ToList();
         var groundIds = (definition.Grounds ?? []).Select(g => g.Id!).ToList();
@@ -331,7 +351,7 @@ public sealed class WorldGenData
         {
             var sink = new DiagnosticSink(file, diagnostics);
             WorldGenValidator.Validate(prefab, biomeIds, sink, groundIds, objectIds, liquidIds, content, modId,
-                definition.LootTables ?? new Dictionary<string, LootTableDefinition>());
+                definition.LootTables ?? new Dictionary<string, LootTableDefinition>(), derelicts.Keys.ToHashSet(StringComparer.Ordinal));
             var id = $"{modId}:{prefab.Id}";
             if (pois.Any(p => p.QualifiedId == id))
                 sink.Error(DiagnosticCodes.PoiInvalid, "$.id", $"POI '{id}' is defined twice.");
@@ -344,8 +364,8 @@ public sealed class WorldGenData
                 ? path.Resolve(folder)
                 : null;
         var sites = ResolveSites(definition, definitionMod, pois, new DiagnosticSink($"{definitionMod}/{DefinitionFile}", diagnostics));
-        return new WorldGenData(definition, [.. pois.OrderBy(p => p.QualifiedId, StringComparer.Ordinal)], diagnostics, ComputeFingerprint(definition, pois),
-            AssetFile, sites, definitionMod);
+        return new WorldGenData(definition, [.. pois.OrderBy(p => p.QualifiedId, StringComparer.Ordinal)], diagnostics, ComputeFingerprint(definition, pois, derelicts.Values),
+            AssetFile, sites, definitionMod) { Derelicts = derelicts };
     }
 
     // Sites name prefabs that live in their own files, so they are checked once every POI has loaded. A site whose prefab
@@ -457,7 +477,7 @@ public sealed class WorldGenData
         }
     }
 
-    private static string ComputeFingerprint(WorldGenDefinition definition, IEnumerable<LoadedPoi> pois)
+    private static string ComputeFingerprint(WorldGenDefinition definition, IEnumerable<LoadedPoi> pois, IEnumerable<LoadedDerelict>? derelicts = null)
     {
         using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
         hash.AppendData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(definition, DataJson.WriteOptions)));
@@ -465,6 +485,11 @@ public sealed class WorldGenData
         {
             hash.AppendData(Encoding.UTF8.GetBytes(poi.QualifiedId));
             hash.AppendData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(poi.Prefab, DataJson.WriteOptions)));
+        }
+        foreach (var derelict in (derelicts ?? []).OrderBy(d => d.QualifiedId, StringComparer.Ordinal))
+        {
+            hash.AppendData(Encoding.UTF8.GetBytes(derelict.QualifiedId));
+            hash.AppendData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(derelict.Definition, DataJson.WriteOptions)));
         }
         return Convert.ToHexStringLower(hash.GetHashAndReset());
     }

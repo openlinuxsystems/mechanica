@@ -1,0 +1,1891 @@
+{
+  "id": "farm_cart",
+  "name": "Farm Cart",
+  "missing": [
+    {
+      "part": "scrap_wheel",
+      "chance": 0.7
+    },
+    {
+      "part": "scrap_seat",
+      "chance": 0.5
+    }
+  ],
+  "creation": {
+    "format_version": 1,
+    "id": 0,
+    "parts": [
+      {
+        "id": 1,
+        "part": "vanilla:wood_block",
+        "cell": [
+          0,
+          0,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 2,
+        "part": "vanilla:wood_block",
+        "cell": [
+          0,
+          0,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 3,
+        "part": "vanilla:wood_block",
+        "cell": [
+          0,
+          0,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 4,
+        "part": "vanilla:wood_block",
+        "cell": [
+          0,
+          0,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 5,
+        "part": "vanilla:wood_block",
+        "cell": [
+          0,
+          0,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 6,
+        "part": "vanilla:wood_block",
+        "cell": [
+          0,
+          0,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 7,
+        "part": "vanilla:wood_block",
+        "cell": [
+          0,
+          0,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 8,
+        "part": "vanilla:wood_block",
+        "cell": [
+          0,
+          0,
+          9
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 9,
+        "part": "vanilla:wood_block",
+        "cell": [
+          0,
+          0,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 10,
+        "part": "vanilla:wood_block",
+        "cell": [
+          0,
+          0,
+          11
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 11,
+        "part": "vanilla:wood_block",
+        "cell": [
+          1,
+          0,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 12,
+        "part": "vanilla:wood_block",
+        "cell": [
+          1,
+          0,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 13,
+        "part": "vanilla:wood_block",
+        "cell": [
+          1,
+          0,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 14,
+        "part": "vanilla:wood_block",
+        "cell": [
+          1,
+          0,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 15,
+        "part": "vanilla:wood_block",
+        "cell": [
+          1,
+          0,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 16,
+        "part": "vanilla:wood_block",
+        "cell": [
+          1,
+          0,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 17,
+        "part": "vanilla:wood_block",
+        "cell": [
+          1,
+          0,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 18,
+        "part": "vanilla:wood_block",
+        "cell": [
+          1,
+          0,
+          9
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 19,
+        "part": "vanilla:wood_block",
+        "cell": [
+          1,
+          0,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 20,
+        "part": "vanilla:wood_block",
+        "cell": [
+          1,
+          0,
+          11
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 21,
+        "part": "vanilla:wood_block",
+        "cell": [
+          2,
+          0,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 22,
+        "part": "vanilla:wood_block",
+        "cell": [
+          2,
+          0,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 23,
+        "part": "vanilla:wood_block",
+        "cell": [
+          2,
+          0,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 24,
+        "part": "vanilla:wood_block",
+        "cell": [
+          2,
+          0,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 25,
+        "part": "vanilla:wood_block",
+        "cell": [
+          2,
+          0,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 26,
+        "part": "vanilla:wood_block",
+        "cell": [
+          2,
+          0,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 27,
+        "part": "vanilla:wood_block",
+        "cell": [
+          2,
+          0,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 28,
+        "part": "vanilla:wood_block",
+        "cell": [
+          2,
+          0,
+          9
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 29,
+        "part": "vanilla:wood_block",
+        "cell": [
+          2,
+          0,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 30,
+        "part": "vanilla:wood_block",
+        "cell": [
+          2,
+          0,
+          11
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 31,
+        "part": "vanilla:wood_block",
+        "cell": [
+          3,
+          0,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 32,
+        "part": "vanilla:wood_block",
+        "cell": [
+          3,
+          0,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 33,
+        "part": "vanilla:wood_block",
+        "cell": [
+          3,
+          0,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 34,
+        "part": "vanilla:wood_block",
+        "cell": [
+          3,
+          0,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 35,
+        "part": "vanilla:wood_block",
+        "cell": [
+          3,
+          0,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 36,
+        "part": "vanilla:wood_block",
+        "cell": [
+          3,
+          0,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 37,
+        "part": "vanilla:wood_block",
+        "cell": [
+          3,
+          0,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 38,
+        "part": "vanilla:wood_block",
+        "cell": [
+          3,
+          0,
+          9
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 39,
+        "part": "vanilla:wood_block",
+        "cell": [
+          3,
+          0,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 40,
+        "part": "vanilla:wood_block",
+        "cell": [
+          3,
+          0,
+          11
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 41,
+        "part": "vanilla:wood_block",
+        "cell": [
+          4,
+          0,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 42,
+        "part": "vanilla:wood_block",
+        "cell": [
+          4,
+          0,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 43,
+        "part": "vanilla:wood_block",
+        "cell": [
+          4,
+          0,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 44,
+        "part": "vanilla:wood_block",
+        "cell": [
+          4,
+          0,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 45,
+        "part": "vanilla:wood_block",
+        "cell": [
+          4,
+          0,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 46,
+        "part": "vanilla:wood_block",
+        "cell": [
+          4,
+          0,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 47,
+        "part": "vanilla:wood_block",
+        "cell": [
+          4,
+          0,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 48,
+        "part": "vanilla:wood_block",
+        "cell": [
+          4,
+          0,
+          9
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 49,
+        "part": "vanilla:wood_block",
+        "cell": [
+          4,
+          0,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 50,
+        "part": "vanilla:wood_block",
+        "cell": [
+          4,
+          0,
+          11
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 51,
+        "part": "vanilla:wood_block",
+        "cell": [
+          5,
+          0,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 52,
+        "part": "vanilla:wood_block",
+        "cell": [
+          5,
+          0,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 53,
+        "part": "vanilla:wood_block",
+        "cell": [
+          5,
+          0,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 54,
+        "part": "vanilla:wood_block",
+        "cell": [
+          5,
+          0,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 55,
+        "part": "vanilla:wood_block",
+        "cell": [
+          5,
+          0,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 56,
+        "part": "vanilla:wood_block",
+        "cell": [
+          5,
+          0,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 57,
+        "part": "vanilla:wood_block",
+        "cell": [
+          5,
+          0,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 58,
+        "part": "vanilla:wood_block",
+        "cell": [
+          5,
+          0,
+          9
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 59,
+        "part": "vanilla:wood_block",
+        "cell": [
+          5,
+          0,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 60,
+        "part": "vanilla:wood_block",
+        "cell": [
+          5,
+          0,
+          11
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 61,
+        "part": "vanilla:wood_block",
+        "cell": [
+          0,
+          1,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 62,
+        "part": "vanilla:wood_block",
+        "cell": [
+          0,
+          1,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 63,
+        "part": "vanilla:wood_block",
+        "cell": [
+          0,
+          1,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 64,
+        "part": "vanilla:wood_block",
+        "cell": [
+          0,
+          1,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 65,
+        "part": "vanilla:wood_block",
+        "cell": [
+          0,
+          1,
+          9
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 66,
+        "part": "vanilla:wood_block",
+        "cell": [
+          0,
+          1,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 67,
+        "part": "vanilla:wood_block",
+        "cell": [
+          0,
+          1,
+          11
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 68,
+        "part": "vanilla:wood_block",
+        "cell": [
+          5,
+          1,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 69,
+        "part": "vanilla:wood_block",
+        "cell": [
+          5,
+          1,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 70,
+        "part": "vanilla:wood_block",
+        "cell": [
+          5,
+          1,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 71,
+        "part": "vanilla:wood_block",
+        "cell": [
+          5,
+          1,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 72,
+        "part": "vanilla:wood_block",
+        "cell": [
+          5,
+          1,
+          9
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 73,
+        "part": "vanilla:wood_block",
+        "cell": [
+          5,
+          1,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 74,
+        "part": "vanilla:wood_block",
+        "cell": [
+          5,
+          1,
+          11
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 75,
+        "part": "vanilla:wood_block",
+        "cell": [
+          1,
+          1,
+          11
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 76,
+        "part": "vanilla:wood_block",
+        "cell": [
+          2,
+          1,
+          11
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 77,
+        "part": "vanilla:wood_block",
+        "cell": [
+          3,
+          1,
+          11
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 78,
+        "part": "vanilla:wood_block",
+        "cell": [
+          4,
+          1,
+          11
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 79,
+        "part": "vanilla:scrap_wood_block",
+        "cell": [
+          2,
+          0,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 80,
+        "part": "vanilla:scrap_wood_block",
+        "cell": [
+          3,
+          0,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 81,
+        "part": "vanilla:scrap_wood_block",
+        "cell": [
+          2,
+          0,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 82,
+        "part": "vanilla:scrap_wood_block",
+        "cell": [
+          3,
+          0,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 83,
+        "part": "vanilla:scrap_seat",
+        "cell": [
+          1,
+          1,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 84,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          0,
+          -1,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 85,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          5,
+          -1,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 86,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          0,
+          -2,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 87,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          1,
+          -2,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 88,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          2,
+          -2,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 89,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          3,
+          -2,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 90,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          4,
+          -2,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 91,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          5,
+          -2,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 92,
+        "part": "vanilla:bearing",
+        "cell": [
+          -1,
+          -2,
+          8
+        ],
+        "rotation": "+y-x"
+      },
+      {
+        "id": 93,
+        "part": "vanilla:scrap_wheel",
+        "cell": [
+          -2,
+          -3,
+          7
+        ],
+        "rotation": "+y-x"
+      },
+      {
+        "id": 94,
+        "part": "vanilla:bearing",
+        "cell": [
+          6,
+          -2,
+          8
+        ],
+        "rotation": "-y+x"
+      },
+      {
+        "id": 95,
+        "part": "vanilla:scrap_wheel",
+        "cell": [
+          7,
+          -1,
+          7
+        ],
+        "rotation": "-y+x"
+      },
+      {
+        "id": 96,
+        "part": "vanilla:scrap_wood_block",
+        "cell": [
+          2,
+          -1,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 97,
+        "part": "vanilla:scrap_wood_block",
+        "cell": [
+          3,
+          -1,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 98,
+        "part": "vanilla:scrap_wood_block",
+        "cell": [
+          2,
+          -2,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 99,
+        "part": "vanilla:scrap_wood_block",
+        "cell": [
+          3,
+          -2,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 100,
+        "part": "vanilla:scrap_wood_block",
+        "cell": [
+          2,
+          -3,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 101,
+        "part": "vanilla:scrap_wood_block",
+        "cell": [
+          3,
+          -3,
+          2
+        ],
+        "rotation": "+x+y"
+      }
+    ],
+    "connections": [
+      {
+        "type": "structural",
+        "a": 1,
+        "b": 2
+      },
+      {
+        "type": "structural",
+        "a": 1,
+        "b": 11
+      },
+      {
+        "type": "structural",
+        "a": 2,
+        "b": 3
+      },
+      {
+        "type": "structural",
+        "a": 2,
+        "b": 12
+      },
+      {
+        "type": "structural",
+        "a": 3,
+        "b": 4
+      },
+      {
+        "type": "structural",
+        "a": 3,
+        "b": 13
+      },
+      {
+        "type": "structural",
+        "a": 4,
+        "b": 5
+      },
+      {
+        "type": "structural",
+        "a": 4,
+        "b": 14
+      },
+      {
+        "type": "structural",
+        "a": 4,
+        "b": 61
+      },
+      {
+        "type": "structural",
+        "a": 5,
+        "b": 6
+      },
+      {
+        "type": "structural",
+        "a": 5,
+        "b": 15
+      },
+      {
+        "type": "structural",
+        "a": 5,
+        "b": 62
+      },
+      {
+        "type": "structural",
+        "a": 6,
+        "b": 7
+      },
+      {
+        "type": "structural",
+        "a": 6,
+        "b": 16
+      },
+      {
+        "type": "structural",
+        "a": 6,
+        "b": 63
+      },
+      {
+        "type": "structural",
+        "a": 7,
+        "b": 8
+      },
+      {
+        "type": "structural",
+        "a": 7,
+        "b": 17
+      },
+      {
+        "type": "structural",
+        "a": 7,
+        "b": 64
+      },
+      {
+        "type": "structural",
+        "a": 7,
+        "b": 84
+      },
+      {
+        "type": "structural",
+        "a": 8,
+        "b": 9
+      },
+      {
+        "type": "structural",
+        "a": 8,
+        "b": 18
+      },
+      {
+        "type": "structural",
+        "a": 8,
+        "b": 65
+      },
+      {
+        "type": "structural",
+        "a": 9,
+        "b": 10
+      },
+      {
+        "type": "structural",
+        "a": 9,
+        "b": 19
+      },
+      {
+        "type": "structural",
+        "a": 9,
+        "b": 66
+      },
+      {
+        "type": "structural",
+        "a": 10,
+        "b": 20
+      },
+      {
+        "type": "structural",
+        "a": 10,
+        "b": 67
+      },
+      {
+        "type": "structural",
+        "a": 11,
+        "b": 12
+      },
+      {
+        "type": "structural",
+        "a": 11,
+        "b": 21
+      },
+      {
+        "type": "structural",
+        "a": 12,
+        "b": 13
+      },
+      {
+        "type": "structural",
+        "a": 12,
+        "b": 22
+      },
+      {
+        "type": "structural",
+        "a": 13,
+        "b": 14
+      },
+      {
+        "type": "structural",
+        "a": 13,
+        "b": 23
+      },
+      {
+        "type": "structural",
+        "a": 14,
+        "b": 15
+      },
+      {
+        "type": "structural",
+        "a": 14,
+        "b": 24
+      },
+      {
+        "type": "structural",
+        "a": 15,
+        "b": 16
+      },
+      {
+        "type": "structural",
+        "a": 15,
+        "b": 25
+      },
+      {
+        "type": "structural",
+        "a": 16,
+        "b": 17
+      },
+      {
+        "type": "structural",
+        "a": 16,
+        "b": 26
+      },
+      {
+        "type": "structural",
+        "a": 17,
+        "b": 18
+      },
+      {
+        "type": "structural",
+        "a": 17,
+        "b": 27
+      },
+      {
+        "type": "structural",
+        "a": 18,
+        "b": 19
+      },
+      {
+        "type": "structural",
+        "a": 18,
+        "b": 28
+      },
+      {
+        "type": "structural",
+        "a": 19,
+        "b": 20
+      },
+      {
+        "type": "structural",
+        "a": 19,
+        "b": 29
+      },
+      {
+        "type": "structural",
+        "a": 20,
+        "b": 30
+      },
+      {
+        "type": "structural",
+        "a": 20,
+        "b": 75
+      },
+      {
+        "type": "structural",
+        "a": 21,
+        "b": 22
+      },
+      {
+        "type": "structural",
+        "a": 21,
+        "b": 31
+      },
+      {
+        "type": "structural",
+        "a": 21,
+        "b": 79
+      },
+      {
+        "type": "structural",
+        "a": 21,
+        "b": 96
+      },
+      {
+        "type": "structural",
+        "a": 22,
+        "b": 23
+      },
+      {
+        "type": "structural",
+        "a": 22,
+        "b": 32
+      },
+      {
+        "type": "structural",
+        "a": 22,
+        "b": 83
+      },
+      {
+        "type": "structural",
+        "a": 23,
+        "b": 24
+      },
+      {
+        "type": "structural",
+        "a": 23,
+        "b": 33
+      },
+      {
+        "type": "structural",
+        "a": 23,
+        "b": 83
+      },
+      {
+        "type": "structural",
+        "a": 24,
+        "b": 25
+      },
+      {
+        "type": "structural",
+        "a": 24,
+        "b": 34
+      },
+      {
+        "type": "structural",
+        "a": 25,
+        "b": 26
+      },
+      {
+        "type": "structural",
+        "a": 25,
+        "b": 35
+      },
+      {
+        "type": "structural",
+        "a": 26,
+        "b": 27
+      },
+      {
+        "type": "structural",
+        "a": 26,
+        "b": 36
+      },
+      {
+        "type": "structural",
+        "a": 27,
+        "b": 28
+      },
+      {
+        "type": "structural",
+        "a": 27,
+        "b": 37
+      },
+      {
+        "type": "structural",
+        "a": 28,
+        "b": 29
+      },
+      {
+        "type": "structural",
+        "a": 28,
+        "b": 38
+      },
+      {
+        "type": "structural",
+        "a": 29,
+        "b": 30
+      },
+      {
+        "type": "structural",
+        "a": 29,
+        "b": 39
+      },
+      {
+        "type": "structural",
+        "a": 30,
+        "b": 40
+      },
+      {
+        "type": "structural",
+        "a": 30,
+        "b": 76
+      },
+      {
+        "type": "structural",
+        "a": 31,
+        "b": 32
+      },
+      {
+        "type": "structural",
+        "a": 31,
+        "b": 41
+      },
+      {
+        "type": "structural",
+        "a": 31,
+        "b": 80
+      },
+      {
+        "type": "structural",
+        "a": 31,
+        "b": 97
+      },
+      {
+        "type": "structural",
+        "a": 32,
+        "b": 33
+      },
+      {
+        "type": "structural",
+        "a": 32,
+        "b": 42
+      },
+      {
+        "type": "structural",
+        "a": 32,
+        "b": 83
+      },
+      {
+        "type": "structural",
+        "a": 33,
+        "b": 34
+      },
+      {
+        "type": "structural",
+        "a": 33,
+        "b": 43
+      },
+      {
+        "type": "structural",
+        "a": 33,
+        "b": 83
+      },
+      {
+        "type": "structural",
+        "a": 34,
+        "b": 35
+      },
+      {
+        "type": "structural",
+        "a": 34,
+        "b": 44
+      },
+      {
+        "type": "structural",
+        "a": 35,
+        "b": 36
+      },
+      {
+        "type": "structural",
+        "a": 35,
+        "b": 45
+      },
+      {
+        "type": "structural",
+        "a": 36,
+        "b": 37
+      },
+      {
+        "type": "structural",
+        "a": 36,
+        "b": 46
+      },
+      {
+        "type": "structural",
+        "a": 37,
+        "b": 38
+      },
+      {
+        "type": "structural",
+        "a": 37,
+        "b": 47
+      },
+      {
+        "type": "structural",
+        "a": 38,
+        "b": 39
+      },
+      {
+        "type": "structural",
+        "a": 38,
+        "b": 48
+      },
+      {
+        "type": "structural",
+        "a": 39,
+        "b": 40
+      },
+      {
+        "type": "structural",
+        "a": 39,
+        "b": 49
+      },
+      {
+        "type": "structural",
+        "a": 40,
+        "b": 50
+      },
+      {
+        "type": "structural",
+        "a": 40,
+        "b": 77
+      },
+      {
+        "type": "structural",
+        "a": 41,
+        "b": 42
+      },
+      {
+        "type": "structural",
+        "a": 41,
+        "b": 51
+      },
+      {
+        "type": "structural",
+        "a": 42,
+        "b": 43
+      },
+      {
+        "type": "structural",
+        "a": 42,
+        "b": 52
+      },
+      {
+        "type": "structural",
+        "a": 43,
+        "b": 44
+      },
+      {
+        "type": "structural",
+        "a": 43,
+        "b": 53
+      },
+      {
+        "type": "structural",
+        "a": 44,
+        "b": 45
+      },
+      {
+        "type": "structural",
+        "a": 44,
+        "b": 54
+      },
+      {
+        "type": "structural",
+        "a": 45,
+        "b": 46
+      },
+      {
+        "type": "structural",
+        "a": 45,
+        "b": 55
+      },
+      {
+        "type": "structural",
+        "a": 46,
+        "b": 47
+      },
+      {
+        "type": "structural",
+        "a": 46,
+        "b": 56
+      },
+      {
+        "type": "structural",
+        "a": 47,
+        "b": 48
+      },
+      {
+        "type": "structural",
+        "a": 47,
+        "b": 57
+      },
+      {
+        "type": "structural",
+        "a": 48,
+        "b": 49
+      },
+      {
+        "type": "structural",
+        "a": 48,
+        "b": 58
+      },
+      {
+        "type": "structural",
+        "a": 49,
+        "b": 50
+      },
+      {
+        "type": "structural",
+        "a": 49,
+        "b": 59
+      },
+      {
+        "type": "structural",
+        "a": 50,
+        "b": 60
+      },
+      {
+        "type": "structural",
+        "a": 50,
+        "b": 78
+      },
+      {
+        "type": "structural",
+        "a": 51,
+        "b": 52
+      },
+      {
+        "type": "structural",
+        "a": 52,
+        "b": 53
+      },
+      {
+        "type": "structural",
+        "a": 53,
+        "b": 54
+      },
+      {
+        "type": "structural",
+        "a": 54,
+        "b": 55
+      },
+      {
+        "type": "structural",
+        "a": 54,
+        "b": 68
+      },
+      {
+        "type": "structural",
+        "a": 55,
+        "b": 56
+      },
+      {
+        "type": "structural",
+        "a": 55,
+        "b": 69
+      },
+      {
+        "type": "structural",
+        "a": 56,
+        "b": 57
+      },
+      {
+        "type": "structural",
+        "a": 56,
+        "b": 70
+      },
+      {
+        "type": "structural",
+        "a": 57,
+        "b": 58
+      },
+      {
+        "type": "structural",
+        "a": 57,
+        "b": 71
+      },
+      {
+        "type": "structural",
+        "a": 57,
+        "b": 85
+      },
+      {
+        "type": "structural",
+        "a": 58,
+        "b": 59
+      },
+      {
+        "type": "structural",
+        "a": 58,
+        "b": 72
+      },
+      {
+        "type": "structural",
+        "a": 59,
+        "b": 60
+      },
+      {
+        "type": "structural",
+        "a": 59,
+        "b": 73
+      },
+      {
+        "type": "structural",
+        "a": 60,
+        "b": 74
+      },
+      {
+        "type": "structural",
+        "a": 61,
+        "b": 62
+      },
+      {
+        "type": "structural",
+        "a": 62,
+        "b": 63
+      },
+      {
+        "type": "structural",
+        "a": 63,
+        "b": 64
+      },
+      {
+        "type": "structural",
+        "a": 64,
+        "b": 65
+      },
+      {
+        "type": "structural",
+        "a": 65,
+        "b": 66
+      },
+      {
+        "type": "structural",
+        "a": 66,
+        "b": 67
+      },
+      {
+        "type": "structural",
+        "a": 67,
+        "b": 75
+      },
+      {
+        "type": "structural",
+        "a": 68,
+        "b": 69
+      },
+      {
+        "type": "structural",
+        "a": 69,
+        "b": 70
+      },
+      {
+        "type": "structural",
+        "a": 70,
+        "b": 71
+      },
+      {
+        "type": "structural",
+        "a": 71,
+        "b": 72
+      },
+      {
+        "type": "structural",
+        "a": 72,
+        "b": 73
+      },
+      {
+        "type": "structural",
+        "a": 73,
+        "b": 74
+      },
+      {
+        "type": "structural",
+        "a": 74,
+        "b": 78
+      },
+      {
+        "type": "structural",
+        "a": 75,
+        "b": 76
+      },
+      {
+        "type": "structural",
+        "a": 76,
+        "b": 77
+      },
+      {
+        "type": "structural",
+        "a": 77,
+        "b": 78
+      },
+      {
+        "type": "structural",
+        "a": 79,
+        "b": 80
+      },
+      {
+        "type": "structural",
+        "a": 79,
+        "b": 81
+      },
+      {
+        "type": "structural",
+        "a": 80,
+        "b": 82
+      },
+      {
+        "type": "structural",
+        "a": 81,
+        "b": 82
+      },
+      {
+        "type": "structural",
+        "a": 84,
+        "b": 86
+      },
+      {
+        "type": "structural",
+        "a": 85,
+        "b": 91
+      },
+      {
+        "type": "structural",
+        "a": 86,
+        "b": 87
+      },
+      {
+        "type": "structural",
+        "a": 86,
+        "b": 92
+      },
+      {
+        "type": "structural",
+        "a": 87,
+        "b": 88
+      },
+      {
+        "type": "structural",
+        "a": 88,
+        "b": 89
+      },
+      {
+        "type": "structural",
+        "a": 89,
+        "b": 90
+      },
+      {
+        "type": "structural",
+        "a": 90,
+        "b": 91
+      },
+      {
+        "type": "structural",
+        "a": 91,
+        "b": 94
+      },
+      {
+        "type": "rotational",
+        "a": 92,
+        "a_socket": "rotor",
+        "b": 93,
+        "b_socket": "hub"
+      },
+      {
+        "type": "rotational",
+        "a": 94,
+        "a_socket": "rotor",
+        "b": 95,
+        "b_socket": "hub"
+      },
+      {
+        "type": "structural",
+        "a": 96,
+        "b": 97
+      },
+      {
+        "type": "structural",
+        "a": 96,
+        "b": 98
+      },
+      {
+        "type": "structural",
+        "a": 97,
+        "b": 99
+      },
+      {
+        "type": "structural",
+        "a": 98,
+        "b": 99
+      },
+      {
+        "type": "structural",
+        "a": 98,
+        "b": 100
+      },
+      {
+        "type": "structural",
+        "a": 99,
+        "b": 101
+      },
+      {
+        "type": "structural",
+        "a": 100,
+        "b": 101
+      }
+    ]
+  }
+}

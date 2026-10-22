@@ -57,7 +57,7 @@ After adding, renaming or re-documenting an action or AI endpoint method, run `t
   `meshes/*.glb|.gltf`, `textures/*.png`, `sounds/*.ogg|.wav` with `sounds/**/*.json` (sound events; see
   `docs/sound-events.md`), `world/worldgen.json` (world
   generation rules; the last mod in load order wins) and `pois/*.json` (POI prefabs; see
-  `docs/world-generation.md`) and `recipes/*.json` (crafting recipes; see `docs/part-data-schema.md`), `bots/*.json` (bot types:
+  `docs/world-generation.md`) and `derelicts/*.json` (derelict vehicles POIs leave with key parts missing; same doc) and `recipes/*.json` (crafting recipes; see `docs/part-data-schema.md`), `bots/*.json` (bot types:
   stats, attacks, drops, behaviour tree, optional Lua script) and `raids/raids.json` (the raid table; the
   last mod in load order wins) and `quests/*.json` (quests and dialogue; see `docs/quests.md`), `characters/*.json` (player characters and
   skins on the shared humanoid rig; see `docs/characters.md`), `lang/<code>.json` (string tables for the mod's text and the
