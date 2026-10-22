@@ -1,0 +1,24 @@
+{
+  "id": "billboard",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "wood_block",
+      "count": 10
+    },
+    {
+      "item": "paint_ammo",
+      "count": 10
+    }
+  ],
+  "outputs": [
+    {
+      "item": "billboard",
+      "count": 1
+    }
+  ],
+  "time": 10,
+  "order": 2260
+}

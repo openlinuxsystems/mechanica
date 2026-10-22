@@ -1,20 +1,19 @@
 {
   "id": "no_entry_sign",
   "name": "No Entry Sign",
-  "description": "A red round sign with a white bar: keep out.",
+  "description": "A red round sign with a white bar: keep out. On a post with a bolted foot.",
   "category": "decor",
   "mass": 3,
-  "durability": 2,
-  "friction": 0.5,
-  "buoyancy": 0.3,
+  "durability": 3,
+  "friction": 0.4,
+  "buoyancy": 0.2,
   "flammable": false,
   "stack_size": 20,
   "sound_material": "metal",
   "size": [3, 6, 1],
-  "mesh": "meshes/decor/no_entry_sign.glb",
+  "mesh": "meshes/parts/no_entry_sign.glb",
+  "icon": "textures/items/no_entry_sign_icon.png",
   "visual": {
-    "color": "#c02020",
-    "roughness": 0.5,
-    "metallic": 0.5
+    "color": "#ffffff"
   }
 }
