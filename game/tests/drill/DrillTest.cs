@@ -69,7 +69,8 @@ public partial class DrillTest : StagedTest
             stand.SetAllBodyPoses(new Pose(lift, System.Numerics.Quaternion.Identity));
             _host.Main.Creations.Add(stand, _host.Main.Assets);
             // The boulder (1 m) sits on the slab on the drill's axis, 0.05 m past its tip.
-            var centre = PartGeometry.CentreMetres(stand.DefinitionOf(_drill), drill.Cell, drill.Rotation).ToNumerics() + lift;
+            // The drill's body sits flush on the bearing's disc, off the grid (the rotor's inset).
+            var centre = stand.BodyPose(stand.BodyIndexOf(_drill)).Apply(PartGeometry.CentreMetres(stand.DefinitionOf(_drill), drill.Cell, drill.Rotation).ToNumerics());
             var boulder = new Creation(BoulderId, _mods);
             Place(boulder, Boulder, GridCell.Zero);
             var middle = new NVector3(centre.X + 0.375f + 0.05f + 0.5f, 0.255f + 0.13f + 0.5f + 0.01f, centre.Z);
