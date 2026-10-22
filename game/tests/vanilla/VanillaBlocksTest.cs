@@ -108,7 +108,7 @@ public partial class VanillaBlocksTest : StagedTest
 
         Add("every block lands on the ground on host and client", frame =>
         {
-            var hostNodes = _sandbox.Host.Main.Creations.All.Where(c => !c.IsWorldOwned).Select(c => _sandbox.Host.Main.Creations.NodeOf(c.Id)!).ToList();
+            var hostNodes = Spawned(_sandbox.Host).Select(c => _sandbox.Host.Main.Creations.NodeOf(c.Id)!).ToList();
             if (frame < 60 || (hostNodes.Any(n => !n.Bodies[0].Sleeping) && frame < 900))
                 return false;
             foreach (var node in hostNodes)
@@ -162,6 +162,10 @@ public partial class VanillaBlocksTest : StagedTest
     [System.Text.RegularExpressions.GeneratedRegex(@"_(block|wedge)(_\d+)?\.json$")]
     private static partial System.Text.RegularExpressions.Regex BlockRecipe();
 
-    // Only what players made: the Workshops' Fabricators (world-owned) are in the vanilla world too.
-    private static int Count(SandboxScreen.Instance instance) => instance.Main.Creations.All.Count(c => !c.IsWorldOwned);
+    // Only the one-block Creations the client spawned: the vanilla world also holds the Workshops' Fabricators (world-owned)
+    // and derelict vehicles (nobody's).
+    private IEnumerable<Core.Creations.Creation> Spawned(SandboxScreen.Instance instance) =>
+        instance.Main.Creations.All.Where(c => !c.IsWorldOwned && c.Parts.Count == 1 && _blocks.Contains(c.Parts.First().Part));
+
+    private int Count(SandboxScreen.Instance instance) => Spawned(instance).Count();
 }
