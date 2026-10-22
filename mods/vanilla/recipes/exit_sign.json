@@ -1,0 +1,24 @@
+{
+  "id": "exit_sign",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 2
+    },
+    {
+      "item": "glass_block",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "exit_sign",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 2185
+}

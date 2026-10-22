@@ -1,0 +1,20 @@
+{
+  "id": "beware_bots_sign",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal_block",
+      "count": 4
+    }
+  ],
+  "outputs": [
+    {
+      "item": "beware_bots_sign",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 2136
+}

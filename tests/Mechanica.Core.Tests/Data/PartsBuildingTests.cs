@@ -4,7 +4,7 @@ using Mechanica.Core.Items;
 namespace Mechanica.Core.Tests.Data;
 
 /// <summary>
-/// The parts map's batches 11 and 12 (stairs, railings, windows, windshields and signs; batches 11a, 11b, 12a so far): each
+/// The parts map's batches 11 and 12 (stairs, railings, windows, windshields and signs; batches 11a, 11b, 12a, 12b so far): each
 /// part has the wiki's stats and recipe, its own model and icon (tools/parts_building/build_parts.py) and its place in
 /// the Fabricator's list.
 /// </summary>
@@ -44,6 +44,14 @@ public class PartsBuildingTests
     [InlineData("traffic_cone", 3, 2, 0.3, 0.6, true, 2, 3, 2)]
     [InlineData("banner_holder", 3, 3, 0.6, 0.5, false, 4, 1, 1)]
     [InlineData("billboard", 6, 3, 0.4, 0.6, false, 8, 8, 2)]
+    [InlineData("beware_bots_sign", 3, 3, 0.4, 0.2, false, 3, 6, 1)]
+    [InlineData("construction_sign", 3, 3, 0.4, 0.2, false, 3, 6, 1)]
+    [InlineData("exit_sign", 3, 3, 0.4, 0.5, false, 3, 1, 1)]
+    [InlineData("falling_objects_sign", 3, 3, 0.4, 0.2, false, 3, 6, 1)]
+    [InlineData("hard_work_sign", 3, 1, 0.5, 0.4, true, 4, 3, 1)]
+    [InlineData("sale_sign", 3, 1, 0.5, 0.4, true, 4, 3, 1)]
+    [InlineData("skull_sign", 3, 3, 0.4, 0.2, false, 3, 6, 1)]
+    [InlineData("welcome_sign", 3, 3, 0.4, 0.2, false, 6, 3, 1)]
     public void TakesTheWikiStatsAtOurSize(string id, double mass, int durability, double friction, double buoyancy,
         bool flammable, int x, int y, int z)
     {
@@ -83,6 +91,14 @@ public class PartsBuildingTests
     [InlineData("traffic_cone", 15, 2210, "metal_block:10", "paint_ammo:1")]
     [InlineData("banner_holder", 10, 2250, "metal_block:10")]
     [InlineData("billboard", 10, 2260, "wood_block:10", "paint_ammo:10")]
+    [InlineData("beware_bots_sign", 2, 2136, "scrap_metal_block:4")]
+    [InlineData("construction_sign", 2, 2123, "scrap_metal_block:4")]
+    [InlineData("exit_sign", 2, 2185, "metal_block:2", "glass_block:1")]
+    [InlineData("falling_objects_sign", 2, 2126, "scrap_metal_block:4")]
+    [InlineData("hard_work_sign", 2, 2193, "scrap_wood_block:4")]
+    [InlineData("sale_sign", 2, 2196, "scrap_wood_block:4")]
+    [InlineData("skull_sign", 2, 2133, "scrap_metal_block:4")]
+    [InlineData("welcome_sign", 2, 2190, "scrap_wood_block:4")]
     public void TakesTheWikiRecipeInItsGroup(string id, float time, int order, params string[] inputs)
     {
         var book = RecipeBook.Load(Vanilla.Value);
@@ -124,6 +140,14 @@ public class PartsBuildingTests
     [InlineData("traffic_cone")]
     [InlineData("banner_holder")]
     [InlineData("billboard")]
+    [InlineData("beware_bots_sign")]
+    [InlineData("construction_sign")]
+    [InlineData("exit_sign")]
+    [InlineData("falling_objects_sign")]
+    [InlineData("hard_work_sign")]
+    [InlineData("sale_sign")]
+    [InlineData("skull_sign")]
+    [InlineData("welcome_sign")]
     public void HasItsOwnModelAndIcon(string id)
     {
         var part = Part(id);
