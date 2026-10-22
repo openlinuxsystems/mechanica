@@ -176,6 +176,35 @@ public partial class FabricatorTest : StagedTest
             Check(HostWorkshop.InventoryOf(_fabricator)!.Count(Chest) == 0, "not in the Fabricator's own slots");
             return true;
         });
+        Control? filler = null;
+        var cardHeight = 0f;
+        Add("a tall detail card scrolls instead of growing the window", frame =>
+        {
+            var details = (Control)_screen.DetailScroll.GetChild(0);
+            if (frame == 0)
+            {
+                // Stands in for a recipe with many inputs and a long description.
+                cardHeight = _screen.StationPanels[1].GetGlobalRect().Size.Y;
+                filler = new Control { Name = "Filler", CustomMinimumSize = new Vector2(0, 1500) };
+                details.AddChild(filler);
+                return false;
+            }
+            if (frame < 3)
+                return false;
+            var (main, card) = (_screen.StationPanels[0].GetGlobalRect(), _screen.StationPanels[1].GetGlobalRect());
+            var craft = _screen.CraftButton.GetGlobalRect();
+            Check(Mathf.Abs(card.Size.Y - cardHeight) < 1 && Mathf.Abs(card.Size.Y - main.Size.Y) < 1, $"the card keeps its height ({cardHeight} → {card.Size.Y}, window {main.Size.Y})");
+            Check(card.Encloses(craft) && GetViewport().GetVisibleRect().Encloses(craft), $"the Craft bar stays in the card, on screen ({craft})");
+            var bar = _screen.DetailScroll.GetVScrollBar();
+            Check(bar.MaxValue > bar.Page + 1000, $"the details scroll instead ({bar.Page} of {bar.MaxValue})");
+            _screen.DetailScroll.ScrollVertical = 300;
+            _screen.Choose(_screen.RecipeRows.First(r => r.Recipe != _screen.ChosenRecipe).Recipe);
+            Check(_screen.DetailScroll.ScrollVertical == 0, "choosing another recipe scrolls back to the top");
+            details.RemoveChild(filler!);
+            filler!.QueueFree();
+            _screen.Choose(Chest);
+            return true;
+        });
         Add("the upgrade dialog shows the cost in red while short", frame =>
         {
             if (frame == 0)
