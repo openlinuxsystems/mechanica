@@ -99,21 +99,52 @@ The Fabricator is not part of the model. Each Workshop prefab has a `part` marke
 puts a working Fabricator there that nobody can break; a player may pick it up and take it elsewhere (see
 [World Generation](world-generation.md#poisidjson)).
 
+## The crash site
+
+The SV-04 Salvager is a Salvager Tech container freighter, 62 m long with a dark hull: a bridge and cargo control in
+the bow, a spine carrying racks of coloured cargo containers on both sides, and an aft block with the crew quarters,
+mess, engineering and two engine housings. `tools/structures/cargo_ship.py` builds it whole (the review renders) and
+`tools/structures/crash_site.py` breaks it up.
+
+The story: the ship came in from the south-east, blew open over the forest and lost its containers, then ploughed into
+the clearing and broke in four. What lies there:
+
+- **The wreck**, four walk-in pieces in a burnt scar with the bow to the north-west: `sv04_aft.glb`,
+  `sv04_spine_a.glb`, `sv04_spine_b.glb` and `sv04_bow.glb`. Their bellies are dug in so every hatch sill is low
+  enough to step or jump over. The Power Core is in engineering, port side of the aft block, and is drawn by
+  `battery_bay.glb` with its story clips (see the Getting Started quest).
+- **The port engine housing** (`sv04_housing.glb`), torn off by the explosion, lying on its own west of the aft block.
+  The Master Battery was blown out with it and lies in the grass nearby.
+- **Twelve burst containers** (`sv04_container_<colour>.glb`) trailing back along the flight path, each on a crater
+  with its cargo spilled in front of its doors. A container's colour says what it carried, and each spill is a world
+  object (`cargo_spill_<kind>`) the player empties with Use: red metal, blue electronics, yellow fuel, green farming,
+  tan building materials. The drops are in `world/worldgen.json`.
+- **Ten fires**: one in each of the wreck's hatches and openings, and four at burst containers. They burn until water
+  puts them out; the first quest asks for three.
+- The crew's things inside (lockers, a microwave in the mess, a file cabinet on the bridge, a loot crate in cargo
+  control), scrap piles round the hull, and the older site round it: the Old Stone court, the farm and pond, the dead
+  relay beacon and the burnt woods.
+
+Every number (where the pieces lie, the container slots and where each container landed, the fires) lives in
+`tools/structures/sv04_layout.py`, which the models, the Power Core build and the opening share.
+`python3 tools/structures/print_crash_layout.py` prints them in the POI's frame, for
+`mods/vanilla/pois/crash_site.json` and `game/data/opening.json`; copy what changed after editing the layout.
+
 ## The opening cinematic
 
 The first time a world started from the menu loads, the host watches the crash happen. It is 31 seconds and in-engine.
-The intact SV-04 flies in low over the forest and the old pillars. Its port nacelle catches fire and blows off (it lands
-where `sv04_nacelle.glb` lies). The ship comes down in the clearing and breaks in two. The picture then goes black and
-comes back on the player getting up at the spawn, facing the wreck. Jump or Esc skips it. Players who join later spawn
-straight in, and a loaded save never plays it. The world itself never changes, so nothing is sent to other peers.
+The intact SV-04 flies in low over the forest. Its port engine housing catches fire, then the ship blows open: the
+housing tears away and falls on its own, and the containers break off one by one as the ship passes over the spot
+each one lands on, tumbling down with a cloud of dust. The ship ploughs into the clearing and breaks in four. The
+picture then goes black and comes back on the player getting up at the spawn, facing the wreck. Jump or Esc skips it.
+Players who join later spawn straight in, and a loaded save never plays it. The world itself never changes, so nothing
+is sent to other peers.
 
-What flies are copies of the wreck's own models: `sv04_fore.glb`, `sv04_aft.glb` and `sv04_nacelle.glb`. Each comes
-to rest exactly where the crash site places it. While they fly, the following stay out of sight until the ship
-settles:
+What flies are copies of the wreck's own models: the four pieces, the housing and the twelve containers. Each comes
+to rest exactly where the crash site places it. While they fly, the following stay out of sight until they land:
 
 - the real models;
-- the cargo crates (`hidden_models`);
-- the loot crates and scrap piles near the wreck (`hidden_objects`, within `hide_radius`);
+- the loot crates, scrap piles and cargo spills near the wreck (`hidden_objects`, within `hide_radius`);
 - the site's fires.
 
 The HUD is hidden, quest dialogue waits and the player stands still.
@@ -121,16 +152,18 @@ The HUD is hidden, quest dialogue waits and the player stands still.
 `game/data/opening.json` holds the cinematic:
 
 - the ship's flight, as timed keys;
-- when it touches down, breaks and settles;
-- the nacelle's fire and fall;
+- when the housing catches fire, when the ship explodes (and where on it), when the housing comes down;
+- the containers' fall time and tumble;
+- when the ship touches down, breaks and settles;
 - the camera shots, shakes, sounds and fades.
 
 The ship rises over hills in its way, so the flight clears the forest in every world, and the cameras never go under
-the ground. It is an engine setting: it ships with the build and is not moddable. Its `fore_wreck`, `aft_wreck`,
-`aft_intact`, `nacelle_on_aft` and `nacelle_lying` repeat how `tools/structures/ship.py` lays out the wreck. Change
-them together, and `OpeningSceneTests` checks that the intact ship's sections still meet.
+the ground. It is an engine setting: it ships with the build and is not moddable. Its `pieces` (each piece's pivot
+and where it lies), `housing_on_ship`, `housing_lying` and `containers.slots` repeat `sv04_layout.py`. Change them
+together: `OpeningSceneTests` checks that the pieces put back together make the intact ship, that every container
+rides in its rack slot and that each one is down before the ship lands.
 
-It only plays at a crash site that places those three models and holds the spawn. A mod that moves the spawn or
+It only plays at a crash site that places those models and holds the spawn. A mod that moves the spawn or
 replaces the crash site without them simply starts without it. To see it, run `tools/capture-opening.sh OUT_DIR`,
 which saves stills through it. With `MOVIE=1` it also records the whole of it, sound included, to `opening.avi`.
 
@@ -149,7 +182,8 @@ python tools/structures/build_structures.py
 | `textures.py` | The shared detail textures and normal maps (paint, metal, stone, wood, concrete, worn concrete), from seeded noise |
 | `frame.py` | Framed construction: framed boxes, vents, labels, screens and hazard bands |
 | `families.py` | The palette and the Colony Works, Settler Patchwork and Old Stone structures |
-| `ship.py` | The SV-04 Salvager (Salvager Tech) |
+| `cargo_ship.py`, `crash_site.py`, `sv04_layout.py` | The SV-04 Salvager whole, its wreck, and the layout they share (Salvager Tech; see [The crash site](#the-crash-site)) |
+| `ship.py` | The starting scrap piles' plates and the older Salvager pieces |
 | `workshop.py` | The Workshop (Colony Works) |
 | `landmarks.py` | The eight landmarks (all four families; see [World Generation](world-generation.md#landmarks)), whose stairs, ramps and catwalks collide as walkable ramps (`build_structures.py landmarks` builds only them) |
 | `build_structures.py` | Exports every vanilla structure and the starting scrap piles |

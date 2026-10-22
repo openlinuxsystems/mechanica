@@ -737,7 +737,7 @@ Vanilla fills these (tables in `world/worldgen.json`):
 
 | Where | Containers | Table, draws |
 |---|---|---|
-| SV-04 crash site | A Locker in each bunk room, a Broken Microwave in the port one, a File Cabinet on the bridge | `locker` 1-4, `microwave` 1, `file_cabinet` 1-3 |
+| SV-04 crash site | A Locker in the crew quarters and one in cargo control, a Broken Microwave on the mess counter, a File Cabinet on the bridge | `locker` 1-4, `microwave` 1, `file_cabinet` 1-3 |
 | Warehouses (2, 3 and 4 floors) | A Metal Crate on each floor but the top one, a Wooden Crate on the top floor; two Lockers and a File Cabinet against the back wall of the ground floor and of the top floor | `warehouse_crate` 2-5, `crate` 2-4, `locker` 1-4, `file_cabinet` 1-3 |
 | Workshops | The supply Dispenser and a Scrap Chest | `crate` 2-4 |
 | Faction Outpost | A Scrap Chest | `crate` 2-4 |
