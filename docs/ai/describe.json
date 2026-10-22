@@ -412,9 +412,9 @@
       "kind": "action",
       "group": "survival",
       "scope": "play",
-      "description": "Filling a bucket at water. Arguments of CollectWater: fill every empty bucket the caller carries where they aim at water.",
+      "description": "Filling a bucket at water, or at a pool of another liquid that has a full bucket of its own. Arguments of CollectWater: fill every empty bucket the caller carries where they aim at water, or at a pool of a liquid that fills buckets too (a chemical pool gives Chemical Buckets).",
       "params": {
-        "description": "Arguments of CollectWater: fill every empty bucket the caller carries where they aim at water.",
+        "description": "Arguments of CollectWater: fill every empty bucket the caller carries where they aim at water, or at a pool of a liquid that fills buckets too (a chemical pool gives Chemical Buckets).",
         "type": "object",
         "properties": {
           "point": {
@@ -1853,6 +1853,44 @@
           "from",
           "from_slot",
           "to"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "NameContainer",
+      "kind": "action",
+      "group": "items",
+      "scope": "play",
+      "description": "Naming a container. Arguments of NameContainer: name a container that feeds a vehicle gauge (VehicleGauges).",
+      "params": {
+        "description": "Arguments of NameContainer: name a container that feeds a vehicle gauge (VehicleGauges).",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "Creation holding the container.",
+            "type": "integer"
+          },
+          "part": {
+            "description": "The container.",
+            "type": "integer"
+          },
+          "name": {
+            "description": "Its new name, at most 20 characters; null or blank gives it back its default (\"Gas 1\").",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "creation",
+          "part",
+          "name"
         ],
         "additionalProperties": false
       }

@@ -33,6 +33,16 @@
   // Jumping at the surface lifts the feet this far above the water, so a swimmer can climb out onto an edge this high.
   "swim_leap_height": 0.6,
   "wade_speed_scale": 0.7,
+  // Ladders (parts with "climbable"): walk into one to grab it, forward climbs up and back down at climb_speed, strafe
+  // moves along the rungs. Jump pushes off; at the top the player steps onto the floor behind it. A player let go can
+  // grab again after climb_regrab_seconds.
+  "climb_speed": 2.0,
+  "climb_side_speed": 1.0,
+  "climb_reach": 0.25,
+  "climb_jump_speed": 3.5,
+  "climb_jump_up": 3.0,
+  "climb_regrab_seconds": 0.4,
+  "climb_top_out_speed": 2.5,
   // Camera (UI spec §6): first-person by default; zoom out (C) and in (X) by a step, in past the closest goes first-person.
   // camera_distance is where the third-person camera sits when it pulls back (death, spectating, or starting third-person).
   "camera_starts_first_person": true,

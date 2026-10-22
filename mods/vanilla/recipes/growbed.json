@@ -1,0 +1,28 @@
+{
+  "id": "growbed",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "component_kit",
+      "count": 2
+    },
+    {
+      "item": "circuit_board",
+      "count": 2
+    },
+    {
+      "item": "soil_bag",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "growbed",
+      "count": 1
+    }
+  ],
+  "time": 30,
+  "order": 1955
+}

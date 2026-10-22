@@ -140,6 +140,11 @@ Screens that have not moved to the design language yet use these colours and `Me
 | Warning | `#E8E3A0` | warnings |
 | Success | `#4CD07D` | success, running |
 | Health | `#36B36B` | the health bar fill, lighter at the top and darker at the bottom (`ShadedBox`) |
+| GaugeGas | `#DB4A41` | a Gas vehicle gauge's fill (shaded like Health) |
+| GaugeElectric | `#2E86DE` | a battery vehicle gauge's fill (the interface Blue) |
+| GaugeChemical | `#8CCB3A` | a Chemical vehicle gauge's fill |
+| GaugeWater | `#4FC3DE` | a Water vehicle gauge's fill |
+| GaugeAmmo | `#CBBF3A` | an Ammo vehicle gauge's fill (mustard, clear of orange) |
 
 There is no orange anywhere in the interface: menus, the HUD, overlays, gizmos, tool ghosts and the
 script editor. Saturated yellow counts as orange. Content is not interface: a part's paint or a

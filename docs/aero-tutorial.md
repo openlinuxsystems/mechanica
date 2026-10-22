@@ -23,7 +23,7 @@ Connect Tool and listen to the same seats and switches.
 
 | Part | Size (cells) | What it does | Numbers |
 |------|--------------|--------------|---------|
-| Thruster | 1×1×1 | Pushes its creation toward its base: the flame comes out of the face opposite the one you attach. | 200 N at full power; burns a gasoline every 112 s at full power (0.5 fuel a second, none in Creative). |
+| Thruster | 1×1×1 | Pushes its creation toward its base: the flame comes out of the face opposite the one you attach. Its lever (E) picks a power step: each step pushes half again as hard and burns half again as much. Five levels (Component Kits, U): each is lighter (12 kg down to 4.5 kg), tougher, unlocks one more step (3 up to 7) and goes further on a gasoline. | 200 N at full power on step 1 (450 N on step 3); a Thruster 1 burns a gasoline every 112 s at full power on step 1, a Thruster 5 every 224 s (none in Creative). |
 | Wing | 4×1×4 (1 m by 1 m) | Lift square to the air flowing over it, and drag along it. It is cambered: it lifts toward its top even when level. It stalls past about 10° up. | Lift coefficient 0.4 level, plus 4.5 per radian; at most 1.2. Area 1 m². |
 | Control Surface | 4×1×2 (1 m by 0.5 m) | A wing without camber that tilts the air it meets by up to 10° on command: an elevator, aileron or rudder. | Area 0.5 m². |
 | Rotor | 3×1×3 | A propeller that pulls its creation away from its base, and twists the creation the other way from its spin. It spools up and down. | 150 N and 40 N·m at full speed; full speed in 1.25 s. |
@@ -91,8 +91,9 @@ This is the plane the automated test flies (`game/tests/vanilla/VanillaAeroTest.
    the wings behind the centre of mass, or the plane will flip.
 4. **Elevators.** A control surface on each side of the tail, hinged to the fuselage, and a third
    standing upright on top of the fuselage, just behind the wings, as a fin.
-5. **Thrusters.** Four thrusters stacked on the tail, attached by their bases. Keep the thrust line
-   level with the centre of mass, or full throttle pitches the plane up or down.
+5. **Thrusters.** Two thrusters stacked on the tail, attached by their bases, each on power step 3 (its
+   lever, E). Keep the thrust line level with the centre of mass, or full throttle pitches the plane up
+   or down. A Thruster 1 weighs 12 kg: more of them make the tail heavy and the plane flips.
 6. **Wheels.** Two legs of two blocks under the fuselage, one near the nose and one behind the wings,
    each with a bearing on both sides and a wheel on each bearing.
 7. **Wire it.** With the Connect Tool, link the seat to each thruster and set their Control to

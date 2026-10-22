@@ -1,0 +1,19 @@
+{
+  "id": "tubes_tee",
+  "name": "Conduit (Tee)",
+  "description": "A conduit tray where two tubes run on and two turn off to the side.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 4,
+  "friction": 0.3,
+  "buoyancy": 0.4,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [2, 1, 2],
+  "mesh": "meshes/parts/tubes_tee.glb",
+  "icon": "textures/items/tubes_tee_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

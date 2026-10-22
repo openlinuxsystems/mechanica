@@ -11,7 +11,8 @@ namespace Mechanica.Game.Tests;
 /// Rebindable controls (UI spec §1, §16): every action is a Godot input action with the UI spec's
 /// default keys, presses match modifiers exactly (Q is not Shift+Q, the wheel is not Alt+wheel),
 /// rebinding through the settings rebuilds the actions and the HUD labels, a test run never reads the
-/// player's own settings file, and a player whose mouse is free (a menu is open) doesn't walk.
+/// player's own settings file, a player whose mouse is free (a menu is open) doesn't walk, and while
+/// running Shift is Sprint, not a modifier, so the wheel steps the hotbar.
 /// </summary>
 public partial class ControlsTest : StagedTest
 {
@@ -51,6 +52,25 @@ public partial class ControlsTest : StagedTest
                 "a chord that is bound never falls back to the bare key");
             Check(!GameInput.Pressed(new InputEventKey { PhysicalKeycode = Key.E, Pressed = true, Echo = true }, InputActions.Interact), "key repeats are not presses");
             Check(GameInput.Label(InputActions.Primary) == "Left Click" && GameInput.Label(InputActions.RotateBack) == "Shift + Q", "labels read as players expect");
+            return true;
+        });
+        Add("running, Shift is Sprint, not a modifier, so the wheel and number keys pick hotbar slots", _ =>
+        {
+            Input.ActionPress(InputActions.Sprint);
+            var standing = GameInput.Pressed(Wheel(MouseButton.WheelDown, shift: true), InputActions.Rotate)
+                && !GameInput.Pressed(Wheel(MouseButton.WheelDown, shift: true), InputActions.HotbarNext);
+            Input.ActionPress(InputActions.MoveForward);
+            var running = GameInput.Running()
+                && GameInput.Pressed(Wheel(MouseButton.WheelDown, shift: true), InputActions.HotbarNext)
+                && GameInput.Pressed(Wheel(MouseButton.WheelUp, shift: true), InputActions.HotbarPrevious)
+                && !GameInput.Pressed(Wheel(MouseButton.WheelDown, shift: true), InputActions.Rotate)
+                && GameInput.Pressed(KeyPress(Key.Key3, shift: true), InputActions.Hotbar(3))
+                && GameInput.Pressed(Wheel(MouseButton.WheelUp, alt: true, shift: true), InputActions.ZoomIn);
+            Input.ActionRelease(InputActions.MoveForward);
+            Input.ActionRelease(InputActions.Sprint);
+            Check(standing, "standing with Shift held, Shift+wheel still turns the part");
+            Check(running, "running, Shift+wheel steps the hotbar, Shift+3 picks slot 3 and Alt+wheel still zooms");
+            Check(!GameInput.Running(), "letting go stops running");
             return true;
         });
         Add("rebinding rebuilds the actions and labels", _ =>
@@ -96,6 +116,6 @@ public partial class ControlsTest : StagedTest
     private static InputEventMouseButton Click(MouseButton button, bool shift = false, bool ctrl = false) =>
         new() { ButtonIndex = button, Pressed = true, ShiftPressed = shift, CtrlPressed = ctrl };
 
-    private static InputEventMouseButton Wheel(MouseButton button, bool alt = false) =>
-        new() { ButtonIndex = button, Pressed = true, AltPressed = alt };
+    private static InputEventMouseButton Wheel(MouseButton button, bool alt = false, bool shift = false) =>
+        new() { ButtonIndex = button, Pressed = true, AltPressed = alt, ShiftPressed = shift };
 }

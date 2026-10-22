@@ -903,6 +903,8 @@ public partial class PartEditorScreen : Control
                 v => Set("Set accepted items", x => x with { Inventory = x.Inventory! with { Accepts = SplitIds(v) } }), "any item, or ids: gasoline, crude_oil");
             _partGrid.AddBool("Carry contents", inventory.CarryContents == true,
                 v => Set("Set carry contents", x => x with { Inventory = x.Inventory! with { CarryContents = v == true ? true : null } }));
+            _partGrid.AddEnum("Gauge", inventory.Gauge,
+                v => Set("Set gauge", x => x with { Inventory = x.Inventory! with { Gauge = v } }), optional: true);
         }
         _partGrid.AddBool("Crafting station", d.Crafting is not null,
             v => Document?.Apply(v == true ? "Make crafting station" : "Remove crafting", x => x with { Crafting = v == true ? x.Crafting ?? new CraftingDefinition() : null }));
@@ -977,6 +979,7 @@ public partial class PartEditorScreen : Control
             }
             _partGrid.AddBool("Respawn point", d.RespawnPoint, v => Set("Set respawn point", x => x with { RespawnPoint = v == true ? true : null }), optional: true);
             _partGrid.AddBool("Ground only", d.GroundOnly, v => Set("Set ground only", x => x with { GroundOnly = v == true ? true : null }), optional: true);
+            _partGrid.AddBool("Climbable", d.Climbable, v => Set("Set climbable", x => x with { Climbable = v == true ? true : null }), optional: true);
             if (d.GroundOnly == true)
                 _partGrid.AddNumber("Steepest ground", d.MaxSlope, 0, 90, 1, v => Set("Set steepest ground", x => x with { MaxSlope = (float?)v }), optional: true, suffix: "°");
             // A Soil Bag sets a soil mound down on the ground; the mound is placed from, and picked up as, the bag.

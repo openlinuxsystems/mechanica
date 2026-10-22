@@ -1,40 +1,113 @@
 {
   // Aero and propulsion parts (chunk 11): thruster, wing, control surface, rotor and hover jet. Their
-  // behaviour is in Lua (D2); the numbers are spec §21.2's. Re-run with tools/author-vanilla.sh.
+  // behaviour is in Lua (D2); the numbers are spec §21.2's. Parts map batch 6 gave the Thruster the wiki's stats and
+  // recipe, five levels (mass, durability, power steps and mileage per level) and a real model set
+  // (tools/thruster/build_thruster.py). Re-run with tools/author-vanilla.sh.
   "format_version": 1,
   "parts": [
     {
       "file": "parts/thruster.json",
       "template": "thruster",
       "set": {
-        "name": "Thruster",
-        "description": "A jet that pushes its creation toward its base. Link a switch or a seat to it, or pick a pilot control with the Connect Tool (R). Burns gasoline from the creation's gas containers.",
-        "mass": 4,
-        "durability": 4,
+        "name": "Thruster 1",
+        "description": "A jet that pushes its creation toward its base. Link a switch or a seat to it, or pick a pilot control with the Connect Tool (R); pick its power step on its lever (E): each step pushes half again as hard and burns half again as much. Burns gasoline from the gas containers linked to it. Upgrade it in place with Component Kits (U) for more power steps and better mileage.",
+        "mass": 12,
+        "durability": 5,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
         "stack_size": 10,
         "script": "scripts/thruster.lua",
+        "icon": "textures/items/thruster_1_icon.png",
         "logic": { "inputs": 4, "outputs": 10, "kind": "power" },
-        "visual": { "color": "#5b6470", "roughness": 0.4, "metallic": 0.8 },
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "sounds": { "ignite": "thruster_ignite", "loop": "thruster_loop", "cut": "thruster_cut" },
-        "display": { "glow": { "readout": "power", "offset": [0, 0.125, 0], "direction": [0, 1, 0], "length": 0.6 } },
-        "properties": { "thrust": 200, "lever_rate": 0.5, "fuel": "gasoline", "fuel_time": 112 }
+        "settings": [{ "id": "control", "name": "Control", "type": "choice", "options": ["link", "w_s", "a_d", "space_shift"], "default": "link" }, { "id": "invert", "name": "Invert", "type": "toggle", "default": false }, { "id": "power", "name": "Power", "type": "number", "min": 1, "max": 3, "step": 1, "default": 1 }],
+        "menu": {
+          "readouts": [
+            { "id": "fuel", "name": "Fuel", "kind": "bar" },
+            { "id": "fuel_items", "name": "Gasoline in tanks", "kind": "number" }
+          ],
+          "lever": {
+            "setting": "power", "fuel": "gasoline", "fuel_count": "fuel_items", "fuel_bar": "fuel",
+            "hint": "Drag to pick the thrust",
+            "upgrade_stats": [
+              { "name": "Power steps", "value": "settings.power" },
+              { "name": "Mileage", "value": "properties.fuel_time", "show": "percent" },
+              { "name": "Durability", "value": "durability" }
+            ]
+          }
+        },
+        "display": {
+          "glow": { "readout": "power", "offset": [0, 0.125, 0], "direction": [0, 1, 0], "length": 0.6 },
+          "clips": { "readout": "pose" }
+        },
+        "properties": { "thrust": 200, "step_gain": 1.5, "lever_rate": 0.5, "fuel": "gasoline", "fuel_time": 112 },
+        "upgrades": [
+          {
+            "cost": [{ "item": "component_kit", "count": 10 }],
+            "set": {
+              "name": "Thruster 2",
+              "mass": 9,
+              "durability": 6,
+              "settings": [{ "id": "control", "name": "Control", "type": "choice", "options": ["link", "w_s", "a_d", "space_shift"], "default": "link" }, { "id": "invert", "name": "Invert", "type": "toggle", "default": false }, { "id": "power", "name": "Power", "type": "number", "min": 1, "max": 4, "step": 1, "default": 1 }],
+              "properties": { "fuel_time": 140 },
+              "mesh": "meshes/parts/thruster_2.glb",
+              "icon": "textures/items/thruster_2_icon.png"
+            }
+          },
+          {
+            "cost": [{ "item": "component_kit", "count": 10 }],
+            "set": {
+              "name": "Thruster 3",
+              "mass": 7.5,
+              "durability": 7,
+              "settings": [{ "id": "control", "name": "Control", "type": "choice", "options": ["link", "w_s", "a_d", "space_shift"], "default": "link" }, { "id": "invert", "name": "Invert", "type": "toggle", "default": false }, { "id": "power", "name": "Power", "type": "number", "min": 1, "max": 5, "step": 1, "default": 1 }],
+              "properties": { "fuel_time": 168 },
+              "mesh": "meshes/parts/thruster_3.glb",
+              "icon": "textures/items/thruster_3_icon.png"
+            }
+          },
+          {
+            "cost": [{ "item": "component_kit", "count": 10 }],
+            "set": {
+              "name": "Thruster 4",
+              "mass": 6,
+              "durability": 8,
+              "settings": [{ "id": "control", "name": "Control", "type": "choice", "options": ["link", "w_s", "a_d", "space_shift"], "default": "link" }, { "id": "invert", "name": "Invert", "type": "toggle", "default": false }, { "id": "power", "name": "Power", "type": "number", "min": 1, "max": 6, "step": 1, "default": 1 }],
+              "properties": { "fuel_time": 196 },
+              "mesh": "meshes/parts/thruster_4.glb",
+              "icon": "textures/items/thruster_4_icon.png"
+            }
+          },
+          {
+            "cost": [{ "item": "component_kit", "count": 10 }],
+            "set": {
+              "name": "Thruster 5",
+              "description": "A jet that pushes its creation toward its base. Link a switch or a seat to it, or pick a pilot control with the Connect Tool (R); pick its power step on its lever (E). Burns gasoline from the gas containers linked to it.",
+              "mass": 4.5,
+              "durability": 9,
+              "settings": [{ "id": "control", "name": "Control", "type": "choice", "options": ["link", "w_s", "a_d", "space_shift"], "default": "link" }, { "id": "invert", "name": "Invert", "type": "toggle", "default": false }, { "id": "power", "name": "Power", "type": "number", "min": 1, "max": 7, "step": 1, "default": 1 }],
+              "properties": { "fuel_time": 224 },
+              "mesh": "meshes/parts/thruster_5.glb",
+              "icon": "textures/items/thruster_5_icon.png"
+            }
+          }
+        ]
       },
-      "model": [
-        { "kind": "box", "size": [0.24, 0.04, 0.24], "position": [0, -0.105, 0] },
-        { "kind": "cylinder", "radius": 0.09, "height": 0.17, "position": [0, -0.005, 0] },
-        { "kind": "cylinder", "radius": 0.11, "height": 0.05, "position": [0, 0.1, 0] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/thruster_1.glb" }],
       "recipes": [
         {
           "id": "thruster",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "scrap_metal_block", "count": 16 },
-            { "item": "component_kit", "count": 2 },
-            { "item": "gasoline", "count": 2 }
+            { "item": "metal_block_3", "count": 50 },
+            { "item": "component_kit", "count": 5 },
+            { "item": "gas_engine", "count": 1 },
+            { "item": "controller", "count": 1 }
           ],
           "outputs": [{ "item": "thruster", "count": 1 }],
-          "time": 8,
+          "time": 30,
           "order": 1110
         }
       ]

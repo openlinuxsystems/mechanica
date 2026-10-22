@@ -1,0 +1,19 @@
+{
+  "id": "anvil",
+  "name": "Anvil",
+  "description": "A settler's anvil stapled onto a hardwood stump. Heavy and grippy.",
+  "category": "decor",
+  "mass": 15,
+  "durability": 5,
+  "friction": 0.8,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [3, 3, 3],
+  "mesh": "meshes/parts/anvil.glb",
+  "icon": "textures/items/anvil_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

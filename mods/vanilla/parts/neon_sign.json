@@ -1,0 +1,59 @@
+{
+  "id": "neon_sign",
+  "name": "Neon Sign",
+  "description": "A settler shop sign for a wall: neon tubes bent into a sprout in a ring, on a plank board. It glows mint; paint it to change the colour. Set its brightness with the Connect Tool. Use it to switch it off and on; a linked switch also works.",
+  "category": "light",
+  "mass": 3,
+  "durability": 1,
+  "friction": 0.5,
+  "buoyancy": 0.4,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "wood",
+  "size": [3, 3, 1],
+  "mesh": "meshes/parts/neon_sign.glb",
+  "icon": "textures/items/neon_sign_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, 0, 0.125],
+      "normal": [0, 0, 1]
+    }
+  ],
+  "script": "scripts/light.lua",
+  "sounds": {
+    "on": "light_on",
+    "off": "light_off"
+  },
+  "logic": {
+    "inputs": 1,
+    "use": "toggle"
+  },
+  "settings": [
+    {
+      "id": "brightness",
+      "name": "Brightness",
+      "type": "number",
+      "min": 1,
+      "max": 10,
+      "step": 1,
+      "default": 10
+    }
+  ],
+  "light": {
+    "kind": "omni",
+    "color": "#7dffc4",
+    "energy": 1.5,
+    "range": 6,
+    "offset": [0, 0.03, -0.06]
+  },
+  "display": {
+    "clips": {
+      "readout": "pose"
+    }
+  }
+}

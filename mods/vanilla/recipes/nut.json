@@ -1,0 +1,20 @@
+{
+  "id": "nut",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal_block",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "nut",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 3160
+}

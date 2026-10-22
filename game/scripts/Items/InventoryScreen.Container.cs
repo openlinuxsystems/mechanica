@@ -1,4 +1,5 @@
 using Godot;
+using Mechanica.Core.Data;
 using Mechanica.Core.Items;
 using Mechanica.Game.Ui;
 
@@ -11,6 +12,11 @@ namespace Mechanica.Game.Items;
 /// player's inventory, with its own header (fill count and the nearly-full warning) over every slot in rows of ten that
 /// scroll. Empty slots of a container that takes only one item (gasoline in a Gas Container) show that item's silhouette.
 /// Stacks drag, click and Shift+click between the two exactly as in the plain inventory screen.
+/// <para>
+/// A container that feeds a vehicle gauge (<see cref="InventoryDefinition.Gauge"/>) is titled with its name ("Gas 1", or
+/// the one a player gave it) under its part's name, with a pencil to rename it: the name turns into a text field, Enter or
+/// clicking away saves it (<c>NameContainer</c>), Esc cancels, and an empty name goes back to the default.
+/// </para>
 /// </summary>
 public partial class InventoryScreen
 {
@@ -24,6 +30,9 @@ public partial class InventoryScreen
     private Label _containerTitle = null!;
     private Label _containerFill = null!;
     private Control _containerFillPill = null!;
+    private Label _containerKind = null!;
+    private Button _containerRename = null!;
+    private LineEdit _containerNameEdit = null!;
     private readonly SlotGrid _containerGrid = new(ContainerColumns, ContainerTile, tiled: true);
     private ScrollContainer _containerScroll = null!;
     private VBoxContainer _containerBody = null!;
@@ -48,6 +57,15 @@ public partial class InventoryScreen
 
     /// <summary>The container header's title and fill text (<c>16 / 50 Gasoline</c>).</summary>
     public (string Title, string Fill) ContainerHeader => (_containerTitle.Text, _containerFill.Text);
+
+    /// <summary>The pencil next to a gauge container's name, which starts renaming it.</summary>
+    public Button ContainerRenameButton => _containerRename;
+
+    /// <summary>The field a gauge container's name is typed in while renaming (hidden otherwise).</summary>
+    public LineEdit ContainerNameField => _containerNameEdit;
+
+    /// <summary>True while the player is typing a container's new name.</summary>
+    public bool Renaming => _containerNameEdit.Visible;
 
     /// <summary>The container window and the inventory window under it.</summary>
     public IReadOnlyList<Control> ContainerPanels => [_containerWindow, (Control)_containerScreen.GetChild(1)];
@@ -81,8 +99,29 @@ public partial class InventoryScreen
         row.AddChild(_containerArt);
         var titles = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, Alignment = BoxContainer.AlignmentMode.Center };
         titles.AddThemeConstantOverride("separation", 6);
+        // A gauge container's part name sits small over its own name.
+        _containerKind = Loc.Verbatim(new Label { Name = "ContainerKind", ThemeTypeVariation = "SectionLabel", Uppercase = true, Visible = false });
+        titles.AddChild(_containerKind);
+        var nameRow = new HBoxContainer();
+        nameRow.AddThemeConstantOverride("separation", 8);
+        titles.AddChild(nameRow);
         _containerTitle = Loc.Verbatim(new Label { Name = "ContainerTitle", ThemeTypeVariation = "DisplayLabel", Uppercase = true });
-        titles.AddChild(_containerTitle);
+        nameRow.AddChild(_containerTitle);
+        _containerRename = new Button
+        {
+            Name = "Rename", Text = "✎", TooltipText = "Rename", CustomMinimumSize = new Vector2(30, 30), Visible = false,
+            SizeFlagsVertical = Control.SizeFlags.ShrinkCenter, FocusMode = Control.FocusModeEnum.None,
+        };
+        _containerRename.Pressed += StartRename;
+        nameRow.AddChild(_containerRename);
+        _containerNameEdit = Loc.Verbatim(new LineEdit
+        {
+            Name = "NameField", MaxLength = VehicleGauges.MaxNameLength, Visible = false, CustomMinimumSize = new Vector2(240, 0),
+            SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin,
+        });
+        _containerNameEdit.TextSubmitted += _ => FinishRename(save: true);
+        _containerNameEdit.FocusExited += () => FinishRename(save: true);
+        nameRow.AddChild(_containerNameEdit);
         _containerFillPill = new PanelContainer { Name = "FillPill", ThemeTypeVariation = "Pill", SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin };
         _containerFill = Loc.Verbatim(new Label { Name = "Fill", ThemeTypeVariation = "PillLabel", Uppercase = true });
         _containerFillPill.AddChild(_containerFill);
@@ -159,7 +198,7 @@ public partial class InventoryScreen
     {
         var view = _open is { } where ? Inventory.Shown.GetValueOrDefault(where) : null;
         var id = view?.Part ?? (_open is { Creation: { } c, Part: { } p } ? Creations?.Find(c)?.FindPart(p)?.Part : null);
-        _containerTitle.Text = id is null ? Loc.T("Opening…") : ItemName(id);
+        RefreshName(id);
         _containerArt.Texture = id is null ? null : Icons?.For(id);
         _containerArt.Visible = _containerArt.Texture is not null;
         var only = view?.Accepts is [var single] ? single : null;
@@ -183,5 +222,65 @@ public partial class InventoryScreen
         _bagWarningText.Text = free == 0 ? Loc.T("Inventory full") : Loc.T("Nearly full: {0} free", free);
         _warning.Text = _bagWarningText.Text;
         _warningPill.Visible = _bagWarning.Visible;
+    }
+
+    // The open container's gauge (kind and default number) and name, or null when it feeds no gauge.
+    private (GaugeKind Kind, int Number, string? Name)? OpenGauge()
+    {
+        if (_open is not { Creation: { } c, Part: { } p } || Creations?.Find(c) is not { } creation || creation.FindPart(p) is not { } part)
+            return null;
+        return VehicleGauges.NumberOf(creation, p) is { } gauge ? (gauge.Kind, gauge.Number, part.Name) : null;
+    }
+
+    // The title: a gauge container's name under its part's name, or the part's name.
+    private void RefreshName(string? id)
+    {
+        var gauge = id is null ? null : OpenGauge();
+        _containerKind.Visible = gauge is not null;
+        _containerRename.Visible = gauge is not null && !Renaming;
+        _containerTitle.Visible = !Renaming;
+        if (id is null)
+            _containerTitle.Text = Loc.T("Opening…");
+        else if (gauge is { } g)
+        {
+            _containerKind.Text = ItemName(id);
+            _containerTitle.Text = g.Name ?? GaugeNames.Default(g.Kind, g.Number);
+        }
+        else
+            _containerTitle.Text = ItemName(id);
+    }
+
+    /// <summary>Starts renaming the open gauge container: the name becomes a text field with the name selected.</summary>
+    public void StartRename()
+    {
+        if (OpenGauge() is not { } gauge)
+            return;
+        // The field types in the title's own face and size.
+        _containerNameEdit.AddThemeFontOverride("font", _containerTitle.GetThemeFont("font"));
+        _containerNameEdit.AddThemeFontSizeOverride("font_size", _containerTitle.GetThemeFontSize("font_size"));
+        _containerNameEdit.Text = gauge.Name ?? GaugeNames.Default(gauge.Kind, gauge.Number);
+        _containerNameEdit.Visible = true;
+        _containerTitle.Visible = _containerRename.Visible = false;
+        _containerNameEdit.GrabFocus();
+        _containerNameEdit.SelectAll();
+    }
+
+    /// <summary>
+    /// Ends renaming: <paramref name="save"/> sends the typed name to the host (an empty one, or the default unchanged,
+    /// gives it its default back), otherwise the name stays as it was.
+    /// </summary>
+    public void FinishRename(bool save)
+    {
+        if (!Renaming)
+            return;
+        _containerNameEdit.Visible = false;
+        if (save && _open is { Creation: { } c, Part: { } p } && OpenGauge() is { } gauge)
+        {
+            var typed = VehicleGauges.CleanName(_containerNameEdit.Text);
+            var name = typed == GaugeNames.Default(gauge.Kind, gauge.Number) ? null : typed;
+            if (name != gauge.Name)
+                Send(InventoryActions.NameContainer, new NameContainerArgs(c, p, name));
+        }
+        RefreshName(_open is { Creation: { } creation, Part: { } part } ? Creations?.Find(creation)?.FindPart(part)?.Part : null);
     }
 }

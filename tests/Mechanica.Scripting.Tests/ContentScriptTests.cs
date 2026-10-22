@@ -123,12 +123,56 @@ public sealed class ContentScriptTests : IDisposable
         var lamp = Place(creation, "vanilla:interior_light", new GridCell(0, -1, 0));
         Steps(1);
         Assert.Equal(1f, _runtime.Lights.Level(creation.Id, lamp));
+        Assert.Equal("on", Pose(creation, lamp));
         Activate(creation, lamp);
         Steps(1);
         Assert.Equal(0f, _runtime.Lights.Level(creation.Id, lamp));
+        Assert.Equal("off", Pose(creation, lamp));
         Activate(creation, lamp);
         Steps(1);
         Assert.Equal(1f, _runtime.Lights.Level(creation.Id, lamp));
+        Assert.Equal("on", Pose(creation, lamp));
+        NoErrors();
+    }
+
+    [Fact]
+    public void AShackLightShinesAtItsBrightnessSettingAndDimmingItMakesNoSound()
+    {
+        // Parts map batch 5: a "brightness" setting (1 to 10) dims a light to that many tenths of full.
+        var creation = Board();
+        var lamp = Place(creation, "vanilla:shack_light", new GridCell(0, -2, 0));
+        Steps(1);
+        Assert.Equal(1f, _runtime.Lights.Level(creation.Id, lamp));
+        Assert.Equal("on", Pose(creation, lamp));
+        var sounds = _sound.Played.Count;
+
+        Configure(creation, lamp, "brightness", 3);
+        Steps(1);
+        Assert.Equal(0.3f, _runtime.Lights.Level(creation.Id, lamp), 0.001f);
+        Assert.Equal("on", Pose(creation, lamp));
+        Assert.Equal(sounds, _sound.Played.Count);
+
+        Activate(creation, lamp);
+        Steps(1);
+        Assert.Equal(0f, _runtime.Lights.Level(creation.Id, lamp));
+        Assert.Equal("off", Pose(creation, lamp));
+        Assert.Equal("light_off", _sound.Played[^1].Sound);
+        NoErrors();
+    }
+
+    [Fact]
+    public void AWarningLightsModelFollowsItsBlink()
+    {
+        var creation = Board();
+        var lamp = Place(creation, "vanilla:warning_light", new GridCell(0, 1, 0));
+        var poses = new HashSet<string?>();
+        for (var i = 0; i < 120; i++)
+        {
+            Steps(1);
+            Assert.Equal(_runtime.Lights.Level(creation.Id, lamp) > 0 ? "on" : "off", Pose(creation, lamp));
+            poses.Add(Pose(creation, lamp));
+        }
+        Assert.Equal(2, poses.Count);
         NoErrors();
     }
 
@@ -399,10 +443,22 @@ public sealed class ContentScriptTests : IDisposable
         var cannon = Place(creation, "vanilla:water_cannon", new GridCell(0, 1, 0));
         _f.World.Ray = (from, direction) => new RayHit(from + direction * 5, Creation: soil.Id, Part: soilPart);
         Steps(1);
+        // With no Water Container linked it only clicks.
+        Activate(creation, cannon);
+        Steps(1);
+        Assert.Equal(0f, soil.SoilOf(soilPart)!.Water);
+        Assert.Contains(_sound.Played, p => p.Sound == "logic_click");
+        Assert.DoesNotContain(_sound.Played, p => p.Sound == "water_cannon_fire");
+
+        var tank = WaterTank(creation, cannon, 1);
+        Steps(40);
         Activate(creation, cannon);
         Steps(1);
         Assert.True(soil.SoilOf(soilPart)!.Water > 0, "the soil got water");
         Assert.Contains(_sound.Played, p => p.Sound == "water_cannon_fire");
+        Assert.Equal("fire#1", _runtime.Readouts.Text(creation.Id, cannon, "clip"));
+        // One full bucket is properties.jets (10) jets.
+        Assert.Equal(0, creation.InventoryOf(tank)!.Count("vanilla:water_bucket_full"));
         Assert.Empty(_f.World.Pushes);
 
         var block = Target();
@@ -417,12 +473,30 @@ public sealed class ContentScriptTests : IDisposable
     }
 
     [Fact]
+    public void AWaterCannonRunsDryAfterTenJetsABucket()
+    {
+        var creation = Board();
+        var cannon = Place(creation, "vanilla:water_cannon", new GridCell(0, 1, 0));
+        WaterTank(creation, cannon, 1);
+        Steps(1);
+        for (var shot = 0; shot < 11; shot++)
+        {
+            Activate(creation, cannon);
+            Steps(31);
+        }
+        Assert.Equal(10, _sound.Played.Count(p => p.Sound == "water_cannon_fire"));
+        Assert.Equal(1, _sound.Played.Count(p => p.Sound == "logic_click"));
+        NoErrors();
+    }
+
+    [Fact]
     public void AWaterCannonPutsOutFiresAlongItsJet()
     {
         _f.Fire.LightSites([new Mechanica.Core.Quests.QuestSite(0, "test:camp", Vector3.Zero, 10,
             [new Mechanica.Core.Quests.QuestMarker(0, "fire", null, new Vector3(0, 0, -6)), new Mechanica.Core.Quests.QuestMarker(1, "fire", null, new Vector3(4, 0, -6))])]);
         var creation = Board();
         var cannon = Place(creation, "vanilla:water_cannon", new GridCell(0, 1, 0));
+        WaterTank(creation, cannon, 1);
         Steps(1);
         for (var shot = 0; shot < 3; shot++)
         {
@@ -435,34 +509,58 @@ public sealed class ContentScriptTests : IDisposable
     }
 
     [Fact]
-    public void AMountedBlasterFiresPotatoesFromTheCreationsChest()
+    public void AMountedBlasterFiresPotatoesFromItsLinkedAmmoContainer()
     {
         var target = Target();
         var creation = Board();
         var gun = Place(creation, "vanilla:potato_blaster_mounted", new GridCell(0, 1, 0));
-        var chest = Place(creation, "vanilla:chest", new GridCell(-4, 1, -4));
+        // Potatoes in a chest it is not linked to are no use to it.
+        var chest = Place(creation, "vanilla:chest", new GridCell(2, 1, 2));
+        creation.InventoryOf(chest)!.Add("vanilla:potato", 5);
         _f.World.Ray = (from, direction) => new RayHit(from + direction * 20, Creation: target.Id, Part: target.Parts.First().Id);
         Steps(1);
         Activate(creation, gun);
         Steps(1);
         Assert.Empty(_f.World.Casts);
         Assert.DoesNotContain(_sound.Played, p => p.Sound == "blaster_fire");
+        Assert.Contains(_sound.Played, p => p.Sound == "logic_click");
 
-        creation.InventoryOf(chest)!.Add("vanilla:potato", 2);
+        var hopper = AmmoContainer(creation, gun, 2);
+        Steps(10);
         Activate(creation, gun);
         Steps(1);
         Assert.Single(_f.World.Casts);
-        Assert.Equal(1, creation.InventoryOf(chest)!.Count("vanilla:potato"));
-        Assert.Equal(40f, target.PartDamage(target.Parts.First().Id), 3);
-        // properties.interval is 0.4 s.
+        Assert.Equal(1, creation.InventoryOf(hopper)!.Count("vanilla:potato"));
+        Assert.Equal(28f, target.PartDamage(target.Parts.First().Id), 3);
+        // properties.interval is 0.1 s.
         Activate(creation, gun);
         Steps(1);
         Assert.Single(_f.World.Casts);
-        Steps(30);
+        Steps(6);
         Activate(creation, gun);
         Steps(1);
         Assert.Equal(2, _f.World.Casts.Count);
-        Assert.Equal(0, creation.InventoryOf(chest)!.Count("vanilla:potato"));
+        Assert.Equal(0, creation.InventoryOf(hopper)!.Count("vanilla:potato"));
+        Assert.Equal(5, creation.InventoryOf(chest)!.Count("vanilla:potato"));
+        NoErrors();
+    }
+
+    [Fact]
+    public void AMountedBlasterKeepsFiringWhileItsTriggerIsOn()
+    {
+        var creation = Board();
+        var gun = Place(creation, "vanilla:potato_blaster_mounted", new GridCell(0, 1, 0));
+        var trigger = Place(creation, "vanilla:switch", new GridCell(3, 1, 3));
+        Link(creation, trigger, gun);
+        var hopper = AmmoContainer(creation, gun, 20);
+        Steps(1);
+        Activate(creation, trigger);
+        // Half a second held on is about five shots, one every 0.1 s.
+        Steps(30);
+        Activate(creation, trigger);
+        Steps(30);
+        Assert.InRange(_f.World.Casts.Count, 4, 6);
+        Assert.Equal(20 - _f.World.Casts.Count, creation.InventoryOf(hopper)!.Count("vanilla:potato"));
         NoErrors();
     }
 
@@ -471,8 +569,7 @@ public sealed class ContentScriptTests : IDisposable
     {
         var creation = Board();
         var gun = Place(creation, "vanilla:potato_blaster_mounted", new GridCell(0, 1, 0));
-        var chest = Place(creation, "vanilla:chest", new GridCell(-4, 1, -4));
-        creation.InventoryOf(chest)!.Add("vanilla:potato", 2);
+        AmmoContainer(creation, gun, 2);
         _f.World.Ray = (from, direction) => new RayHit(from + direction * 5, Player: SurvivalFixture.You.Peer);
         _f.Survival.FriendlyFire = false;
         Steps(1);
@@ -488,6 +585,24 @@ public sealed class ContentScriptTests : IDisposable
         Assert.Equal(2, _f.World.Casts.Count);
         Assert.True(_f.Survival.View(SurvivalFixture.You.Peer)!.Health < 100f);
         NoErrors();
+    }
+
+    // A Water Container in the board's corner holding full buckets, linked into the cannon.
+    private static int WaterTank(Creation creation, int cannon, int buckets)
+    {
+        var tank = Place(creation, "vanilla:water_container", new GridCell(-4, 1, -4));
+        creation.InventoryOf(tank)!.Add("vanilla:water_bucket_full", buckets);
+        Link(creation, tank, cannon);
+        return tank;
+    }
+
+    // A Potato Ammo Container in the board's corner holding potatoes, linked into the gun.
+    private static int AmmoContainer(Creation creation, int gun, int potatoes)
+    {
+        var hopper = Place(creation, "vanilla:potato_ammo_container", new GridCell(-4, 1, -4));
+        creation.InventoryOf(hopper)!.Add("vanilla:potato", potatoes);
+        Link(creation, hopper, gun);
+        return hopper;
     }
 
     // A 9 x 9 metal plate to build on, centred on the origin.
@@ -526,6 +641,9 @@ public sealed class ContentScriptTests : IDisposable
         Assert.True(creation.TryPlacePart(part, cell, rotation, out var placed, out var error), $"{part} at {cell}: {error}");
         return placed.Id;
     }
+
+    // The clip a light's model plays (light.lua's "pose" readout).
+    private string? Pose(Creation creation, int part) => _runtime.Readouts.Text(creation.Id, part, "pose");
 
     private static void Link(Creation creation, int from, int to) =>
         Assert.True(creation.TryLink(from, to, out var error), error);

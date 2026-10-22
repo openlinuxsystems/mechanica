@@ -2,7 +2,7 @@
 
 <!-- Generated from mechanica.describe by tools/ai/gen-docs.sh. Do not edit by hand. -->
 
-Protocol version 2. 173 methods: 65 actions (change the world), 29 queries (only read it) and 79 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
+Protocol version 2. 174 methods: 66 actions (change the world), 29 queries (only read it) and 79 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
 
 ## Contents
 
@@ -15,7 +15,7 @@ Protocol version 2. 173 methods: 65 actions (change the world), 29 queries (only
 - [Chat](#chat) (1)
 - [Debug and general](#debug-and-general) (2)
 - [Fire](#fire) (1)
-- [Items, inventories and crafting](#items-inventories-and-crafting) (9)
+- [Items, inventories and crafting](#items-inventories-and-crafting) (10)
 - [Logic, seats and part menus](#logic-seats-and-part-menus) (9)
 - [Map markers](#map-markers) (3)
 - [Motion and physics primitives](#motion-and-physics-primitives) (6)
@@ -763,6 +763,18 @@ Moving items. Arguments of MoveItems.
 | `to_slot` | integer or null |  |  | The slot they go to; null puts them wherever they fit. |
 | `count` | integer or null |  |  | How many; null moves the whole stack. |
 
+### `NameContainer`
+
+*action, play scope*
+
+Naming a container. Arguments of NameContainer: name a container that feeds a vehicle gauge (VehicleGauges).
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `creation` | integer | yes |  | Creation holding the container. |
+| `part` | integer | yes |  | The container. |
+| `name` | string or null | yes |  | Its new name, at most 20 characters; null or blank gives it back its default ("Gas 1"). |
+
 ### `SetHotbarSlot`
 
 *action, play scope*
@@ -1050,7 +1062,7 @@ No params.
 
 *action, play scope*
 
-Filling a bucket at water. Arguments of CollectWater: fill every empty bucket the caller carries where they aim at water.
+Filling a bucket at water, or at a pool of another liquid that has a full bucket of its own. Arguments of CollectWater: fill every empty bucket the caller carries where they aim at water, or at a pool of a liquid that fills buckets too (a chemical pool gives Chemical Buckets).
 
 | Param | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|

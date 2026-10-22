@@ -15,7 +15,10 @@ public static class WaterEffects
     public const float DefaultRadius = 1.2f;
 
     private static readonly Color WaterColour = new(0.42f, 0.66f, 0.78f, 0.75f);
+    // Thrown chemical (ProjectileView.Chemical, a Chemical Bucket): the same splash in the pools' glowing green.
+    private static readonly Color ChemicalColour = new(0.38f, 0.82f, 0.18f, 0.85f);
     private static StandardMaterial3D? _material;
+    private static StandardMaterial3D? _chemicalMaterial;
     private static StandardMaterial3D? _mistMaterial;
     private static GradientTexture2D? _wetTexture;
 
@@ -27,6 +30,18 @@ public static class WaterEffects
         Metallic = 0.1f,
         CullMode = BaseMaterial3D.CullModeEnum.Disabled,
         VertexColorUseAsAlbedo = true,
+    };
+
+    private static StandardMaterial3D ChemicalMaterial => _chemicalMaterial ??= new StandardMaterial3D
+    {
+        AlbedoColor = ChemicalColour,
+        Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+        Roughness = 0.12f,
+        CullMode = BaseMaterial3D.CullModeEnum.Disabled,
+        VertexColorUseAsAlbedo = true,
+        EmissionEnabled = true,
+        Emission = ChemicalColour,
+        EmissionEnergyMultiplier = 0.4f,
     };
 
     // Soft round puffs, facing the camera, their colour (and fade) from the particles.
@@ -63,9 +78,13 @@ public static class WaterEffects
         Height = 128,
     };
 
-    /// <summary>The flying water: a slosh about as wide as the splash is big, with drops streaming off behind it.</summary>
-    public static Node3D Blob(float radius = DefaultRadius)
+    /// <summary>
+    /// The flying water: a slosh about as wide as the splash is big, with drops streaming off behind it; green for
+    /// <paramref name="chemical"/>.
+    /// </summary>
+    public static Node3D Blob(float radius = DefaultRadius, bool chemical = false)
     {
+        var material = Look(chemical).Material;
         var scale = Mathf.Clamp(radius / DefaultRadius, 0.6f, 3f);
         var blob = new Node3D { Name = "Water" };
         // A few overlapping lumps that wobble round each other read as loose water rather than a ball.
@@ -75,30 +94,30 @@ public static class WaterEffects
             {
                 Name = $"Lump{i}",
                 Mesh = new SphereMesh { Radius = 0.12f * scale, Height = 0.18f * scale, RadialSegments = 12, Rings = 6 },
-                MaterialOverride = Material,
+                MaterialOverride = material,
                 CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
                 Position = new Vector3(Mathf.Cos(i * 2.1f), Mathf.Sin(i * 1.7f) * 0.5f, Mathf.Sin(i * 2.1f)) * 0.07f * scale,
             };
             blob.AddChild(lump);
         }
-        blob.AddChild(Drops("Trail", amount: (int)(50 * scale), lifetime: 0.5, burst: false, speed: (0.2f, 1.2f), spread: 180f, size: 0.035f));
+        blob.AddChild(Drops("Trail", amount: (int)(50 * scale), lifetime: 0.5, burst: false, speed: (0.2f, 1.2f), spread: 180f, size: 0.035f, chemical));
         blob.AddChild(new WaterWobble { Name = "Wobble" });
         return blob;
     }
 
     /// <summary>
     /// Bursts a splash of <paramref name="radius"/> metres at <paramref name="at"/> under <paramref name="parent"/>; every piece
-    /// frees itself when done.
+    /// frees itself when done. <paramref name="chemical"/> splashes green.
     /// </summary>
-    public static void Splash(Node parent, Vector3 at, float radius = DefaultRadius)
+    public static void Splash(Node parent, Vector3 at, float radius = DefaultRadius, bool chemical = false)
     {
         radius = Mathf.Clamp(radius, 0.3f, 10f);
         var reach = Mathf.Sqrt(radius / DefaultRadius);
         // The crown: thrown up high in the middle and falling back.
         Burst(parent, at, Drops("Crown", amount: (int)(90 + 50 * radius), lifetime: 1.2, burst: true, speed: (3f * reach, 6.5f * reach),
-            spread: 35f, size: 0.06f));
+            spread: 35f, size: 0.06f, chemical));
         // The sheet: sprayed out low and fast across the ground to the edge of the radius.
-        var sheet = Drops("Sheet", amount: (int)(140 + 80 * radius), lifetime: 0.9, burst: true, speed: (1.5f, 3f), spread: 80f, size: 0.05f);
+        var sheet = Drops("Sheet", amount: (int)(140 + 80 * radius), lifetime: 0.9, burst: true, speed: (1.5f, 3f), spread: 80f, size: 0.05f, chemical);
         sheet.EmissionShape = CpuParticles3D.EmissionShapeEnum.Sphere;
         sheet.EmissionSphereRadius = 0.25f;
         sheet.RadialAccelMin = 4.5f * radius;
@@ -106,7 +125,7 @@ public static class WaterEffects
         sheet.DampingMin = sheet.DampingMax = 1.5f;
         Burst(parent, at + Vector3.Up * 0.05f, sheet);
         // Droplets landing all over the patch a beat later.
-        var rain = Drops("Rain", amount: (int)(40 * radius), lifetime: 0.7, burst: true, speed: (0.5f, 1.5f), spread: 30f, size: 0.04f);
+        var rain = Drops("Rain", amount: (int)(40 * radius), lifetime: 0.7, burst: true, speed: (0.5f, 1.5f), spread: 30f, size: 0.04f, chemical);
         rain.EmissionShape = CpuParticles3D.EmissionShapeEnum.Sphere;
         rain.EmissionSphereRadius = radius * 0.8f;
         rain.Explosiveness = 0.5f;
@@ -176,7 +195,11 @@ public static class WaterEffects
             particles.GetTree().CreateTimer(delay).Timeout += () => { if (GodotObject.IsInstanceValid(particles)) particles.Emitting = true; };
     }
 
-    private static CpuParticles3D Drops(string name, int amount, double lifetime, bool burst, (float Min, float Max) speed, float spread, float size) => new()
+    private static (StandardMaterial3D Material, Color Colour) Look(bool chemical) =>
+        chemical ? (ChemicalMaterial, ChemicalColour) : (Material, WaterColour);
+
+    private static CpuParticles3D Drops(string name, int amount, double lifetime, bool burst, (float Min, float Max) speed, float spread, float size,
+        bool chemical) => new()
     {
         Name = name,
         Amount = Mathf.Max(1, amount),
@@ -189,9 +212,9 @@ public static class WaterEffects
         Gravity = new Vector3(0, -9.8f, 0),
         ScaleAmountMin = 0.5f,
         ScaleAmountMax = 1.3f,
-        Color = WaterColour,
+        Color = Look(chemical).Colour,
         Mesh = new SphereMesh { Radius = size, Height = size * 2f, RadialSegments = 6, Rings = 3 },
-        MaterialOverride = Material,
+        MaterialOverride = Look(chemical).Material,
         CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
     };
 }

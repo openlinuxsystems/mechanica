@@ -37,14 +37,24 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
 
 - **Health** goes down from weapons, the Sledgehammer, splash, and falls faster than
   `fall.min_speed`. It comes back by eating. At 0 you die: everything you carry falls where
-  you stood in the knockout bag, a yellow canvas drawstring bag that your compass and maps point to until you pick it
-  up or it expires (tools you crafted, like the Connect Tool and the Weld Tool, stay with you), and you respawn at your bed, or at the world spawn if you have none (or it was broken).
+  you stood in the knockout bag, a yellow canvas drawstring bag that your compass (with a bag icon, not a waypoint diamond)
+  and maps point to until you pick it up or it expires (tools you crafted, like the Connect Tool and the Weld Tool, stay with you), and you respawn at your bed, or at the world spawn if you have none (or it was broken).
+  Any part with `respawn_point` is a bed: vanilla has the wooden Respawn Bed (it burns) and the steel Fancy Bed (it
+  does not, and is tougher).
+- **Ice:** the Freezer is a crafting station with one recipe: a full Water Bucket becomes 20 Ice Blocks in a minute,
+  and the empty bucket comes back into the Freezer's slots with the ice.
 - **Farming:** aim a Soil Bag at the ground (no steeper than 17°) to spill out a 3×3 soil mound (with Force build held,
   or aimed anywhere but the terrain, the bag itself is set down; picking a mound up gives the bag back). Plant a seed
   and water it. Soil looks dry, lightly watered, fully wet or drying, and empty soil dries out in about a game day. A crop grows only while its soil holds water,
   using a second of water per second of growth, through four stages. Harvest it ripe (E) for its crop
   and usually a seed back. Crops keep growing while nobody is near (the soil catches up from the world
   clock when it next runs) and are saved with the soil's Creation.
+- **Growbeds:** the Growbed (Fabricator: 2 Component Kits, 2 Circuit Boards and a Soil Bag) is soil you build into a
+  Creation, so a farm can be a cart, a boat or a base. It takes carrot, potato, tomato and cotton seeds, and a harvest
+  always gives 5 crops. It runs on batteries: each Battery Pack powers 6 minutes of growth, taken from Battery Containers
+  wired into it (or any container on its Creation); its cyan light shows while it grows. The crop rides along with the
+  Creation wherever it drives, across chunks and while it is parked, and saves with it. Picking a bed (or a soil mound) up
+  gives an unripe crop's seed back; a ripe crop must be harvested first. A bed that breaks drops its seed.
 - **Building costs items.** Placing a part takes one from your inventory; removing it gives it back
   (or drops it when your inventory is full). Craft parts at a Portable Fabricator or a Fabricator.
   The Portable Fabricator (every player starts with one) makes the scrap tier from scrap blocks: the Scrap Seat, Scrap
@@ -53,6 +63,12 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
 - **Breaking things:** a part breaks off at 0 health. A container that breaks spills what it held.
   Trees, rocks and bushes with `health` break into resources (`drops` in `world/worldgen.json`).
   Crashes and falls never damage a Creation: only the Sledgehammer, weapons, bots, explosions and fire do.
+- **Explosions:** an Explosive Canister (Small: 1.75 m, Large: 3.75 m) goes off at once when it breaks, when another
+  blast reaches it (canisters set each other off in the same moment) or when it hits something at 8 m/s or more. Any
+  other blow (a shot, a Sledgehammer, a saw, fire) lights its fuse: it hisses, its lamp blinks red and three seconds
+  later it goes off. A blast hurts players, bots, parts and world objects in its reach, most at its middle, pushes
+  parts away and sets flammable parts near it burning; every player sees and hears it. A blast that breaks a
+  creation apart still reaches the pieces.
 - **Piles** of items on the ground last `drop_lifetime` seconds (15 minutes). Drag a stack out of any item window
   (the inventory, a container, the hotbar) and let go over the world to toss it: it flies from your hand and lands
   `toss_distance` ahead as a pile anyone can pick up with E.
@@ -83,7 +99,8 @@ Fire (D13) burns in Survival and Creative alike, on the host, and every player s
 - **Putting it out.** Throw a full water bucket at a fire: the water flies in a lob, and every fire within
   its `splash` of where it lands loses its `douse` strength (vanilla's bucket puts a fire out in one go). The
   bucket comes back empty. A water cannon's jet takes its own `douse` off every fire along it, so a few shots
-  put one out. Fill empty buckets at any water, such as the pond by the crash site.
+  put one out; it fires the full buckets in the Water Containers linked to it, ten jets a bucket (the empty
+  buckets stay in the container for now). Fill empty buckets at any water, such as the pond by the crash site.
 - **Saved** with the world: fires at POI markers by marker (an out one stays out), and a burning part's
   strength on the part.
 
@@ -111,6 +128,12 @@ their item's properties.
   and throwing (`watering.lua`, with `item.replace`) empties one at a time; each swaps one for the other in the
   same slot, so the bucket in hand stays in hand. How it moves in the hand
   is `bucket` in `game/data/character.json`.
+- A pool of a liquid with a `bucket` (worldgen `liquids[]`; vanilla's chemical pools name `chemical_bucket`) fills
+  buckets with that instead: `CollectWater` there turns every empty bucket carried into a Chemical Bucket (Parts map
+  E11; no recipe). Its script (`chemical_bucket.lua`) pours `properties.count` Chemical into a container in reach that
+  takes it (the Chemical Container), through `inventory.put`, or throws it like water (a green `chemical` projectile
+  that waters nothing and puts out no fire); either way the bucket comes back empty. A liquid with only `collect` gives
+  its items and leaves the bucket empty.
 - Items and parts: `seed`, `soil` and `respawn_point` in part data
   ([Part Data Schema](part-data-schema.md#survival)). Food, weapons, seeds and the water bucket are
   item scripts (`food.lua`, `potato_gun.lua`, `seed.lua`, `bucket.lua` and `watering.lua` in `mods/vanilla/scripts/`)
@@ -121,7 +144,10 @@ their item's properties.
   and its growth speed; the script reads both with `world.item`. The host keeps only what the script stores
   on the soil (seed, growth, water, stage and when growth was last worked out): that is what is saved, sent
   to clients and read by bots and raids. Vanilla's items and soil are authored by the Part Editor batch
-  `mods/vanilla/editor/batches/survival.json`.
+  `mods/vanilla/editor/batches/survival.json`. Soil on a Creation (the Growbed, parts map E9) is the same: its state is
+  per part, so it follows the part through splits and welds and saves in the Creation. `soil.yield` and `soil.seeds` fix
+  its harvest and the seeds it takes (checked by the host in `CheckPlant`, which `farm.can_plant` asks), and `soil.lua`'s
+  `charge_item` / `charge_time` properties power it. The Growbed is in `mods/vanilla/editor/batches/parts_farming.json`.
 - `game/data/building.json`: `sledge.combat_damage` (players and bots), `sledge.object_damage` (world objects
   without their own) and the knockback (`impulse`, `max_knockback_speed`, `character_mass`, `knockback_lift`,
   `knockback_drag`). A world object's own hit damage is its `sledge_damage` in `worldgen.json`. A mod changes
@@ -140,7 +166,7 @@ their item's properties.
 | `AimItem` | `on` | Starts (`true`) or stops aiming the item in hand: right click held with a weapon. |
 | `ReloadItem` | `slot` | Reloads the item in the slot (its script's `on_reload_item`). |
 | `SetFriendlyFire` | `on` | Host only: turns friendly fire on or off. |
-| `CollectWater` | `point`, `slot?` | A point on water in reach; turns every empty `bucket_item` the caller carries into a full `water_item` (the one in `slot`, or the first, first), each in the same slot when it was the last of its stack; with no room for the rest, the others stay empty. Returns `{slot}`, where the full bucket is. |
+| `CollectWater` | `point`, `slot?` | A point on water in reach; turns every empty `bucket_item` the caller carries into a full `water_item` (the one in `slot`, or the first, first), each in the same slot when it was the last of its stack; with no room for the rest, the others stay empty. In a pool of a liquid with a `bucket` item they turn into that instead (a Chemical Bucket), and in one with only `collect` the caller gets those items and the buckets stay empty. Returns `{slot}`, where the full bucket is. |
 | `SetSpawn` | `creation`, `part` | A `respawn_point` part in reach. |
 | `DropItems` | `slot`, `count`, `at`, `from` | Tosses the stack (or `count` of it) in front of you; `from` takes it from a container in reach instead of your inventory, and `at` places it there with Force build (it then stays). |
 | `PickUp` | `drop` | A pile within `pickup_reach`. |

@@ -5,8 +5,12 @@
   ],
   "inputs": [
     {
-      "item": "scrap_metal_block",
-      "count": 8
+      "item": "metal_block_2",
+      "count": 20
+    },
+    {
+      "item": "glue",
+      "count": 2
     }
   ],
   "outputs": [
@@ -15,6 +19,6 @@
       "count": 1
     }
   ],
-  "time": 2,
+  "time": 10,
   "order": 230
 }

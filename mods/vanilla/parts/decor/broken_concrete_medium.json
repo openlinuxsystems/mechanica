@@ -1,0 +1,19 @@
+{
+  "id": "broken_concrete_medium",
+  "name": "Broken Concrete (Medium)",
+  "description": "A smaller broken slab of cast concrete with two rebar ends.",
+  "category": "decor",
+  "mass": 7.5,
+  "durability": 4,
+  "friction": 0.2,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "concrete",
+  "size": [3, 3, 2],
+  "mesh": "meshes/parts/broken_concrete_medium.glb",
+  "icon": "textures/items/broken_concrete_medium_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

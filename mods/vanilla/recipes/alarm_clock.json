@@ -1,0 +1,28 @@
+{
+  "id": "alarm_clock",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 5
+    },
+    {
+      "item": "glass_block",
+      "count": 10
+    },
+    {
+      "item": "circuit_board",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "alarm_clock",
+      "count": 1
+    }
+  ],
+  "time": 10,
+  "order": 1260
+}

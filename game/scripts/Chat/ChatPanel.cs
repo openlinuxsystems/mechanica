@@ -34,6 +34,12 @@ public partial class ChatPanel : CanvasLayer, IHudLayer
     /// <summary>Where requests go. Set before adding to the tree.</summary>
     public ActionGateway Actions { get; init; } = null!;
 
+    /// <summary>
+    /// How far up from the bottom of the screen another bottom-left panel reaches (the vehicle gauges), in pixels; the
+    /// chat sits above it. Null or 0 keeps the chat at its own place.
+    /// </summary>
+    public Func<float>? Below { get; init; }
+
     /// <summary>True while the typing box is open.</summary>
     public bool IsOpen => _input.Visible;
 
@@ -112,6 +118,10 @@ public partial class ChatPanel : CanvasLayer, IHudLayer
         var now = Time.GetTicksMsec() / 1000.0;
         foreach (var (label, at) in _lines)
             label.Visible = IsOpen || now - at < ShowSeconds;
+        var size = GetViewport().GetVisibleRect().Size;
+        var bottom = -Mathf.Max(size.Y * 0.02f + 56, (Below?.Invoke() ?? 0) + 8);
+        if (!Mathf.IsEqualApprox(_panel.OffsetBottom, bottom))
+            _panel.OffsetTop = _panel.OffsetBottom = bottom;
         var opacity = GameSettings.Current.Interface.ChatOpacity;
         _background.BgColor = UiTokens.DeepNavy with { A = IsOpen ? Mathf.Max(opacity, 0.35f) : _lines.Any(l => l.Label.Visible) ? opacity : 0f };
         // The list grows with its lines up to the cap, then scrolls.

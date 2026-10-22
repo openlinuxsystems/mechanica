@@ -21,7 +21,8 @@ namespace Mechanica.Core.Survival;
 /// combat primitives here: <see cref="Hitscan"/>, <see cref="Hit"/>, <see cref="Splash"/>, <see cref="Launch"/>
 /// (projectiles) and <see cref="Heal"/>.</item>
 /// <item>Farming: seeds and the water bucket are Lua item scripts (chunk 20b) that plant and water soil
-/// through <see cref="PlantSeed"/> and <see cref="WaterSoil"/>. Buckets come from <c>CollectWater</c>. How
+/// through <see cref="PlantSeed"/> and <see cref="WaterSoil"/>. Buckets fill at water, or at a pool of a liquid with a
+/// bucket of its own (chemicals), through <c>CollectWater</c>. How
 /// crops grow and are harvested is the soil part's own Lua script (D2: growth in <c>on_update</c>, the harvest
 /// in <c>on_activate</c> through <c>ActivatePart</c>); C# only keeps the <see cref="SoilState"/> it decides.</item>
 /// <item>Items on the ground: <c>DropItems</c>, <c>PickUp</c>. Broken containers, broken world objects and
@@ -35,7 +36,7 @@ namespace Mechanica.Core.Survival;
 public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings settings, InventoryActions inventories, ISurvivalWorld world)
     : IBuildCosts, IStrikeTargets
 {
-    /// <summary>Action name for filling a bucket at water.</summary>
+    /// <summary>Action name for filling a bucket at water, or at a pool of another liquid that has a full bucket of its own.</summary>
     public const string CollectWater = "CollectWater";
 
     /// <summary>Action name for setting the bed to respawn at.</summary>
@@ -168,6 +169,14 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
 
     /// <summary>A blow rocked a player who lived through it (<see cref="HitSettings"/>): how hard, and where it came from.</summary>
     public event Action<PlayerHitView>? PlayerHit;
+
+    /// <summary>
+    /// A part took damage of any kind (a shot, a blast, a Sledgehammer, fire, a bot), or broke off: the part's own script
+    /// hears it as <c>on_damage</c>. Raised by <see cref="ToolActions.DamagePart"/> through <see cref="IStrikeTargets"/>.
+    /// </summary>
+    public event Action<PartDamage>? PartDamaged;
+
+    void IStrikeTargets.PartDamaged(PartDamage damage) => PartDamaged?.Invoke(damage);
 
     /// <summary>Registers every survival action.</summary>
     public void Register(ActionDispatcher dispatcher)
@@ -471,7 +480,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             var body = creation.BodyIndexOf(part);
             if (cutting)
                 world.Impact(hit.Point, creation.DefinitionOf(part).SoundMaterial ?? "metal");
-            var result = world.DamagePart(creation, part, damage);
+            var result = world.DamagePart(creation, part, damage, kind);
             if (!result.Broken && push != Vector3.Zero && float.IsFinite(push.LengthSquared()))
                 world.Push(creation, body, hit.Point, push);
             return new ShotHitView("part", point, damage, Creation: id, Part: part);
@@ -540,18 +549,21 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         }
         // FindCreation brings each Creation's Body poses up to date.
         // A world-owned Creation (WorldOwned) is not hurt or moved by a blast.
-        foreach (var creation in world.AllCreations.Where(c => !c.IsWorldOwned).Select(c => c.Id).ToList().Select(world.FindCreation).OfType<Creation>())
+        foreach (var whole in world.AllCreations.Where(c => !c.IsWorldOwned).Select(c => c.Id).ToList().Select(world.FindCreation).OfType<Creation>())
         {
-            foreach (var part in creation.Parts.ToList())
+            // A break can split the Creation: its pieces keep their part ids, so each part is looked for in them too.
+            var pieces = new List<Creation> { whole };
+            foreach (var part in whole.Parts.ToList())
             {
-                if (creation.FindPart(part.Id) is null)
-                    continue; // broken off by an earlier part's damage, with the Creation split
+                if (pieces.FirstOrDefault(p => p.FindPart(part.Id) is { } found && found.Part == part.Part) is not { } creation)
+                    continue; // broken by an earlier part's blast damage
                 var centre = PartCentre(creation, part.Id);
                 if (Vector3.Distance(centre, at) is var d && d > radius)
                     continue;
                 var dealt = Falloff(d);
                 var body = creation.BodyIndexOf(part.Id);
-                var result = world.DamagePart(creation, part.Id, dealt);
+                var result = world.DamagePart(creation, part.Id, dealt, DamageKinds.Explosion);
+                pieces.AddRange(result.SplitOff.Select(world.FindCreation).OfType<Creation>());
                 if (!result.Broken && impulse > 0 && centre != at)
                     world.Push(creation, body, centre, Vector3.Normalize(centre - at) * impulse * (dealt / damage));
                 hits.Add(new ShotHitView("part", centre.ToVec3(), dealt, Creation: creation.Id, Part: part.Id));
@@ -817,7 +829,20 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             return $"Unknown item '{seed}'.";
         if (CropOf(Identifiers.Qualify(seed), item.Seed) is not { } crop || catalog.FindDefinition(crop) is null)
             return $"{item.Name ?? seed} cannot be planted.";
-        return world.FindCreation(creationId)!.SoilOf(partId)!.Seed is not null ? "Something is already growing there." : null;
+        var creation = world.FindCreation(creationId)!;
+        if (!Grows(creation, partId, seed))
+            return $"The {creation.DefinitionOf(partId).Name ?? "soil"} cannot grow {item.Name ?? seed}.";
+        return creation.SoilOf(partId)!.Seed is not null ? "Something is already growing there." : null;
+    }
+
+    // True when the soil part's soil.seeds (bare ids in the part's own mod) lists the seed, or lists nothing.
+    private static bool Grows(Creation creation, int partId, string seed)
+    {
+        if (creation.DefinitionOf(partId).Soil?.Seeds is not { } seeds)
+            return true;
+        var owner = Identifiers.Qualify(creation.FindPart(partId)!.Part).Split(':')[0];
+        var wanted = Identifiers.Qualify(seed);
+        return seeds.Any(s => Identifiers.Qualify(s, owner) == wanted);
     }
 
     /// <summary>
@@ -929,50 +954,70 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         }
         if (CheckReach(caller, point) is { } far)
             return far;
+        string full;
         if (world.LiquidAt(point) is { Liquid.Water: false } pool)
         {
-            if (pool.Liquid.Collect is not { Item: { } item } collect || catalog.FindDefinition(item) is null)
-                return "A bucket cannot hold that.";
-            if (_lastWater.TryGetValue(caller.Peer, out var lastDip) && world.Now - lastDip < settings.WaterSeconds * IntervalJitter)
-                return "You are still filling the last one.";
-            return inventories.PlayerInventory(caller.Peer).SpaceFor(item) >= collect.Count ? null : "Make room in your inventory first.";
+            if (pool.Liquid.Bucket is { } bucket)
+            {
+                if (catalog.FindDefinition(bucket) is null)
+                    return "A bucket cannot hold that.";
+                full = bucket;
+            }
+            else
+            {
+                if (pool.Liquid.Collect is not { Item: { } item } collect || catalog.FindDefinition(item) is null)
+                    return "A bucket cannot hold that.";
+                if (_lastWater.TryGetValue(caller.Peer, out var lastDip) && world.Now - lastDip < settings.WaterSeconds * IntervalJitter)
+                    return "You are still filling the last one.";
+                return inventories.PlayerInventory(caller.Peer).SpaceFor(item) >= collect.Count ? null : "Make room in your inventory first.";
+            }
         }
-        if (!world.IsWater(point))
+        else if (!world.IsWater(point))
             return "There is no water there.";
+        else
+            full = settings.WaterItem;
         if (_lastWater.TryGetValue(caller.Peer, out var last) && world.Now - last < settings.WaterSeconds * IntervalJitter)
             return "You are still filling the last one.";
         var pockets = inventories.PlayerInventory(caller.Peer);
-        return pockets[EmptyBucketSlot(caller.Peer, args.Slot)!.Value]!.Count == 1 || pockets.SpaceFor(settings.WaterItem) > 0
+        return pockets[EmptyBucketSlot(caller.Peer, args.Slot)!.Value]!.Count == 1 || pockets.SpaceFor(Identifiers.Qualify(full)) > 0
             ? null : "Make room in your inventory first.";
     }
 
     // Fills every empty bucket the caller carries in one dip, the one in the slot first: the last one in a slot turns
-    // full where it is (so the one in hand stays in hand), and the rest go wherever there is room.
-    // A pool of a liquid that can be collected (a chemical pool) gives its items once and the buckets stay empty.
+    // full where it is (so the one in hand stays in hand), and the rest go wherever there is room. Water fills them with
+    // water; a pool of another liquid with a bucket (a chemical pool) fills them with that (Parts map E11), and one that can
+    // only be collected gives its items once and the buckets stay empty.
     private JsonElement? ApplyCollectWater(ActionCaller caller, CollectWaterArgs args)
     {
         _lastWater[caller.Peer] = world.Now;
         var pockets = inventories.PlayerInventory(caller.Peer);
         var slot = EmptyBucketSlot(caller.Peer, args.Slot)!.Value;
-        if (world.LiquidAt(args.Point.ToNumerics()) is { Liquid: { Water: false, Collect: { } collect } })
+        var full = settings.WaterItem;
+        if (world.LiquidAt(args.Point.ToNumerics()) is { Liquid.Water: false } pool)
         {
-            pockets.Add(Identifiers.Qualify(collect.Item!), collect.Count);
-            PlayPickup(collect.Item!, args.Point.ToNumerics());
-            return Value(new CollectWaterResult(slot));
+            if (pool.Liquid.Bucket is { } bucket)
+                full = bucket;
+            else
+            {
+                var collect = pool.Liquid.Collect!;
+                pockets.Add(Identifiers.Qualify(collect.Item!), collect.Count);
+                PlayPickup(collect.Item!, args.Point.ToNumerics());
+                return Value(new CollectWaterResult(slot));
+            }
         }
-        FillBuckets(pockets, slot);
+        FillBuckets(pockets, slot, full);
         for (var s = 0; s < pockets.SlotCount; s++)
         {
             if (s != slot && EmptyBucketSlot(caller.Peer, s) is not null)
-                FillBuckets(pockets, s);
+                FillBuckets(pockets, s, full);
         }
         return Value(new CollectWaterResult(slot));
     }
 
-    // Fills the empty buckets in one slot until it has none left or there is no room for another full one.
-    private void FillBuckets(Inventory pockets, int slot)
+    // Fills the empty buckets in one slot with full (a full bucket item) until it has none left or there is no room for another.
+    private void FillBuckets(Inventory pockets, int slot, string full)
     {
-        var water = Identifiers.Qualify(settings.WaterItem);
+        var water = Identifiers.Qualify(full);
         while (pockets[slot] is { } stack && Identifiers.Qualify(stack.Item) == Identifiers.Qualify(settings.BucketItem))
         {
             if (stack.Count == 1)
@@ -1274,14 +1319,25 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         return drop;
     }
 
-    /// <summary>A part with an inventory is breaking: everything in it falls out as a pile where it was.</summary>
+    /// <summary>
+    /// A part is breaking: everything in its inventory falls out as a pile where it was, and so does the seed of a crop
+    /// planted in it (soil on a Creation, a Growbed, that is smashed).
+    /// </summary>
     public void Spill(Creation creation, int partId)
     {
-        if (creation.InventoryOf(partId) is not { IsEmpty: false } inventory)
-            return;
-        var items = inventory.Slots.Where(s => s is not null).Select(s => s!).ToList();
-        inventory.Clear();
-        AddDrop(PartCentre(creation, partId), items);
+        var items = new List<ItemStack>();
+        if (creation.InventoryOf(partId) is { IsEmpty: false } inventory)
+        {
+            items.AddRange(inventory.Slots.Where(s => s is not null).Select(s => s!));
+            inventory.Clear();
+        }
+        if (creation.SoilOf(partId) is { Seed: { } seed } soil)
+        {
+            items.Add(new ItemStack(seed, 1));
+            soil.Clear();
+        }
+        if (items.Count > 0)
+            AddDrop(PartCentre(creation, partId), items);
     }
 
     private void RemoveDrop(int id)

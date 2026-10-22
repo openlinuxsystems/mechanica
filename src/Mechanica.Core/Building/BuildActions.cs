@@ -410,6 +410,8 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
             return $"Creation {args.Creation} has no part {args.Part}.";
         if (creation.HoldsItems(part.Id) && !creation.CarriesContents(part.Id))
             return $"Empty the {creation.DefinitionOf(part.Id).Name ?? part.Part} before picking it up.";
+        if (creation.SoilOf(part.Id) is { Ripe: true } ripe)
+            return $"Harvest the {CropName(ripe.Seed!)} before picking up the {creation.DefinitionOf(part.Id).Name ?? part.Part}.";
         var pose = creation.BodyPose(creation.BodyIndexOf(part.Id));
         var centre = pose.Apply(PartGeometry.CentreMetres(creation.DefinitionOf(part.Id), part.Cell, part.Rotation).ToNumerics());
         return CheckReach(caller, centre);
@@ -428,6 +430,9 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
         List<ItemStack> held = creation.InventoryOf(part.Id) is { IsEmpty: false } inventory
             ? [.. inventory.Slots.Where(s => s is not null).Select(s => s!)]
             : [];
+        // Soil picked up with a crop still growing in it (a ripe one must be harvested first) gives its seed back.
+        if (creation.SoilOf(part.Id)?.Seed is { } planted)
+            held.Add(new ItemStack(planted, 1));
         var worldPart = creation.WorldPart;
         var result = Remove(world, creation, args.Part);
         // A world-owned part is the player's once picked up: its marker places no other.
@@ -455,6 +460,13 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
             return;
         var owner = bound is null ? Identifiers.VanillaModId : OwnerOf(part.Part);
         world.PlaySound(sound, owner, PartCentre(creation, partId));
+    }
+
+    // The name of what a planted seed grows into, for messages.
+    private string CropName(string seed)
+    {
+        var crop = catalog.FindDefinition(seed)?.Seed?.Crop is { } id ? Identifiers.Qualify(id, seed.Split(':')[0]) : seed;
+        return catalog.FindDefinition(crop)?.Name ?? crop;
     }
 
     /// <summary>World position of a part's centre.</summary>

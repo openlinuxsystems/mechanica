@@ -1,0 +1,19 @@
+{
+  "id": "juice_drum",
+  "name": "Juice Drum",
+  "description": "A 200 litre colony drum of berry juice concentrate, sealed.",
+  "category": "decor",
+  "mass": 7.5,
+  "durability": 3,
+  "friction": 0.3,
+  "buoyancy": 0.6,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [2, 3, 2],
+  "mesh": "meshes/parts/juice_drum.glb",
+  "icon": "textures/items/juice_drum_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

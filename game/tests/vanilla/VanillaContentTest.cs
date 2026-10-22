@@ -1,5 +1,6 @@
 using Godot;
 using Mechanica.Core.Actions;
+using Mechanica.Core.Building;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
 using Mechanica.Core.Editor;
@@ -16,9 +17,11 @@ namespace Mechanica.Game.Tests;
 /// Headless test for chunk 23's content passes. Re-runs the Part Editor batches that author the lights,
 /// utility parts, decor props and the remaining containers and stations into a scratch copy of the mod and
 /// checks every file they write is byte-for-byte what is checked in (D3). Then, on a host with a client
-/// (D10), through the client's Action API: a switch turns a spotlight and a rotor on, an interior light is
-/// switched off with F, a warning light blinks, a beacon switched on flashes and its model plays its on and flash clips,
-/// and the client shows every light and the rotor's spinning model as the host's scripts drive them.
+/// (D10), through the client's Action API: a switch turns a spotlight and a rotor on and the spotlight's model plays its
+/// on clip, a shack light is dimmed with its brightness setting, a painted headlight shines in its paint colour (parts
+/// map batch 5), an interior light is switched off with F and plays its off clip, a warning light blinks, a beacon
+/// switched on flashes and its model plays its on and flash clips, and the client shows every light and the rotor's
+/// spinning model as the host's scripts drive them.
 /// </summary>
 public partial class VanillaContentTest : StagedTest
 {
@@ -35,7 +38,7 @@ public partial class VanillaContentTest : StagedTest
     private ModLoadResult _mods = null!;
     private Instance _host = null!;
     private Instance _client = null!;
-    private int _switch, _spot, _lamp, _warning, _rotor, _beacon;
+    private int _switch, _spot, _lamp, _warning, _rotor, _beacon, _shack, _headlight;
     private readonly HashSet<bool> _blinks = [];
     private readonly HashSet<string> _beaconClips = [];
     private float _rotorAngle, _rotorTurned;
@@ -155,6 +158,50 @@ public partial class VanillaContentTest : StagedTest
             Check(_blinks.Count == 2, "the client sees the warning light both lit and dark");
             return true;
         });
+        Add("the spotlight's model plays its on clip and the dark switched-off lamps their off clip, on both peers", _ =>
+        {
+            foreach (var instance in new[] { _host, _client })
+            {
+                Check(Display(instance, _spot)?.Clip == "on", $"{instance}: the lit spotlight plays its on clip ({Display(instance, _spot)?.Clip})");
+                Check(Display(instance, _lamp)?.Clip == "on", $"{instance}: the interior light plays its on clip ({Display(instance, _lamp)?.Clip})");
+            }
+            return true;
+        });
+        Add("the client dims the shack light to 4 of 10 and both peers show it dimmer", frame =>
+        {
+            if (frame == 0)
+            {
+                Check(Lit(_host, _shack) is > 1.9f and < 2.1f, $"the shack light starts at its full energy ({Lit(_host, _shack)})");
+                Request(LogicActions.ConfigurePart, new ConfigurePartArgs(RigId, _shack,
+                    new Dictionary<string, System.Text.Json.JsonElement?> { ["brightness"] = System.Text.Json.JsonSerializer.SerializeToElement(4) }));
+            }
+            if (frame < 30)
+                return false;
+            Check(_results.Count == 1 && _results[0].Ok, $"setting the brightness succeeds ({string.Join("; ", _results)})");
+            foreach (var instance in new[] { _host, _client })
+            {
+                Check(Lit(instance, _shack) is > 0.75f and < 0.85f, $"{instance}: the shack light shines at 0.4 of its energy ({Lit(instance, _shack)})");
+                Check(Display(instance, _shack)?.Clip == "on", $"{instance}: the dimmed shack light still plays its on clip");
+            }
+            _results.Clear();
+            return true;
+        });
+        Add("the client paints the headlight red: both peers' headlights shine red", frame =>
+        {
+            if (frame == 0)
+                Request(ToolActions.Paint, new PaintArgs(RigId, [_headlight], "#ff2010"));
+            if (frame < 30)
+                return false;
+            Check(_results.Count == 1 && _results[0].Ok, $"painting the headlight succeeds ({string.Join("; ", _results)})");
+            foreach (var instance in new[] { _host, _client })
+            {
+                var light = instance.Main.Creations.NodeOf(RigId)!.Lights.First(l => l.Part == _headlight).Light;
+                Check(light.LightColor.R > 0.9f && light.LightColor.G < 0.2f && light.LightColor.B < 0.1f, $"{instance}: its light is the paint's red ({light.LightColor})");
+                Check(Lit(instance, _headlight) > 3.9f, $"{instance}: the painted headlight still shines ({Lit(instance, _headlight)})");
+            }
+            _results.Clear();
+            return true;
+        });
         Add("the client switches the interior light off with F", frame =>
         {
             if (frame == 0)
@@ -163,7 +210,10 @@ public partial class VanillaContentTest : StagedTest
                 return false;
             Check(_results.Count == 1 && _results[0].Ok, $"using the light succeeds ({string.Join("; ", _results)})");
             foreach (var instance in new[] { _host, _client })
+            {
                 Check(Lit(instance, _lamp) is 0f, $"{instance}: the interior light is off ({Lit(instance, _lamp)})");
+                Check(Display(instance, _lamp)?.Clip == "off", $"{instance}: its model plays its off clip ({Display(instance, _lamp)?.Clip})");
+            }
             _results.Clear();
             return true;
         });
@@ -195,11 +245,13 @@ public partial class VanillaContentTest : StagedTest
         });
     }
 
-    private PartDisplayVisual? Beacon(Instance instance) =>
-        instance.Main.Creations.NodeOf(RigId)?.Displays.FirstOrDefault(d => d.Part == _beacon);
+    private PartDisplayVisual? Beacon(Instance instance) => Display(instance, _beacon);
 
-    // A 6 x 6 metal plate with a switch linked to a spotlight and a rotor, an interior light hung under a
-    // corner, a warning light and a beacon.
+    private static PartDisplayVisual? Display(Instance instance, int part) =>
+        instance.Main.Creations.NodeOf(RigId)?.Displays.FirstOrDefault(d => d.Part == part);
+
+    // A 6 x 6 metal plate with a switch linked to a spotlight and a rotor, an interior light and a shack light hung
+    // under it, a headlight on its front edge, a warning light and a beacon.
     private void SpawnRig()
     {
         var rig = new Creation(RigId, _mods);
@@ -212,6 +264,8 @@ public partial class VanillaContentTest : StagedTest
         _warning = Place(rig, "vanilla:warning_light", new GridCell(0, 1, 5));
         _lamp = Place(rig, "vanilla:interior_light", new GridCell(4, -1, 4));
         _beacon = Place(rig, "vanilla:beacon", new GridCell(2, 1, 5));
+        _shack = Place(rig, "vanilla:shack_light", new GridCell(1, -2, 1));
+        _headlight = Place(rig, "vanilla:headlight", new GridCell(2, 0, -1));
         foreach (var to in new[] { _spot, _rotor })
         {
             if (!rig.TryLink(_switch, to, out var error))

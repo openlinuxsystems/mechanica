@@ -1,0 +1,48 @@
+{
+  "id": "fluorescent_light",
+  "name": "Fluorescent Light",
+  "description": "A long ceiling batten with two tubes, from the colony's warehouses. Build it under a roof; it lights the room around it. Use it to switch it off and on; a linked switch also works.",
+  "category": "light",
+  "mass": 7.5,
+  "durability": 4,
+  "friction": 0.4,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [4, 1, 2],
+  "mesh": "meshes/parts/fluorescent_light.glb",
+  "icon": "textures/items/fluorescent_light_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, 0.125, 0],
+      "normal": [0, 1, 0]
+    }
+  ],
+  "script": "scripts/light.lua",
+  "sounds": {
+    "on": "light_on",
+    "off": "light_off"
+  },
+  "logic": {
+    "inputs": 1,
+    "use": "toggle"
+  },
+  "light": {
+    "kind": "omni",
+    "color": "#fff4dd",
+    "energy": 3,
+    "range": 12,
+    "offset": [0, -0.06, 0]
+  },
+  "display": {
+    "clips": {
+      "readout": "pose"
+    }
+  }
+}

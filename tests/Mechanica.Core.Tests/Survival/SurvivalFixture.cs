@@ -234,7 +234,7 @@ internal sealed class SurvivalFixture
 
         public void PlaySound(string sound, string ownerModId, Vector3 position) => Sounds.Add((sound, ownerModId, position));
 
-        public SledgeResult DamagePart(Creation creation, int partId, float damage) => Tools.DamagePart(creation, partId, damage);
+        public SledgeResult DamagePart(Creation creation, int partId, float damage, string kind) => Tools.DamagePart(creation, partId, damage, kind);
 
         public void Push(Creation creation, int bodyIndex, Vector3 point, Vector3 impulse)
         {
@@ -252,6 +252,10 @@ internal sealed class SurvivalFixture
         public void ObjectHit(WorldObjectId id, Vector3 at, bool broke) => ObjectHits.Add((id, at, broke));
 
         public void Impact(Vector3 at, string material) => Impacts.Add((at, material));
+
+        public List<(Vector3 At, float Radius)> Blasts { get; } = [];
+
+        public void Blast(Vector3 at, float radius) => Blasts.Add((at, radius));
 
         // A part's shape reaches the sphere when its centre is within the radius plus half a block.
         public IEnumerable<(int Creation, int Part)> PartsNear(Vector3 point, float radius) =>

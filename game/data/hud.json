@@ -8,6 +8,9 @@
   "safe_area": 0.02,
   "hint_dismiss_seconds": 0.6,
   "crosshair_pulse_hz": 2.0,
+  // A vehicle gauge under this share of its container's room pulses red, this many times a second.
+  "gauge_low": 0.1,
+  "gauge_pulse_hz": 1.0,
   // What fills all ten pips of each stat in a detail card (UI spec §0). Mass pips follow the logarithm of the mass.
   "stat_pips": {
     "mass_kg": 900,

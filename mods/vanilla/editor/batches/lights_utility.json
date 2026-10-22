@@ -1,7 +1,12 @@
 {
-  // Lights and utility parts (chunk 23): six lights, the glowstick, radio, beacon, horn, dispenser, saw blade,
+  // Lights and utility parts (chunk 23): twelve lights, the glowstick, radio, beacon, horn, dispenser, saw blade,
   // drill, water cannon and the mounted potato blaster. Their behaviour is in Lua (D2); a light's look is its
-  // light section. The numbers are placeholders until balance tuning. Re-run with tools/author-vanilla.sh.
+  // light section. Parts map batch 5 gave the lights the wiki's stats and recipes, six new lights (shack, fluorescent,
+  // packing, frame beam, neon, protector) and real models with on and off clips (tools/<part>/build_<part>.py).
+  // Parts map batch 6 (working parts) gave the Water Cannon and Mounted Potato Blaster the wiki's stats, recipes and
+  // linked containers, and added the Plasma Drill, the Small and Large Explosive Canisters, the Alarm Clock, the Cash
+  // Register and the Scuttler Head (a placeable note player, still dropped by Scuttlers), each with a real model.
+  // Re-run with tools/author-vanilla.sh.
   "format_version": 1,
   "parts": [
     {
@@ -9,36 +14,33 @@
       "template": "interactive",
       "set": {
         "name": "Headlight",
-        "description": "A small lamp for the front of a vehicle. It shines out of its face while its input is on, or all the time with nothing linked.",
+        "description": "A small lamp for the front of a vehicle. It shines out of its face while its input is on, or all the time with nothing linked. Paint it to change the colour of its light.",
         "category": "light",
-        "mass": 1,
-        "durability": 2,
-        "stack_size": 20,
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.4,
+        "flammable": false,
+        "stack_size": 1,
         "size": [1, 1, 1],
         "sockets": [{ "id": "base", "type": "structural", "position": [0, 0, 0.125], "normal": [0, 0, 1] }],
         "script": "scripts/light.lua",
-        "visual": { "color": "#d8d8d0", "roughness": 0.4, "metallic": 0.5, "emission": "#fff4dd" },
+        "icon": "textures/items/headlight_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "sounds": { "on": "light_on", "off": "light_off" },
         "logic": { "inputs": 1 },
-        "light": { "kind": "spot", "color": "#fff4dd", "energy": 4, "range": 30, "angle": 25, "offset": [0, 0, -0.1] }
+        "light": { "kind": "spot", "color": "#fff4dd", "energy": 4, "range": 30, "angle": 25, "offset": [0, 0, -0.12] },
+        "display": { "clips": { "readout": "pose" } },
+        "sound_material": "metal"
       },
-      "model": [
-        { "kind": "box", "size": [0.22, 0.22, 0.12], "position": [0, 0, 0.06] },
-        {
-          "kind": "cylinder",
-          "radius": 0.09,
-          "height": 0.06,
-          "position": [0, 0, -0.03],
-          "rotation": [90, 0, 0]
-        }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/headlight.glb" }],
       "recipes": [
         {
           "id": "headlight",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 4 }, { "item": "component_kit", "count": 1 }],
+          "inputs": [{ "item": "metal_block", "count": 1 }, { "item": "glass_block", "count": 1 }, { "item": "circuit_board", "count": 1 }, { "item": "glue", "count": 1 }],
           "outputs": [{ "item": "headlight", "count": 1 }],
-          "time": 3,
+          "time": 5,
           "order": 1630
         }
       ]
@@ -50,13 +52,17 @@
         "name": "Spotlight",
         "description": "A bright narrow beam on a swivel base. It shines toward its front while its input is on, or all the time with nothing linked.",
         "category": "light",
-        "mass": 4,
-        "durability": 3,
+        "mass": 7.5,
+        "durability": 4,
+        "friction": 0.4,
+        "buoyancy": 0.2,
+        "flammable": false,
         "stack_size": 20,
         "size": [2, 2, 2],
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.25, 0], "normal": [0, -1, 0] }],
         "script": "scripts/light.lua",
-        "visual": { "color": "#3f4448", "roughness": 0.4, "metallic": 0.5, "emission": "#fffbe8" },
+        "icon": "textures/items/spotlight_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "sounds": { "on": "light_on", "off": "light_off" },
         "logic": { "inputs": 1 },
         "light": {
@@ -65,29 +71,17 @@
           "energy": 6,
           "range": 40,
           "angle": 15,
-          "offset": [0, 0.07, -0.2]
-        }
+          "offset": [0, 0.07, -0.24]
+        },
+        "display": { "clips": { "readout": "pose" } },
+        "sound_material": "metal"
       },
-      "model": [
-        { "kind": "box", "size": [0.4, 0.06, 0.4], "position": [0, -0.22, 0] },
-        { "kind": "box", "size": [0.08, 0.16, 0.08], "position": [0, -0.11, 0] },
-        {
-          "kind": "cylinder",
-          "radius": 0.14,
-          "height": 0.3,
-          "position": [0, 0.07, -0.05],
-          "rotation": [90, 0, 0]
-        }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/spotlight.glb" }],
       "recipes": [
         {
           "id": "spotlight",
           "stations": ["fabricator"],
-          "inputs": [
-            { "item": "scrap_metal_block", "count": 8 },
-            { "item": "component_kit", "count": 1 },
-            { "item": "circuit_board", "count": 1 }
-          ],
+          "inputs": [{ "item": "scrap_metal_block", "count": 8 }, { "item": "component_kit", "count": 1 }, { "item": "circuit_board", "count": 1 }],
           "outputs": [{ "item": "spotlight", "count": 1 }],
           "time": 5,
           "order": 1640
@@ -101,13 +95,17 @@
         "name": "Warehouse Spotlight",
         "description": "A big floodlight that lights a whole yard. It shines toward its front while its input is on, or all the time with nothing linked.",
         "category": "light",
-        "mass": 10,
-        "durability": 5,
+        "mass": 6,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.4,
+        "flammable": true,
         "stack_size": 20,
         "size": [3, 3, 3],
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "script": "scripts/light.lua",
-        "visual": { "color": "#2f3438", "roughness": 0.4, "metallic": 0.5, "emission": "#fff8e0" },
+        "icon": "textures/items/warehouse_spotlight_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "sounds": { "on": "light_on", "off": "light_off" },
         "logic": { "inputs": 1 },
         "light": {
@@ -116,37 +114,17 @@
           "energy": 10,
           "range": 60,
           "angle": 20,
-          "offset": [0, 0.1, -0.33]
-        }
-      },
-      "model": [
-        { "kind": "box", "size": [0.6, 0.08, 0.6], "position": [0, -0.335, 0] },
-        { "kind": "box", "size": [0.12, 0.25, 0.12], "position": [0, -0.17, 0] },
-        {
-          "kind": "cylinder",
-          "radius": 0.25,
-          "height": 0.42,
-          "position": [0, 0.1, -0.1],
-          "rotation": [90, 0, 0]
+          "offset": [0, 0.1, -0.36]
         },
-        {
-          "kind": "cylinder",
-          "radius": 0.22,
-          "height": 0.02,
-          "operation": "subtract",
-          "position": [0, 0.1, -0.32],
-          "rotation": [90, 0, 0]
-        }
-      ],
+        "display": { "clips": { "readout": "pose" } },
+        "sound_material": "metal"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/warehouse_spotlight.glb" }],
       "recipes": [
         {
           "id": "warehouse_spotlight",
           "stations": ["fabricator"],
-          "inputs": [
-            { "item": "scrap_metal_block", "count": 16 },
-            { "item": "component_kit", "count": 2 },
-            { "item": "circuit_board", "count": 1 }
-          ],
+          "inputs": [{ "item": "scrap_metal_block", "count": 16 }, { "item": "component_kit", "count": 2 }, { "item": "circuit_board", "count": 1 }],
           "outputs": [{ "item": "warehouse_spotlight", "count": 1 }],
           "time": 8,
           "order": 1680
@@ -158,15 +136,19 @@
       "template": "interactive",
       "set": {
         "name": "Construction Light",
-        "description": "A work lamp on a tripod stand, tilted down to light the ground in front of it. Shines while its input is on, or all the time with nothing linked.",
+        "description": "A work lamp on a tripod mast, tilted down to light the ground in front of it. Shines while its input is on, or all the time with nothing linked.",
         "category": "light",
         "mass": 6,
         "durability": 3,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
         "stack_size": 20,
         "size": [2, 4, 2],
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.5, 0], "normal": [0, -1, 0] }],
         "script": "scripts/light.lua",
-        "visual": { "color": "#d9a520", "roughness": 0.4, "metallic": 0.5, "emission": "#fff2d0" },
+        "icon": "textures/items/construction_light_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "sounds": { "on": "light_on", "off": "light_off" },
         "logic": { "inputs": 1 },
         "light": {
@@ -175,15 +157,13 @@
           "energy": 5,
           "range": 25,
           "angle": 45,
-          "offset": [0, 0.38, -0.12],
+          "offset": [0, 0.29, -0.09],
           "direction": [0, -0.4, -1]
-        }
+        },
+        "display": { "clips": { "readout": "pose" } },
+        "sound_material": "metal"
       },
-      "model": [
-        { "kind": "cylinder", "radius": 0.03, "height": 0.8, "position": [0, -0.06, 0] },
-        { "kind": "box", "size": [0.42, 0.04, 0.42], "position": [0, -0.48, 0] },
-        { "kind": "box", "size": [0.36, 0.24, 0.14], "position": [0, 0.38, -0.03], "rotation": [-20, 0, 0] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/construction_light.glb" }],
       "recipes": [
         {
           "id": "construction_light",
@@ -200,23 +180,26 @@
       "template": "interactive",
       "set": {
         "name": "Interior Light",
-        "description": "A ceiling lamp for cabins and bases. Build it under a roof; it lights the room around it. Use it to switch it off and on; a linked switch also works.",
+        "description": "A square ceiling lamp for cabins and bases. Build it under a roof; it lights the room around it. Use it to switch it off and on; a linked switch also works.",
         "category": "light",
-        "mass": 1.5,
+        "mass": 7.5,
         "durability": 2,
+        "friction": 0.5,
+        "buoyancy": 0.3,
+        "flammable": false,
         "stack_size": 20,
         "size": [2, 1, 2],
         "sockets": [{ "id": "base", "type": "structural", "position": [0, 0.125, 0], "normal": [0, 1, 0] }],
         "script": "scripts/light.lua",
-        "visual": { "color": "#e8e4d8", "roughness": 0.4, "metallic": 0.5, "emission": "#fff0c8" },
+        "icon": "textures/items/interior_light_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "sounds": { "on": "light_on", "off": "light_off" },
         "logic": { "inputs": 1, "use": "toggle" },
-        "light": { "kind": "omni", "color": "#fff0c8", "energy": 1.5, "range": 8, "offset": [0, -0.06, 0] }
+        "light": { "kind": "omni", "color": "#fff0c8", "energy": 1.5, "range": 8, "offset": [0, -0.06, 0] },
+        "display": { "clips": { "readout": "pose" } },
+        "sound_material": "metal"
       },
-      "model": [
-        { "kind": "box", "size": [0.4, 0.04, 0.4], "position": [0, 0.105, 0] },
-        { "kind": "cylinder", "radius": 0.16, "height": 0.1, "position": [0, 0.03, 0] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/interior_light.glb" }],
       "recipes": [
         {
           "id": "interior_light",
@@ -233,24 +216,26 @@
       "template": "interactive",
       "set": {
         "name": "Warning Light",
-        "description": "An orange flashing lamp. It blinks while its input is on, or all the time with nothing linked.",
+        "description": "A red flashing lamp in a cage. It blinks while its input is on, or all the time with nothing linked.",
         "category": "light",
         "mass": 1,
         "durability": 2,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
         "stack_size": 20,
         "size": [1, 2, 1],
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.25, 0], "normal": [0, -1, 0] }],
         "script": "scripts/light.lua",
-        "visual": { "color": "#e06a10", "roughness": 0.4, "metallic": 0.5, "emission": "#ff8a20" },
+        "icon": "textures/items/warning_light_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "logic": { "inputs": 1 },
-        "light": { "kind": "omni", "color": "#ff8a20", "energy": 2, "range": 6, "offset": [0, 0.08, 0] },
-        "properties": { "blink": 1.0, "duty": 0.5 }
+        "light": { "kind": "omni", "color": "#ff3d2e", "energy": 2, "range": 6, "offset": [0, 0.08, 0] },
+        "display": { "clips": { "readout": "pose" } },
+        "properties": { "blink": 1.0, "duty": 0.5 },
+        "sound_material": "metal"
       },
-      "model": [
-        { "kind": "cylinder", "radius": 0.1, "height": 0.1, "position": [0, -0.2, 0] },
-        { "kind": "cylinder", "radius": 0.08, "height": 0.2 },
-        { "kind": "sphere", "radius": 0.08, "position": [0, 0.1, 0] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/warning_light.glb" }],
       "recipes": [
         {
           "id": "warning_light",
@@ -259,6 +244,236 @@
           "outputs": [{ "item": "warning_light", "count": 1 }],
           "time": 3,
           "order": 1660
+        }
+      ]
+    },
+    {
+      "file": "parts/shack_light.json",
+      "template": "interactive",
+      "set": {
+        "name": "Shack Light",
+        "description": "A bare bulb under a zinc shade, as the settlers hang in their shacks. Build it under a roof; it lights the room around it. Set its brightness with the Connect Tool. Use it to switch it off and on; a linked switch also works.",
+        "category": "light",
+        "mass": 3,
+        "durability": 2,
+        "friction": 0.5,
+        "buoyancy": 0.4,
+        "flammable": true,
+        "stack_size": 1,
+        "size": [2, 2, 2],
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, 0.25, 0], "normal": [0, 1, 0] }],
+        "script": "scripts/light.lua",
+        "icon": "textures/items/shack_light_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sounds": { "on": "light_on", "off": "light_off" },
+        "logic": { "inputs": 1, "use": "toggle" },
+        "settings": [
+          { "id": "brightness", "name": "Brightness", "type": "number", "min": 1, "max": 10, "step": 1, "default": 10 }
+        ],
+        "light": { "kind": "omni", "color": "#fff1cc", "energy": 2, "range": 8, "offset": [0, -0.1, 0] },
+        "display": { "clips": { "readout": "pose" } },
+        "sound_material": "metal"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/shack_light.glb" }],
+      "recipes": [
+        {
+          "id": "shack_light",
+          "stations": ["fabricator", "portable_fabricator"],
+          "inputs": [{ "item": "scrap_metal_block", "count": 2 }, { "item": "glass_block", "count": 1 }],
+          "outputs": [{ "item": "shack_light", "count": 1 }],
+          "time": 5,
+          "order": 1605
+        }
+      ]
+    },
+    {
+      "file": "parts/fluorescent_light.json",
+      "template": "interactive",
+      "set": {
+        "name": "Fluorescent Light",
+        "description": "A long ceiling batten with two tubes, from the colony's warehouses. Build it under a roof; it lights the room around it. Use it to switch it off and on; a linked switch also works.",
+        "category": "light",
+        "mass": 7.5,
+        "durability": 4,
+        "friction": 0.4,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "stack_size": 20,
+        "size": [4, 1, 2],
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, 0.125, 0], "normal": [0, 1, 0] }],
+        "script": "scripts/light.lua",
+        "icon": "textures/items/fluorescent_light_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sounds": { "on": "light_on", "off": "light_off" },
+        "logic": { "inputs": 1, "use": "toggle" },
+        "light": { "kind": "omni", "color": "#fff4dd", "energy": 3, "range": 12, "offset": [0, -0.06, 0] },
+        "display": { "clips": { "readout": "pose" } },
+        "sound_material": "metal"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/fluorescent_light.glb" }],
+      "recipes": [
+        {
+          "id": "fluorescent_light",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 2 }, { "item": "glass_block", "count": 1 }],
+          "outputs": [{ "item": "fluorescent_light", "count": 1 }],
+          "time": 5,
+          "order": 1615
+        }
+      ]
+    },
+    {
+      "file": "parts/packing_lamp.json",
+      "template": "interactive",
+      "set": {
+        "name": "Packing Lamp",
+        "description": "A caged tube lamp on two clip feet. It shines in the colour it is painted (warm white unpainted). Use it to switch it off and on; a linked switch also works.",
+        "category": "light",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.5,
+        "buoyancy": 0.4,
+        "flammable": false,
+        "stack_size": 1,
+        "size": [4, 1, 1],
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.125, 0], "normal": [0, -1, 0] }],
+        "script": "scripts/light.lua",
+        "icon": "textures/items/packing_lamp_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sounds": { "on": "light_on", "off": "light_off" },
+        "logic": { "inputs": 1, "use": "toggle" },
+        "light": { "kind": "omni", "color": "#fff4dd", "energy": 2.5, "range": 10 },
+        "display": { "clips": { "readout": "pose" } },
+        "sound_material": "metal"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/packing_lamp.glb" }],
+      "recipes": [
+        {
+          "id": "packing_lamp",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 2 }, { "item": "glass_block", "count": 1 }],
+          "outputs": [{ "item": "packing_lamp", "count": 1 }],
+          "time": 5,
+          "order": 1617
+        }
+      ]
+    },
+    {
+      "file": "parts/frame_beam_light.json",
+      "template": "interactive",
+      "set": {
+        "name": "Frame Beam Light",
+        "description": "A steel channel beam with a light strip in its underside, for warehouse ceilings and gantries. It shines down. Use it to switch it off and on; a linked switch also works.",
+        "category": "light",
+        "mass": 7.5,
+        "durability": 4,
+        "friction": 0.4,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "stack_size": 20,
+        "size": [4, 1, 1],
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, 0.125, 0], "normal": [0, 1, 0] }],
+        "script": "scripts/light.lua",
+        "icon": "textures/items/frame_beam_light_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sounds": { "on": "light_on", "off": "light_off" },
+        "logic": { "inputs": 1, "use": "toggle" },
+        "light": {
+          "kind": "spot",
+          "color": "#fff4dd",
+          "energy": 4,
+          "range": 15,
+          "angle": 60,
+          "offset": [0, -0.05, 0],
+          "direction": [0, -1, 0]
+        },
+        "display": { "clips": { "readout": "pose" } },
+        "sound_material": "metal"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/frame_beam_light.glb" }],
+      "recipes": [
+        {
+          "id": "frame_beam_light",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 2 }, { "item": "glass_block", "count": 1 }],
+          "outputs": [{ "item": "frame_beam_light", "count": 1 }],
+          "time": 5,
+          "order": 1685
+        }
+      ]
+    },
+    {
+      "file": "parts/neon_sign.json",
+      "template": "interactive",
+      "set": {
+        "name": "Neon Sign",
+        "description": "A settler shop sign for a wall: neon tubes bent into a sprout in a ring, on a plank board. It glows mint; paint it to change the colour. Set its brightness with the Connect Tool. Use it to switch it off and on; a linked switch also works.",
+        "category": "light",
+        "mass": 3,
+        "durability": 1,
+        "friction": 0.5,
+        "buoyancy": 0.4,
+        "flammable": true,
+        "stack_size": 20,
+        "size": [3, 3, 1],
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, 0, 0.125], "normal": [0, 0, 1] }],
+        "script": "scripts/light.lua",
+        "icon": "textures/items/neon_sign_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sounds": { "on": "light_on", "off": "light_off" },
+        "logic": { "inputs": 1, "use": "toggle" },
+        "settings": [
+          { "id": "brightness", "name": "Brightness", "type": "number", "min": 1, "max": 10, "step": 1, "default": 10 }
+        ],
+        "light": { "kind": "omni", "color": "#7dffc4", "energy": 1.5, "range": 6, "offset": [0, 0.03, -0.06] },
+        "display": { "clips": { "readout": "pose" } },
+        "sound_material": "wood"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/neon_sign.glb" }],
+      "recipes": [
+        {
+          "id": "neon_sign",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 2 }, { "item": "glass_block", "count": 2 }, { "item": "paint_ammo", "count": 1 }],
+          "outputs": [{ "item": "neon_sign", "count": 1 }],
+          "time": 5,
+          "order": 1690
+        }
+      ]
+    },
+    {
+      "file": "parts/protector_sign.json",
+      "template": "interactive",
+      "set": {
+        "name": "Protector Sign",
+        "description": "A colony lightbox for a wall, a shield on its face: it marks what is guarded. It glows while lit. Use it to switch it off and on; a linked switch also works.",
+        "category": "light",
+        "mass": 7.5,
+        "durability": 3,
+        "friction": 0.7,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "stack_size": 20,
+        "size": [3, 2, 1],
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, 0, 0.125], "normal": [0, 0, 1] }],
+        "script": "scripts/light.lua",
+        "icon": "textures/items/protector_sign_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sounds": { "on": "light_on", "off": "light_off" },
+        "logic": { "inputs": 1, "use": "toggle" },
+        "light": { "kind": "omni", "color": "#fff4dd", "energy": 1.5, "range": 6, "offset": [0, 0, -0.12] },
+        "display": { "clips": { "readout": "pose" } },
+        "sound_material": "metal"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/protector_sign.glb" }],
+      "recipes": [
+        {
+          "id": "protector_sign",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "metal_block", "count": 2 }, { "item": "circuit_board", "count": 1 }],
+          "outputs": [{ "item": "protector_sign", "count": 1 }],
+          "time": 5,
+          "order": 1695
         }
       ]
     },
@@ -278,10 +493,11 @@
         "size": [1, 1, 1],
         "sockets": null,
         "script": "scripts/light.lua",
-        "visual": { "color": "#6aff6a", "roughness": 0.3, "metallic": 0, "emission": "#40ff40" },
+        "icon": "textures/items/glowstick_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "light": { "kind": "omni", "color": "#60ff70", "energy": 0.8, "range": 4 }
       },
-      "model": [{ "kind": "cylinder", "radius": 0.025, "height": 0.2, "rotation": [90, 0, 0] }],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/glowstick.glb" }],
       "recipes": [
         {
           "id": "glowstick",
@@ -578,37 +794,36 @@
       "template": "interactive",
       "set": {
         "name": "Water Cannon",
-        "description": "Fires a jet of water out of its front when its input turns on or when you use it. It puts out fires along the jet, waters soil it hits and shoves anything else.",
-        "mass": 5,
-        "durability": 4,
+        "description": "Fires a jet of water out of its front when its input turns on or when you use it. Link Water Containers to it with the Connect Tool: each full water bucket in them gives it ten jets. It puts out fires along the jet, waters soil it hits and shoves anything else.",
+        "mass": 7.5,
+        "durability": 5,
+        "friction": 0.4,
+        "buoyancy": 0.2,
+        "flammable": false,
         "stack_size": 10,
         "size": [2, 2, 3],
+        "icon": "textures/items/water_cannon_icon.png",
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.25, 0], "normal": [0, -1, 0] }],
         "script": "scripts/water_cannon.lua",
-        "visual": { "color": "#3a7ab0", "roughness": 0.5, "metallic": 0.5 },
-        "sounds": { "fire": "water_cannon_fire" },
-        "logic": { "inputs": 1, "use": "fire" },
-        "properties": { "interval": 0.5, "range": 15, "water": 60, "impulse": 60, "muzzle": -0.4, "douse": 0.35, "splash": 1 },
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sounds": { "fire": "water_cannon_fire", "dry": "logic_click" },
+        "logic": { "inputs": 5, "use": "fire" },
+        "display": { "clips": { "readout": "clip" } },
+        "properties": { "interval": 0.5, "range": 15, "water": 60, "impulse": 60, "muzzle": -0.4, "douse": 0.35, "splash": 1, "water_item": "water_bucket_full", "jets": 10 },
         "sound_material": "metal"
       },
-      "model": [
-        { "kind": "box", "size": [0.4, 0.1, 0.5], "position": [0, -0.2, 0] },
-        { "kind": "box", "size": [0.3, 0.26, 0.4], "position": [0, -0.02, 0.1] },
-        {
-          "kind": "cylinder",
-          "radius": 0.07,
-          "height": 0.36,
-          "position": [0, 0.02, -0.18],
-          "rotation": [90, 0, 0]
-        }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/water_cannon.glb" }],
       "recipes": [
         {
           "id": "water_cannon",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 16 }, { "item": "component_kit", "count": 2 }],
+          "inputs": [
+            { "item": "metal_block", "count": 10 },
+            { "item": "circuit_board", "count": 1 },
+            { "item": "glue", "count": 2 }
+          ],
           "outputs": [{ "item": "water_cannon", "count": 1 }],
-          "time": 6,
+          "time": 30,
           "order": 1330
         }
       ]
@@ -618,45 +833,277 @@
       "template": "interactive",
       "set": {
         "name": "Mounted Potato Blaster",
-        "description": "A Potato Blaster built into a creation. It fires out of its front when its input turns on or when you use it, using potatoes from the creation's chests.",
-        "mass": 8,
-        "durability": 6,
+        "description": "A Potato Blaster built into a creation. It fires out of its front while its input is on, up to ten potatoes a second, and once each time you use it. Link Potato Ammo Containers to it with the Connect Tool to feed it.",
+        "mass": 10.5,
+        "durability": 5,
+        "friction": 0.4,
+        "buoyancy": 0.2,
+        "flammable": false,
         "stack_size": 5,
         "size": [2, 2, 3],
+        "icon": "textures/items/potato_blaster_mounted_icon.png",
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.25, 0], "normal": [0, -1, 0] }],
         "script": "scripts/mounted_gun.lua",
-        "visual": { "color": "#5a6a3a", "roughness": 0.6, "metallic": 0.5 },
-        "sounds": { "fire": "blaster_fire" },
-        "logic": { "inputs": 1, "use": "fire" },
-        "properties": { "ammo": "potato", "damage": 40, "interval": 0.4, "range": 80, "impulse": 30, "muzzle": -0.4 },
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sounds": { "fire": "blaster_fire", "dry": "logic_click" },
+        "logic": { "inputs": 5, "use": "fire" },
+        "display": { "clips": { "readout": "clip" } },
+        "properties": { "ammo": "potato", "damage": 28, "interval": 0.1, "range": 80, "impulse": 30, "muzzle": -0.45 },
         "sound_material": "metal"
       },
-      "model": [
-        { "kind": "box", "size": [0.4, 0.1, 0.4], "position": [0, -0.2, 0.05] },
-        { "kind": "box", "size": [0.12, 0.12, 0.12], "position": [0, -0.1, 0.05] },
-        { "kind": "box", "size": [0.24, 0.22, 0.4], "position": [0, 0.06, 0.12] },
-        {
-          "kind": "cylinder",
-          "radius": 0.05,
-          "height": 0.42,
-          "position": [0, 0.08, -0.15],
-          "rotation": [90, 0, 0]
-        }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/potato_blaster_mounted.glb" }],
       "recipes": [
         {
           "id": "potato_blaster_mounted",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "potato_blaster", "count": 1 },
-            { "item": "scrap_metal_block", "count": 16 },
-            { "item": "component_kit", "count": 2 }
+            { "item": "metal_block_2", "count": 20 },
+            { "item": "component_kit", "count": 1 },
+            { "item": "circuit_board", "count": 4 }
           ],
           "outputs": [{ "item": "potato_blaster_mounted", "count": 1 }],
-          "time": 8,
+          "time": 15,
           "order": 1340
         }
       ]
+    },
+    {
+      "file": "parts/plasma_drill.json",
+      "template": "interactive",
+      "set": {
+        "name": "Plasma Drill",
+        "description": "Throws a plasma beam out of its front while its input is on, out to the range you set (E). The beam mines rock deposits, boulders and chunks from a distance, grinds parts and bots and sets anything that burns alight. Runs on batteries from the Battery Containers linked to it.",
+        "mass": 4.5,
+        "durability": 8,
+        "friction": 0.2,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "stack_size": 5,
+        "size": [2, 2, 3],
+        "icon": "textures/items/plasma_drill_icon.png",
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.25, 0], "normal": [0, -1, 0] }],
+        "script": "scripts/plasma_drill.lua",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sounds": { "start": "plasma_drill_start", "loop": "plasma_drill_loop", "stop": "plasma_drill_stop" },
+        "logic": { "inputs": 5 },
+        "settings": [{ "id": "range", "name": "Range", "type": "number", "min": 1, "max": 8, "step": 0.5, "default": 4 }],
+        "menu": {
+          "readouts": [
+            { "id": "charge", "name": "Charge", "kind": "bar" },
+            { "id": "batteries", "name": "Batteries", "kind": "number" }
+          ],
+          "preview": { "shape": "ray", "range": "range", "axis": [0, 0, -1] }
+        },
+        "display": {
+          "status": "beam",
+          "glow": { "readout": "beam", "offset": [0, 0.02, -0.375], "direction": [0, 0, -1], "length": 1.5 },
+          "clips": { "readout": "pose" }
+        },
+        "properties": { "kind": "drill", "damage": 12, "interval": 0.25, "range": 8, "muzzle": -0.4, "impulse": 0, "burn": 0.3, "charge_item": "battery_pack", "charge_time": 90 },
+        "sound_material": "metal"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/plasma_drill.glb" }],
+      "recipes": [
+        {
+          "id": "plasma_drill",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "metal_block_2", "count": 100 },
+            { "item": "component_kit", "count": 10 },
+            { "item": "circuit_board", "count": 10 }
+          ],
+          "outputs": [{ "item": "plasma_drill", "count": 1 }],
+          "time": 60,
+          "order": 1315
+        }
+      ]
+    },
+    {
+      "file": "parts/explosive_canister_small.json",
+      "template": "interactive",
+      "set": {
+        "name": "Small Explosive Canister",
+        "description": "A canister of volatile fuel. Hit it and its fuse hisses for a few seconds; break it, drop it hard or catch it in a blast and it goes off at once, wrecking everything within seven blocks and setting what burns alight.",
+        "mass": 6,
+        "durability": 10,
+        "friction": 0.3,
+        "buoyancy": 0.7,
+        "flammable": true,
+        "stack_size": 10,
+        "size": [1, 2, 1],
+        "icon": "textures/items/explosive_canister_small_icon.png",
+        "collision": { "shape": "cylinder", "radius": 0.11, "height": 0.5 },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.25, 0], "normal": [0, -1, 0] }],
+        "script": "scripts/explosive_canister.lua",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sounds": { "fuse": "canister_fuse", "explode": "canister_explode" },
+        "display": { "clips": { "readout": "pose" } },
+        "properties": { "radius": 1.75, "damage": 120, "impulse": 600, "fuse": 3, "impact_speed": 8, "burn_radius": 1.0, "burn": 0.5 },
+        "sound_material": "metal"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/explosive_canister_small.glb" }],
+      "recipes": [
+        {
+          "id": "explosive_canister_small",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "metal_block", "count": 5 },
+            { "item": "explosive_remnant", "count": 2 },
+            { "item": "gasoline", "count": 2 }
+          ],
+          "outputs": [{ "item": "explosive_canister_small", "count": 1 }],
+          "time": 10,
+          "order": 1350
+        }
+      ]
+    },
+    {
+      "file": "parts/explosive_canister_large.json",
+      "base": "explosive_canister_small",
+      "set": {
+        "name": "Large Explosive Canister",
+        "description": "A big drum of volatile fuel. Hit it and its fuse hisses for a few seconds; break it, drop it hard or catch it in a blast and it goes off at once, wrecking everything within fifteen blocks and setting what burns alight.",
+        "stack_size": 5,
+        "size": [2, 3, 2],
+        "icon": "textures/items/explosive_canister_large_icon.png",
+        "collision": { "shape": "cylinder", "radius": 0.23, "height": 0.75 },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
+        "properties": { "radius": 3.75, "damage": 200, "impulse": 1500, "fuse": 3, "impact_speed": 8, "burn_radius": 2.0, "burn": 0.6 }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/explosive_canister_large.glb" }],
+      "recipes": [
+        {
+          "id": "explosive_canister_large",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "metal_block", "count": 10 },
+            { "item": "explosive_remnant", "count": 4 },
+            { "item": "gasoline", "count": 3 }
+          ],
+          "outputs": [{ "item": "explosive_canister_large", "count": 1 }],
+          "time": 15,
+          "order": 1355
+        }
+      ]
+    },
+    {
+      "file": "parts/alarm_clock.json",
+      "template": "interactive",
+      "set": {
+        "name": "Alarm Clock",
+        "description": "Rings once a day at the time you set (E), with the alarm sound you pick, and turns its output on while it rings: wake up, or start an engine, open a door or fire a cannon at dawn. A linked button stops the ringing.",
+        "mass": 4.5,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.6,
+        "flammable": true,
+        "stack_size": 10,
+        "size": [2, 2, 1],
+        "icon": "textures/items/alarm_clock_icon.png",
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.25, 0], "normal": [0, -1, 0] }],
+        "script": "scripts/alarm_clock.lua",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sounds": { "bell": "alarm_clock_bell", "beep": "alarm_clock_beep", "chime": "alarm_clock_chime", "set": "alarm_clock_set" },
+        "logic": { "inputs": 1, "outputs": 10 },
+        "settings": [
+          { "id": "hour", "name": "Hour", "type": "number", "min": 0, "max": 23, "step": 1, "default": 7 },
+          { "id": "minute", "name": "Minute", "type": "number", "min": 0, "max": 55, "step": 5, "default": 0 },
+          { "id": "alarm", "name": "Alarm", "type": "choice", "options": ["bell", "beep", "chime"], "default": "bell" },
+          { "id": "armed", "name": "Armed", "type": "toggle", "default": true }
+        ],
+        "menu": {
+          "readouts": [
+            { "id": "now", "name": "Time now", "kind": "text" },
+            { "id": "rings", "name": "Rings at", "kind": "text" }
+          ],
+          "signals": true
+        },
+        "display": { "clips": { "readout": "pose" } },
+        "properties": { "ring": 10, "repeat_time": 1 },
+        "sound_material": "glass"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/alarm_clock.glb" }],
+      "recipes": [
+        {
+          "id": "alarm_clock",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "metal_block", "count": 5 },
+            { "item": "glass_block", "count": 10 },
+            { "item": "circuit_board", "count": 2 }
+          ],
+          "outputs": [{ "item": "alarm_clock", "count": 1 }],
+          "time": 10,
+          "order": 1260
+        }
+      ]
+    },
+    {
+      "file": "parts/cash_register.json",
+      "template": "interactive",
+      "set": {
+        "name": "Cash Register",
+        "description": "A shop till. Use it, or turn its input on, and its drawer springs open with a ring; its output is on while the drawer is open.",
+        "mass": 7.5,
+        "durability": 4,
+        "friction": 0.6,
+        "buoyancy": 0.2,
+        "flammable": true,
+        "stack_size": 1,
+        "size": [3, 2, 2],
+        "icon": "textures/items/cash_register_icon.png",
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.25, 0], "normal": [0, -1, 0] }],
+        "script": "scripts/cash_register.lua",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sounds": { "open": "cash_register_open", "close": "cash_register_close" },
+        "logic": { "inputs": 1, "outputs": 10, "use": "open" },
+        "display": { "clips": { "readout": "clip" } },
+        "sound_material": "metal"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/cash_register.glb" }],
+      "recipes": [
+        {
+          "id": "cash_register",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "metal_block", "count": 5 },
+            { "item": "circuit_board", "count": 1 }
+          ],
+          "outputs": [{ "item": "cash_register", "count": 1 }],
+          "time": 5,
+          "order": 2029
+        }
+      ]
+    },
+    {
+      "file": "parts/scuttler_head.json",
+      "template": "interactive",
+      "set": {
+        "name": "Scuttler Head",
+        "description": "A Scuttler's head, pried off its body and wired up. It plays a note each time its input turns on: set the note and the voice (blip, bass, drum or voice) in its menu (E) and line a few up on a sequence of switches or a controller to play a tune.",
+        "category": "interactive",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.4,
+        "buoyancy": 0.6,
+        "flammable": false,
+        "stack_size": 5,
+        "size": [2, 2, 2],
+        "icon": "textures/items/scuttler_head_icon.png",
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.25, 0], "normal": [0, -1, 0] }],
+        "script": "scripts/scuttler_head.lua",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sounds": { "blip": "scuttler_head_blip", "bass": "scuttler_head_bass", "drum": "scuttler_head_drum", "voice": "scuttler_head_voice", "pickup": "pickup_metal", "drop": "drop_metal" },
+        "logic": { "inputs": 1 },
+        "settings": [
+          { "id": "note", "name": "Note", "type": "number", "min": 0, "max": 24, "step": 1, "default": 12 },
+          { "id": "voice", "name": "Voice", "type": "choice", "options": ["blip", "bass", "drum", "voice"], "default": "blip" }
+        ],
+        "display": { "clips": { "readout": "pose" } },
+        "sound_material": "metal"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/scuttler_head.glb" }],
+      "recipes": []
     }
   ]
 }

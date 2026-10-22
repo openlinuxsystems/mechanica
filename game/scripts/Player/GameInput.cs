@@ -9,7 +9,8 @@ namespace Mechanica.Game.Player;
 /// keys are polled through (<c>Input.GetVector</c>, <c>Input.IsActionPressed</c>). Presses are matched
 /// with <see cref="Pressed"/> instead, which compares modifiers exactly, so <c>Q</c> and <c>Shift+Q</c>
 /// or the wheel and <c>Alt</c>+wheel are different actions. A chord nothing is bound to falls back to its
-/// bare key, so a click while sprinting (Shift) or crawling (Ctrl) is still a click. HUD hints use
+/// bare key, so a click while sprinting (Shift) or crawling (Ctrl) is still a click. While the player runs, the
+/// Sprint key is not a modifier at all, so the wheel steps the hotbar as in Scrap Mechanic. HUD hints use
 /// <see cref="Label"/> so they show the player's keys.
 /// </summary>
 public static class GameInput
@@ -50,17 +51,28 @@ public static class GameInput
     /// <summary>
     /// True for a fresh press (no echo) of one of <paramref name="action"/>'s bindings. A press with
     /// modifiers held that no action is bound to counts as the bare key, so held Sprint or Crawl doesn't
-    /// swallow a click or a key.
+    /// swallow a click or a key. While <see cref="Running"/>, the Sprint key is ignored as a modifier, so Shift+wheel is
+    /// the wheel (the hotbar), not the turn key.
     /// </summary>
     public static bool Pressed(InputEvent @event, string action)
     {
         if (ToChord(@event, pressedOnly: true) is not { } chord)
             return false;
+        if (Running())
+        {
+            foreach (var sprint in _keymap.Bindings(InputActions.Sprint))
+                chord = chord.Without(sprint);
+        }
         if (Matches(action, chord))
             return true;
         var bare = new InputChord(chord.Code);
         return bare != chord && Matches(action, bare) && !InputActions.All.Any(def => Matches(def.Id, chord));
     }
+
+    /// <summary>True while Sprint and a movement key are held: the player is running, not holding Shift to turn a part.</summary>
+    public static bool Running() =>
+        InputMap.HasAction(InputActions.Sprint) && Input.IsActionPressed(InputActions.Sprint)
+        && Input.GetVector(InputActions.MoveLeft, InputActions.MoveRight, InputActions.MoveBack, InputActions.MoveForward) != Vector2.Zero;
 
     private static bool Matches(string action, InputChord chord)
     {

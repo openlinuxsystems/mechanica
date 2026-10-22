@@ -1,0 +1,19 @@
+{
+  "id": "tank_large",
+  "name": "Large Tank",
+  "description": "A colony storage tank with a ladder up the side. It is empty, so it floats.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 4,
+  "friction": 0.4,
+  "buoyancy": 0.4,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [7, 5, 7],
+  "mesh": "meshes/parts/tank_large.glb",
+  "icon": "textures/items/tank_large_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

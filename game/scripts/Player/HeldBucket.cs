@@ -58,6 +58,26 @@ public sealed class HeldBucket
         _body.AddChild(_drops);
     }
 
+    /// <summary>The colour of chemical in a held bucket (a Chemical Bucket): the glowing green of the chemical pools.</summary>
+    public static readonly Color ChemicalColour = new(0.36f, 0.78f, 0.16f);
+
+    private Color? _tint;
+
+    /// <summary>Colours the liquid in the bucket (null: the model's own water).</summary>
+    public void Tint(Color? colour)
+    {
+        if (_tint == colour || _water is null)
+            return;
+        _tint = colour;
+        Material? material = colour is { } c
+            ? new StandardMaterial3D { AlbedoColor = c, Roughness = 0.15f, EmissionEnabled = true, Emission = c, EmissionEnergyMultiplier = 0.35f }
+            : null;
+        foreach (var mesh in _water.FindChildren("*", nameof(MeshInstance3D), recursive: true, owned: false).OfType<MeshInstance3D>()
+            .Append(_water as MeshInstance3D).OfType<MeshInstance3D>())
+            mesh.MaterialOverride = material;
+        _drops.MaterialOverride = colour is { } d ? new StandardMaterial3D { AlbedoColor = d, Roughness = 0.1f } : WaterDropMaterial();
+    }
+
     /// <summary>The bucket under the prop node <paramref name="prop"/>, or null when it has none.</summary>
     public static HeldBucket? Find(Node3D prop, BucketSettings settings)
     {

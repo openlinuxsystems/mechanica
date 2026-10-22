@@ -4,11 +4,15 @@
 -- linked to it, and "space_shift" is a throttle lever the pilot opens with Space and closes with Shift, at
 -- properties.lever_rate per second, that stays where they leave it. "invert" flips the command, so S or A
 -- fires it instead.
+-- Its "power" setting (the menu's lever) picks a power step from 1 to the top its level unlocks (3 at level 1, one more
+-- each upgrade): each step above the first multiplies the push and the fuel it burns by properties.step_gain.
 -- It burns properties.fuel from the containers linked into it with the Connect Tool (gas containers), or from every
--- container of the Creation when none is, one item per properties.fuel_time seconds at full power; in Creative it
--- needs none.
+-- container of the Creation when none is, one item per properties.fuel_time seconds at full power on step 1 (a higher
+-- level's fuel_time is longer, so it burns less); in Creative it needs none.
 -- Sounds: "ignite" when it lights, the "loop" while it burns (its "thrust" parameter follows the power)
--- and "cut" when it goes out. Its "power" display (a glow at the exhaust) follows the power.
+-- and "cut" when it goes out. Its "power" display (a glow at the exhaust) follows the power, its "pose" readout plays
+-- the model's "on" and "off" clips (the burner glows while it fires), and its menu shows "fuel" (what is left of the
+-- item burning now) and "fuel_items" (gasoline left in its tanks).
 
 local function clamp(v, lo, hi)
   return math.max(lo, math.min(hi, v))
@@ -57,12 +61,18 @@ local function tanks()
   return ids
 end
 
+-- The push and fuel multiplier of the "power" step.
+local function boost()
+  local step = part.setting("power") or 1
+  return (properties.step_gain or 1.5) ^ (step - 1)
+end
+
 -- Burns fuel for dt seconds at this power; false when the Creation has none left.
 local function burn(power, dt)
   if world.creative() or power == 0 then
     return true
   end
-  state.fuel = (state.fuel or 0) - power * dt
+  state.fuel = (state.fuel or 0) - power * boost() * dt
   if state.fuel > 0 then
     return true
   end
@@ -89,6 +99,17 @@ local function flame(power)
   end
 end
 
+local function show(pose)
+  if state.pose ~= pose then
+    state.pose = pose
+    part.display("pose", pose)
+  end
+end
+
+function on_create()
+  state.pose = nil
+end
+
 function on_update(dt)
   local power = clamp(command(dt), 0, 1)
   if not burn(power, dt) then
@@ -96,11 +117,14 @@ function on_update(dt)
   end
   state.power = power
   part.display("power", power)
+  part.display("fuel", world.creative() and 1 or clamp((state.fuel or 0) / properties.fuel_time, 0, 1))
+  part.display("fuel_items", creation.count(properties.fuel, tanks()))
+  show(power > 0 and "on" or "off")
   flame(power)
   if power > 0 then
     -- The exhaust leaves through +Y, so the push is along -Y, at the part.
     local d = part.to_world(vec3(0, -1, 0))
-    local f = properties.thrust * power
+    local f = properties.thrust * boost() * power
     part.apply_force(vec3(d.x * f, d.y * f, d.z * f), part.position())
   end
 end

@@ -147,6 +147,30 @@ public sealed record PlayerMovementSettings
     /// </summary>
     public float StepHeight { get; init; } = 0.35f;
 
+    /// <summary>Speed climbing a ladder up or down, in m/s (Parts map E2, <see cref="LadderClimb"/>).</summary>
+    public float ClimbSpeed { get; init; } = 2f;
+
+    /// <summary>Speed moving sideways along a ladder's rungs, in m/s.</summary>
+    public float ClimbSideSpeed { get; init; } = 1f;
+
+    /// <summary>
+    /// How far from a ladder's face the player's capsule may be and still grab it by walking into it, in metres. A player
+    /// on it is let go once it is twice this far off.
+    /// </summary>
+    public float ClimbReach { get; init; } = 0.25f;
+
+    /// <summary>Speed a jump off a ladder pushes the player away from its face, in m/s; they also rise at <see cref="ClimbJumpUp"/>.</summary>
+    public float ClimbJumpSpeed { get; init; } = 3.5f;
+
+    /// <summary>Upward speed of a jump off a ladder, in m/s.</summary>
+    public float ClimbJumpUp { get; init; } = 3f;
+
+    /// <summary>Seconds after letting go of a ladder (a jump, the top, the bottom) before it can be grabbed again.</summary>
+    public float ClimbRegrabSeconds { get; init; } = 0.4f;
+
+    /// <summary>Speed the player steps off the top of a ladder onto the floor behind it, in m/s.</summary>
+    public float ClimbTopOutSpeed { get; init; } = 2.5f;
+
     /// <summary>What walking speed is multiplied by when wading in water shallower than <see cref="SwimDepth"/>.</summary>
     public float WadeSpeedScale { get; init; } = 0.7f;
 
@@ -193,6 +217,13 @@ public sealed record PlayerMovementSettings
         Positive(SwimAcceleration, "swim_acceleration");
         Positive(Buoyancy, "buoyancy");
         NonNegative(SwimLeapHeight, "swim_leap_height");
+        Positive(ClimbSpeed, "climb_speed");
+        NonNegative(ClimbSideSpeed, "climb_side_speed");
+        Positive(ClimbReach, "climb_reach");
+        NonNegative(ClimbJumpSpeed, "climb_jump_speed");
+        NonNegative(ClimbJumpUp, "climb_jump_up");
+        NonNegative(ClimbRegrabSeconds, "climb_regrab_seconds");
+        Positive(ClimbTopOutSpeed, "climb_top_out_speed");
         if (!float.IsFinite(StepHeight) || StepHeight < 0f || StepHeight >= CrouchHeight / 2f)
             throw new FormatException($"step_height must be from 0 up to below half of crouch_height (got {StepHeight}).");
         if (!float.IsFinite(FloatDepth) || FloatDepth < SwimDepth || FloatDepth >= EyeHeight)

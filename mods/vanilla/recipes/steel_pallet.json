@@ -1,0 +1,20 @@
+{
+  "id": "steel_pallet",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 4
+    }
+  ],
+  "outputs": [
+    {
+      "item": "steel_pallet",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 3170
+}

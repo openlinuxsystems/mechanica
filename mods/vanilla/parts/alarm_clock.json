@@ -1,0 +1,99 @@
+{
+  "id": "alarm_clock",
+  "name": "Alarm Clock",
+  "description": "Rings once a day at the time you set (E), with the alarm sound you pick, and turns its output on while it rings: wake up, or start an engine, open a door or fire a cannon at dawn. A linked button stops the ringing.",
+  "category": "interactive",
+  "mass": 4.5,
+  "durability": 3,
+  "friction": 0.4,
+  "buoyancy": 0.6,
+  "flammable": true,
+  "stack_size": 10,
+  "sound_material": "glass",
+  "size": [2, 2, 1],
+  "mesh": "meshes/parts/alarm_clock.glb",
+  "icon": "textures/items/alarm_clock_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.25, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/alarm_clock.lua",
+  "sounds": {
+    "bell": "alarm_clock_bell",
+    "beep": "alarm_clock_beep",
+    "chime": "alarm_clock_chime",
+    "set": "alarm_clock_set"
+  },
+  "logic": {
+    "inputs": 1,
+    "outputs": 10
+  },
+  "settings": [
+    {
+      "id": "hour",
+      "name": "Hour",
+      "type": "number",
+      "min": 0,
+      "max": 23,
+      "step": 1,
+      "default": 7
+    },
+    {
+      "id": "minute",
+      "name": "Minute",
+      "type": "number",
+      "min": 0,
+      "max": 55,
+      "step": 5,
+      "default": 0
+    },
+    {
+      "id": "alarm",
+      "name": "Alarm",
+      "type": "choice",
+      "options": [
+        "bell",
+        "beep",
+        "chime"
+      ],
+      "default": "bell"
+    },
+    {
+      "id": "armed",
+      "name": "Armed",
+      "type": "toggle",
+      "default": true
+    }
+  ],
+  "menu": {
+    "readouts": [
+      {
+        "id": "now",
+        "name": "Time now",
+        "kind": "text"
+      },
+      {
+        "id": "rings",
+        "name": "Rings at",
+        "kind": "text"
+      }
+    ],
+    "signals": true
+  },
+  "display": {
+    "clips": {
+      "readout": "pose"
+    }
+  },
+  "properties": {
+    "ring": 10,
+    "repeat_time": 1
+  }
+}

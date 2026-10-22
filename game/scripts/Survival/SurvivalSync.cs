@@ -345,7 +345,7 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     public void PlaySound(string sound, string ownerModId, System.Numerics.Vector3 position) => Build.PlaySound(sound, ownerModId, position);
 
     /// <inheritdoc/>
-    public SledgeResult DamagePart(Creation creation, int partId, float damage) => Build.Tools!.DamagePart(creation, partId, damage);
+    public SledgeResult DamagePart(Creation creation, int partId, float damage, string kind) => Build.Tools!.DamagePart(creation, partId, damage, kind);
 
     /// <inheritdoc/>
     public void Push(Creation creation, int bodyIndex, System.Numerics.Vector3 point, System.Numerics.Vector3 impulse) =>
@@ -366,6 +366,9 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
 
     /// <inheritdoc/>
     public void Impact(System.Numerics.Vector3 at, string material) => World.Impact(at.ToGodot(), material);
+
+    /// <inheritdoc/>
+    public void Blast(System.Numerics.Vector3 at, float radius) => World.Blast(at.ToGodot(), radius);
 
     // Slowed players move slower: the host from its own state, a client from the vitals it was sent.
     private void UpdateSpeedScales()
@@ -564,7 +567,9 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
         if (Read<ProjectileView>(json) is not { } view)
             return;
         HideProjectile(view.Id);
-        Node3D node = view.Look == ProjectileView.Water ? WaterEffects.Blob(view.Size ?? WaterEffects.DefaultRadius) : new MeshInstance3D { Mesh = new SphereMesh { Radius = 0.08f, Height = 0.16f } };
+        Node3D node = view.Look is ProjectileView.Water or ProjectileView.Chemical
+            ? WaterEffects.Blob(view.Size ?? WaterEffects.DefaultRadius, view.Look == ProjectileView.Chemical)
+            : new MeshInstance3D { Mesh = new SphereMesh { Radius = 0.08f, Height = 0.16f } };
         node.Name = $"Projectile{view.Id}";
         node.Position = view.From.ToGodot();
         _projectiles[view.Id] = (view, Now, node);
@@ -577,8 +582,8 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     {
         if (_projectiles.Remove(id, out var shown))
         {
-            if (shown.View.Look == ProjectileView.Water)
-                WaterEffects.Splash(this, shown.Node.Position, shown.View.Size ?? WaterEffects.DefaultRadius);
+            if (shown.View.Look is ProjectileView.Water or ProjectileView.Chemical)
+                WaterEffects.Splash(this, shown.Node.Position, shown.View.Size ?? WaterEffects.DefaultRadius, shown.View.Look == ProjectileView.Chemical);
             RemoveChild(shown.Node);
             shown.Node.QueueFree();
         }

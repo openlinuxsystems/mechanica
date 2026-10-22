@@ -1,0 +1,19 @@
+{
+  "id": "hull_door",
+  "name": "Hull Door",
+  "description": "A maintenance hatch from the SV-04, its status light still on. It is a panel: it does not open.",
+  "category": "decor",
+  "mass": 10.5,
+  "durability": 5,
+  "friction": 0.6,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [5, 10, 1],
+  "mesh": "meshes/parts/hull_door.glb",
+  "icon": "textures/items/hull_door_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

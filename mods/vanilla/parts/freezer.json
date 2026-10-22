@@ -1,0 +1,52 @@
+{
+  "id": "freezer",
+  "name": "Freezer",
+  "description": "Freezes water into ice: craft Ice Blocks here from a full Water Bucket, 20 a bucket in a minute, and the empty bucket comes back. Two-way port on the right.",
+  "category": "station",
+  "mass": 4.5,
+  "durability": 7,
+  "friction": 0.6,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 5,
+  "sound_material": "metal",
+  "size": [3, 4, 3],
+  "mesh": "meshes/parts/freezer.glb",
+  "icon": "textures/items/freezer_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.5, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "sounds": {
+    "start": "freezer_start",
+    "work": "freezer_work",
+    "complete": "freezer_complete",
+    "place": "place_metal"
+  },
+  "inventory": {
+    "slots": 4
+  },
+  "crafting": {
+    "speed": 1,
+    "queue_size": 4,
+    "link_range": 1,
+    "clips": {
+      "start": "start",
+      "work": "work_loop",
+      "complete": "complete"
+    }
+  },
+  "display": {
+    "clips": {
+      "readout": "station",
+      "idle": "idle_loop"
+    }
+  }
+}

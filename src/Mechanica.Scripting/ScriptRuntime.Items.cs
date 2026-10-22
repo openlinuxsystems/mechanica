@@ -76,6 +76,7 @@ public sealed partial class ScriptRuntime
         _dispatcher.Register<ReloadItemArgs>(ReloadItem, ValidateReload, ApplyReload);
         _dispatcher.Register<AimItemArgs>(AimItem, ValidateAim, ApplyAim);
         survival.ProjectileLanded += OnProjectileLanded;
+        survival.PartDamaged += OnPartDamaged;
         survival.VitalsChanged += peer =>
         {
             if (survival.IsDead(peer))
@@ -542,6 +543,41 @@ public sealed partial class ScriptRuntime
             pockets.Remove(id, count);
             return DynValue.True;
         });
+        // A container part in the holder's reach, as InventoryActions.CheckAccess sees it: the inventory, or why not.
+        (Inventory? Container, string? Why) ContainerArgs(Instance instance, CallbackArguments args, string function)
+        {
+            var creation = (int)LuaValues.Number(args[0], function, 1);
+            var part = (int)LuaValues.Number(args[1], function, 2);
+            var why = _inventories!.CheckAccess(instance.Caller, InventoryRef.OfPart(creation, part), out var container);
+            return (container, why);
+        }
+        Fn(inventory, "put", args =>
+        {
+            var instance = Acting("inventory.put");
+            var id = ItemId(instance, args.AsType(2, "inventory.put", DataType.String).String);
+            var count = args.Count > 3 && !args[3].IsNil() ? Count(args[3], "inventory.put", 4) : 1;
+            if (_catalog!.FindDefinition(id) is not { } item)
+                throw new ScriptRuntimeException($"inventory.put: unknown item '{id}'");
+            var (container, why) = ContainerArgs(instance, args, "inventory.put");
+            if (container is null)
+                return DynValue.NewTuple(DynValue.False, DynValue.NewString(why ?? "There is no container there."));
+            if (!container.Accepts(id))
+                return DynValue.NewTuple(DynValue.False, DynValue.NewString($"That does not take {item.Name ?? id}."));
+            if (container.SpaceFor(id) < count)
+                return DynValue.NewTuple(DynValue.False, DynValue.NewString("There is no room for that."));
+            container.Add(id, count);
+            return DynValue.True;
+        });
+        Fn(inventory, "space", args =>
+        {
+            var instance = ItemNow();
+            var id = ItemId(instance, args.AsType(2, "inventory.space", DataType.String).String);
+            var (container, why) = ContainerArgs(instance, args, "inventory.space");
+            if (container is null)
+                return NilBecause(why ?? "There is no container there.");
+            return container.Accepts(id) ? DynValue.NewNumber(container.SpaceFor(id))
+                : NilBecause($"That does not take {_catalog!.FindDefinition(id)?.Name ?? id}.");
+        });
         globals.Set("inventory", DynValue.NewTable(inventory));
 
         var combat = new Table(script);
@@ -593,6 +629,23 @@ public sealed partial class ScriptRuntime
             var list = new Table(script);
             var index = 1;
             foreach (var view in _survival!.Splash(caller, at, radius, damage, impulse))
+                list.Set(index++, ViewTable(context, view));
+            return DynValue.NewTable(list);
+        });
+        Fn(combat, "explode", args =>
+        {
+            // A blast: splash damage and push (as combat.splash) and the explosion every peer sees and hears.
+            var (_, caller, _) = Combatant("combat.explode", acting: true);
+            var at = LuaValues.ToVector(args[0], "combat.explode", 1);
+            var radius = LuaValues.Number(args[1], "combat.explode", 2);
+            if (radius <= 0f || radius > _settings.MaxOverlapRadius)
+                throw new ScriptRuntimeException($"combat.explode: radius must be more than 0 and at most {_settings.MaxOverlapRadius:0.#} m");
+            var damage = LuaValues.Number(args[2], "combat.explode", 3);
+            var impulse = LuaValues.OptionalNumber(args[3], "combat.explode", 4) ?? 0f;
+            _survival!.World.Blast(at, radius);
+            var list = new Table(script);
+            var index = 1;
+            foreach (var view in _survival.Splash(caller, at, radius, damage, impulse))
                 list.Set(index++, ViewTable(context, view));
             return DynValue.NewTable(list);
         });
@@ -653,6 +706,14 @@ public sealed partial class ScriptRuntime
             var seed = args.Count > 2 && !args[2].IsNil() ? ItemId(instance, args.AsType(2, "farm.plant", DataType.String).String) : instance.PartType;
             return _survival!.CheckPlant(instance.Caller, creation, part, seed) is { } bad ? NilBecause(bad)
                 : SoilTable(script, _survival.PlantSeed(instance.Caller, creation, part, seed));
+        });
+        Fn(farm, "can_plant", args =>
+        {
+            // Only reads, so an item's can_use may ask it: the same check farm.plant makes.
+            var instance = ItemNow();
+            var (creation, part) = SoilArgs(args, "farm.can_plant");
+            var seed = args.Count > 2 && !args[2].IsNil() ? ItemId(instance, args.AsType(2, "farm.can_plant", DataType.String).String) : instance.PartType;
+            return _survival!.CheckPlant(instance.Caller, creation, part, seed) is { } bad ? NilBecause(bad) : DynValue.True;
         });
         Fn(farm, "water", args =>
         {

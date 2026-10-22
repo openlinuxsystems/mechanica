@@ -1,0 +1,19 @@
+{
+  "id": "wires_bend",
+  "name": "Cable (Bend)",
+  "description": "Cables turning a right angle on a mounting plate.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 1,
+  "friction": 0.4,
+  "buoyancy": 0.4,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/parts/wires_bend.glb",
+  "icon": "textures/items/wires_bend_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

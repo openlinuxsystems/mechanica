@@ -133,6 +133,7 @@ template becomes the part's name.
 | `on_command(name, args, peer)` | A player sent the part a command from its menu (the `CommandPart` action). The only commands are the `preview` names of the part's `sequence` settings: a controller's Play button sends `{playing, frames}`, with `frames` checked like the setting before the script sees it. `peer` is who sent it. A part without this hook takes no commands. |
 | `on_power(amount)` | The sum of the part's logic inputs changed; `amount` is the new sum. It also runs when the script (re)starts with a non-zero input. See the [Logic and Power Tutorial](logic-power-tutorial.md). |
 | `on_collision(other, impulse)` | The part's Body began touching something. `other` is a table with `creation` and `part` when it is a Creation, empty for the ground; `impulse` is in N·s. |
+| `on_damage(amount, kind, broken, at)` | The part took `amount` health of damage. `kind` is what dealt it: `weapon`, `explosion`, `sledge`, `drill`, `saw`, `bot` or `fire`. `broken` is true when the blow broke the part off; it is then gone (`part.*` reads give `nil`, `part.sound` still answers) and its script is destroyed straight after. `at` is the part's middle when it was hit. Damage is heard once no other hook is running, in the order it came, so a blast that sets off another part (an Explosive Canister next to one) is heard in the same step. A part on a piece a blow broke off its creation still hears it, from its script on the new creation (which starts afresh, as after any split). Placed parts only; needs combat on the host. |
 | `get_outputs()` | Called once per step after `on_update`; what it returns (a number, or a boolean as 1 or 0) is the part's logic output, as if it called `part.set_output`. |
 | `on_enter(peer)` | A player sat down in the part (a part with `seat`). |
 | `on_leave(peer)` | The player sitting in the part stood up (or the seat is going away). |
@@ -195,6 +196,7 @@ placed.
 | `part.links()` | The ids of the parts this part's output is linked to (an engine finds its bearings here). |
 | `part.setting(id)` | The value of one of the part's settings: a number, a choice (string), a toggle (boolean), a number list (table) or a sequence (a table of frames, each a number or a list of `{part, target, speed}`); the default until a player changes it. `nil` for an unknown id. |
 | `part.sound(key)` | The sound id the part binds to `key` in its `sounds` (for `sound.play` and `sound.start`), or `nil`. Scripts play the part's own bindings this way, so the ids stay in data. |
+| `part.destroy(kind?)` | Breaks the part off at once, as enough damage of `kind` (`explosion` unless given) would: it spills what it holds, the pieces it held together split and it hears `on_damage` with `broken` true. True when it broke; `false` when it is already gone or cannot break (no `durability`). Needs combat on the host. |
 | `part.occupant()` | For a seat: the peer of the player sitting in it, or `nil`. |
 | `part.occupant_input()` | For a seat: the sitting player's input as `{x, z, jump, sprint, yaw, pitch}`. `x` is steering (-1 left to 1 right) and `z` throttle (-1 back to 1 forward). `nil` when the seat is empty. |
 | `part.set_light(level)` | For a part with a `light` section: sets how bright it shines, 0 (dark) to 1 (its full `energy`), or `true`/`false` for 1/0. It stays until changed; the host sends it to every client. Returns `true`, or `false` and the reason. |
@@ -237,6 +239,7 @@ The Creation the part belongs to.
 |----------|---------|
 | `world.gravity()` | Gravity acceleration, in m/s² (a `vec3`). |
 | `world.time()` | Seconds the world has been simulated. Saves keep it, so the clock carries on when a world loads and times kept in `state` or on soil stay meaningful. |
+| `world.time_of_day()` | The in-game time in hours, from 0 (midnight) up to 24. A world starts at 6 and one `day_length` (the world's generation rules, 1440 s by default) of `world.time()` is a whole day, so an Alarm Clock set for 7:30 rings once a day. |
 | `world.tick()` | Physics steps since the scripts started. |
 | `world.creative()` | `true` in Creative, where engines run without fuel. |
 | `world.raycast(from, to)` | The first thing on the segment from `from` to `to`, skipping the script's own Creation: `{position, normal, distance, creation?, part?, player?, bot?}`, or `nil`. `player` is the peer of a player it hit and `bot` the id of a bot; all four are missing for the ground and world objects. A ray may be at most `max_ray_length` m long. |
@@ -247,7 +250,10 @@ The Creation the part belongs to.
 
 The soil part the script runs on (chunk 20). The host only stores what the script decides; the vanilla
 `soil.lua` grows crops from the world clock and harvests them in `on_activate`. A soil function on a part
-without a `soil` section raises an error.
+without a `soil` section raises an error. The soil may be a ground mound or a part built into a Creation (the
+Growbed): the state belongs to the part either way. On a Growbed `soil.lua` also uses up batteries while the crop grows
+(`charge_item` and `charge_time` in its properties, from `part.inputs()` storage or else `creation.count` / `creation.take`),
+sets the `pose` readout `on` while growing and `off` otherwise, and harvests `soil.yield` crops.
 
 | Function | Returns |
 |----------|---------|
@@ -319,12 +325,12 @@ one) in `mods/vanilla/scripts/`.
   `EquipItem {slot?}` says what is in hand. `ReloadItem {slot}` runs `can_reload_item`, then `on_reload_item`.
   A dead player's uses are refused.
 - **`can_use`, `can_reload_item` and the script's setup only read.** Functions that change the world (`item.consume`, `item.replace`, `item.counter`,
-  `holder.heal`, `inventory.take`, `farm.plant`, `farm.water`, `fire.douse`, `fire.ignite` and the `combat` ones that deal damage
+  `holder.heal`, `inventory.take`, `inventory.put`, `farm.plant`, `farm.water`, `fire.douse`, `fire.ignite` and the `combat` ones that deal damage
   or launch) raise an error there.
 - **Damage follows the world's rules.** In Creative nothing hurts players; with friendly fire off
   (the default) no shot, splash or part script hurts a player, but a player's own splash still hurts them.
 - `part` and `creation` functions don't work in an item script; `world` and `log` do. The `item`,
-  `holder` and `inventory` libraries only work in an item script; `combat`, `farm` (except `farm.plant`) and
+  `holder` and `inventory` libraries only work in an item script; `combat`, `farm` (except `farm.plant` and `farm.can_plant`) and
   `fire` work in part and mod scripts too (below).
 
 ```lua
@@ -375,6 +381,8 @@ The holder's inventory. Item ids may be bare (`potato`, in the item's own mod) o
 |----------|---------|
 | `inventory.count(item)` | How many of `item` they carry. |
 | `inventory.take(item, count?)` | Takes `count` (default 1). `true`, or `false` (and nothing taken) when they carry fewer. |
+| `inventory.put(creation, part, item, count?)` | Puts `count` (default 1) of `item` into a container part (its `inventory` section) the holder can reach and open, as a bucket is emptied into a tank: the items are made, not taken from the holder. `true`, or `false` and why (out of reach, it doesn't take that item, no room), with nothing put. |
+| `inventory.space(creation, part, item)` | How many more of `item` fit in that container part (0 when it is full), or `nil` and why when the holder can't reach or open it or it doesn't take `item`. Read only, so `can_use` may call it. |
 
 Part and mod scripts can use every `combat` function, `farm.soil`, `farm.water` and `farm.near` too (a saw, a drill, a water
 cannon, a mounted gun or a mortar), and both kinds use [`fire`](#fire). They act for the host, skip nothing (aim rays
@@ -394,12 +402,13 @@ are the same primitives bots use (chunk 21).
 | `combat.hit(hit, damage, push?, kind?)` | Deals `damage` to what a cast hit. A part's Body also gets `push` (a `vec3` impulse, N·s) unless the part broke off. `kind` is the damage kind (`drill`, `saw`, `weapon` (the default), `sledge`, `explosion`, `bot`): a world object with `damage_from` takes only the kinds it lists, so only a drill (`kind = "drill"`) breaks a rock outcrop. Returns the hit with `damage` dealt. |
 | `combat.hitscan(from, direction, range, damage, impulse?)` | `combat.cast` then `combat.hit`, pushing along the ray with `impulse` N·s. The hit, or `nil` when nothing is in range. |
 | `combat.splash(at, radius, damage, impulse?)` | Hurts every player, part and world object within `radius` m of `at`, falling off from `damage` at the centre to 0 at the edge, and pushes parts away with up to `impulse` N·s. A list of hits. `radius` is at most `max_overlap_radius`. |
+| `combat.explode(at, radius, damage, impulse?)` | An explosion: the same damage and push as `combat.splash`, and every peer sees the blast (a fireball, a flash and smoke as big as `radius`). Play its sound with `sound.play`. A list of hits. |
 | `combat.pellets(direction, count, spread)` | `count` (at most 64) unit directions: the first along `direction`, the rest evenly round a cone of `spread` degrees. No randomness, so every replay agrees. |
-| `combat.projectile(from, velocity, options?)` | Launches a projectile from `from` at `velocity` m/s. `options`: `gravity` (a `vec3`, default `world.gravity()`), `lifetime` (s, default and at most `max_projectile_lifetime`), `data` (passed to `on_hit`), `look` (how clients draw it: `"water"` is a blob of water that splashes where it lands; default a plain ball), `size` (how big the look is drawn, in metres, up to 10: for `"water"` the radius its splash covers, crown, spray, mist and a wet patch; default 1.2). It flies on the host, every client draws it along its arc, and `on_hit` runs where it lands; it deals no damage by itself. Returns its id, or `false` and the reason when `max_projectiles` are already in flight. |
+| `combat.projectile(from, velocity, options?)` | Launches a projectile from `from` at `velocity` m/s. `options`: `gravity` (a `vec3`, default `world.gravity()`), `lifetime` (s, default and at most `max_projectile_lifetime`), `data` (passed to `on_hit`), `look` (how clients draw it: `"water"` is a blob of water that splashes where it lands, `"chemical"` the same in glowing green; default a plain ball), `size` (how big the look is drawn, in metres, up to 10: for `"water"` and `"chemical"` the radius its splash covers, crown, spray, mist and a wet patch; default 1.2). It flies on the host, every client draws it along its arc, and `on_hit` runs where it lands; it deals no damage by itself. Returns its id, or `false` and the reason when `max_projectiles` are already in flight. |
 
 ### `farm`
 
-Soil parts (chunk 20). A soil table is `{seed?, crop?, stage, ripe, water, capacity}`: the planted
+Soil parts (chunk 20): a mound on the ground or soil built onto a Creation (a Growbed), alike. A soil table is `{seed?, crop?, stage, ripe, water, capacity}`: the planted
 seed and its crop (qualified ids), the growth stage (0 to 4, 4 is `ripe`) and the seconds of water it
 holds of its `capacity`. Each function checks the part is soil within the holder's `reach`, and
 returns `nil` and the reason when it can't act; in `on_hit`, `farm.water` reaches wherever the item's projectile
@@ -410,6 +419,7 @@ soil part's own script ([`soil`](#soil)); the seed's `seed` section sets what gr
 |----------|---------|
 | `farm.soil(creation, part)` | The soil table. |
 | `farm.plant(creation, part, seed?)` | Plants `seed` (an item with a `seed` section; default this item) in empty soil and returns the soil table. It takes nothing from the inventory: use `item.consume`. |
+| `farm.can_plant(creation, part, seed?)` | `true` when `farm.plant` would plant `seed` (default this item) there now, or `nil` and the reason: not soil, out of reach, something already growing, or soil whose `soil.seeds` does not list it (a Growbed). It only reads, so `can_use` may call it. |
 | `farm.water(creation, part, seconds)` | Adds `seconds` of water, up to `capacity`, and returns the soil table. Takes nothing from the inventory either. |
 | `farm.near(position, radius)` | Soil parts within `radius` m of `position` (at most `max_overlap_radius`), nearest first: a list of `{creation, part}`, for watering where a splash lands. |
 

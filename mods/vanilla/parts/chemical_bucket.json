@@ -1,0 +1,29 @@
+{
+  "id": "chemical_bucket",
+  "name": "Chemical Bucket",
+  "description": "A Water Bucket full of chemical from a chemical pool. Pour it into a Chemical Container, or throw it.",
+  "category": "consumable",
+  "mass": 7.5,
+  "durability": 3,
+  "friction": 0.7,
+  "buoyancy": 0.5,
+  "flammable": false,
+  "stack_size": 1,
+  "mesh": "meshes/items/chemical_bucket.glb",
+  "icon": "textures/items/chemical_bucket_icon.png",
+  "script": "scripts/chemical_bucket.lua",
+  "sounds": {
+    "throw": "bucket_throw",
+    "splash": "water_splash",
+    "pour": "fuel_pour"
+  },
+  "properties": {
+    "item": "chemical",
+    "count": 5,
+    "empty": "water_bucket",
+    "range": 14,
+    "throw_speed": 11,
+    "throw_up": 0.35,
+    "splash": 2.5
+  }
+}

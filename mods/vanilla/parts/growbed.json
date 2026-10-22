@@ -1,0 +1,58 @@
+{
+  "id": "growbed",
+  "name": "Growbed",
+  "description": "A raised bed of soil to build onto anything: crops grow on your creation and ride along with it. Plant carrot, potato, tomato or cotton seeds and water it; every harvest gives 5. It needs power: link a Battery Container to it with the Connect Tool (one battery grows for 6 minutes).",
+  "category": "interactive",
+  "mass": 4.5,
+  "durability": 3,
+  "friction": 0.4,
+  "buoyancy": 0.6,
+  "flammable": false,
+  "stack_size": 5,
+  "sound_material": "wood",
+  "size": [5, 2, 5],
+  "mesh": "meshes/parts/growbed.glb",
+  "icon": "textures/items/growbed_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.25, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/soil.lua",
+  "sounds": {
+    "use": "pickup_produce",
+    "place": "place_wood"
+  },
+  "soil": {
+    "capacity": 600,
+    "growth": 1,
+    "dry_time": 2160,
+    "wet_level": 0.25,
+    "yield": 5,
+    "seeds": [
+      "carrot_seed",
+      "potato_seed",
+      "tomato_seed",
+      "cotton_seed"
+    ]
+  },
+  "logic": {
+    "inputs": 4
+  },
+  "display": {
+    "clips": {
+      "readout": "pose"
+    }
+  },
+  "properties": {
+    "interval": 0.5,
+    "charge_item": "battery_pack",
+    "charge_time": 360
+  }
+}

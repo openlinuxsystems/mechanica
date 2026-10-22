@@ -1,0 +1,19 @@
+{
+  "id": "coil_corner",
+  "name": "Coil Corner",
+  "description": "A generator coil turning a quarter round. It lines up with the Coil Segment.",
+  "category": "decor",
+  "mass": 9,
+  "durability": 6,
+  "friction": 0.6,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [3, 3, 3],
+  "mesh": "meshes/parts/coil_corner.glb",
+  "icon": "textures/items/coil_corner_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

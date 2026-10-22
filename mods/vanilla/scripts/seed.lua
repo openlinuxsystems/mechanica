@@ -12,6 +12,11 @@ function can_use(target)
   if soil.seed then
     return "Something is already growing there."
   end
+  -- Soil that only grows some seeds (a Growbed) refuses the rest.
+  local ok, refused = farm.can_plant(target.creation, target.part)
+  if not ok then
+    return refused
+  end
 end
 
 function on_use(target)

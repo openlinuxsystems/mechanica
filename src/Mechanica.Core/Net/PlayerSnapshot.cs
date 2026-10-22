@@ -58,8 +58,11 @@ public enum BodyFlags : byte
     /// <summary>The tool in hand raised: the Sledgehammer up to block, the Connect Tool aimed, the Paint Tool spraying.</summary>
     Guard = 16,
 
+    /// <summary>On a ladder (<see cref="Player.LadderClimb"/>).</summary>
+    Climbing = 32,
+
     /// <summary>Every flag.</summary>
-    All = OnFloor | Swimming | Crawl | Seated | Guard,
+    All = OnFloor | Swimming | Crawl | Seated | Guard | Climbing,
 }
 
 /// <summary>All players at one host physics tick.</summary>

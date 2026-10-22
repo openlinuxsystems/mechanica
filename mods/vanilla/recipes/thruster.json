@@ -5,16 +5,20 @@
   ],
   "inputs": [
     {
-      "item": "scrap_metal_block",
-      "count": 16
+      "item": "metal_block_3",
+      "count": 50
     },
     {
       "item": "component_kit",
-      "count": 2
+      "count": 5
     },
     {
-      "item": "gasoline",
-      "count": 2
+      "item": "gas_engine",
+      "count": 1
+    },
+    {
+      "item": "controller",
+      "count": 1
     }
   ],
   "outputs": [
@@ -23,6 +27,6 @@
       "count": 1
     }
   ],
-  "time": 8,
+  "time": 30,
   "order": 1110
 }

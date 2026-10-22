@@ -43,22 +43,25 @@ public class RecipeDataTests : IDisposable
     [InlineData("""{ "inventory": { "slots": 0 } }""", "$.inventory.slots", "slots must be 1 to 256 (got 0).")]
     [InlineData("""{ "inventory": { "slots": 2, "accepts": ["Bad Id"] } }""", "$.inventory.accepts[0]", "'Bad Id' must be an item id or 'mod_id:item_id'.")]
     [InlineData("""{ "inventory": { "slots": 2, "accepts": ["gas", "vanilla:gas"] } }""", "$.inventory.accepts[1]", "'vanilla:gas' is listed twice.")]
+    [InlineData("""{ "inventory": { "slots": 2, "gauge": "water" } }""", "$.inventory.gauge", "a gauge needs accepts: it shows how much of the first accepted item the container holds.")]
+    [InlineData("""{ "inventory": { "slots": 2, "accepts": ["gas"], "gauge": "fuel" } }""", "$.inventory.gauge", null)]
     [InlineData("""{ "crafting": { } }""", "$.crafting", "a crafting station needs an inventory for what it makes.")]
     [InlineData("""{ "inventory": { "slots": 1 }, "crafting": { "speed": 0 } }""", "$.crafting.speed", "speed must be greater than 0.")]
     [InlineData("""{ "inventory": { "slots": 1 }, "crafting": { "queue_size": 0 } }""", "$.crafting.queue_size", "queue_size must be 1 to 64.")]
     [InlineData("""{ "inventory": { "slots": 1 }, "crafting": { "link_range": 9 } }""", "$.crafting.link_range", "link_range must be 0 to 8 m.")]
     [InlineData("""{ "upgrades": [ { "cost": [] } ] }""", "$.upgrades[0].set", "set is required: the part keys this level changes.")]
-    [InlineData("""{ "upgrades": [ { "set": { "mass": 9 } } ] }""", "$.upgrades[0].set", "an upgrade can change only name, description, durability, mesh, icon, sockets, settings, display, crafting, inventory, logic, properties, not 'mass'.")]
+    [InlineData("""{ "upgrades": [ { "set": { "size": [1, 1, 2] } } ] }""", "$.upgrades[0].set", "an upgrade can change only name, description, mass, durability, mesh, icon, sockets, settings, display, crafting, inventory, logic, properties, not 'size'.")]
+    [InlineData("""{ "upgrades": [ { "set": { "mass": -1 } } ] }""", "$.upgrades[0].set.mass", "mass (kg) must be greater than 0.")]
     [InlineData("""{ "upgrades": [ { "cost": [ { "item": "Bad Id", "count": 0 } ], "set": { "properties": { "a": 1 } } } ] }""", "$.upgrades[0].cost[0].item", "'Bad Id' must be an item id or 'mod_id:item_id'.")]
     [InlineData("""{ "upgrades": [ { "cost": [ { "item": "kit", "count": 0 } ], "set": { "properties": { "a": 1 } } } ] }""", "$.upgrades[0].cost[0].count", "count must be 1 or more.")]
     [InlineData("""{ "inventory": { "slots": 4 }, "upgrades": [ { "set": { "inventory": { "slots": 2 } } } ] }""", "$.upgrades[0].set.inventory", "an upgrade cannot take inventory slots away.")]
     [InlineData("""{ "inventory": { "slots": 4 }, "upgrades": [ { "set": { "inventory": { "slots": 0 } } } ] }""", "$.upgrades[0].set.inventory.slots", "slots must be 1 to 256 (got 0).")]
     [InlineData("""{ "inventory": { "slots": 1 }, "crafting": { }, "upgrades": [ { "set": { "crafting": { "speed": -1 } } } ] }""", "$.upgrades[0].set.crafting.speed", "speed must be greater than 0.")]
-    public void BadStorageFieldsAreReported(string overrides, string path, string message)
+    public void BadStorageFieldsAreReported(string overrides, string path, string? message)
     {
         var content = _mods.Mod("vanilla").Part("vanilla", "box.json", TestMods.Block("box", overrides)).Load();
 
-        Assert.Contains(content.Diagnostics, d => d.JsonPath == path && d.Message == message);
+        Assert.Contains(content.Diagnostics, d => d.JsonPath == path && (message is null || d.Message == message));
     }
 
     [Fact]
@@ -237,10 +240,10 @@ public class RecipeDataTests : IDisposable
         var book = RecipeBook.Load(content);
 
         var made = book.All.Where(r => r.RunsAt("portable_fabricator")).Select(r => r.QualifiedId[8..]).Order(StringComparer.Ordinal);
-        // Scrap Mechanic's Mini Craftbot list (the scrap tier) plus our gasoline, wedges and Connect Tool. Parts SM makes at
-        // both stations have a scrap recipe here (`_scrap`) and a Metal Block one at the Fabricator.
+        // Scrap Mechanic's Mini Craftbot list (the scrap tier) plus our gasoline, wedges, Connect Tool and Shack Light. Parts
+        // SM makes at both stations have a scrap recipe here (`_scrap`) and a Metal Block one at the Fabricator.
         Assert.Equal(["beacon_scrap", "bearing_scrap", "connect_tool", "gasoline", "scrap_drivers_seat", "scrap_gas_engine",
-            "scrap_metal_wedge", "scrap_seat", "scrap_wheel", "scrap_wood_wedge", "switch_scrap"], made);
+            "scrap_metal_wedge", "scrap_seat", "scrap_wheel", "scrap_wood_wedge", "shack_light", "switch_scrap"], made);
         foreach (var scrap in new[] { "scrap_seat", "scrap_drivers_seat", "scrap_gas_engine", "scrap_wheel" })
             Assert.False(book.Find(scrap)!.RunsAt("fabricator"), $"{scrap} is made only at the Portable Fabricator");
         foreach (var both in new[] { "bearing", "switch", "beacon" })

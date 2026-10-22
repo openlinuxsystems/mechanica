@@ -86,7 +86,7 @@ public sealed class PartAssets
                 return painted;
             var plain = ModelFor(qualifiedId, definition);
             var color = HexColor.TryParse(paint, out var c) ? new Color(c.R, c.G, c.B) : Colors.White;
-            return _models[key] = plain with { Meshes = [.. plain.Meshes.Select(m => Paint(m, color))] };
+            return _models[key] = plain with { Meshes = [.. plain.Meshes.Select(m => Paint(m, color, definition.Light is not null))] };
         }
         if (_models.TryGetValue(cacheKey, out var cached))
             return cached;
@@ -174,7 +174,7 @@ public sealed class PartAssets
             if (definition.Visual is { } visual)
                 part = ApplyVisual(part, visual, modId);
             if (color is { } painted)
-                part = Paint(part, painted);
+                part = Paint(part, painted, definition.Light is not null);
             for (var i = 0; i < (part.SurfaceMaterials?.Count ?? 0); i++)
                 node.SetSurfaceOverrideMaterial(i, part.SurfaceMaterials![i]);
         }
@@ -322,7 +322,9 @@ public sealed class PartAssets
     }
 
     // Every surface's material copied with its albedo colour replaced; textures keep showing through.
-    private static PartMesh Paint(PartMesh mesh, Color color)
+    // A painted part takes the paint as its colour; a painted light's glowing surfaces glow in it too (parts map E5),
+    // as its light shines in it (CreationNode).
+    private static PartMesh Paint(PartMesh mesh, Color color, bool light)
     {
         var materials = new List<Material?>();
         for (var i = 0; i < mesh.Mesh.GetSurfaceCount(); i++)
@@ -330,6 +332,8 @@ public sealed class PartAssets
             var original = mesh.SurfaceMaterials?.ElementAtOrDefault(i) ?? mesh.Mesh.SurfaceGetMaterial(i);
             var material = original is BaseMaterial3D b ? (BaseMaterial3D)b.Duplicate() : new StandardMaterial3D();
             material.AlbedoColor = new Color(color, material.AlbedoColor.A);
+            if (light && material.EmissionEnabled)
+                material.Emission = color;
             materials.Add(material);
         }
         return mesh with { SurfaceMaterials = materials };

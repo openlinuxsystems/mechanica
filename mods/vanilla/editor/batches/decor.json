@@ -604,27 +604,6 @@
       ]
     },
     {
-      "file": "parts/decor/hay_bale.json",
-      "template": "decor",
-      "set": {
-        "name": "Hay Bale",
-        "description": "A tightly bound bale of hay. It burns well.",
-        "mass": 25,
-        "durability": 2,
-        "flammable": true,
-        "sound_material": "fabric",
-        "stack_size": 20,
-        "size": [4, 2, 2],
-        "visual": { "color": "#d8c060", "roughness": 1.0, "metallic": 0.0 },
-        "buoyancy": 0.6
-      },
-      "model": [
-        { "kind": "box", "size": [1, 0.5, 0.5] },
-        { "kind": "box", "size": [0.02, 0.51, 0.51], "position": [0.25, 0, 0] },
-        { "kind": "box", "size": [0.02, 0.51, 0.51], "position": [-0.25, 0, 0] }
-      ]
-    },
-    {
       "file": "parts/decor/grass_tuft.json",
       "template": "decor",
       "set": {
@@ -944,34 +923,29 @@
       "file": "parts/decor/ladder.json",
       "template": "decor",
       "set": {
+        // Parts map batch 17a (E2): climbable, with the wiki's stats and recipe. Model: tools/engine/build_engine.py.
         "name": "Ladder",
-        "description": "A steel ladder, 2 m tall. Decor only: climb it like stairs.",
-        "mass": 8,
-        "durability": 4,
-        "flammable": false,
+        "description": "A Colony Works steel ladder, 2 m tall. Walk into it to grab it, climb with the move keys, jump to let go.",
+        "mass": 4.5,
+        "durability": 5,
+        "friction": 0.4,
+        "buoyancy": 0.2,
+        "flammable": true,
         "sound_material": "metal",
-        "stack_size": 20,
+        "stack_size": 10,
         "size": [2, 8, 1],
-        "visual": { "color": "#a0a8b0", "roughness": 0.4, "metallic": 0.8 }
+        "climbable": true,
+        "icon": "textures/items/ladder_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
       },
-      "model": [
-        { "kind": "box", "size": [0.04, 2, 0.04], "position": [-0.22, 0, 0] },
-        { "kind": "box", "size": [0.04, 2, 0.04], "position": [0.22, 0, 0] },
-        { "kind": "box", "size": [0.44, 0.03, 0.03], "position": [0, -0.75, 0] },
-        { "kind": "box", "size": [0.44, 0.03, 0.03], "position": [0, -0.5, 0] },
-        { "kind": "box", "size": [0.44, 0.03, 0.03], "position": [0, -0.25, 0] },
-        { "kind": "box", "size": [0.44, 0.03, 0.03] },
-        { "kind": "box", "size": [0.44, 0.03, 0.03], "position": [0, 0.25, 0] },
-        { "kind": "box", "size": [0.44, 0.03, 0.03], "position": [0, 0.5, 0] },
-        { "kind": "box", "size": [0.44, 0.03, 0.03], "position": [0, 0.75, 0] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/ladder.glb" }],
       "recipes": [
         {
           "id": "ladder",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 8 }],
+          "inputs": [{ "item": "metal_block_2", "count": 20 }, { "item": "glue", "count": 2 }],
           "outputs": [{ "item": "ladder", "count": 1 }],
-          "time": 2,
+          "time": 10,
           "order": 230
         }
       ]

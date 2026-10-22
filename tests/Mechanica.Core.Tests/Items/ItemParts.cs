@@ -44,14 +44,14 @@ internal static class ItemParts
                 new UpgradeDefinition
                 {
                     Cost = [new RecipeItem { Item = Kit, Count = 3 }],
-                    Set = (System.Text.Json.Nodes.JsonObject)System.Text.Json.Nodes.JsonNode.Parse("""{ "crafting": { "queue_size": 3 } }""")!,
+                    Set = (System.Text.Json.Nodes.JsonObject)System.Text.Json.Nodes.JsonNode.Parse("""{ "mass": 3, "crafting": { "queue_size": 3 } }""")!,
                 },
             ],
         });
 
     /// <summary>
     /// Bench recipes: 2 scrap + 1 wood make a chest in 4 s (also at the Forge); 1 scrap makes 10 blocks in 1 s. The Forge
-    /// links containers within 0.5 m and has two upgrade levels (2 then 3 kits).
+    /// links containers within 0.5 m and has two upgrade levels (2 then 3 kits; the second takes its mass from 5 to 3 kg).
     /// </summary>
     public static RecipeBook Recipes(IPartCatalog catalog) => RecipeBook.From(catalog,
         ("test", new RecipeDefinition

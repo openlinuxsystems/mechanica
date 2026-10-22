@@ -1,0 +1,42 @@
+{
+  "id": "cash_register",
+  "name": "Cash Register",
+  "description": "A shop till. Use it, or turn its input on, and its drawer springs open with a ring; its output is on while the drawer is open.",
+  "category": "interactive",
+  "mass": 7.5,
+  "durability": 4,
+  "friction": 0.6,
+  "buoyancy": 0.2,
+  "flammable": true,
+  "stack_size": 1,
+  "sound_material": "metal",
+  "size": [3, 2, 2],
+  "mesh": "meshes/parts/cash_register.glb",
+  "icon": "textures/items/cash_register_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.25, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/cash_register.lua",
+  "sounds": {
+    "open": "cash_register_open",
+    "close": "cash_register_close"
+  },
+  "logic": {
+    "inputs": 1,
+    "outputs": 10,
+    "use": "open"
+  },
+  "display": {
+    "clips": {
+      "readout": "clip"
+    }
+  }
+}

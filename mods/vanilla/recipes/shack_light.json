@@ -1,0 +1,25 @@
+{
+  "id": "shack_light",
+  "stations": [
+    "fabricator",
+    "portable_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal_block",
+      "count": 2
+    },
+    {
+      "item": "glass_block",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "shack_light",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 1605
+}

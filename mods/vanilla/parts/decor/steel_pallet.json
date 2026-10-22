@@ -1,0 +1,19 @@
+{
+  "id": "steel_pallet",
+  "name": "Steel Pallet",
+  "description": "A colony steel pallet with fork pockets.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 5,
+  "friction": 0.6,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [5, 1, 5],
+  "mesh": "meshes/parts/steel_pallet.glb",
+  "icon": "textures/items/steel_pallet_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

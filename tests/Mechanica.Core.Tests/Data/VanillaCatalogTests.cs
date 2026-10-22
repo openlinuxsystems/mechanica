@@ -1,6 +1,7 @@
 using Mechanica.Core.Characters;
 using Mechanica.Core.Data;
 using Mechanica.Core.Items;
+using Mechanica.Core.World;
 
 namespace Mechanica.Core.Tests.Data;
 
@@ -21,17 +22,19 @@ public class VanillaCatalogTests
         "bearing", "gas_engine", "scrap_gas_engine", "electric_engine", "piston", "sport_suspension", "offroad_suspension",
         "drivers_seat", "scrap_drivers_seat", "passenger_seat", "scrap_seat", "controller", "logic_gate", "timer", "sensor",
         "switch", "button", "horn", "thruster", "wing", "rotor", "control_surface", "hover_jet", "saw_blade", "drill",
-        "water_cannon", "potato_blaster_mounted", "scrap_wheel", "wheel", "big_wheel",
+        "water_cannon", "potato_blaster_mounted", "scrap_wheel", "wheel", "big_wheel", "sticky_wheel", "plasma_drill",
+        "explosive_canister_small", "explosive_canister_large",
         // Containers, stations, lights, utility
         "chest", "small_chest", "large_chest", "cargo_chest", "water_container", "potato_ammo_container", "broken_microwave", "ruin_chest",
         "gas_container", "battery", "chemical_container", "fridge", "locker", "file_cabinet", "tool_cabinet",
         "wooden_crate", "metal_crate", "barrel", "fabricator", "portable_fabricator", "refiner", "dispenser", "respawn_bed",
         "radio", "beacon", "headlight", "spotlight", "warehouse_spotlight", "construction_light", "interior_light",
-        "warning_light",
+        "warning_light", "shack_light", "fluorescent_light", "packing_lamp", "frame_beam_light", "neon_sign", "protector_sign",
+        "alarm_clock", "cash_register", "fancy_bed", "freezer", "anvil",
         // Resources, consumables, handheld weapons (produce_crate is left out for now)
         "component_kit", "circuit_board", "glue", "gasoline", "crude_oil", "battery_pack",
         "master_battery", "warehouse_key", "explosive_remnant", "scuttler_head", "carrot_seed", "potato_seed", "tomato_seed",
-        "cotton_seed", "carrot", "potato", "tomato", "cotton", "beeswax", "ember", "water_bucket", "glowstick", "popper", "potato_blaster", "potato_scattergun",
+        "cotton_seed", "carrot", "potato", "tomato", "cotton", "beeswax", "ember", "water_bucket", "chemical_bucket", "glowstick", "popper", "potato_blaster", "potato_scattergun",
         "potato_launcher",
         // World / farming parts
         "soil_bag",
@@ -76,9 +79,11 @@ public class VanillaCatalogTests
     [MemberData(nameof(Ids))]
     public void LightsAndPartsPlayersUseHaveAScript(string id)
     {
-        // Bearings, suspensions and wheels are driven by other parts' scripts and need none of their own.
+        // Bearings, suspensions and wheels are driven by other parts' scripts and need none of their own, and a
+        // container's outputs only link its storage to the parts that draw on it (a Water Container to Water Cannons).
         var part = Part(id);
-        if (part.Category == PartCategory.Light || part.Logic?.Use is not null || part.Logic?.Outputs > 0)
+        var storageLinks = part.Category == PartCategory.Container && part.Logic?.Use is null;
+        if (part.Category == PartCategory.Light || part.Logic?.Use is not null || (part.Logic?.Outputs > 0 && !storageLinks))
             Assert.True(part.Script is not null && File.Exists(Path.Combine(TestMods.RepoRoot, "mods", "vanilla", part.Script)), $"{id} has a script");
     }
 
@@ -239,6 +244,8 @@ public class VanillaCatalogTests
     [InlineData("paint_ammo")]
     [InlineData("explosive_remnant")]
     [InlineData("chemical")]
+    [InlineData("chemical_bucket")]
+    [InlineData("ladder")]
     public void EachCraftingMaterialHasItsOwnModelAndIcon(string id)
     {
         var part = Part(id);
@@ -469,14 +476,327 @@ public class VanillaCatalogTests
     }
 
     [Theory]
-    [InlineData("fabricator", "vanilla:wheel", "vanilla:big_wheel")]
+    // Parts map batch 5 (lights): the wiki's bars. The Frame Beam Light, Neon Sign, Packing Lamp, Protector Sign, Shack
+    // Light and Fluorescent Light are new; the Construction and Warning Lights are ours and keep their numbers.
+    [InlineData("headlight", 3, 3, 0.4, 0.4, false, 1)]
+    [InlineData("warehouse_spotlight", 6, 2, 0.4, 0.4, true, 20)]
+    [InlineData("interior_light", 7.5, 2, 0.5, 0.3, false, 20)]
+    [InlineData("spotlight", 7.5, 4, 0.4, 0.2, false, 20)]
+    [InlineData("frame_beam_light", 7.5, 4, 0.4, 0.1, false, 20)]
+    [InlineData("neon_sign", 3, 1, 0.5, 0.4, true, 20)]
+    [InlineData("packing_lamp", 6, 4, 0.5, 0.4, false, 1)]
+    [InlineData("protector_sign", 7.5, 3, 0.7, 0.1, false, 20)]
+    [InlineData("shack_light", 3, 2, 0.5, 0.4, true, 1)]
+    [InlineData("fluorescent_light", 7.5, 4, 0.4, 0.3, false, 20)]
+    public void LightsTakeTheWikiStats(string id, double mass, int durability, double friction, double buoyancy,
+        bool flammable, int stack) => VehiclePartsTakeTheWikiStats(id, mass, durability, friction, buoyancy, flammable, stack);
+
+    [Theory]
+    // Parts map batch 5: the Headlight takes the wiki's Craftbot recipe. SM cannot craft the warehouse and shack lights,
+    // so the Spotlight, Warehouse Spotlight and Interior Light keep ours and the new ones get a cheap recipe.
+    [InlineData("headlight", 5, "metal_block:1", "glass_block:1", "circuit_board:1", "glue:1")]
+    [InlineData("spotlight", 5, "scrap_metal_block:8", "component_kit:1", "circuit_board:1")]
+    [InlineData("warehouse_spotlight", 8, "scrap_metal_block:16", "component_kit:2", "circuit_board:1")]
+    [InlineData("interior_light", 3, "scrap_metal_block:4", "component_kit:1")]
+    [InlineData("frame_beam_light", 5, "metal_block:2", "glass_block:1")]
+    [InlineData("neon_sign", 5, "metal_block:2", "glass_block:2", "paint_ammo:1")]
+    [InlineData("packing_lamp", 5, "metal_block:2", "glass_block:1")]
+    [InlineData("protector_sign", 5, "metal_block:2", "circuit_board:1")]
+    [InlineData("fluorescent_light", 5, "metal_block:2", "glass_block:1")]
+    public void LightsTakeTheWikiRecipes(string id, float time, params string[] inputs) =>
+        VehiclePartsTakeTheWikiRecipes(id, time, inputs);
+
+    [Theory]
+    // Parts map batch 6 (working parts): the wiki's bars. The Plasma Drill, Sticky Wheel, Explosive Canisters, Alarm
+    // Clock and Cash Register are new, and the Scuttler Head is now a part (it plays notes).
+    [InlineData("thruster", 12, 5, 0.5, 0.2, false, 10)]
+    [InlineData("water_cannon", 7.5, 5, 0.4, 0.2, false, 10)]
+    [InlineData("potato_blaster_mounted", 10.5, 5, 0.4, 0.2, false, 5)]
+    [InlineData("plasma_drill", 4.5, 8, 0.2, 0.3, false, 5)]
+    [InlineData("sticky_wheel", 6, 7, 1.1, 0.2, false, 20)]
+    [InlineData("explosive_canister_small", 6, 10, 0.3, 0.7, true, 10)]
+    [InlineData("explosive_canister_large", 6, 10, 0.3, 0.7, true, 5)]
+    [InlineData("alarm_clock", 4.5, 3, 0.4, 0.6, true, 10)]
+    [InlineData("cash_register", 7.5, 4, 0.6, 0.2, true, 1)]
+    [InlineData("scuttler_head", 6, 4, 0.4, 0.6, false, 5)]
+    public void WorkingPartsTakeTheWikiStats(string id, double mass, int durability, double friction, double buoyancy,
+        bool flammable, int stack) => VehiclePartsTakeTheWikiStats(id, mass, durability, friction, buoyancy, flammable, stack);
+
+    [Theory]
+    // Parts map batch 6: the wiki's Craftbot recipes with our materials (Glow is explosive_remnant, Chili gasoline,
+    // Bee Wax beeswax, Glue Clam chemical). The Scuttler Head only drops from Scuttlers.
+    [InlineData("thruster", 30, "metal_block_3:50", "component_kit:5", "gas_engine:1", "controller:1")]
+    [InlineData("water_cannon", 30, "metal_block:10", "circuit_board:1", "glue:2")]
+    [InlineData("potato_blaster_mounted", 15, "metal_block_2:20", "component_kit:1", "circuit_board:4")]
+    [InlineData("plasma_drill", 60, "metal_block_2:100", "component_kit:10", "circuit_board:10")]
+    [InlineData("sticky_wheel", 30, "metal_block_2:20", "beeswax:10", "chemical:5")]
+    [InlineData("explosive_canister_small", 10, "metal_block:5", "explosive_remnant:2", "gasoline:2")]
+    [InlineData("explosive_canister_large", 15, "metal_block:10", "explosive_remnant:4", "gasoline:3")]
+    [InlineData("alarm_clock", 10, "metal_block:5", "glass_block:10", "circuit_board:2")]
+    [InlineData("cash_register", 5, "metal_block:5", "circuit_board:1")]
+    public void WorkingPartsTakeTheWikiRecipes(string id, float time, params string[] inputs) =>
+        VehiclePartsTakeTheWikiRecipes(id, time, inputs);
+
+    [Fact]
+    public void TheThrusterIsCraftedAtLevel1AndUpgradedForPowerStepsAndMileage()
+    {
+        // Parts map batch 6: five levels for 10 Component Kits each, lighter and tougher each level, one more power step
+        // (3 to 7) and better mileage (gasoline lasts 112 s at level 1, 224 s at level 5), each level its own model.
+        var written = Part("thruster");
+        var vanilla = Path.Combine(TestMods.RepoRoot, "mods", "vanilla");
+
+        Assert.Equal(4, PartUpgrades.MaxLevel(written));
+        Assert.Equal([10, 10, 10, 10], written.Upgrades!.Select(u => u.Cost!.Single(c => c.Item == "component_kit").Count!.Value));
+        for (var level = 0; level <= 4; level++)
+        {
+            var part = PartUpgrades.At(written, level);
+            Assert.Equal($"Thruster {level + 1}", part.Name);
+            Assert.Equal($"meshes/parts/thruster_{level + 1}.glb", part.Mesh);
+            Assert.Equal($"textures/items/thruster_{level + 1}_icon.png", part.Icon);
+            Assert.True(File.Exists(Path.Combine(vanilla, part.Mesh!)), $"level {level + 1}'s model {part.Mesh}");
+            Assert.True(File.Exists(Path.Combine(vanilla, part.Icon!)), $"level {level + 1}'s icon {part.Icon}");
+            Assert.Equal(new[] { 12, 9, 7.5, 6, 4.5 }[level], (double)part.Mass!.Value, 3);
+            Assert.Equal(5 + level, (int)part.Durability!.Value);
+            Assert.Equal(3 + level, (double)part.Settings!.Single(s => s.Id == "power").Max!.Value);
+            Assert.Equal(112 + 28 * level, part.Properties!["fuel_time"]!.GetValue<double>());
+            Assert.Equal(level < 4, part.Description!.Contains("Upgrade it in place", StringComparison.Ordinal));
+        }
+    }
+
+    [Theory]
+    // Parts map batch 6: a real model per part (tools/<model>/build_<model>.py), its icon, and the clips its script
+    // plays on the readout the part's display names.
+    [InlineData("water_cannon", "water_cannon", "fire")]
+    [InlineData("potato_blaster_mounted", "potato_blaster_mounted", "fire")]
+    [InlineData("plasma_drill", "plasma_drill", "off", "on")]
+    [InlineData("sticky_wheel", "sticky_wheel", "off", "on")]
+    [InlineData("explosive_canister_small", "explosive_canister", "fuse_loop")]
+    [InlineData("explosive_canister_large", "explosive_canister", "fuse_loop")]
+    [InlineData("alarm_clock", "alarm_clock", "armed", "off", "ring_loop")]
+    [InlineData("cash_register", "cash_register", "close", "open")]
+    [InlineData("scuttler_head", "scuttler_head", "note")]
+    [InlineData("thruster", "thruster", "off", "on")]
+    public void EachWorkingPartHasItsOwnModelIconAndClips(string id, string tool, params string[] clips)
+    {
+        var part = Part(id);
+        var mod = Path.Combine(TestMods.RepoRoot, "mods", "vanilla");
+
+        Assert.StartsWith($"meshes/parts/{id}", part.Mesh, StringComparison.Ordinal);
+        Assert.StartsWith($"textures/items/{id}", part.Icon, StringComparison.Ordinal);
+        Assert.True(File.Exists(Path.Combine(mod, part.Mesh!)), $"{id} has a model");
+        Assert.True(File.Exists(Path.Combine(mod, part.Icon!)), $"{id} has an icon");
+        Assert.True(File.Exists(Path.Combine(TestMods.RepoRoot, "tools", tool, $"build_{tool}.py")), $"{id} has its build script");
+        Assert.Equal(clips, GlbAnimations(Path.Combine(mod, part.Mesh!)).Order(StringComparer.Ordinal));
+        var readout = part.Display?.Clips?.Readout;
+        Assert.NotNull(readout);
+        Assert.Contains($"part.display(\"{readout}\"", File.ReadAllText(Path.Combine(mod, part.Script!)), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    // Parts map batch 7 (beds and stations): the wiki's bars. The Fabricator and Refiner have no stack size (-1).
+    [InlineData("respawn_bed", 4.5, 3, 0.4, 0.6, true, 1)]
+    [InlineData("fancy_bed", 4.5, 7, 0.4, 0.6, false, 5)]
+    [InlineData("freezer", 4.5, 7, 0.6, 0.2, false, 5)]
+    [InlineData("anvil", 15, 5, 0.8, 0.1, false, 20)]
+    [InlineData("fabricator", 10.5, 7, 0.6, 0.1, false, -1)]
+    [InlineData("refiner", 10.5, 7, 0.6, 0.1, false, -1)]
+    public void BedsAndStationsTakeTheWikiStats(string id, double mass, int durability, double friction, double buoyancy,
+        bool flammable, int stack)
+    {
+        var part = Part(id);
+
+        Assert.Equal((mass, durability, friction, buoyancy, flammable, stack),
+            (Math.Round((double)part.Mass!.Value, 3), (int)part.Durability!.Value, Math.Round((double)part.Friction!.Value, 3),
+                Math.Round((double)part.Buoyancy!.Value, 3), part.Flammable!.Value, part.StackSize ?? -1));
+    }
+
+    [Theory]
+    // Parts map batch 7: the wiki's Craftbot recipes. The Refiner keeps ours (our early path to Gasoline) and the
+    // Fabricator has none (it is picked up at the Workshop).
+    [InlineData("respawn_bed", 30, "wood_block:50", "cotton:20", "paint_ammo:10")]
+    [InlineData("fancy_bed", 30, "metal_block_2:25", "cotton:20", "paint_ammo:10")]
+    [InlineData("freezer", 30, "metal_block_2:20", "component_kit:2", "circuit_board:4", "chemical:20")]
+    [InlineData("anvil", 10, "metal_block_2:100")]
+    [InlineData("refiner", 15, "scrap_metal_block:40", "component_kit:4", "circuit_board:2")]
+    public void BedsAndStationsTakeTheWikiRecipes(string id, float time, params string[] inputs) =>
+        VehiclePartsTakeTheWikiRecipes(id, time, inputs);
+
+    [Fact]
+    public void TheFabricatorKeepsItsFiveLevelsAndNoRecipe()
+    {
+        var book = RecipeBook.Load(Vanilla.Value);
+        var written = Part("fabricator");
+
+        Assert.DoesNotContain(book.All, r => r.Outputs.Any(o => o.Item.StartsWith("vanilla:fabricator", StringComparison.Ordinal)));
+        Assert.Equal(4, PartUpgrades.MaxLevel(written));
+        for (var level = 0; level <= 4; level++)
+            Assert.Equal($"meshes/parts/fabricator_{level + 1}.glb", PartUpgrades.At(written, level).Mesh);
+    }
+
+    [Theory]
+    // Parts map batch 7: a real model per part (tools/<part>/build_<part>.py) and icon; the stations play their clips
+    // from the crafting queue's readout (no script), the beds and the Anvil have none.
+    [InlineData("respawn_bed")]
+    [InlineData("fancy_bed")]
+    [InlineData("anvil")]
+    [InlineData("freezer", "complete", "idle_loop", "start", "work_loop")]
+    [InlineData("refiner", "complete", "idle_loop", "start", "work_loop")]
+    public void EachBedAndStationHasItsOwnModelIconAndClips(string id, params string[] clips)
+    {
+        var part = Part(id);
+        var mod = Path.Combine(TestMods.RepoRoot, "mods", "vanilla");
+
+        Assert.Equal($"meshes/parts/{id}.glb", part.Mesh);
+        Assert.Equal($"textures/items/{id}_icon.png", part.Icon);
+        Assert.True(File.Exists(Path.Combine(mod, part.Mesh!)), $"{id} has a model");
+        Assert.True(File.Exists(Path.Combine(mod, part.Icon!)), $"{id} has an icon");
+        Assert.True(File.Exists(Path.Combine(TestMods.RepoRoot, "tools", id, $"build_{id}.py")), $"{id} has its build script");
+        Assert.Equal(clips, GlbAnimations(Path.Combine(mod, part.Mesh!)).Order(StringComparer.Ordinal));
+        if (clips.Length == 0)
+            return;
+        Assert.Equal(("station", "idle_loop"), (part.Display?.Clips?.Readout, part.Display?.Clips?.Idle));
+        Assert.Equal(("start", "work_loop", "complete"), (part.Crafting?.Clips?.Start, part.Crafting?.Clips?.Work, part.Crafting?.Clips?.Complete));
+    }
+
+    [Theory]
+    [InlineData("respawn_bed", true)]
+    [InlineData("fancy_bed", false)]
+    public void BothBedsAreRespawnPointsAndOnlyTheWoodenOneBurns(string id, bool flammable)
+    {
+        var part = Part(id);
+
+        Assert.True(part.RespawnPoint);
+        Assert.Equal(flammable, part.Flammable);
+        Assert.Equal(("bed_use", "bed_set"), (part.Sounds!["use"], part.Sounds!["set"]));
+    }
+
+    [Fact]
+    public void TheFreezerTurnsAFullBucketInto20IceBlocksAndGivesTheBucketBack()
+    {
+        // Parts map batch 7: the wiki's Freezer makes 20 Ice Blocks from a Water in about a minute; our Water is the full bucket.
+        var book = RecipeBook.Load(Vanilla.Value);
+        var freezer = Part("freezer");
+
+        var recipe = Assert.Single(book.ForStation("freezer"));
+        Assert.Equal(["vanilla:water_bucket_full:1"], recipe.Inputs.Select(i => $"{i.Item}:{i.Count}"));
+        Assert.Equal(["vanilla:ice_block:20", "vanilla:water_bucket:1"], recipe.Outputs.Select(o => $"{o.Item}:{o.Count}"));
+        Assert.Equal(60f, recipe.Time);
+        Assert.Equal(PartCategory.Station, freezer.Category);
+        Assert.True(freezer.Inventory!.Slots >= 2, "room for the ice and the bucket");
+        Assert.DoesNotContain(book.ForStation("fabricator"), r => r.QualifiedId == recipe.QualifiedId);
+    }
+
+    [Fact]
+    public void TheScuttlerHeadIsTheScuttlersDropAndCannotBeCrafted()
+    {
+        var book = RecipeBook.Load(Vanilla.Value);
+
+        Assert.DoesNotContain(book.All, r => r.Outputs.Any(o => o.Item == "vanilla:scuttler_head"));
+        Assert.Contains("scuttler_head", DroppedItems());
+        Assert.True(Part("scuttler_head").IsPlaceable);
+    }
+
+    [Fact]
+    public void TheShackLightIsMadeFromScrapAtEitherFabricator()
+    {
+        // Scrap metal is the scrap tier, so the Portable Fabricator makes it as well as the Fabricator: one recipe at both.
+        var book = RecipeBook.Load(Vanilla.Value);
+        var recipe = book.Find("shack_light")!;
+
+        Assert.Equal(["vanilla:fabricator", "vanilla:portable_fabricator"], recipe.Stations);
+        Assert.Equal(["vanilla:scrap_metal_block:2", "vanilla:glass_block:1"], recipe.Inputs.Select(i => $"{i.Item}:{i.Count}"));
+        Assert.Equal(5f, recipe.Time);
+        Assert.Single(book.All, r => r.Outputs.Any(o => o.Item == "vanilla:shack_light"));
+    }
+
+    public static TheoryData<string> Lights => [.. Items.Where(id => Part(id).Category == PartCategory.Light && id != "beacon")];
+
+    [Theory]
+    [MemberData(nameof(Lights))]
+    public void EachLightHasItsOwnModelIconAndOnAndOffClips(string id)
+    {
+        // Parts map batch 5: a real model per light (tools/<id>/build_<id>.py) and its icon. A light that can go out
+        // plays its model's on and off clips from light.lua's "pose" readout; the glowstick is always lit.
+        var part = Part(id);
+        var mod = Path.Combine(TestMods.RepoRoot, "mods", "vanilla");
+
+        Assert.Equal($"meshes/parts/{id}.glb", part.Mesh);
+        Assert.Equal($"textures/items/{id}_icon.png", part.Icon);
+        Assert.True(File.Exists(Path.Combine(mod, part.Mesh!)), $"{id} has a model");
+        Assert.True(File.Exists(Path.Combine(mod, part.Icon!)), $"{id} has an icon");
+        Assert.True(File.Exists(Path.Combine(TestMods.RepoRoot, "tools", id, $"build_{id}.py")), $"{id} has its build script");
+        var clips = GlbAnimations(Path.Combine(mod, part.Mesh!));
+        if (id == "glowstick")
+        {
+            Assert.Null(part.Display);
+            Assert.Empty(clips);
+            return;
+        }
+        Assert.Equal("pose", part.Display?.Clips?.Readout);
+        Assert.Equal(["off", "on"], clips.Order(StringComparer.Ordinal));
+        Assert.Contains("part.display(\"pose\"", File.ReadAllText(Path.Combine(mod, part.Script!)), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("shack_light")]
+    [InlineData("neon_sign")]
+    public void TheShackLampsHaveABrightnessSetting(string id)
+    {
+        var brightness = Part(id).Settings!.Single(s => s.Id == "brightness");
+
+        Assert.Equal((1.0, 10.0, 10.0), ((double)brightness.Min!.Value, (double)brightness.Max!.Value, brightness.Default!.Value.GetDouble()));
+    }
+
+    [Fact]
+    public void LampsShineWarmWhiteAndNeverOrange()
+    {
+        // docs/art-direction.md: lamp light is warm white; the Warning Light is signal red, the Neon Sign mint, the Glowstick
+        // green and the Beacon cyan. No light is orange (Scrap Mechanic's signature, banned).
+        var coloured = new Dictionary<string, string>
+        {
+            ["warning_light"] = "#ff3d2e", ["neon_sign"] = "#7dffc4", ["glowstick"] = "#60ff70", ["beacon"] = "#38c8ff",
+        };
+        foreach (var id in Items.Where(id => Part(id).Category == PartCategory.Light))
+        {
+            var color = Part(id).Light!.Color!;
+            if (coloured.TryGetValue(id, out var expected))
+            {
+                Assert.Equal(expected, color);
+                continue;
+            }
+            var (r, g, b) = (Convert.ToInt32(color[1..3], 16), Convert.ToInt32(color[3..5], 16), Convert.ToInt32(color[5..7], 16));
+            Assert.True(r == 255 && g >= 240 && b >= 200 && b < g, $"{id} shines warm white ({color})");
+        }
+    }
+
+    // The clip names in a .glb's glTF JSON chunk.
+    private static List<string> GlbAnimations(string path)
+    {
+        var bytes = File.ReadAllBytes(path);
+        var length = BitConverter.ToInt32(bytes, 12);
+        using var doc = System.Text.Json.JsonDocument.Parse(bytes.AsMemory(20, length));
+        return doc.RootElement.TryGetProperty("animations", out var animations)
+            ? [.. animations.EnumerateArray().Select(a => a.GetProperty("name").GetString()!)]
+            : [];
+    }
+
+    [Theory]
+    [InlineData("fabricator", "vanilla:wheel", "vanilla:big_wheel", "vanilla:sticky_wheel")]
     [InlineData("fabricator", "vanilla:gas_engine", "vanilla:electric_engine")]
     [InlineData("fabricator", "vanilla:switch", "vanilla:button")]
     [InlineData("fabricator", "vanilla:passenger_seat", "vanilla:saddle", "vanilla:drivers_seat", "vanilla:drivers_saddle", "vanilla:controller")]
     [InlineData("fabricator", "vanilla:toilet", "vanilla:bathtub")]
+    [InlineData("fabricator", "vanilla:timer", "vanilla:sensor", "vanilla:alarm_clock")]
+    [InlineData("fabricator", "vanilla:drill", "vanilla:plasma_drill", "vanilla:saw_blade", "vanilla:water_cannon",
+        "vanilla:potato_blaster_mounted", "vanilla:explosive_canister_small", "vanilla:explosive_canister_large")]
+    [InlineData("fabricator", "vanilla:shack_light", "vanilla:glowstick", "vanilla:fluorescent_light", "vanilla:packing_lamp",
+        "vanilla:interior_light", "vanilla:headlight", "vanilla:spotlight", "vanilla:construction_light", "vanilla:warning_light",
+        "vanilla:beacon", "vanilla:warehouse_spotlight", "vanilla:frame_beam_light", "vanilla:neon_sign", "vanilla:protector_sign")]
+    [InlineData("fabricator", "vanilla:portable_fabricator", "vanilla:refiner", "vanilla:respawn_bed", "vanilla:fancy_bed", "vanilla:freezer")]
+    [InlineData("fabricator", "vanilla:bathtub", "vanilla:anvil", "vanilla:cash_register")]
     [InlineData("portable_fabricator", "vanilla:scrap_wood_wedge", "vanilla:scrap_metal_wedge", "vanilla:scrap_seat",
         "vanilla:scrap_drivers_seat", "vanilla:scrap_wheel", "vanilla:scrap_gas_engine", "vanilla:gasoline", "vanilla:bearing_scrap",
-        "vanilla:switch_scrap", "vanilla:beacon_scrap", "vanilla:connect_tool")]
+        "vanilla:switch_scrap", "vanilla:shack_light", "vanilla:beacon_scrap", "vanilla:connect_tool")]
     public void RelatedRecipesSitTogetherScrapTierFirst(string station, params string[] ids)
     {
         var listed = RecipeBrowser.Ordered(RecipeBook.Load(Vanilla.Value).ForStation(station)).Select(r => r.QualifiedId).ToList();
@@ -503,8 +823,43 @@ public class VanillaCatalogTests
         Assert.Equal(CollisionShape.Cylinder, part.Collision?.Shape);
     }
 
+    [Theory]
+    // Parts map batch 17a: the wiki's bars for the Ladder (E2) and the Chemical Bucket (E11).
+    [InlineData("ladder", 4.5, 5, 0.4, 0.2, true, 10)]
+    [InlineData("chemical_bucket", 7.5, 3, 0.7, 0.5, false, 1)]
+    public void Batch17aPartsTakeTheWikiStats(string id, double mass, int durability, double friction, double buoyancy,
+        bool flammable, int stack) =>
+        BedsAndStationsTakeTheWikiStats(id, mass, durability, friction, buoyancy, flammable, stack);
+
+    [Fact]
+    public void TheLadderIsClimbableAndMadeFromMetalAndGlue()
+    {
+        // Parts map batch 17a (E2): the wiki's 20 Metal Block 2 + 2 Glue in 10 s at the Craftbot, at the Fabricator.
+        BedsAndStationsTakeTheWikiRecipes("ladder", 10, "metal_block_2:20", "glue:2");
+        var ladder = Part("ladder");
+        Assert.True(ladder.Climbable);
+        Assert.Equal(new GridSize(2, 8, 1), ladder.Size);
+        Assert.Equal("meshes/parts/ladder.glb", ladder.Mesh);
+    }
+
+    [Fact]
+    public void AChemicalPoolFillsABucketThatPoursIntoTheChemicalContainer()
+    {
+        // Parts map batch 17a (E11): no recipe; the vanilla chemical pool turns an empty bucket into a Chemical Bucket, which
+        // pours Chemical into a container that takes it and goes back to the empty bucket.
+        var book = RecipeBook.Load(Vanilla.Value);
+        Assert.DoesNotContain(book.All, r => r.Outputs.Any(o => o.Item == "vanilla:chemical_bucket"));
+        var world = WorldGenData.Load(Vanilla.Value);
+        Assert.Equal("chemical_bucket", world.Definition.Liquids!.Single(l => l.Id == "chemical").Bucket);
+        var bucket = Part("chemical_bucket");
+        Assert.Equal("scripts/chemical_bucket.lua", bucket.Script);
+        Assert.Equal("chemical", bucket.Properties!["item"]!.GetValue<string>());
+        Assert.Equal("water_bucket", bucket.Properties["empty"]!.GetValue<string>());
+        Assert.Contains("chemical", Part("chemical_container").Inventory!.Accepts!);
+    }
+
     // Items that bots, world objects, harvests and POIs hand out, the Survival starting kit, and the item
-    // water fills, read from the data files.
+    // water (or a pool of another liquid) fills, read from the data files.
     private static HashSet<string> DroppedItems()
     {
         var found = new HashSet<string>();
@@ -515,7 +870,7 @@ public class VanillaCatalogTests
         foreach (var file in files)
         {
             foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(file),
-                "\"(?:item|ref|crop|water_item)\"\\s*:\\s*\"(?:vanilla:)?([a-z0-9_]+)\""))
+                "\"(?:item|ref|crop|water_item|bucket)\"\\s*:\\s*\"(?:vanilla:)?([a-z0-9_]+)\""))
                 found.Add(m.Groups[1].Value);
         }
         return found;

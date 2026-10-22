@@ -1,0 +1,20 @@
+{
+  "id": "juice_drum",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 4
+    }
+  ],
+  "outputs": [
+    {
+      "item": "juice_drum",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 3116
+}

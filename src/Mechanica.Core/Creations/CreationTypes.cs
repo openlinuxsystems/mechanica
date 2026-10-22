@@ -25,6 +25,12 @@ public sealed record PartInstance(int Id, string Part, GridCell Cell, GridRotati
     /// <summary>Upgrade level (UI spec §4): 0 is the part as written, up to its <see cref="Data.PartDefinition.Upgrades"/> count.</summary>
     public int Level { get; init; }
 
+    /// <summary>
+    /// The name a player gave it (a Gas Container's "Main tank"), at most <see cref="Items.VehicleGauges.MaxNameLength"/>
+    /// characters; null shows its default ("Gas 1").
+    /// </summary>
+    public string? Name { get; init; }
+
     /// <summary>Keys this build does not know, kept so a save round-trips without losing data.</summary>
     public IReadOnlyDictionary<string, JsonElement>? Extra { get; init; }
 }

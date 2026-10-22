@@ -26,6 +26,7 @@ public static class LuaApi
         new("on_command", "function on_command(name, args, peer)", "The player sent the part a command from its menu (CommandPart), such as \"preview\" from a sequence's Play button; args is the command's table.", "Hooks"),
         new("on_power", "function on_power(amount)", "The sum of the part's logic inputs changed; amount is the new sum.", "Hooks"),
         new("on_collision", "function on_collision(other, impulse)", "The part's Body began touching something; other has creation and part when it is a Creation.", "Hooks"),
+        new("on_damage", "function on_damage(amount, kind, broken, at)", "The part took amount health of damage of kind (weapon, explosion, fire, ...) with its middle at at; broken is true when it broke off (it is gone).", "Hooks"),
         new("get_outputs", "function get_outputs()", "Called once per step; returns the part's logic output (a number or boolean), like part.set_output.", "Hooks"),
         new("on_enter", "function on_enter(peer)", "A player sat down in the part (a seat).", "Hooks"),
         new("on_leave", "function on_leave(peer)", "The player sitting in the part stood up.", "Hooks"),
@@ -78,6 +79,7 @@ public static class LuaApi
         new("part.display", "part.display(id, value)", "Shows a value on the part: a readout in its menu or what its display follows (a number, a boolean as 1 or 0, a string, or nil to clear); returns true or false, reason.", "part"),
         new("part.displayed", "part.displayed(id)", "The value the part shows under id (a number or a string), or nil.", "part"),
         new("part.sound", "part.sound(key)", "The sound id the part binds to key in its sounds, for sound.play or sound.start; nil when unbound.", "part"),
+        new("part.destroy", "part.destroy(kind?)", "Breaks the part off at once, as damage of kind (explosion unless given) would; true when it broke.", "part"),
         new("part.occupant", "part.occupant()", "The peer of the player sitting in this seat, or nil.", "part"),
         new("part.occupant_input", "part.occupant_input()", "The seated player's input as {x, z, jump, sprint, yaw, pitch} (x right, z forward, -1 to 1), or nil.", "part"),
 
@@ -97,6 +99,7 @@ public static class LuaApi
 
         new("world.gravity", "world.gravity()", "Gravity acceleration, in m/s².", "world"),
         new("world.time", "world.time()", "Seconds the world has been simulated; carries on across saves.", "world"),
+        new("world.time_of_day", "world.time_of_day()", "The in-game time in hours, 0 up to 24: a world starts at 6 and a day lasts the world's day_length.", "world"),
         new("world.tick", "world.tick()", "Physics steps since the scripts started.", "world"),
         new("world.raycast", "world.raycast(from, to)", "First thing on the segment, skipping the script's own Creation: {position, normal, distance, creation?, part?, player?, bot?} or nil; player is the peer and bot the bot id.", "world"),
         new("world.creative", "world.creative()", "True in Creative, where engines need no fuel.", "world"),
@@ -135,16 +138,20 @@ public static class LuaApi
 
         new("inventory.count", "inventory.count(item)", "How many of an item the holder carries (bare ids are in the item's mod).", "inventory"),
         new("inventory.take", "inventory.take(item, count?)", "Takes count (default 1) of an item from the holder; true, or false when they carry too few.", "inventory"),
+        new("inventory.put", "inventory.put(creation, part, item, count?)", "Puts count (default 1) of an item (not from the holder) into a container part in the holder's reach that takes it: a bucket emptied into a tank; true, or false and why (nothing put).", "inventory"),
+        new("inventory.space", "inventory.space(creation, part, item)", "How many more of an item fit in a container part in the holder's reach (0 when it is full), or nil and why when it is out of reach or does not take that item.", "inventory"),
 
         new("combat.cast", "combat.cast(from, direction, range)", "The first thing a ray hits, skipping the holder: {kind, position, distance, player?, creation?, part?, object?, bot?, type?} or nil; type is a part's qualified type or a world object's kind (birch_tree).", "combat"),
         new("combat.hit", "combat.hit(hit, damage, push?, kind?)", "Deals damage to what a cast hit, pushing a part's Body with push N·s; kind (drill, saw, weapon...) says what world objects take it (a rock outcrop takes only drill). Returns the hit with damage dealt.", "combat"),
         new("combat.hitscan", "combat.hitscan(from, direction, range, damage, impulse?)", "A cast plus a hit along the ray; returns the hit with damage dealt, or nil.", "combat"),
         new("combat.splash", "combat.splash(at, radius, damage, impulse?)", "Damage falling off to 0 at radius m around at, for players, parts and world objects; returns a list of hits.", "combat"),
+        new("combat.explode", "combat.explode(at, radius, damage, impulse?)", "An explosion: combat.splash plus the blast every peer sees; returns a list of hits.", "combat"),
         new("combat.pellets", "combat.pellets(direction, count, spread)", "count directions: the first along direction, the rest evenly round a cone of spread degrees.", "combat"),
-        new("combat.projectile", "combat.projectile(from, velocity, options?)", "Launches a projectile ({gravity?, lifetime?, data?, look?, size?}; look \"water\" draws thrown water, size is how big it is drawn in metres, for water the radius its splash spreads over); on_hit runs where it lands. Returns its id.", "combat"),
+        new("combat.projectile", "combat.projectile(from, velocity, options?)", "Launches a projectile ({gravity?, lifetime?, data?, look?, size?}; look \"water\" draws thrown water and \"chemical\" thrown chemical, size is how big it is drawn in metres, for water and chemical the radius its splash spreads over); on_hit runs where it lands. Returns its id.", "combat"),
 
         new("farm.soil", "farm.soil(creation, part)", "A soil part in the holder's reach: {seed?, crop?, stage, ripe, water, capacity}, or nil and why.", "farm"),
         new("farm.plant", "farm.plant(creation, part, seed?)", "Plants seed (default: this item) in empty soil in reach; returns the soil, or nil and why. Takes no items.", "farm"),
+        new("farm.can_plant", "farm.can_plant(creation, part, seed?)", "True when seed (default: this item) could be planted there now (soil in reach, empty, and one it grows), or nil and why. Only reads, so can_use may call it.", "farm"),
         new("farm.water", "farm.water(creation, part, seconds)", "Adds seconds of water to soil in reach, up to its capacity; returns the soil, or nil and why. Takes no items.", "farm"),
         new("farm.near", "farm.near(position, radius)", "Soil parts within radius m of position, nearest first: a list of {creation, part}.", "farm"),
 

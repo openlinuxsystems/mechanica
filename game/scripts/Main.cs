@@ -274,6 +274,9 @@ public partial class Main : Node3D
     /// <summary>Text chat between players.</summary>
     public Mechanica.Game.Chat.ChatSync Chat { get; private set; } = null!;
 
+    /// <summary>The vehicle gauges sent to seated players.</summary>
+    public GaugeSync Gauges { get; private set; } = null!;
+
     /// <summary>Inventories, containers and crafting, and their sync to clients.</summary>
     public InventorySync Inventory { get; private set; } = null!;
 
@@ -553,6 +556,7 @@ public partial class Main : Node3D
         };
         Fire.RegisterActions(Actions.Dispatcher);
         Scripts.Runtime.Fire = Fire.Actions;
+        Scripts.Runtime.DayLength = () => Streamer.Generator?.Data.Definition.DayLength ?? Mechanica.Core.World.WorldGenDefinition.DefaultDayLength;
         AddChild(Fire);
         Logic = new LogicSync
         {
@@ -561,6 +565,8 @@ public partial class Main : Node3D
         };
         AddChild(Logic);
         Logic.RegisterActions(Actions.Dispatcher);
+        Gauges = new GaugeSync { Name = "Gauges", Session = Session, Creations = Creations, Seats = () => Logic.Seats };
+        AddChild(Gauges);
         Display = new PartDisplaySync { Name = "Display", Session = Session, Creations = Creations, Scripts = Scripts, InterestOf = peer => CreationSync.InterestOf(peer), ConnectToolOut = () => Tools?.Connector.Active == true };
         AddChild(Display);
         LogicOverlay = new LogicOverlay { Creations = Creations, Players = PlayerSync, Actions = Actions, Build = Build, ReadDeviceInput = ReadDeviceInput, Connector = () => Tools?.Connector };
@@ -802,7 +808,9 @@ public partial class Main : Node3D
             AddChild(new RaidBanner { Name = "RaidBanner", Bots = Bots });
             AddChild(new Ui.Nameplates { Name = "Nameplates", Players = PlayerSync });
             AddChild(new Ui.InUseIndicators { Name = "InUse", Session = Session, Players = PlayerSync, Inventory = Inventory, Logic = Logic, Build = Build, Creations = Creations });
-            AddChild(new Mechanica.Game.Chat.ChatPanel { Name = "ChatPanel", Chat = Chat, Actions = Actions });
+            var gauges = new Ui.VehicleGaugesHud { Name = "VehicleGauges", Gauges = Gauges };
+            AddChild(gauges);
+            AddChild(new Mechanica.Game.Chat.ChatPanel { Name = "ChatPanel", Chat = Chat, Actions = Actions, Below = () => gauges.Top });
             var compass = new Ui.CompassHud
             {
                 Name = "Compass", Players = PlayerSync,

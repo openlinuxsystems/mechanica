@@ -170,6 +170,14 @@ public sealed record PartDefinition
     public bool? RespawnPoint { get; init; }
 
     /// <summary>
+    /// Makes a placeable part a ladder players climb (Parts map E2): walking into one of its broad faces grabs it, the move
+    /// keys climb it up and down its long axis, and at the top the player steps off onto the floor behind it. Its long
+    /// axis must stand within <see cref="Player.LadderClimb.MaxTiltDegrees"/> of upright to be climbed. The climbing
+    /// speeds are the engine's (<c>player.json</c>), not the part's. Placeable parts only.
+    /// </summary>
+    public bool? Climbable { get; init; }
+
+    /// <summary>
     /// Makes a placeable part go only flat on the ground, as Scrap Mechanic's soil does: upright (its local +Y
     /// straight up), resting on the world itself, never tipped onto a side or set on a Creation.
     /// </summary>
@@ -320,9 +328,37 @@ public sealed record InventoryDefinition
     /// </summary>
     public bool? CarryContents { get; init; }
 
+    /// <summary>
+    /// The HUD gauge it feeds while a player sits on its Creation (a Gas Container is <see cref="GaugeKind.Gas"/>): one row
+    /// per container, or per kind, with what it holds of the first <see cref="Accepts"/> item. Omitted shows no gauge.
+    /// </summary>
+    public GaugeKind? Gauge { get; init; }
+
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// The kinds of HUD gauge a container feeds (<see cref="InventoryDefinition.Gauge"/>), in the order they stack on the screen,
+/// top first.
+/// </summary>
+public enum GaugeKind
+{
+    /// <summary>Fuel (red, a fuel can).</summary>
+    Gas,
+
+    /// <summary>Charge (blue, a battery).</summary>
+    Electric,
+
+    /// <summary>Chemicals (green, a flask).</summary>
+    Chemical,
+
+    /// <summary>Water (aqua, a drop).</summary>
+    Water,
+
+    /// <summary>Ammunition (mustard, a potato).</summary>
+    Ammo,
 }
 
 /// <summary>A crafting station: recipes that list this part in <c>stations</c> run here.</summary>
@@ -374,7 +410,7 @@ public sealed record StationClipsDefinition
 /// <summary>
 /// One upgrade level of a placed part. <see cref="Set"/> holds part keys to change, merged like a Part Editor batch's
 /// <c>set</c> (objects key by key, other values replace) on top of the part and every level before it. Only
-/// <c>name</c>, <c>description</c>, <c>durability</c>, <c>mesh</c>, <c>icon</c>, <c>sockets</c> (only their joints),
+/// <c>name</c>, <c>description</c>, <c>mass</c>, <c>durability</c>, <c>mesh</c>, <c>icon</c>, <c>sockets</c> (only their joints),
 /// <c>settings</c>, <c>display</c>, <c>crafting</c>, <c>inventory</c>, <c>logic</c> and <c>properties</c> may change, and an
 /// inventory never shrinks.
 /// <code>
@@ -387,7 +423,7 @@ public sealed record UpgradeDefinition
 {
     /// <summary>Part keys a level may change.</summary>
     public static readonly IReadOnlyList<string> Changeable =
-        ["name", "description", "durability", "mesh", "icon", "sockets", "settings", "display", "crafting", "inventory", "logic", "properties"];
+        ["name", "description", "mass", "durability", "mesh", "icon", "sockets", "settings", "display", "crafting", "inventory", "logic", "properties"];
 
     /// <summary>Items the level takes from the player's inventory in Survival. Omitted means free.</summary>
     public List<Items.RecipeItem>? Cost { get; init; }
@@ -436,7 +472,10 @@ public sealed record SeedDefinition
     public Dictionary<string, JsonElement>? Extra { get; init; }
 }
 
-/// <summary>Farm soil: one crop grows on top of the part.</summary>
+/// <summary>
+/// Farm soil: one crop grows on top of the part. Any placeable part can be soil: a mound on the ground
+/// (<c>ground_only</c>, the Soil Bag's) or a bed built onto a Creation (the Growbed), whose crop rides along with it.
+/// </summary>
 public sealed record SoilDefinition
 {
     /// <summary>Most seconds of water the soil holds (more than 0).</summary>
@@ -456,6 +495,18 @@ public sealed record SoilDefinition
     /// Omitted means 0.5.
     /// </summary>
     public float? WetLevel { get; init; }
+
+    /// <summary>
+    /// How many of its crop every harvest gives, whatever the seed's own <c>yield</c> (a Growbed's fixed harvest).
+    /// Omitted gives the seed's yield. The soil script reads it; seeds back still follow the seed.
+    /// </summary>
+    public int? Yield { get; init; }
+
+    /// <summary>
+    /// The seeds (item ids; a bare id is in the part's own mod) that can be planted here. Omitted takes any seed.
+    /// The host refuses the rest when one is planted (<c>CheckPlant</c>).
+    /// </summary>
+    public IReadOnlyList<string>? Seeds { get; init; }
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]

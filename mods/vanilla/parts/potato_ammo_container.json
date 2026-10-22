@@ -1,7 +1,7 @@
 {
   "id": "potato_ammo_container",
   "name": "Potato Ammo Container",
-  "description": "Holds five stacks of potatoes for mounted potato guns.",
+  "description": "Holds five stacks of potatoes. Link it to Mounted Potato Blasters with the Connect Tool and they fire its potatoes.",
   "category": "container",
   "mass": 7.5,
   "durability": 6,
@@ -31,6 +31,11 @@
     "slots": 5,
     "accepts": [
       "potato"
-    ]
+    ],
+    "gauge": "ammo"
+  },
+  "logic": {
+    "outputs": 16,
+    "kind": "power"
   }
 }

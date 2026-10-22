@@ -259,10 +259,19 @@ public partial class BotEffect : Node3D
             p.ScaleAmountCurve = curve;
             p.ScaleAmountMin = p.ScaleAmountMax = g.To;
         }
+        // The effect may be freed first (its peer left the world, or the scene quit).
         if (delay > 0f)
-            GetTree().CreateTimer(delay).Timeout += () => p.Emitting = true;
+            GetTree().CreateTimer(delay).Timeout += () =>
+            {
+                if (IsInstanceValid(p))
+                    p.Emitting = true;
+            };
         if (stopAfter > 0f)
-            GetTree().CreateTimer(stopAfter).Timeout += () => p.Emitting = false;
+            GetTree().CreateTimer(stopAfter).Timeout += () =>
+            {
+                if (IsInstanceValid(p))
+                    p.Emitting = false;
+            };
         return p;
     }
 }

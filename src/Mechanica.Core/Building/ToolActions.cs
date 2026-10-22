@@ -116,6 +116,24 @@ public sealed record PaintResult(int Painted);
 public sealed record SledgeResult(bool Broken, float? Health, bool Destroyed, IReadOnlyList<int> SplitOff);
 
 /// <summary>
+/// A part took damage (<see cref="ToolActions.DamagePart"/>), told to <see cref="IStrikeTargets.PartDamaged"/> so the
+/// part's own script hears it (<c>on_damage</c>).
+/// </summary>
+/// <param name="Creation">The Creation the part was in.</param>
+/// <param name="Part">The part.</param>
+/// <param name="PartType">The part's qualified id.</param>
+/// <param name="Amount">Health taken (0 or more).</param>
+/// <param name="Kind">What dealt it (<see cref="DamageKinds"/>).</param>
+/// <param name="Broken">True when it broke the part off (the part is gone).</param>
+/// <param name="At">The part's middle in the world when it was hit, in metres.</param>
+/// <param name="SplitOff">
+/// When the break split <paramref name="Creation"/>, the new Creations its pieces went to (they keep their part ids), so
+/// damage reported earlier to a part on a piece can still find it.
+/// </param>
+public sealed record PartDamage(int Creation, int Part, string PartType, float Amount, string Kind, bool Broken, Vector3 At,
+    IReadOnlyList<int>? SplitOff = null);
+
+/// <summary>
 /// Players and world objects the Sledgehammer can hit besides parts (chunk 20). Survival implements it;
 /// without it only parts can be hit.
 /// </summary>
@@ -151,6 +169,11 @@ public interface IStrikeTargets
 
     /// <summary>Takes <paramref name="damage"/> health from a bot (a melee hit). Returns the health left (0 when it died).</summary>
     float StrikeBot(int bot, float damage);
+
+    /// <summary>A part took damage (any kind, from anything), after its health changed or it broke off.</summary>
+    void PartDamaged(PartDamage damage)
+    {
+    }
 
     /// <summary>The health a Sledgehammer hit takes from a world object (its <c>sledge_damage</c>), or null for the default.</summary>
     float? SledgeDamageOf(string id) => null;
@@ -936,7 +959,7 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
         var creation = world.FindCreation(args.Creation!.Value)!;
         var centre = HitPoint(args, PartCentre(creation, args.Part!.Value));
         var body = creation.BodyIndexOf(args.Part.Value);
-        var result = DamagePart(creation, args.Part.Value, creation.DefinitionOf(args.Part.Value).SledgeDamage ?? settings.Sledge.Damage);
+        var result = DamagePart(creation, args.Part.Value, creation.DefinitionOf(args.Part.Value).SledgeDamage ?? settings.Sledge.Damage, DamageKinds.Sledge);
         world.PlaySound(result.Broken ? "smash_break" : "smash_hit", Identifiers.VanillaModId, centre);
         if (!result.Broken && caller.Source == ActionSource.Player && world.EyeOf(caller.Peer) is { } eye && centre != eye)
         {
@@ -952,9 +975,10 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
     /// <see cref="SledgeSettings.HealthPerDurability"/>). At 0 it breaks off: what it holds spills out
     /// (<see cref="IToolWorld.Breaking"/>) and the pieces it held together split. Weapons and impacts use
     /// it as well as the Sledgehammer. A part without a durability takes no damage. The part plays its
-    /// <c>impact</c> sound, or its <c>break</c> sound as it breaks (<see cref="PartSounds"/>).
+    /// <c>impact</c> sound, or its <c>break</c> sound as it breaks (<see cref="PartSounds"/>). <paramref name="kind"/>
+    /// (<see cref="DamageKinds"/>) is passed on to <see cref="IStrikeTargets.PartDamaged"/> with the result.
     /// </summary>
-    public SledgeResult DamagePart(Creation creation, int partId, float damage)
+    public SledgeResult DamagePart(Creation creation, int partId, float damage, string kind = DamageKinds.Weapon)
     {
         // A world-owned part takes no damage (WorldOwned), whatever hits it: it only sounds the blow, like a part that can't break.
         if (creation.IsWorldOwned || settings.Sledge.HealthOf(creation.DefinitionOf(partId).Durability) is not { } full)
@@ -971,14 +995,19 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
             var centre = PartCentre(creation, partId);
             var size = creation.DefinitionOf(partId).Size is { } cells ? Math.Max(cells.X, Math.Max(cells.Y, cells.Z)) * MechanicaInfo.GridSize : MechanicaInfo.GridSize;
             var seed = World.Noise.Hash((uint)creation.Id, partId, (int)(world.Now * 1000) & 0xFFFF);
+            var type = creation.FindPart(partId)!.Part;
+            var taken = Math.Max(0, full - creation.PartDamage(partId));
             var removal = BuildActions.Remove(world, creation, partId);
             // A rock chunk falls apart into rods where it was.
             if (breaks is not null)
                 Shatter(breaks, centre, size * 0.5f, seed);
+            Targets?.PartDamaged(new PartDamage(creation.Id, partId, type, taken, kind, true, centre, removal.SplitOff));
             return new SledgeResult(true, 0f, removal.Destroyed, removal.SplitOff);
         }
         BuildActions.PlayPartSound(world, creation, partId, PartSounds.Impact, null);
         creation.SetPartDamage(partId, total);
+        if (damage > 0)
+            Targets?.PartDamaged(new PartDamage(creation.Id, partId, creation.FindPart(partId)!.Part, damage, kind, false, PartCentre(creation, partId)));
         return new SledgeResult(false, full - total, false, []);
     }
 
