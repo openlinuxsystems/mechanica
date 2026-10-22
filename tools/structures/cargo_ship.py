@@ -26,6 +26,7 @@ from families import M, glow, GUNMETAL, CYAN, COPPER, MUSTARD, BONE, STEEL, GRAP
 T = 0.2          # wall thickness
 ROOF = []        # roof pieces and everything on them, hidden for the cutaway
 ROOMS = {}       # room name -> (x, y) centre, for labelling plans
+CONTAINERS = []  # every container slot: code, colour, rack position, tier
 
 # What each container colour carries: the opening scatters it where the containers land.
 CARGO = {
@@ -446,7 +447,152 @@ def bow_at(y):
     return keyed(BOW, y)
 
 
-def cargo_ship(o=(0, 0, 0), yaw=0, name="sv04", palette="light", seed=7, lights=True):
+def canopy_glass():
+    """Tinted glass; in review renders it lets the sky through."""
+    m = K.mat("canopy", "#9fd2e2", rough=0.05, metal=0.0, emit=CYAN, emit_strength=0.05)
+    if not K.EXPORT and m.node_tree and not m.get("clear"):
+        b = m.node_tree.nodes["Principled BSDF"]
+        b.inputs["Transmission Weight"].default_value = 0.85
+        b.inputs["IOR"].default_value = 1.05
+        m["clear"] = True
+    return m
+
+
+def dash(P, a, b, n, z0, mats, rnd, screen_col=CYAN):
+    """A run of dashboard from (x, y) a to b along the window, its front facing n (into the room): a framed body,
+    a sloped top with screens and button rows, a sill shelf behind."""
+    a, b, n = Vector((*a, 0)), Vector((*b, 0)), Vector((*n, 0)).normalized()
+    d = b - a
+    L = d.length
+    u = d / L
+    yaw = math.degrees(math.atan2(u.y, u.x))
+    left = Vector((-u.y, u.x, 0))
+    tilt = -28 if left.dot(n) > 0 else 28
+    c = (a + b) / 2
+    gm = M(GUNMETAL, metal=0.5)
+    gra = M(GRAPHITE, metal=0.3)
+    K.box("dash_body", (L, 0.7, 0.8), gra, loc=(c.x, c.y, z0 + 0.4), rot=(0, 0, yaw), bev=0.03, parent=P)
+    K.box("dash_kick", (L, 0.06, 0.12), gm, loc=(*(c + n * 0.36).xy, z0 + 0.06), rot=(0, 0, yaw), bev=0.01, parent=P)
+    top = c + n * 0.05
+    K.box("dash_top", (L, 0.8, 0.08), gm, loc=(top.x, top.y, z0 + 0.88), rot=(tilt, 0, yaw), bev=0.02, parent=P)
+    k = max(1, int(L / 0.9))
+    for i in range(k):
+        t = (i + 0.5) / k
+        p = a + d * t - n * 0.08
+        if i % 2 == 0:
+            q = p - n * 0.12
+            face = math.degrees(math.atan2(n.x, -n.y))
+            FR.screen(P, (q.x, q.y, z0 + 1.22), min(0.8, L / k * 0.75), 0.42, gra, glow(screen_col if rnd.random() < 0.7 else "#7dffc9", 0.9), rot=(-12, 0, face))
+            K.box("dash_stalk", (0.06, 0.06, 0.3), gm, loc=(q.x, q.y, z0 + 0.95), bev=0, parent=P)
+        else:
+            for j in range(6):
+                q = a + d * (t - 0.35 / k + j * 0.14 / k) + n * 0.12
+                col = rnd.choice([MUSTARD, "#c8423a", "#57e39a", BONE, CYAN])
+                K.box("dash_button", (0.07, 0.07, 0.03), glow(col, 1.5) if col in ("#57e39a", CYAN) else M(col), loc=(q.x, q.y, z0 + 0.9), rot=(tilt, 0, yaw), bev=0.01, parent=P)
+    sh = c - n * 0.3
+    K.box("dash_shelf", (L, 0.3, 0.1), gm, loc=(sh.x, sh.y, WIN0 - 0.12), rot=(0, 0, yaw), bev=0.02, parent=P)
+    K.box("dash_glow", (L * 0.95, 0.03, 0.03), glow(CYAN, 3), loc=(*(c + n * 0.37).xy, z0 + 0.82), rot=(0, 0, yaw), bev=0, parent=P)
+
+
+def bridge(P, rnd, mats, lights=True):
+    gm = M(GUNMETAL, metal=0.5)
+    gra = M(GRAPHITE, metal=0.3)
+    trim, dark = mats["trim"], mats["dark"]
+    must = M(MUSTARD, wear=0.25)
+    DAIS = 0.25
+    # the raised helm deck: a dais from y 27.2 to the nose, one step, mustard nosing
+    hw0, hw1 = bow_at(27.2)[0] - 0.32, bow_at(30.85)[0] - 0.32
+    bm = bmesh.new()
+    pts = [(-hw0, 27.2), (hw0, 27.2), (bow_at(29)[0] - 0.32, 29.0), (hw1, 30.85), (-hw1, 30.85), (-bow_at(29)[0] + 0.32, 29.0)]
+    bot = [bm.verts.new((x, y, 0.0)) for x, y in pts]
+    top = [bm.verts.new((x, y, DAIS)) for x, y in pts]
+    bm.faces.new(list(reversed(bot)))
+    bm.faces.new(top)
+    for i in range(len(pts)):
+        j = (i + 1) % len(pts)
+        bm.faces.new((bot[i], bot[j], top[j], top[i]))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    d = K.from_bm("dais", bm, mats["floor"])
+    d.parent = P
+    K.box("dais_nosing", (2 * hw0, 0.08, 0.04), must, loc=(0, 27.22, DAIS + 0.01), bev=0, parent=P)
+    K.box("dais_step", (2.4, 0.4, DAIS / 2), mats["floor"], loc=(0, 27.0, DAIS / 4), bev=0.01, parent=P)
+    K.box("step_nosing", (2.4, 0.06, 0.03), must, loc=(0, 26.82, DAIS / 2), bev=0, parent=P)
+    # the wraparound dash under the window band: port side, nose, starboard side
+    y_a, y_b, y_c = 27.4, 29.3, 30.45
+    for s in (-1, 1):
+        a = (s * (bow_at(y_a)[0] - 0.75), y_a)
+        b = (s * (bow_at(y_b)[0] - 0.75), y_b)
+        c = (s * 1.2, y_c)
+        nab = Vector((-(b[1] - a[1]), b[0] - a[0])) * (-s)
+        dash(P, a, b, nab.normalized().xy, DAIS, mats, rnd, screen_col="#7dffc9" if s < 0 else CYAN)
+        nbc = Vector((-(c[1] - b[1]), c[0] - b[0])) * (-s)
+        dash(P, b, c, nbc.normalized().xy, DAIS, mats, rnd)
+    dash(P, (-1.2, y_c), (1.2, y_c), (0, -1), DAIS, mats, rnd)
+    # helm controls: yoke, throttle quadrant, a pilot's screen pair on a stalk
+    K.box("yoke_column", (0.12, 0.12, 0.5), gm, loc=(0, 29.9, DAIS + 0.75), rot=(-30, 0, 0), bev=0.02, parent=P)
+    K.torus("yoke", 0.2, 0.035, M(GRAPHITE), loc=(0, 29.7, DAIS + 1.0), rot=(70, 0, 0), arc=200, parent=P).rotation_euler.y = math.radians(-10)
+    for k in range(3):
+        K.box("throttle", (0.05, 0.05, 0.28), M(MUSTARD if k == 1 else BONE), loc=(0.75 + k * 0.1, 29.9, DAIS + 1.05), rot=(-15 - k * 8, 0, 0), bev=0.01, parent=P)
+    K.box("throttle_base", (0.42, 0.3, 0.1), gm, loc=(0.85, 29.95, DAIS + 0.9), bev=0.02, parent=P)
+    for x in (-0.45, 0.45):
+        FR.screen(P, (x, 30.05, DAIS + 1.35), 0.6, 0.38, gra, glow(CYAN if x < 0 else "#ffb347", 2.2), rot=(-15, 0, 0))
+    K.box("screen_stalk", (0.08, 0.08, 0.3), gm, loc=(0, 30.15, DAIS + 1.1), bev=0.01, parent=P)
+    # seats on the dais: pilot at the nose, two officers on the wings, facing their part of the dash
+    chair(P, (0, 29.2, DAIS), yaw=0, col="#3e6a8c")
+    for s in (-1, 1):
+        chair(P, (s * 2.7, 28.3, DAIS), yaw=-s * 55)
+    # overhead panel above the pilot: a slab of switches hung from the ceiling on two rods
+    zc = min(BCEIL, bow_at(29.0)[2] - 0.7)
+    K.box("overhead", (1.8, 0.9, 0.12), gra, loc=(0, 29.6, zc - 0.55), rot=(20, 0, 0), bev=0.03, parent=P)
+    for k in range(18):
+        col = rnd.choice(["#57e39a", "#ffb347", CYAN, "#c8423a", BONE])
+        K.box("ovh_switch", (0.06, 0.08, 0.04), glow(col, 2) if col != BONE else M(BONE), loc=(-0.75 + (k % 9) * 0.19, 29.4 + (k // 9) * 0.3, zc - 0.63 + (k // 9) * 0.1), rot=(20, 0, 0), bev=0.01, parent=P)
+    for x in (-0.7, 0.7):
+        K.box("ovh_rod", (0.05, 0.05, 0.5), gm, loc=(x, 29.6, zc - 0.25), bev=0, parent=P)
+    # the captain's chair on a pedestal, armrest screens
+    K.cyl("captain_plinth", 0.6, 0.12, gm, loc=(0, 25.4, 0.06), bev=0.03, parent=P)
+    chair(P, (0, 25.4, 0.12), yaw=0, col="#2c3036", big=True)
+    # nav table: the island's map as a raised holo relief, a beacon ring at the crash-site-to-be
+    FR.framed_box(P, "nav_table", (0, 22.6, 0.5), (2.2, 1.3, 1.0), gra, gm, fw=0.07)
+    K.box("nav_holo", (1.9, 1.0, 0.03), glow("#0f5a78", 1.0), loc=(0, 22.6, 1.02), bev=0.01, parent=P)
+    for k in range(26):
+        x, y = rnd.uniform(-0.8, 0.8), rnd.uniform(-0.4, 0.4)
+        h = 0.03 + 0.12 * max(0.0, 1 - math.hypot(x / 0.8, y / 0.4)) * rnd.uniform(0.5, 1.2)
+        K.box("holo_relief", (0.12, 0.12, h), glow("#5fd0ff", 1.4), loc=(x, 22.6 + y, 1.04 + h / 2), bev=0, parent=P)
+    K.torus("holo_ring", 0.12, 0.012, glow("#ffb347", 5), loc=(0.35, 22.75, 1.2), parent=P)
+    K.cyl("holo_emitter", 0.05, 0.6, gm, loc=(0, 22.6, 2.9), bev=0, parent=P)
+    # wall stations down both sides: screens, a cabinet, the Logbook lectern, an extinguisher
+    for s in (-1, 1):
+        x = s * (6.8 - 0.32)
+        for k, y in enumerate((21.4, 23.6)):
+            hw = bow_at(y)[0] - 0.32 if y > BW1 else 6.48
+            ang = 90 - s * 11.3 if y > BW1 else 90
+            K.box("wall_screen_frame", (1.62, 0.06, 0.97), gra, loc=(s * (hw - 0.04), y, 2.1), rot=(0, 0, ang), bev=0.02, parent=P)
+            K.box("wall_screen", (1.5, 0.04, 0.85), glow(rnd.choice([CYAN, "#7dffc9"]), 1.6), loc=(s * (hw - 0.09), y, 2.1), rot=(0, 0, ang), bev=0.005, parent=P)
+        K.box("floor_strip", (0.05, 9.5, 0.02), glow(CYAN, 2), loc=(s * 1.3, 25.5, 0.03), bev=0, parent=P)
+    K.box("lectern", (0.5, 0.45, 1.05), gm, loc=(-4.9, 21.0, 0.52), bev=0.04, parent=P)
+    K.box("lectern_top", (0.6, 0.5, 0.06), gra, loc=(-4.9, 20.98, 1.1), rot=(-20, 0, 0), bev=0.02, parent=P)
+    K.box("logbook", (0.36, 0.46, 0.07), M(MUSTARD, wear=0.2), loc=(-4.9, 20.98, 1.16), rot=(-20, 0, 12), bev=0.02, parent=P)
+    FR.framed_box(P, "bridge_cab", (5.6, 21.2, 0.8), (1.2, 1.8, 1.6), M(STEEL, metal=0.3), gm, fw=0.06)
+    K.cyl("extinguisher", 0.11, 0.6, M("#c8423a", wear=0.2), loc=(6.25, 22.6, 0.75), segs=12, bev=0.02, parent=P)
+    K.box("helmet_shelf", (0.4, 1.2, 0.05), gm, loc=(6.25, 21.2, 2.0), bev=0.01, parent=P)
+    for k in range(2):
+        K.sphere("helmet", 0.17, M(BONE, wear=0.3), loc=(6.25, 20.85 + k * 0.6, 2.18), parent=P)
+    K.box("mug_bridge", (0.08, 0.08, 0.1), M(MUSTARD), loc=(1.6, 29.8, DAIS + 1.03), bev=0.02, parent=P)
+    # ceiling: cable tray and a roof hatch
+    K.box("bridge_tray", (0.4, 9.0, 0.08), gm, loc=(-1.8, 25.0, BCEIL - 0.3), bev=0.01, parent=P)
+    K.cyl("roof_hatch_in", 0.45, 0.1, trim, loc=(2.6, 21.6, BCEIL - 0.05), segs=16, bev=0.02, parent=P)
+    if lights:
+        ceiling_light(P, (0, 22.6), BCEIL)
+        ceiling_light(P, (-2.6, 25.5), BCEIL - 0.1, length=1.0)
+        ceiling_light(P, (2.6, 25.5), BCEIL - 0.1, length=1.0)
+        K.point("dash_glow_pt", (0, 29.6, 1.4), "#7fd6ff", 60, 0.8).parent = P
+        K.point("bridge_fill", (0, 26.0, 3.2), "#e2f5ff", 250, 1.5).parent = P
+
+
+def cargo_ship(o=(0, 0, 0), yaw=0, name="sv04", palette="dark", seed=7, lights=True, spine_break=None, keep=None):
+    """The ship under an empty. spine_break (a y) builds the spine in two pieces; keep (container codes) leaves the
+    other containers out. CONTAINERS lists all sixteen afterwards: code, colour, rack position, tier."""
     rnd = random.Random(seed)
     ROOF.clear()
     ROOMS.clear()
@@ -682,52 +828,64 @@ def cargo_ship(o=(0, 0, 0), yaw=0, name="sv04", palette="light", seed=7, lights=
         K.cyl("leg_pad", 0.6, 0.2, trim, loc=(x, y - 0.9, -2.85), bev=0.04, parent=root)
 
     # ============================================================ spine: y -12 .. 14, the cargo corridor
-    outer = [(y, octagon(SHW, -1.4, 4.2, 0.6, 0.5)) for y in (S0 - 0.1, S1 + 0.1)]
-    inner_s = [(y, octagon(SHW - 0.2, 0.0, SCEIL, 0.05, 0.3)) for y in (S0 - 0.4, S1 + 0.4)]
-    shell(root, "spine_hull", outer, inner_s, hull)
-    K.box("spine_deck", (2 * SHW - 0.4, S1 - S0, 0.04), floor, loc=(0, (S0 + S1) / 2, 0.02), bev=0, parent=root)
-    for k in range(37):
-        K.box("spine_grate", (1.6, 0.05, 0.03), grate, loc=(0, S0 + 0.35 + k * 0.7, 0.05), bev=0, parent=root)
-    ROOMS["Cargo spine"] = (0, 1.0)
+    # In the wreck the spine snaps at the middle rack post (spine_break): every run along it is built per segment.
+    segs = [(S0, S1)] if spine_break is None else [(S0, spine_break), (spine_break, S1)]
     posts = [S0 + 0.2 + k * 6.4 for k in range(5)]
     centres = [(posts[k] + posts[k + 1]) / 2 for k in range(4)]
-    for side in (-1, 1):
-        rack(root, posts, side * SHW, side * 5.4, -1.6, 4.0, trim, mats)
+    ROOMS["Cargo spine"] = (0, 1.0)
+    for g0, g1 in segs:
+        e0, e1 = (g0 - 0.1 if g0 == S0 else g0), (g1 + 0.1 if g1 == S1 else g1)
+        outer = [(y, octagon(SHW, -1.4, 4.2, 0.6, 0.5)) for y in (e0, e1)]
+        inner_s = [(y, octagon(SHW - 0.2, 0.0, SCEIL, 0.05, 0.3)) for y in (e0 - 0.3, e1 + 0.3)]
+        shell(root, "spine_hull", outer, inner_s, hull)
+        K.box("spine_deck", (2 * SHW - 0.4, g1 - g0, 0.04), floor, loc=(0, (g0 + g1) / 2, 0.02), bev=0, parent=root)
+        y = g0 + 0.35
+        while y < g1 - 0.1:
+            K.box("spine_grate", (1.6, 0.05, 0.03), grate, loc=(0, y, 0.05), bev=0, parent=root)
+            y += 0.7
+        ps = [p for p in posts if g0 - 0.3 <= p <= g1 + 0.3]
+        for side in (-1, 1):
+            rack(root, ps, side * SHW, side * 5.4, -1.6, 4.0, trim, mats)
+        hull_ribs(root, SHW - 0.2, g0 + 0.6, g1 - 0.4, SCEIL, trim, dark, step=3.2, sides=False)
+        pipe_run(root, -1.9, g0, g1, 3.0, 0.12, cu)
+        pipe_run(root, -1.6, g0, g1, 3.15, 0.09, gm)
+        K.box("cable_tray", (0.5, g1 - g0, 0.08), gm, loc=(1.8, (g0 + g1) / 2, 3.1), bev=0.01, parent=root)
+        L = g1 - g0
+        for side in (-1, 1):
+            ROOF.append(K.box("gantry_rail", (0.3, L, 0.3), trim, loc=(side * 1.6, (g0 + g1) / 2, 4.4), bev=0.04, parent=root))
+            ROOF.append(K.box("gantry_chord", (0.18, L, 0.18), gm, loc=(side * 1.3, (g0 + g1) / 2, 5.6), bev=0.03, parent=root))
+            ROOF.append(K.box("spine_stripe", (0.06, L, 0.15), must, loc=(side * 2.2, (g0 + g1) / 2, 4.25), bev=0, parent=root))
+        ROOF.append(K.box("gantry_chord", (0.18, L, 0.18), gm, loc=(0, (g0 + g1) / 2, 5.6), bev=0.03, parent=root))
+        for k in range(int(L)):
+            y = g0 + 0.5 + k
+            for side in (-1, 1):
+                ROOF.append(K.box("truss_post", (0.1, 0.1, 1.2), gm, loc=(side * 1.3, y, 5.0), bev=0.01, parent=root))
+                ROOF.append(K.box("truss_diag", (0.08, 1.0, 0.08), gm, loc=(side * 1.3, y + 0.5, 5.0), rot=(55 if k % 2 else -55, 0, 0), bev=0.01, parent=root))
+            ROOF.append(K.box("truss_cross", (2.6, 0.08, 0.08), gm, loc=(0, y, 5.6), bev=0.01, parent=root))
+    CONTAINERS.clear()
     codes = iter(f"SV4-{n:03d}" for n in (112, 118, 120, 131, 207, 215, 233, 240, 301, 309, 316, 322, 405, 411, 420, 438))
     for k, (pl, pu, sl, su) in enumerate(RACKS):
         y = centres[k]
         for side, lo, up in ((-1, pl, pu), (1, sl, su)):
             x = side * 3.95
-            container(root, (x, y, -0.3), lo, next(codes), rnd)
-            container(root, (x, y, 2.35), up, next(codes), rnd)["tier"] = "upper"
+            for tier, col, z in (("lower", lo, -0.3), ("upper", up, 2.35)):
+                code = next(codes)
+                CONTAINERS.append(dict(code=code, colour=col, at=(x, y, z), tier=tier))
+                if keep is None or code in keep:
+                    container(root, (x, y, z), col, code, rnd)["tier"] = tier
             hatch_x = side * (SHW - 0.22)
             K.box("hatch", (0.06, 1.4, 2.2), gm, loc=(hatch_x, y, 1.15), bev=0.03, parent=root)
             K.box("hatch_wheel", (0.08, 0.5, 0.5), trim, loc=(hatch_x - side * 0.05, y, 1.2), bev=0.1, parent=root)
             for j, c in enumerate((lo, up)):
-                K.box("bay_lamp", (0.06, 0.26, 0.16), glow(CARGO[c][0], 4), loc=(hatch_x - side * 0.04, y - 0.25 + j * 0.5, 2.55), bev=0.02, parent=root)
+                K.box("bay_lamp", (0.06, 0.26, 0.16), glow(CARGO[c][0], 4) if lights else dark, loc=(hatch_x - side * 0.04, y - 0.25 + j * 0.5, 2.55), bev=0.02, parent=root)
             sign(root, f"BAY {k + 1}{'P' if side < 0 else 'S'}", (hatch_x - side * 0.04, y, 2.9), (0, 0, 90 * side), size=0.14)
         if lights:
             ceiling_light(root, (0, y), SCEIL)
-    hull_ribs(root, SHW - 0.2, S0 + 0.6, S1 - 0.4, SCEIL, trim, dark, step=3.2, sides=False)
-    pipe_run(root, -1.9, S0, S1, 3.0, 0.12, cu)
-    pipe_run(root, -1.6, S0, S1, 3.15, 0.09, gm)
-    K.box("cable_tray", (0.5, S1 - S0, 0.08), gm, loc=(1.8, (S0 + S1) / 2, 3.1), bev=0.01, parent=root)
-    # roof: crane gantry and hex hatches over the containers
-    for side in (-1, 1):
-        ROOF.append(K.box("gantry_rail", (0.3, S1 - S0 + 2, 0.3), trim, loc=(side * 1.6, (S0 + S1) / 2, 4.4), bev=0.04, parent=root))
-        ROOF.append(K.box("gantry_chord", (0.18, S1 - S0 + 2, 0.18), gm, loc=(side * 1.3, (S0 + S1) / 2, 5.6), bev=0.03, parent=root))
-        ROOF.append(K.box("spine_stripe", (0.06, S1 - S0, 0.15), must, loc=(side * 2.2, (S0 + S1) / 2, 4.25), bev=0, parent=root))
-    ROOF.append(K.box("gantry_chord", (0.18, S1 - S0 + 2, 0.18), gm, loc=(0, (S0 + S1) / 2, 5.6), bev=0.03, parent=root))
-    for k in range(int(S1 - S0) + 1):
-        y = S0 + k
-        for side in (-1, 1):
-            ROOF.append(K.box("truss_post", (0.1, 0.1, 1.2), gm, loc=(side * 1.3, y, 5.0), bev=0.01, parent=root))
-            ROOF.append(K.box("truss_diag", (0.08, 1.4, 0.08), gm, loc=(side * 1.3, y + 0.5, 5.0), rot=(55 if k % 2 else -55, 0, 0), bev=0.01, parent=root))
-        ROOF.append(K.box("truss_cross", (2.6, 0.08, 0.08), gm, loc=(0, y, 5.6), bev=0.01, parent=root))
-    ROOF.append(K.box("crane", (3.6, 1.4, 0.8), M(MUSTARD, wear=0.35), loc=(0, 3.0, 5.9), bev=0.06, parent=root))
-    ROOF.append(K.box("crane_cab", (1.0, 1.0, 0.7), M(GRAPHITE), loc=(1.0, 3.0, 6.5), bev=0.05, parent=root))
-    ROOF.append(K.box("crane_glass", (0.7, 0.04, 0.4), glass, loc=(1.0, 3.52, 6.55), bev=0, parent=root))
-    ROOF.append(K.cyl("crane_cable", 0.03, 1.6, gm, loc=(-0.8, 3.0, 4.9), segs=6, bev=0, parent=root))
+    if spine_break is None:
+        ROOF.append(K.box("crane", (3.6, 1.4, 0.8), M(MUSTARD, wear=0.35), loc=(0, 3.0, 5.9), bev=0.06, parent=root))
+        ROOF.append(K.box("crane_cab", (1.0, 1.0, 0.7), M(GRAPHITE), loc=(1.0, 3.0, 6.5), bev=0.05, parent=root))
+        ROOF.append(K.box("crane_glass", (0.7, 0.04, 0.4), glass, loc=(1.0, 3.52, 6.55), bev=0, parent=root))
+        ROOF.append(K.cyl("crane_cable", 0.03, 1.6, gm, loc=(-0.8, 3.0, 4.9), segs=6, bev=0, parent=root))
     for y in centres:
         for side in (-1, 1):
             ROOF.append(K.cyl("hex_hatch", 0.8, 0.22, trim, loc=(side * 3.95, y + (1.6 if side > 0 else -1.6), 3.72), segs=6, bev=0.05, parent=root))
@@ -757,7 +915,7 @@ def cargo_ship(o=(0, 0, 0), yaw=0, name="sv04", palette="light", seed=7, lights=
     for y in (26.5, 29.0, 32.0, BTIP):
         hw = bow_at(y)[0] - (0.12 if y < BTIP else 0.4)
         gl.append((y, [(-hw, WIN0), (hw, WIN0), (hw, WIN1), (-hw, WIN1)]))
-    canopy_g = K.mat("canopy", "#1d4a5c", rough=0.06, metal=0.2, emit=CYAN, emit_strength=0.35)
+    canopy_g = canopy_glass()
     g = loft("bridge_glass", gl, canopy_g, root, bev=0)
     gi = []
     for y in (26.3, 29.0, 32.0, BTIP - 0.06):
@@ -771,7 +929,14 @@ def cargo_ship(o=(0, 0, 0), yaw=0, name="sv04", palette="light", seed=7, lights=
         for y in (26.2, 29.0, 32.0, BTIP + d):
             hw = bow_at(min(y, BTIP))[0] + d
             sec.append((y, [(-hw, z0), (hw, z0), (hw, z1), (-hw, z1)]))
-        loft(f"window_{lip}", sec, trim, root, bev=0.03)
+        ob = loft(f"window_{lip}", sec, trim, root, bev=0.03)
+        hole = []
+        for y in (25.9, 29.0, 32.0, BTIP - 0.25):
+            hw = bow_at(y)[0] - 0.2
+            hole.append((y, [(-hw, z0 - 0.2), (hw, z0 - 0.2), (hw, z1 + 0.2), (-hw, z1 + 0.2)]))
+        hc = loft(f"{lip}_hole", hole, K.mat("cut", "#ff00ff"), root, bev=0)
+        hc.hide_render = hc.hide_viewport = True
+        cut(ob, hc)
     for y in (27.2, 28.4, 29.6, 30.8, 32.0, 33.0):
         hw = bow_at(y)[0]
         for s in (-1, 1):
@@ -818,25 +983,10 @@ def cargo_ship(o=(0, 0, 0), yaw=0, name="sv04", palette="light", seed=7, lights=
         ceiling_light(root, (0, 17.0), BCEIL)
         ceiling_light(root, (-3.6, 17.0), BCEIL, length=1.0)
 
-    # ---- bridge (y 20..31): helm, two stations, captain's chair, the nav table and the Logbook
+    # ---- bridge (y 20..31): a raised helm deck behind a wraparound dash, overhead panel, captain's chair, nav
+    # table with the island's map, wall stations and the Logbook
     ROOMS["Bridge"] = (0, 25.0)
-    console(root, (0, 29.6, 0), yaw=180, w=2.0)
-    chair(root, (0, 28.5, 0), yaw=0, col="#3e6a8c")
-    for side in (-1, 1):
-        console(root, (side * 3.0, 27.0, 0), yaw=180 - side * 40, w=1.5, screen_col="#7dffc9" if side < 0 else CYAN)
-        chair(root, (side * 2.4, 26.1, 0), yaw=-side * 40)
-    chair(root, (0, 24.4, 0), yaw=0, col="#2c3036", big=True)
-    FR.framed_box(root, "nav_table", (0, 22.2, 0.5), (2.2, 1.2, 1.0), M(GRAPHITE), gm, fw=0.07)
-    K.box("nav_holo", (1.8, 0.9, 0.04), glow(CYAN, 1.6), loc=(0, 22.2, 1.02), bev=0.01, parent=root)
-    for k in range(5):
-        K.sphere("nav_blip", 0.06, glow("#bfefff", 6), loc=(rnd.uniform(-0.7, 0.7), 22.2 + rnd.uniform(-0.3, 0.3), 1.12), parent=root)
-    K.box("logbook_stand", (0.5, 0.5, 1.0), gm, loc=(-4.6, 21.0, 0.5), bev=0.04, parent=root)
-    K.box("logbook", (0.36, 0.46, 0.07), M(MUSTARD, wear=0.2), loc=(-4.6, 21.0, 1.04), rot=(0, 0, 15), bev=0.02, parent=root)
-    FR.framed_box(root, "bridge_cab", (5.4, 21.2, 0.8), (1.2, 2.0, 1.6), M(STEEL, metal=0.3), gm, fw=0.06)
-    if lights:
-        ceiling_light(root, (0, 22.5), BCEIL)
-        ceiling_light(root, (-2.6, 25.5), BCEIL - 0.1, length=1.0)
-        ceiling_light(root, (2.6, 25.5), BCEIL - 0.1, length=1.0)
+    bridge(root, rnd, mats, lights)
 
     # ---- bow exterior: plates, retro thruster pods, foredeck, mast, stripes, labels
     for side in (-1, 1):
@@ -894,6 +1044,16 @@ def cargo_ship(o=(0, 0, 0), yaw=0, name="sv04", palette="light", seed=7, lights=
     for s in (-1, 1):
         ROOF.append(K.box("bow_roof_vent", (1.6, 2.4, 0.25), trim, loc=(s * 3.6, 16.8, 4.9), bev=0.04, parent=root))
         ROOF.append(K.box("bow_roof_slots", (1.3, 2.0, 0.05), dark, loc=(s * 3.6, 16.8, 5.04), bev=0, parent=root))
+    # cockpit exterior: a sensor blister under the chin, nav lights and whip antennas on the brow, shutter rails
+    K.sphere("chin_blister", 0.5, M(GRAPHITE, metal=0.3), loc=(0, 31.6, -0.25), scale=(1, 1, 0.6), parent=root)
+    K.sphere("chin_eye", 0.18, glow("#ff5a4a", 3), loc=(0, 32.05, -0.3), parent=root)
+    for s_ in (-1, 1):
+        hw = bow_at(30.5)[0]
+        K.box("brow_light", (0.18, 0.4, 0.12), glow("#57e39a" if s_ > 0 else "#ff5a4a", 6), loc=(s_ * (hw + 0.1), 30.5, WIN1 + 0.2), bev=0.02, parent=root)
+        K.cyl("whip", 0.025, 1.6, trim, loc=(s_ * 1.6, 28.6, bow_at(28.6)[2] + 0.75), rot=(-15, 0, 0), segs=6, bev=0, parent=root)
+        for y in (27.0, 28.5):
+            K.box("shutter_rail", (0.12, 0.12, WIN1 - WIN0 + 0.5), dark, loc=(s_ * (bow_at(y)[0] + 0.12), y, (WIN0 + WIN1) / 2), bev=0.02, parent=root)
+        K.box("cheek_vent", (0.1, 1.6, 0.5), dark, loc=(s_ * (bow_at(27.5)[0] + 0.03), 27.5, 0.4), rot=(0, 0, s_ * -20), bev=0.02, parent=root)
     K.cyl("probe_launcher", 0.12, 2.0, trim, loc=(1.6, BTIP - 0.6, 0.4), rot=(90, 0, 0), parent=root)
     K.box("nose_light", (1.4, 0.1, 0.2), glow("#e2f5ff", 8), loc=(0, BTIP - 0.05, 0.85), bev=0.02, parent=root)
     for x in (-2.2, 2.2):

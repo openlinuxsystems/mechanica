@@ -19,7 +19,7 @@ K.setup_render(int(os.environ.get("SAMPLES", "32")))
 bpy.context.scene.render.resolution_percentage = int(os.environ.get("SCALE", "100"))
 K.sky(1.0, top="#9fb4c4", horizon="#e4e9ec")
 K.sun((48, 0, -40), 4.0)
-ship = S.cargo_ship(palette=os.environ.get("PALETTE", "light"))
+ship = S.cargo_ship(palette=os.environ.get("PALETTE", "dark"))
 K.ground(400, color="#6a8f4e") if os.environ.get("GROUND") else None
 ship.location.z = 6.0     # flying in the exterior views
 man = K.import_glb(K.MESH / "characters/scrapper_male.glb", (7.6, 16.6 + 1.2, 6.0 - 0.15), yaw=90)
@@ -31,11 +31,13 @@ cams = {
     "top": (("to", (0, 1.5, 90), (0, 1.5, 0), 0, 70), 900, 1500),
     "plan": (("pl", (0, 1.5, 90), (0, 1.5, 0), 0, 70), 900, 1500),
     "bridge": (("br", (-1.6, 20.6, 8.0), (0.6, 28.5, 7.2), 18), 1600, 900),
+    "helm": (("hm", (1.4, 26.0, 8.0), (-0.6, 30.5, 7.0), 20), 1600, 900),
+    "bridge_back": (("bb", (2.5, 28.6, 8.2), (-3.5, 21.0, 6.8), 18), 1600, 900),
     "spine": (("sp", (0.8, -10.5, 7.7), (-0.3, 6.0, 7.2), 16), 1600, 900),
     "mess": (("me", (1.6, -12.6, 8.4), (5.6, -17.0, 6.6), 18), 1600, 900),
     "engineering": (("en", (-2.0, -18.6, 8.8), (-5.0, -22.8, 7.0), 16), 1600, 900),
     "cargo": (("ca", (5.6, 15.0, 8.6), (-4.0, 19.0, 7.2), 16), 1600, 900),
-    "nose": (("no", (14, 44, 2), (0, 28, 5), 30), 1200, 800),
+    "nose": (("no", (16, 46, 3), (0, 28, 5.5), 28), 1600, 900),
     "crew": (("cr", (2.0, -18.6, 8.8), (5.5, -22.5, 6.8), 16), 1600, 900),
 }
 ground = None
