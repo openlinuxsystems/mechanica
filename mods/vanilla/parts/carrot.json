@@ -1,10 +1,14 @@
 {
   "id": "carrot",
   "name": "Carrot",
-  "description": "Crunchy. Heals a little.",
+  "description": "Crunchy. Eat it to heal. Tame Grazers eat carrots from their Feeding Trough.",
   "category": "consumable",
-  "mass": 0.2,
-  "stack_size": 20,
+  "mass": 1.5,
+  "durability": 1,
+  "friction": 0.4,
+  "buoyancy": 0.4,
+  "flammable": true,
+  "stack_size": 10,
   "mesh": "meshes/items/carrot.glb",
   "icon": "textures/items/carrot_icon.png",
   "visual": {
@@ -22,6 +26,6 @@
     "juice": "#ea8430"
   },
   "properties": {
-    "health": 10
+    "health": 25
   }
 }

@@ -20,7 +20,7 @@ namespace Mechanica.Game.Tests;
 /// switches the engine on: the engine burns from it, and the client sees the supply clip and the gauge drop. With the engine off, the
 /// client drops a hotbar slot holding gasoline on the container's menu and its own 10 gasoline move in. Then the client picks
 /// the container up while it still holds fuel and gets the container and its gasoline. A Battery Container (the same size, its
-/// gauge five cells) stands beside it: with 25 of its 50 batteries the client's gauge lights three cells.
+/// gauge five cells) stands beside it: with 50 of its 100 batteries the client's gauge lights three cells.
 /// </summary>
 public partial class GasContainerTest : StagedTest
 {
@@ -74,10 +74,10 @@ public partial class GasContainerTest : StagedTest
             Check(gauge < 0.05f, $"the gauge is empty ({gauge:F2})");
             return true;
         });
-        Add("with 25 of its 50 batteries, the client's Battery Container lights three of its five cells", frame =>
+        Add("with 50 of its 100 batteries, the client's Battery Container lights three of its five cells", frame =>
         {
             if (frame == 0)
-                HostFloor.InventoryOf(_battery)!.Add(Pack, 25);
+                HostFloor.InventoryOf(_battery)!.Add(Pack, 50);
             if (Cell(_client, 2) is not { } lit || Cell(_client, 3) is not { } dark)
                 return false;
             if (lit < 0.9f)

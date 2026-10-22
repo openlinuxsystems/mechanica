@@ -84,7 +84,7 @@ public partial class GaugesTest : StagedTest
             var rows = _hud.Shown.ToList();
             Check(rows[0] == (GaugeKind.Gas, "Gas 1", "20 / 100", false), $"Gas 1 is first ({rows[0]})");
             Check(rows[1] == (GaugeKind.Gas, "Gas 2", "5 / 100", true), $"Gas 2 is under it and low ({rows[1]})");
-            Check(rows[2] == (GaugeKind.Electric, "Battery 1", "30 / 50", false), $"Battery 1 is below the gas ({rows[2]})");
+            Check(rows[2] == (GaugeKind.Electric, "Battery 1", "30 / 100", false), $"Battery 1 is below the gas ({rows[2]})");
             return true;
         });
         Add("gasoline poured into Gas 2 on the host shows on the client's row", frame =>
@@ -119,7 +119,7 @@ public partial class GaugesTest : StagedTest
             if (frame == 5)
             {
                 var rows = _hud.Shown.ToList();
-                Check(rows.Count == 2 && rows[0] == (GaugeKind.Gas, "", "65 / 200", false) && rows[1] == (GaugeKind.Electric, "", "30 / 50", false),
+                Check(rows.Count == 2 && rows[0] == (GaugeKind.Gas, "", "65 / 200", false) && rows[1] == (GaugeKind.Electric, "", "30 / 100", false),
                     $"one gas row and one battery row ({string.Join("; ", rows)})");
                 _mode = VehicleGaugeMode.Off;
             }

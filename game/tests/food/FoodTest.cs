@@ -128,8 +128,8 @@ public partial class FoodTest : StagedTest
             Note(HostView, _hostBites);
             if (frame < 150)
                 return false;
-            Check(_client.Main.Survival.Own!.Health == _health + 15 && Count(Tomato) == 2,
-                $"one tomato is eaten and heals 15 ({_health} -> {_client.Main.Survival.Own!.Health}, {Count(Tomato)} left)");
+            Check(_client.Main.Survival.Own!.Health == _health + 20 && Count(Tomato) == 2,
+                $"one tomato is eaten and heals 20 ({_health} -> {_client.Main.Survival.Own!.Health}, {Count(Tomato)} left)");
             Check(_clientBites.SetEquals([0, 1, 2, -1]), $"the client's arms show it whole, bitten twice and gone ({string.Join(", ", _clientBites)})");
             Check(_hostBites.SetEquals([0, 1, 2, -1]), $"the host's view shows it whole, bitten twice and gone ({string.Join(", ", _hostBites)})");
             var held = ClientView.HeldNode!;

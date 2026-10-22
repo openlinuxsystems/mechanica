@@ -6,6 +6,7 @@
   // Parts map batch 6 (working parts) gave the Water Cannon and Mounted Potato Blaster the wiki's stats, recipes and
   // linked containers, and added the Plasma Drill, the Small and Large Explosive Canisters, the Alarm Clock, the Cash
   // Register and the Scuttler Head (a placeable note player, still dropped by Scuttlers), each with a real model.
+  // Consumables batch C1 gave the Glowstick the wiki's consumable stats and recipe (Ember stands in for Glow).
   // Re-run with tools/author-vanilla.sh.
   "format_version": 1,
   "parts": [
@@ -485,10 +486,12 @@
         "description": "A snap-light that glows green for good. Stick it on anything to mark a path or light a corner; it needs no power.",
         "category": "light",
         "tab": "consumable",
-        "mass": 0.1,
-        "durability": 1,
-        "stack_size": 50,
-        "buoyancy": 1.0,
+        "mass": 3,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.7,
+        "flammable": true,
+        "stack_size": 20,
         "sound_material": "plastic",
         "size": [1, 1, 1],
         "sockets": null,
@@ -502,9 +505,9 @@
         {
           "id": "glowstick",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_wood_block", "count": 4 }, { "item": "chemical", "count": 1 }],
-          "outputs": [{ "item": "glowstick", "count": 1 }],
-          "time": 2,
+          "inputs": [{ "item": "chemical", "count": 4 }, { "item": "ember", "count": 4 }],
+          "outputs": [{ "item": "glowstick", "count": 4 }],
+          "time": 20,
           "order": 1610
         }
       ]

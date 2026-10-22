@@ -6,19 +6,23 @@
   "inputs": [
     {
       "item": "scrap_metal_block",
-      "count": 4
+      "count": 10
+    },
+    {
+      "item": "ember",
+      "count": 5
     },
     {
       "item": "chemical",
-      "count": 1
+      "count": 5
     }
   ],
   "outputs": [
     {
       "item": "battery_pack",
-      "count": 1
+      "count": 5
     }
   ],
-  "time": 4,
+  "time": 20,
   "order": 940
 }
