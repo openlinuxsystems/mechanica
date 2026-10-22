@@ -18,6 +18,7 @@
   ],
   "markers": [
     { "type": "part", "ref": "wooden_crate", "at": [-8.0, 0.3, 2.0], "loot": "crate", "loot_rolls": [2, 4] },
-    { "type": "part", "ref": "barrel", "at": [-8.0, 0.3, -2.0] }
+    { "type": "part", "ref": "barrel", "at": [-8.0, 0.3, -2.0] },
+    { "type": "part", "ref": "signboard", "at": [3.0, 0.3, 7.5], "yaw": 0.0, "settings": { "text": "FRESH VEG\nat the farm\nWorkshop {distance:outpost|poi_02|poi_13} {direction:outpost|poi_02|poi_13}" } }
   ]
 }

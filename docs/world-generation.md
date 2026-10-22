@@ -703,7 +703,7 @@ Another mod's POI is changed or removed through `overrides/<mod>/pois/`, a `.pat
 | `models[].story` | Makes the model animated and follow a quest, like the SV-04's battery bay: `quest` (a quest id, `other_mod:quest` for another mod's) and the glTF clips `waiting` (looped until the quest is done), `finish` (played once when the quest is done while the model is in view) and `done` (looped from then on). At least one clip. Each placement is its own copy of the model, so keep it for a few special pieces; its `collider` mesh (or, without one, its meshes in the file's rest pose) is what collides, and it does not move with the clips. Every peer plays the clips from the quest state the host sends. |
 | `ground[]` | Ground painted on the footprint, in order, each over the ones before: `ground` (an id from `grounds[]`), full inside `radius` of `at` (`[x, z]`, default the centre) and fading over `blend`, with an edge pushed in and out by up to `noise` metres. Must stay inside the POI radius. |
 | `flora` | Id of a biome whose flora grows on the footprint (outside bare ground). Omitted: nothing grows inside the POI. The crash site burns its middle and grows a meadow round it. |
-| `markers[]` | Points for other systems: `type` (`spawn`, `item`, `part`, `bot`, `fire`, `door`, `npc`, `core`, ...), `at` (`[x, y, z]` relative to the POI centre on its pad), `yaw` (degrees about +Y, counter-clockwise from above, added to the POI's turn; 0 faces −Z) and an optional `ref` (a catalog id, or a character id for `npc`). The first `spawn` marker of a fixed POI is where players start. A `bot` marker is a guard post: in Survival its bot (`ref`, a bot of this mod unless qualified) appears when a player comes near, leaves when everyone has gone, and is replaced some time after it is killed (distances and the wait are in the game's `data/bots.json`). [Quests](quests.md) point at markers. An `npc` marker draws the [character](characters.md#non-player-characters) its `ref` names standing there, facing the marker's `yaw`. An `object` marker places the world object `ref` names (`objects[]`, such as `oil_geyser`) on the ground under it, raised by its `at` height. A `part` marker puts a working part there that belongs to the world (see [World-owned parts](#world-owned-parts-part-markers)); a container's can fill it with loot (`loot`, `loot_rolls`, `refill_days`: [Loot in containers](#loot-in-containers)), and `loot` is refused on any other marker. An `item` marker is only a note for design work: nothing appears there. Vanilla's mark things not placed yet (the warehouse key and its sign, the Workshops' respawn bed and sign, the Ruins' scrap and Component Kit) and spots quests point at (the crash site's Master Battery and Logbook); its containers are all `part` markers. |
+| `markers[]` | Points for other systems: `type` (`spawn`, `item`, `part`, `bot`, `fire`, `door`, `npc`, `core`, ...), `at` (`[x, y, z]` relative to the POI centre on its pad), `yaw` (degrees about +Y, counter-clockwise from above, added to the POI's turn; 0 faces −Z) and an optional `ref` (a catalog id, or a character id for `npc`). The first `spawn` marker of a fixed POI is where players start. A `bot` marker is a guard post: in Survival its bot (`ref`, a bot of this mod unless qualified) appears when a player comes near, leaves when everyone has gone, and is replaced some time after it is killed (distances and the wait are in the game's `data/bots.json`). [Quests](quests.md) point at markers. An `npc` marker draws the [character](characters.md#non-player-characters) its `ref` names standing there, facing the marker's `yaw`. An `object` marker places the world object `ref` names (`objects[]`, such as `oil_geyser`) on the ground under it, raised by its `at` height. A `part` marker puts a working part there that belongs to the world (see [World-owned parts](#world-owned-parts-part-markers)), with any `settings` it starts with ([Signs that point the way](#signs-that-point-the-way)); a container's can fill it with loot (`loot`, `loot_rolls`, `refill_days`: [Loot in containers](#loot-in-containers)), and `loot` is refused on any other marker. An `item` marker is only a note for design work: nothing appears there. Vanilla's mark things not placed yet (the warehouse key, the Workshops' respawn bed and sign, the Ruins' scrap and Component Kit) and spots quests point at (the crash site's Master Battery and Logbook); its containers are all `part` markers. |
 | `pools[]` | Round pools of a liquid (`liquid`, an id from `liquids[]`), usually laid in a `basin`: the surface is a disc of `radius` metres round `at` (`[x, z]`), `level` metres above the pad (below 0 in a basin). The liquid fills only the part of the disc where the ground is lower than the surface, so the shore follows the basin's (wobbling) bank: make the disc reach past it. Nothing grows in it. Must stay inside the POI radius. |
 
 The pad height of a spaced POI is the natural ground height at its centre.
@@ -737,6 +737,25 @@ A `part` marker puts one working part in the world: every Workshop has a Fabrica
   a world loads, each marker not taken gets exactly one: a saved one is kept (and put back on its marker if the marker moved), a
   missing one is made (an older save, or a POI a mod added), and one whose marker is gone is removed. It is never
   made twice, however often the world is loaded or the area entered.
+
+### Signs that point the way
+
+A `part` marker may set the part's [settings](part-data-schema.md#logic-settings-and-seats) with `settings`, as a
+player would in its menu. A sign that takes words (vanilla's `signboard`, `colony_sign` and `paper_note`) is written on
+this way:
+
+```json
+{ "type": "part", "ref": "signboard", "at": [-6, 0, 8], "yaw": 0,
+  "settings": { "text": "WATER {direction:pond|pond_large} {distance:pond|pond_large}\nWORKSHOP {direction:outpost|poi_02|poi_13} {distance:outpost|poi_02|poi_13}" } }
+```
+
+- Words may hold tokens that the world fills in for where the sign stands, so the same POI points the right way in
+  every world: `{distance:ids}` (`350 m`, rounded to 50 m, or `1.4 km` from 1 km), `{direction:ids}` (`N`, `NE`, … `NW`;
+  north is −Z) and `{name:ids}` (the place's name). `ids` lists POI ids split by `|` (`other_mod:id` for another mod's);
+  the nearest placed POI among them is the one meant. When the world has none of them the token reads `?`.
+- The settings are checked when the mods load: each must be one of the part's, and text must fit its setting with every
+  token at its longest (`99.9 km`, `NW`, a 24-letter name). `settings` on any marker but a `part` is an error.
+- Anyone can change a world sign's words afterwards in its menu (E), like any world-owned part's settings.
 
 ### Loot in containers
 

@@ -21,6 +21,7 @@
   ],
   "markers": [
     { "type": "part", "ref": "metal_crate", "at": [2.0, 0.3, 14.0], "loot": "crate", "loot_rolls": [2, 4] },
-    { "type": "part", "ref": "warning_light", "at": [17.0, 0.3, 17.0] }
+    { "type": "part", "ref": "warning_light", "at": [17.0, 0.3, 17.0] },
+    { "type": "part", "ref": "colony_sign", "at": [-2.0, 0.3, 17.5], "yaw": 0.0, "settings": { "text": "AGRI WORKS SILOS\nWorkshop {distance:outpost|poi_02|poi_13} {direction:outpost|poi_02|poi_13}" } }
   ]
 }

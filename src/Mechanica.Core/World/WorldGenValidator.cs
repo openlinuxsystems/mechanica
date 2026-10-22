@@ -569,6 +569,9 @@ internal static class WorldGenValidator
             sink.Error(code, $"{path}.loot", $"'{id}' has no inventory to hold loot: loot is for containers.");
         else if (marker.Loot is not null && definition.Inventory?.Slots is { } slots && WorldLoot.RollsOf(marker).Max > slots)
             sink.Warning(code, $"{path}.loot_rolls", $"'{id}' has only {slots} slots, so a fill of more than {slots} draws leaves some out.");
+        if (marker.Settings is { } settings && parts.FindDefinition(id) is { IsPlaceable: true } placeable
+            && Logic.PartSettings.Check(placeable, SignText.Longest(settings)) is { } bad)
+            sink.Error(code, $"{path}.settings", bad);
     }
 
     // A part marker's loot: a table that exists, a [min, max] count of draws and a refill time, the last two only with loot.
@@ -777,7 +780,9 @@ internal static class WorldGenValidator
                 sink.Error(code, $"{path}.ref", $"an object marker needs the id of a world object in the world generation rules (got '{marker.Ref}').");
             if (marker.Type == PoiMarker.PartType)
                 CheckPartMarker(marker, path, sink, parts, modId ?? Identifiers.VanillaModId, lootTables);
-            else if (marker.Loot is not null || marker.LootRolls is not null || marker.RefillDays is not null)
+            else if (marker.Settings is not null)
+                sink.Error(code, $"{path}.settings", "settings are for part markers only (a part the world places).");
+            if (marker.Type != PoiMarker.PartType && (marker.Loot is not null || marker.LootRolls is not null || marker.RefillDays is not null))
                 sink.Error(code, $"{path}.{(marker.Loot is not null ? "loot" : marker.LootRolls is not null ? "loot_rolls" : "refill_days")}",
                     "loot, loot_rolls and refill_days are for part markers only (a container the world places).");
         }

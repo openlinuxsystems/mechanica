@@ -1,0 +1,39 @@
+{
+  "id": "signboard",
+  "name": "Signboard",
+  "description": "A plank board painted bone, on two stakes, to write on: use it to set its words (4 lines).",
+  "category": "decor",
+  "mass": 4,
+  "durability": 1,
+  "friction": 0.5,
+  "buoyancy": 0.4,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "wood",
+  "size": [6, 4, 1],
+  "mesh": "meshes/parts/signboard.glb",
+  "icon": "textures/items/signboard_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "settings": [
+    {
+      "id": "text",
+      "name": "Text",
+      "type": "text",
+      "max_length": 80,
+      "lines": 4
+    }
+  ],
+  "display": {
+    "text": {
+      "setting": "text",
+      "at": [0, 0.2, 0.006],
+      "size": [
+        1.16,
+        0.38
+      ],
+      "color": "#2b2f35"
+    }
+  }
+}

@@ -486,7 +486,7 @@ Each setting:
 |-----|------|---------|
 | `id` | snake_case | Unique within the part. Required. |
 | `name` | string | Label in the settings panel. Default: the id. |
-| `type` | `number`, `choice`, `toggle`, `number_list` or `sequence` | Required. A number shows a slider with a field, a choice a drop-down, a toggle a check box, and a sequence the frame editor. |
+| `type` | `number`, `choice`, `toggle`, `number_list`, `sequence` or `text` | Required. A number shows a slider with a field, a choice a drop-down, a toggle a check box, a sequence the frame editor, and text a box to write in (one line, or several with a Write button). |
 | `min`, `max` | number | Range of a number, and of each entry of a number list or target of a sequence. Required for all three, with `min` ≤ `max`. |
 | `step` | number > 0 | Step of the settings panel's field. |
 | `options` | list of snake_case | The choices of a `choice`, distinct. Required for a choice. |
@@ -495,9 +495,11 @@ Each setting:
 | `group` | string | Toggles with the same group sit side by side under that heading (a sensor's Detects: Players, Bots, Blocks, Creations). |
 | `hide_when_linked` | bool | While anything is linked into the part the setting gives way to "Driven by what is linked to it." (an engine's On toggle). |
 | `max_count` | integer 1 to 64 | Most entries of a `number_list`, or frames of a `sequence`. Required for both. |
+| `max_length` | integer 1 to 256 | Most characters of a `text` (letters as the player sees them, so `é` is one). Required for text. |
+| `lines` | integer 1 to 8 | Most lines of a `text`. Default 1. Text never holds control characters other than line breaks. |
 | `max_speed` | number > 0 | A sequence's fastest joint speed, in rad/s for bearings and m/s for pistons. Required for a sequence. |
 | `preview` | snake_case | A sequence's Play button sends the frames being edited to the script's `on_command` under this name, so it can run them before they are applied. |
-| `default` | value | The value a placed part starts with. It must fit the setting. Default: `min` (or 0), the first option, false, or an empty list. |
+| `default` | value | The value a placed part starts with. It must fit the setting. Default: `min` (or 0), the first option, false, an empty list, or empty text. |
 
 ```json
 "script": "scripts/logic_gate.lua",
@@ -677,6 +679,7 @@ host's values.
 | `press` | `{readout, axis, depth}` | Pushes the model in by `depth` m (default 0.02, at most 0.1) along `axis` (default `[0, -1, 0]`) while the value is not 0 (a button). |
 | `clips` | `{readout, scrub, idle}` | Plays the model's own glTF animations (the model must be a `mesh`). The `readout` is a text value naming the clip to play (text after a `#` is ignored, so `stop#3` restarts `stop`; `start>run_loop` plays `start` and then `run_loop`); clips whose names end in `_loop` loop. `idle` names a clip played while the readout has no value and after a clip that does not loop has finished (a station's idle glow). `scrub` (at most 4) is a list of `{readout, clip}`: that clip is held at the value (0 to 1) of its length, for a lever or a needle. |
 | `effects` | list of `{readout, kind, offset, direction, color}` | At most 8 particle effects whose strength follows the value from 0 to 1. `kind` is `smoke`, `sparks` or `drops`; `offset` lies inside the footprint, `direction` (default up) is where they go, `color` is optional. |
+| `text` | `{setting, at, facing, size, color, max_height}` | Writes a `text` setting's words on the part (a sign). `setting` names the text setting, `at` is the middle of the face to write on (inside the footprint, default the centre), `facing` the way the words face (`[0, 0, 1]` by default, or another ±X or ±Z axis), `size` the face's `[width, height]` in m (required), `color` the ink (default near-black) and `max_height` the tallest a line may be (default the height over the setting's `lines`). The words shrink to fit the face and are drawn the same for every peer; a player's change reaches everyone at once. |
 
 Offsets are from the part centre in the part's frame, within its footprint; axes and directions are not zero.
 
@@ -759,7 +762,7 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 | 1800 | Stations | `portable_fabricator`, `refiner`, `respawn_bed`, `fancy_bed`, `freezer`, `ice_block_freezer` (the Freezer's one recipe) |
 | 1900 | Farming | `soil_bag`, `water_bucket`, `feeding_trough`, `lead`, `growbed`, `fertilizer` |
 | 2000 | Furniture | `stool`, `chair`, `toilet`, `bathtub`, `anvil`, `cash_register`, `wooden_table`, `metal_table`, `office_table`, `table_support`, `office_chair_base`, `cubicle_wall`, `shelf_unit`, `shelf_pillar`, `shelf_support`, `shelf_support_tall`, `pallet`, `stall_door`, `sink`, `mattress`, `pillow`, `mug`, `calendar`, `toilet_paper` |
-| 2100 | Road signs | `stop_sign`, `caution_sign`, `construction_sign`, `falling_objects_sign`, `danger_sign`, `skull_sign`, `beware_bots_sign`, `no_entry_sign`, `speed_limit_sign`, `direction_arrow_left`, `direction_arrow_straight`, `direction_arrow_right`, `exit_sign`, `welcome_sign`, `hard_work_sign`, `sale_sign` |
+| 2100 | Road signs | `stop_sign`, `caution_sign`, `construction_sign`, `falling_objects_sign`, `danger_sign`, `skull_sign`, `beware_bots_sign`, `no_entry_sign`, `speed_limit_sign`, `direction_arrow_left`, `direction_arrow_straight`, `direction_arrow_right`, `exit_sign`, `welcome_sign`, `hard_work_sign`, `sale_sign`, `signboard`, `colony_sign`, `paper_note` (signs that take words) |
 | 2200 | Road and site | `traffic_cone`, `barrier_tape`, `outpost_sign`, `warehouse_key_sign`, `banner_holder`, `billboard` |
 | 2300 | Nature | `fallen_log`, `tree_trunk` |
 | 2400 | Tools | `connect_tool`, `weld_tool`, `paint_tool`, `paint_ammo`, `fire_extinguisher` |

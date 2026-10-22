@@ -452,6 +452,75 @@ def welcome_sign(mats):
     return B.one("WelcomeSign", g, mats)
 
 
+# =====================================================================================================
+# Signs players write on (their words are drawn in game from the part's text setting, display.text)
+# =====================================================================================================
+
+def signboard(mats):
+    """Signboard, 6 x 4 x 1: a Settler board of three scrap planks painted bone, left blank to be written on, a
+    graphite paint drip and a brick-red corner mark, nailed to two stakes. The game paints its words on the bone."""
+    g = Geo()
+    hw, hh, z = 0.68, 0.25, 0.2
+    im = board_image(2 * hw, 2 * hh, 51, paint=BONE, bare_at=0.86)
+    d = ImageDraw.Draw(im)
+    w, h = im.size
+    # a painted border just inside the edge, rubbed away in places, and a maker's mark in one corner
+    m = h * 0.05
+    d.rectangle([m, m, w - m, h - m], outline=GRAPHITE, width=max(4, int(h * 0.018)))
+    d.polygon([(w - m * 3.6, h - m * 1.6), (w - m * 1.6, h - m * 1.6), (w - m * 1.6, h - m * 3.6)], fill=BRICK)
+    im = wear_paint(im, 52, amount=0.1)
+    plank_board(g, mats, hw, hh, z, B.decal(mats, "signboard_face", im, rough=0.85))
+    stakes(g, (-0.5, 0.5), -0.5, z + hh - 0.02)
+    return B.one("Signboard", g, mats)
+
+
+def colony_sign(mats):
+    """Colony Sign, 4 x 6 x 1: a wide Colony plate on two graphite posts, a bone face inside a steel-blue band with
+    a mustard rule at the top, for place names and distances. The game prints its words on the bone."""
+    g = Geo()
+    hw, hh = 0.44, 0.27
+    for x in (-0.3, 0.3):
+        B.post(g, x, -0.04, -0.75, PLATE_Z + hh - 0.04, half=0.022, mat="graphite", cap="graphite", foot_half=0.055)
+        for dz in (-0.14, 0.14):
+            box(g, (x, -0.04, PLATE_Z + dz), (0.035, 0.03, 0.016), "galv", bevel=0.004)
+            B.bolt(g, (x, 0.0005, PLATE_Z + dz), (0, 1, 0), 0.006, "galv")
+    pts = [(x, z + PLATE_Z) for x, z in B.rounded_rect(hw, hh, 0.035)]
+    f = Face(pts)
+    f.plate(STEEL, STEEL)
+    f.d.polygon(f.inset(0.9), fill=BONE)
+    band = f.h * 0.09
+    f.d.rectangle([f.w * 0.08, f.h * 0.06, f.w * 0.92, f.h * 0.06 + band * 0.55], fill=MUSTARD)
+    f.worn(53, BONE, amount=0.06)
+    B.prism(g, pts, -0.01, 0.0, "galv", front=B.decal(mats, "colony_sign_face", f.im, rough=0.5))
+    return B.one("ColonySign", g, mats)
+
+
+def paper_note(mats):
+    """Paper Note, 1 x 1 x 1: a sheet of ruled notepaper, its top corner curling, held flat to a wall, a door or a
+    vehicle by a strip of tape. The game writes its words on it in pencil."""
+    g = Geo()
+    pw, ph = 0.09, 0.115          # half width and height of the sheet
+    y = -0.12                     # its back against the cell's back face
+    s = PX / (2 * ph)
+    w, h = int(2 * pw * s), int(2 * ph * s)
+    rng = np.random.default_rng(61)
+    paper = np.array((236, 230, 212), np.float32)
+    a = np.ones((h, w, 3), np.float32) * paper * (0.96 + 0.04 * rng.random((h, w, 1)))
+    im = Image.fromarray(a.astype(np.uint8))
+    d = ImageDraw.Draw(im)
+    for k in range(2, 14):
+        yy = int(h * k / 14)
+        d.line([(int(w * 0.05), yy), (int(w * 0.95), yy)], fill=(176, 196, 214), width=2)
+    d.line([(int(w * 0.14), 0), (int(w * 0.14), h)], fill=(214, 150, 140), width=2)
+    pts = [(pw, -ph), (-pw, -ph), (-pw, ph - 0.025), (-pw + 0.025, ph), (pw, ph)]
+    B.prism(g, [(x, z) for x, z in pts], y, y + 0.0015, "white",
+            front=B.decal(mats, "paper_note_face", im, rough=0.9), uv_box=(-pw, -ph, pw, ph))
+    # the curled corner, folded forward
+    B.prism(g, [(-pw, ph - 0.025), (-pw + 0.025, ph), (-pw, ph)], y + 0.0015, y + 0.006, "white")
+    box(g, (0.0, y + 0.002, ph - 0.006), (0.03, 0.0008, 0.014), "glass_tint")
+    return B.one("PaperNote", g, mats)
+
+
 def billboard(mats):
     """Billboard, 8 x 8 x 2: a Settler farm billboard, a poster on a plank frame with a zinc back on two braced
     legs: a big tomato and a potato under a mustard sun over sea-teal fields (our own art, no brand), its top corner
@@ -607,4 +676,10 @@ PARTS = [
      ["Graphite plate, mustard border, a mustard skull over crossed wrenches."]),
     ("welcome_sign", welcome_sign, (0.75, 0.125, 0.375), 1.8, "Welcome Sign (6 x 3 x 1 blocks)",
      ["A sea-teal painted plank board: WELCOME in bone, a mustard flower each side, on two stakes."]),
+    ("signboard", signboard, (0.75, 0.125, 0.5), 1.8, "Signboard (6 x 4 x 1 blocks)",
+     ["Settler board painted bone, blank: players write up to 4 lines on it."]),
+    ("colony_sign", colony_sign, (0.5, 0.125, 0.75), 1.75, "Colony Sign (4 x 6 x 1 blocks)",
+     ["Colony plate on two posts: bone face, steel-blue band, mustard rule; 3 lines of words."]),
+    ("paper_note", paper_note, (0.125, 0.125, 0.125), 0.4, "Paper Note (1 x 1 x 1 block)",
+     ["Ruled notepaper taped flat to a wall, door or vehicle; 6 lines in pencil."]),
 ]

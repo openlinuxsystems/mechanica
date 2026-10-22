@@ -61,6 +61,7 @@
     { "type": "part", "ref": "construction_light", "at": [-8.0, 0.0, 22.0], "yaw": 180.0 },
     { "type": "part", "ref": "construction_light", "at": [8.0, 0.0, 22.0], "yaw": 180.0 },
     { "type": "part", "ref": "traffic_cone", "at": [-5.5, 0.0, 23.0] },
-    { "type": "part", "ref": "traffic_cone", "at": [5.5, 0.0, 23.0] }
+    { "type": "part", "ref": "traffic_cone", "at": [5.5, 0.0, 23.0] },
+    { "type": "part", "ref": "colony_sign", "at": [4.5, 0.0, 21.5], "yaw": 0.0, "settings": { "text": "COLONY STORES\nStaff only\nKeys kept upstairs" } }
   ]
 }

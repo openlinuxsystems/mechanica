@@ -637,6 +637,12 @@ public enum SettingType
     /// A frame that is a plain number sends every linked bearing to that angle.
     /// </summary>
     Sequence,
+
+    /// <summary>
+    /// Words a player writes (a sign's text): at most <see cref="SettingDefinition.MaxLength"/> characters on at most
+    /// <see cref="SettingDefinition.Lines"/> lines, with no control characters but the line breaks.
+    /// </summary>
+    Text,
 }
 
 /// <summary>One setting a player can change on a placed part, with the Connect Tool's settings panel.</summary>
@@ -666,9 +672,21 @@ public sealed record SettingDefinition
     /// <summary>Most entries of a number list (1 to 64; required for number lists).</summary>
     public int? MaxCount { get; init; }
 
+    /// <summary>Most characters a text setting holds (1 to <see cref="MaxTextLength"/>; required for text).</summary>
+    public int? MaxLength { get; init; }
+
+    /// <summary>Most lines a text setting holds (1 to <see cref="MaxTextLines"/>). Omitted means one line.</summary>
+    public int? Lines { get; init; }
+
+    /// <summary>Longest <see cref="MaxLength"/> a text setting may have.</summary>
+    public const int MaxTextLength = 256;
+
+    /// <summary>Most <see cref="Lines"/> a text setting may have.</summary>
+    public const int MaxTextLines = 8;
+
     /// <summary>
     /// Value a newly placed part starts with. Omitted means min (number), the first option (choice), false
-    /// (toggle) or an empty list.
+    /// (toggle), an empty list or no text.
     /// </summary>
     public JsonElement? Default { get; init; }
 
@@ -928,6 +946,9 @@ public sealed record DisplayDefinition
     /// <summary>Particle effects whose strength follows a readout from 0 to 1 (exhaust smoke, sparks, oil drips).</summary>
     public IReadOnlyList<EffectDefinition>? Effects { get; init; }
 
+    /// <summary>A text setting's words drawn on the part's face (a sign).</summary>
+    public TextDisplayDefinition? Text { get; init; }
+
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -1008,6 +1029,38 @@ public sealed record EffectDefinition
 
     /// <summary>Its colour as <c>"#rrggbb"</c>. Omitted means the kind's own (dark smoke, yellow sparks, black drops).</summary>
     public string? Color { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// Where a part draws the words of one of its text settings (<see cref="SettingType.Text"/>): an upright area on its face.
+/// The words are fitted into the area: as large as fits, centred, never past it.
+/// </summary>
+public sealed record TextDisplayDefinition
+{
+    /// <summary>The id of the part's text setting whose words it draws.</summary>
+    public string? Setting { get; init; }
+
+    /// <summary>The centre of the area, relative to the part centre in m in the part's frame. Omitted means the centre.</summary>
+    public Vec3? At { get; init; }
+
+    /// <summary>
+    /// Which way the words face, in the part's frame: one of ±X or ±Z. Omitted means +Z, the side a part placed in the
+    /// world turns toward whoever builds it (a sign's face).
+    /// </summary>
+    public Vec3? Facing { get; init; }
+
+    /// <summary>The area's width and height in m (both above 0).</summary>
+    public IReadOnlyList<float>? Size { get; init; }
+
+    /// <summary>The colour of the words, <c>#rrggbb</c>. Omitted means near black; the Paint Tool does not change it.</summary>
+    public string? Color { get; init; }
+
+    /// <summary>Tallest a line of words may be, in m. Omitted means the area's height over its setting's lines.</summary>
+    public float? MaxHeight { get; init; }
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]

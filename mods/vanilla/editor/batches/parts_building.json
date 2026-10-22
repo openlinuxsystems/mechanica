@@ -1946,6 +1946,269 @@
           "order": 2190
         }
       ]
+    },
+    {
+      "file": "parts/decor/signboard.json",
+      "template": "decor",
+      "set": {
+        "name": "Signboard",
+        "description": "A plank board painted bone, on two stakes, to write on: use it to set its words (4 lines).",
+        "mass": 4,
+        "durability": 1,
+        "friction": 0.5,
+        "buoyancy": 0.4,
+        "flammable": true,
+        "stack_size": 20,
+        "sound_material": "wood",
+        "size": [
+          6,
+          4,
+          1
+        ],
+        "icon": "textures/items/signboard_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        },
+        "settings": [
+          {
+            "id": "text",
+            "name": "Text",
+            "type": "text",
+            "max_length": 80,
+            "lines": 4
+          }
+        ],
+        "display": {
+          "text": {
+            "setting": "text",
+            "at": [
+              0,
+              0.2,
+              0.006
+            ],
+            "size": [
+              1.16,
+              0.38
+            ],
+            "color": "#2b2f35"
+          }
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/signboard.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "signboard",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "scrap_wood_block",
+              "count": 4
+            }
+          ],
+          "outputs": [
+            {
+              "item": "signboard",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 2197
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/colony_sign.json",
+      "template": "decor",
+      "set": {
+        "name": "Colony Sign",
+        "description": "A Colony plate on two posts for place names and distances: use it to set its words (3 lines).",
+        "mass": 5,
+        "durability": 3,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [
+          4,
+          6,
+          1
+        ],
+        "icon": "textures/items/colony_sign_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        },
+        "settings": [
+          {
+            "id": "text",
+            "name": "Text",
+            "type": "text",
+            "max_length": 48,
+            "lines": 3
+          }
+        ],
+        "display": {
+          "text": {
+            "setting": "text",
+            "at": [
+              0,
+              0.39,
+              0.004
+            ],
+            "size": [
+              0.74,
+              0.36
+            ],
+            "color": "#2b2f35"
+          }
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/colony_sign.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "colony_sign",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "scrap_metal_block",
+              "count": 4
+            }
+          ],
+          "outputs": [
+            {
+              "item": "colony_sign",
+              "count": 1
+            }
+          ],
+          "time": 2,
+          "order": 2198
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/paper_note.json",
+      "template": "decor",
+      "set": {
+        "name": "Paper Note",
+        "description": "A sheet of notepaper to tape to a wall, a door or a vehicle: use it to write on it (6 lines).",
+        "mass": 0.05,
+        "durability": 1,
+        "friction": 0.5,
+        "buoyancy": 0.4,
+        "flammable": true,
+        "stack_size": 50,
+        "sound_material": "wood",
+        "size": [
+          1,
+          1,
+          1
+        ],
+        "icon": "textures/items/paper_note_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        },
+        "sockets": [
+          {
+            "id": "back",
+            "type": "structural",
+            "position": [
+              0,
+              0,
+              -0.125
+            ],
+            "normal": [
+              0,
+              0,
+              -1
+            ]
+          }
+        ],
+        "collision": {
+          "shape": "box",
+          "size": [
+            0.18,
+            0.24,
+            0.02
+          ],
+          "offset": [
+            0,
+            0,
+            -0.11
+          ]
+        },
+        "settings": [
+          {
+            "id": "text",
+            "name": "Text",
+            "type": "text",
+            "max_length": 120,
+            "lines": 6
+          }
+        ],
+        "display": {
+          "text": {
+            "setting": "text",
+            "at": [
+              0,
+              -0.01,
+              -0.116
+            ],
+            "size": [
+              0.15,
+              0.19
+            ],
+            "color": "#4a4e54"
+          }
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/paper_note.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "paper_note",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "cardboard_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "paper_note",
+              "count": 4
+            }
+          ],
+          "time": 2,
+          "order": 2199
+        }
+      ]
     }
   ]
 }

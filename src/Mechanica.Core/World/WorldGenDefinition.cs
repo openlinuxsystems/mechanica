@@ -1516,6 +1516,13 @@ public sealed record PoiMarker
     /// </summary>
     public float? RefillDays { get; init; }
 
+    /// <summary>
+    /// For a <see cref="PartType"/> marker: values for the part's settings, by setting id, that it is placed with (a sign's
+    /// words). Each must fit its setting. Words may point the way to other places in the world (<see cref="SignText"/>:
+    /// <c>{distance:outpost}</c>, <c>{direction:outpost}</c>, <c>{name:outpost}</c>). Omitted: the part's defaults.
+    /// </summary>
+    public Dictionary<string, JsonElement>? Settings { get; init; }
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
