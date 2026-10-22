@@ -181,6 +181,16 @@ public class SurvivalActionsTests
     }
 
     [Fact]
+    public void PlayersRespawnOnTopOfALowBedsCollisionNotItsBlock()
+    {
+        var bed = _f.Add(Bedroll, new Vector3(0, 0, 0));
+        _f.Ok(Me, SurvivalActions.SetSpawn, new { creation = bed, part = 1 });
+
+        _f.Ok(Me, SurvivalActions.Respawn, new { });
+        Assert.Equal(new Vector3(0, 0.075f, 0), _f.World.Feet[2], new Vector3Comparer(1e-4f));
+    }
+
+    [Fact]
     public void HardLandingsHurt()
     {
         _f.Survival.Landed(Me.Peer, 10f);

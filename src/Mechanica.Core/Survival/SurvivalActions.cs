@@ -374,14 +374,17 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         _vitals.TryGetValue(peer, out var v) && v.Bed is { } bed && world.FindCreation(bed.Creation) is { } c
             && c.FindPart(bed.Part) is not null && c.DefinitionOf(bed.Part).RespawnPoint == true ? bed : null;
 
-    // A spot just above a bed's top face, in the world.
+    // A spot just above a bed's top face, in the world: the top of its collision box when it has one lower than its
+    // size (the Respawn Bed's sleeping bag), else the top of its size.
     private Vector3 BedTop(int creationId, int partId)
     {
         var creation = world.FindCreation(creationId)!;
         var part = creation.FindPart(partId)!;
         var definition = creation.DefinitionOf(partId);
-        var top = PartGeometry.CentreMetres(definition, part.Cell, part.Rotation).ToNumerics()
-            + new Vector3(0, (definition.Size ?? GridSize.One).Metres.Y / 2 + 0.05f, 0);
+        var up = definition.Collision is { Shape: CollisionShape.Box, Size: { } box } collision
+            ? (collision.Offset?.Y ?? 0f) + box.Y / 2
+            : (definition.Size ?? GridSize.One).Metres.Y / 2;
+        var top = PartGeometry.CentreMetres(definition, part.Cell, part.Rotation).ToNumerics() + new Vector3(0, up + 0.05f, 0);
         return creation.BodyPose(creation.BodyIndexOf(partId)).Apply(top);
     }
 
