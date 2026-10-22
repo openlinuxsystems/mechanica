@@ -249,6 +249,7 @@ public sealed partial class ScriptRuntime
         AddLogicLibrary(script, part, creation, world, Vec);
         AddItemLibraries(context);
         AddSoilLibraries(script, world);
+        AddTransportLibrary(context, part);
         AddFireLibrary(context);
         AddDamageLibrary(part, world);
         AddModLibraries(context);

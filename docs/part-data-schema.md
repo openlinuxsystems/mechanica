@@ -249,7 +249,8 @@ rather than in Lua.
 
 Each slot holds one stack of one item, up to that item's `stack_size`. A station runs every recipe that
 lists its part id in `stations`: when an order is queued its inputs come from the station's linked
-storage first, then the crafting player's inventory, and finished crafts land in linked storage first,
+storage and the containers piped to its input ports first (see [item transport](#item-transport)), then the crafting
+player's inventory, and finished crafts land in linked storage and the containers piped to its output ports first,
 then the station's own inventory, where any player in reach can take them. A linked container can be
 opened from the station's screen while the station is in reach. A container or station that holds items, or has orders queued, can't be picked up
 (right click), unless it has `carry_contents`. Its contents are saved with the Creation; if it is broken (Sledgehammer, weapons, fire) they
@@ -282,6 +283,33 @@ At most 10 levels. The Part Editor lists them under Upgrades.
   { "cost": [{ "item": "component_kit", "count": 2 }], "set": { "crafting": { "speed": 1.25 }, "inventory": { "slots": 12 } } },
   { "cost": [{ "item": "component_kit", "count": 4 }], "set": { "crafting": { "speed": 1.5 } } }
 ]
+```
+
+## item transport
+
+Parts map E1 (see [IO Ports](io-ports.md#item-transport)): IO ports in data, Vacuum Pipes that join them, and intakes
+that reach into the world. Only placeable parts take these keys.
+
+| Key | Type | Meaning |
+|-----|------|---------|
+| `io_ports` | list | The part's IO ports, where pipes and other ports join it. Each is `{id, position, normal, mode}`. |
+| `io_ports[].id` | string | Lowercase snake_case, unique on the part (`input`, `output`, `port`). |
+| `io_ports[].position` | `[x, y, z]` m | The port's centre, from the part's centre in its own axes (front +Z): on the face `normal` points out of, at the middle of a block face (so a 2 x 2 port's collar sits on one block of it). |
+| `io_ports[].normal` | `[x, y, z]` | The way the port faces: one grid axis. |
+| `io_ports[].mode` | `in`, `out` or `both` | Which way items go through it: `in` takes them in, `out` sends them out, `both` (the default) does either. Its model's arrows show the same. |
+| `conduit` | boolean | `true` for a pipe: items pass from each of its ports to the others, and it holds nothing. Needs at least two `io_ports` and no `inventory`. |
+| `intake` | object | Where the part reaches into the world (a pump's mouth, a collector's funnel), for `part.pickups()`, `part.collect` and `part.eject`. |
+| `intake.position` | `[x, y, z]` m | Its centre, from the part's centre, inside the part's box. |
+| `intake.normal` | `[x, y, z]` | The way it faces, a unit vector. |
+| `intake.reach` | number 0–16 (m) | How far it reaches. Required. |
+| `intake.throw` | number 0–16 (m) | How far along `normal` an ejected pile lands. Default half the reach. |
+
+A pipe is one block long and chains end to end; there is no drag-to-length placement (parts map E12, not built).
+The network is worked out from the parts, so nothing about it is saved; containers keep their contents as always.
+
+```json
+"io_ports": [{ "id": "port", "position": [0, 0, -0.5], "normal": [0, 0, -1] }],
+"intake": { "position": [0, 0, 0.5], "normal": [0, 0, 1], "reach": 2, "throw": 1 }
 ```
 
 ## survival
@@ -699,7 +727,7 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 | 1400 | Sound | `horn`, `radio` |
 | 1500 | Vehicle body | `bumper_front`, `bumper_rear`, `mud_flap`, `exhaust_pipe`, `license_plate`, `roof_rack`, `antenna`, `windshield`, `windshield_large`, `side_window` (new windshields take 1580-1599) |
 | 1600 | Lights | `shack_light`, `glowstick`, `fluorescent_light`, `packing_lamp`, `interior_light`, `headlight`, `spotlight`, `construction_light`, `warning_light`, `beacon_scrap`, `beacon`, `warehouse_spotlight`, `frame_beam_light`, `neon_sign`, `protector_sign` |
-| 1700 | Storage | `chest` (Scrap Chest), `small_chest`, `large_chest`, `cargo_chest`, `barrel`, `locker`, `tool_cabinet`, `file_cabinet`, `fridge`, `chemical_container`, `water_container`, `potato_ammo_container`, `dispenser`, `broken_microwave`, `ruin_chest` |
+| 1700 | Storage | `chest` (Scrap Chest), `small_chest`, `large_chest`, `cargo_chest`, `barrel`, `locker`, `tool_cabinet`, `file_cabinet`, `fridge`, `chemical_container`, `water_container`, `potato_ammo_container`, `resource_collector`, `vacuum_pipe`, `vacuum_pipe_corner`, `vacuum_pump`, `dispenser`, `broken_microwave`, `ruin_chest` |
 | 1800 | Stations | `portable_fabricator`, `refiner`, `respawn_bed`, `fancy_bed`, `freezer`, `ice_block_freezer` (the Freezer's one recipe) |
 | 1900 | Farming | `soil_bag`, `water_bucket`, `feeding_trough`, `lead`, `growbed` |
 | 2000 | Furniture | `stool`, `chair`, `toilet`, `bathtub`, `anvil`, `cash_register`, `wooden_table`, `metal_table`, `office_table`, `table_support`, `office_chair_base`, `cubicle_wall`, `shelf_unit`, `shelf_pillar`, `shelf_support`, `shelf_support_tall`, `pallet`, `stall_door`, `sink`, `mattress`, `pillow`, `mug`, `calendar`, `toilet_paper` |

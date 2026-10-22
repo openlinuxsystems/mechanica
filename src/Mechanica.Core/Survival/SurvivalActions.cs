@@ -1302,6 +1302,48 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     }
 
     /// <summary>
+    /// Moves what fits of the pile <paramref name="dropId"/> into <paramref name="into"/>, in order (a Vacuum Pump sucking
+    /// it into the containers piped to it, Parts map E1), as <c>PickUp</c> does into a player's pockets: the pile goes
+    /// when it is empty, and the pick-up sound plays where it lay. Returns what moved; empty when nothing fit or there is
+    /// no such pile.
+    /// </summary>
+    public IReadOnlyList<ItemStack> TakeDrop(int dropId, IReadOnlyList<Inventory> into)
+    {
+        if (!_drops.TryGetValue(dropId, out var drop))
+            return [];
+        var left = new List<ItemStack>();
+        var moved = new List<ItemStack>();
+        foreach (var stack in drop.Items)
+        {
+            var added = 0;
+            foreach (var inventory in into)
+            {
+                if (added == stack.Count)
+                    break;
+                added += inventory.Add(stack.Item, stack.Count - added);
+            }
+            if (added > 0)
+                moved.Add(stack with { Count = added });
+            if (added < stack.Count)
+                left.Add(stack with { Count = stack.Count - added });
+        }
+        if (moved.Count == 0)
+            return [];
+        if (left.Count == 0)
+            RemoveDrop(drop.Id);
+        else
+        {
+            _drops[drop.Id] = drop with { Items = left };
+            DropChanged?.Invoke(_drops[drop.Id]);
+        }
+        PlayPickup(moved[0].Item, drop.Position.ToNumerics());
+        return moved;
+    }
+
+    /// <summary>Plays <paramref name="item"/>'s pick-up sound at <paramref name="at"/> (something was collected there).</summary>
+    public void PlayPickupSound(string item, Vector3 at) => PlayPickup(item, at);
+
+    /// <summary>
     /// Puts a pile of items on the ground below <paramref name="at"/>, or exactly at it when <paramref name="placed"/>
     /// (Force Build: it then never expires). Returns it, or null when there was nothing to drop. Past
     /// <see cref="SurvivalSettings.MaxDrops"/> piles the oldest goes. <paramref name="knockedOut"/> marks what a

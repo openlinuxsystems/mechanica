@@ -440,7 +440,7 @@ public partial class CreationNode : Node3D
     {
         foreach (var station in body.PartIds.Where(id => Creation.DefinitionOf(id).Crafting is not null))
         {
-            foreach (var container in Core.Items.StorageLinks.Of(Creation, station).Where(body.PartIds.Contains))
+            foreach (var container in Core.Items.StorageLinks.NearOf(Creation, station).Where(body.PartIds.Contains))
             {
                 var from = Centre(station);
                 var to = Centre(container);

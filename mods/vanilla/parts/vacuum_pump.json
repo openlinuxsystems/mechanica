@@ -1,0 +1,68 @@
+{
+  "id": "vacuum_pump",
+  "name": "Vacuum Pump",
+  "description": "Powered by a logic signal, it sucks piles, loose resources, ripe crops and water through its mouth into the containers its back port is piped to, or, set to Eject, throws their items out. E switches between them.",
+  "category": "interactive",
+  "mass": 7.5,
+  "durability": 7,
+  "friction": 0.5,
+  "buoyancy": 0.7,
+  "flammable": false,
+  "stack_size": 10,
+  "sound_material": "metal",
+  "size": [3, 3, 4],
+  "mesh": "meshes/parts/vacuum_pump.glb",
+  "icon": "textures/items/vacuum_pump_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "sockets": [],
+  "script": "scripts/vacuum_pump.lua",
+  "sounds": {
+    "work": "air_whoosh",
+    "place": "place_metal"
+  },
+  "io_ports": [
+    {
+      "id": "port",
+      "position": [0, 0, -0.5],
+      "normal": [0, 0, -1]
+    }
+  ],
+  "intake": {
+    "position": [0, 0, 0.5],
+    "normal": [0, 0, 1],
+    "reach": 2,
+    "throw": 1
+  },
+  "logic": {
+    "inputs": 4
+  },
+  "settings": [
+    {
+      "id": "mode",
+      "name": "Mode",
+      "type": "choice",
+      "options": [
+        "suck",
+        "eject"
+      ],
+      "default": "suck"
+    }
+  ],
+  "menu": {
+    "use": "cycle",
+    "cycle": "mode",
+    "signals": true
+  },
+  "display": {
+    "clips": {
+      "readout": "pose"
+    }
+  },
+  "properties": {
+    "interval": 0.5,
+    "eject": 1,
+    "rush": 0.6
+  }
+}

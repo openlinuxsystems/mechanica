@@ -30,5 +30,22 @@
   },
   "inventory": {
     "slots": 30
-  }
+  },
+  "io_ports": [
+    {
+      "id": "right",
+      "position": [0.625, 0, 0.125],
+      "normal": [1, 0, 0]
+    },
+    {
+      "id": "left",
+      "position": [-0.625, 0, 0.125],
+      "normal": [-1, 0, 0]
+    },
+    {
+      "id": "back",
+      "position": [0, 0, -0.5],
+      "normal": [0, 0, -1]
+    }
+  ]
 }

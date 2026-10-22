@@ -60,6 +60,7 @@
         "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
+        "io_ports": [{ "id": "port", "position": [0.375, 0, 0], "normal": [1, 0, 0] }],
         "inventory": { "slots": 10 }
       },
       "model": [{ "kind": "mesh", "mesh": "meshes/parts/small_chest.glb" }],
@@ -97,6 +98,11 @@
         "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
+        "io_ports": [
+          { "id": "right", "position": [0.625, 0, 0.125], "normal": [1, 0, 0] },
+          { "id": "left", "position": [-0.625, 0, 0.125], "normal": [-1, 0, 0] },
+          { "id": "back", "position": [0, 0, -0.5], "normal": [0, 0, -1] }
+        ],
         "inventory": { "slots": 30 }
       },
       "model": [{ "kind": "mesh", "mesh": "meshes/parts/large_chest.glb" }],
@@ -134,6 +140,18 @@
         "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.75, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
+        "io_ports": [
+          { "id": "front_1", "position": [-0.625, -0.375, 0.75], "normal": [0, 0, 1] },
+          { "id": "front_2", "position": [-0.125, -0.375, 0.75], "normal": [0, 0, 1] },
+          { "id": "front_3", "position": [0.375, -0.375, 0.75], "normal": [0, 0, 1] },
+          { "id": "back_1", "position": [0.625, -0.375, -0.75], "normal": [0, 0, -1] },
+          { "id": "back_2", "position": [0.125, -0.375, -0.75], "normal": [0, 0, -1] },
+          { "id": "back_3", "position": [-0.375, -0.375, -0.75], "normal": [0, 0, -1] },
+          { "id": "right_1", "position": [1.0, -0.375, 0.375], "normal": [1, 0, 0] },
+          { "id": "right_2", "position": [1.0, -0.375, -0.125], "normal": [1, 0, 0] },
+          { "id": "left_1", "position": [-1.0, -0.375, 0.375], "normal": [-1, 0, 0] },
+          { "id": "left_2", "position": [-1.0, -0.375, -0.125], "normal": [-1, 0, 0] }
+        ],
         "inventory": { "slots": 100 }
       },
       "model": [{ "kind": "mesh", "mesh": "meshes/parts/cargo_chest.glb" }],
@@ -375,6 +393,7 @@
         "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
+        "io_ports": [{ "id": "port", "position": [0.5, 0, 0], "normal": [1, 0, 0] }],
         "inventory": { "slots": 5, "accepts": ["chemical"], "gauge": "chemical" },
         "logic": { "outputs": 16, "kind": "power" }
       },
@@ -413,6 +432,7 @@
         "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
+        "io_ports": [{ "id": "port", "position": [0.5, 0, 0], "normal": [1, 0, 0] }],
         "inventory": { "slots": 5, "accepts": ["water_bucket_full"], "gauge": "water" },
         "logic": { "outputs": 16, "kind": "power" }
       },
@@ -450,6 +470,7 @@
         "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
+        "io_ports": [{ "id": "port", "position": [0.5, 0, 0], "normal": [1, 0, 0] }],
         "inventory": { "slots": 5, "accepts": ["potato"], "gauge": "ammo" },
         "logic": { "outputs": 16, "kind": "power" }
       },
@@ -575,6 +596,7 @@
         "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
+        "io_ports": [{ "id": "port", "position": [0.5, 0, 0], "normal": [1, 0, 0] }],
         "inventory": { "slots": 5, "accepts": ["gasoline"], "carry_contents": true, "gauge": "gas" },
         "logic": { "outputs": 16, "kind": "power" },
         "script": "scripts/gas_container.lua",
@@ -618,6 +640,7 @@
         "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
+        "io_ports": [{ "id": "port", "position": [0.5, 0, 0], "normal": [1, 0, 0] }],
         "inventory": { "slots": 5, "accepts": ["battery_pack"], "gauge": "electric" },
         "logic": { "outputs": 16, "kind": "power" },
         "script": "scripts/battery.lua",

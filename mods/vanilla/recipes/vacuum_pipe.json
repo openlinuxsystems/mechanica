@@ -1,0 +1,24 @@
+{
+  "id": "vacuum_pipe",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 2
+    },
+    {
+      "item": "glass_block",
+      "count": 5
+    }
+  ],
+  "outputs": [
+    {
+      "item": "vacuum_pipe",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 1776
+}

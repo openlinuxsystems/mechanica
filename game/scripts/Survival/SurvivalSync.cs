@@ -90,6 +90,9 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     /// <summary>The survival actions, once registered (the host's health, beds and piles live here).</summary>
     public SurvivalActions? Actions { get; private set; }
 
+    /// <summary>Item transport (Vacuum Pumps, Resource Collectors, pipes; parts map E1), once registered on the host.</summary>
+    public Core.Items.TransportActions? Transport { get; private set; }
+
     /// <summary>Every player's health as last sent, by peer.</summary>
     public IReadOnlyDictionary<int, VitalsView> Vitals => _vitals;
 
@@ -189,6 +192,8 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
         Settings ??= LoadSettings();
         Actions = new SurvivalActions(Catalog, Settings, Inventory.Items!, this) { Mode = Mode, Difficulty = Difficulty, FriendlyFire = FriendlyFire };
         Actions.Register(dispatcher);
+        Transport = new Core.Items.TransportActions(Catalog, Actions);
+        Transport.Register(dispatcher);
         dispatcher.Gate = Actions.Gate;
         Actions.VitalsChanged += OnVitalsChanged;
         Actions.DropChanged += OnDropChanged;

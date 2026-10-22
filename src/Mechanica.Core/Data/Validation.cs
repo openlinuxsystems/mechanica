@@ -117,6 +117,7 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             ValidateCollision(collision, sink);
         ValidateSockets(part, placeable, sink);
         ValidateStorage(part, placeable, sink);
+        ValidateTransport(part, placeable, sink);
         ValidateSurvival(part, placeable, sink);
         ValidateLogic(part, placeable, sink);
         ValidateLight(part, placeable, sink);
@@ -393,6 +394,89 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             }
             KnownKeys.WarnUnknown(crafting.Extra, p, sink, typeof(CraftingDefinition));
         }
+    }
+
+    // IO ports, conduits and intakes (Parts map E1, docs/io-ports.md).
+    private static void ValidateTransport(PartDefinition part, bool placeable, DiagnosticSink sink)
+    {
+        if (part.IoPorts is { } ports)
+        {
+            if (!placeable)
+                sink.Error(Code, "$.io_ports", "only placeable parts can have io_ports.");
+            var extent = (part.Size ?? GridSize.One).Metres;
+            var ids = new HashSet<string>(StringComparer.Ordinal);
+            for (var i = 0; i < ports.Count; i++)
+            {
+                var port = ports[i];
+                var path = $"$.io_ports[{i}]";
+                if (!Identifiers.IsValid(port.Id))
+                    sink.Error(Code, $"{path}.id", port.Id is null ? "port id is required." : $"port id '{port.Id}' must be lowercase snake_case.");
+                else if (!ids.Add(port.Id))
+                    sink.Error(Code, $"{path}.id", $"port id '{port.Id}' is used twice in this part.");
+                if (port.Normal is not { } n || AxisOf(n) is not { } axis)
+                    sink.Error(Code, $"{path}.normal", "normal must be one axis direction, like [1, 0, 0].");
+                else if (port.Position is not { } pos)
+                    sink.Error(Code, $"{path}.position", "port position [x, y, z] in metres is required.");
+                else if (PortFaceError(pos, n, axis, extent) is { } bad)
+                    sink.Error(Code, $"{path}.position", $"port position {pos} {bad}.");
+                KnownKeys.WarnUnknown(port.Extra, path, sink, typeof(ItemPortDefinition));
+            }
+        }
+        if (part.Conduit == true)
+        {
+            if (!placeable)
+                sink.Error(Code, "$.conduit", "only placeable parts can be conduits.");
+            if (part.IoPorts is not { Count: >= 2 })
+                sink.Error(Code, "$.conduit", "a conduit needs at least two io_ports for items to pass between.");
+            if (part.Inventory is not null)
+                sink.Error(Code, "$.conduit", "a conduit holds nothing: it cannot have an inventory.");
+        }
+        if (part.Intake is { } intake)
+        {
+            const string p = "$.intake";
+            if (!placeable)
+                sink.Error(Code, p, "only placeable parts can have an intake.");
+            var half = (part.Size ?? GridSize.One).Metres;
+            if (intake.Position is not { } pos)
+                sink.Error(Code, $"{p}.position", "position [x, y, z] in metres is required.");
+            else if (MathF.Abs(pos.X) > half.X / 2 + Epsilon || MathF.Abs(pos.Y) > half.Y / 2 + Epsilon || MathF.Abs(pos.Z) > half.Z / 2 + Epsilon)
+                sink.Error(Code, $"{p}.position", $"position {pos} is outside the part's {part.Size ?? GridSize.One} footprint.");
+            if (intake.Normal is not { } normal || MathF.Abs(normal.Length - 1) > 1e-3f)
+                sink.Error(Code, $"{p}.normal", "normal (a unit direction like [0, 0, 1]) is required.");
+            if (intake.Reach is not { } reach || !(reach > 0 && reach <= IntakeDefinition.MaxReach))
+                sink.Error(Code, $"{p}.reach", $"reach (more than 0, at most {IntakeDefinition.MaxReach:0} m) is required.");
+            if (intake.Throw is { } toss && !(toss >= 0 && toss <= IntakeDefinition.MaxReach))
+                sink.Error(Code, $"{p}.throw", $"throw must be 0 to {IntakeDefinition.MaxReach:0} m.");
+            KnownKeys.WarnUnknown(intake.Extra, p, sink, typeof(IntakeDefinition));
+        }
+    }
+
+    // 0, 1 or 2 for a unit normal along x, y or z; null for any other direction.
+    private static int? AxisOf(Vec3 n)
+    {
+        var values = new[] { n.X, n.Y, n.Z };
+        var axis = Array.FindIndex(values, v => MathF.Abs(MathF.Abs(v) - 1) < 1e-3f);
+        return axis >= 0 && values.Where((v, i) => i != axis).All(v => MathF.Abs(v) < 1e-3f) ? axis : null;
+    }
+
+    // Why a port's middle is not on the face it looks out of, at the middle of one block face; null when it is.
+    private static string? PortFaceError(Vec3 position, Vec3 normal, int axis, Vec3 extent)
+    {
+        var pos = new[] { position.X, position.Y, position.Z };
+        var size = new[] { extent.X, extent.Y, extent.Z };
+        var sign = new[] { normal.X, normal.Y, normal.Z }[axis];
+        if (MathF.Abs(pos[axis] - MathF.Sign(sign) * size[axis] / 2) > Epsilon)
+            return $"must lie on the footprint's face its normal points out of ({JsonNumbers.Format(MathF.Sign(sign) * size[axis] / 2)} m along that axis)";
+        for (var i = 0; i < 3; i++)
+        {
+            if (i == axis)
+                continue;
+            // Along the face it sits on the middle of a block: half a block in from a block edge.
+            var fromEdge = (pos[i] + size[i] / 2) / MechanicaInfo.GridSize - 0.5f;
+            if (MathF.Abs(pos[i]) > size[i] / 2 || MathF.Abs(fromEdge - MathF.Round(fromEdge)) > 1e-3f)
+                return "must be the middle of one block face on the footprint (on the 0.25 m grid, half a block in)";
+        }
+        return null;
     }
 
     // A clip a station or a display names: optional, 1 to 64 characters, without the readout's '#' and '>' marks.
