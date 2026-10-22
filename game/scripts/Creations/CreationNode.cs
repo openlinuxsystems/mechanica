@@ -60,6 +60,9 @@ public partial class CreationNode : Node3D
     private readonly List<(int Part, Node3D Model, Vector3 Axis, Vector3 Pivot)> _animated = [];
     private readonly HashSet<int> _animatedParts = [];
     private readonly List<PartDisplayVisual> _displays = [];
+    // Parts' words (a sign's text), redrawn when the Creation's revision moves (a setting changed).
+    private readonly List<(int Part, Label3D Label, TextDisplayDefinition Text)> _texts = [];
+    private int _textsRevision = -1;
     private readonly List<int> _soils = [];
     private readonly Dictionary<int, Node3D> _partNodes = [];
     private readonly List<(CreationBody Body, Node3D Visual, Transform3D Placed)> _visuals = [];
@@ -198,6 +201,8 @@ public partial class CreationNode : Node3D
 
     public override void _Process(double delta)
     {
+        if (_texts.Count > 0 && _textsRevision != Creation.Revision)
+            ShowTexts();
         foreach (var (mesh, link, frame) in _shafts)
         {
             // The rod runs from the anchor to where the far side is now, along the axis.
@@ -229,6 +234,21 @@ public partial class CreationNode : Node3D
                 copy.Visible = i == 0 || i < shown;
                 copy.Transform = i < shown ? new Transform3D(Basis.Identity, rod.Axis * (length - i * rod.Segment)) * rod.Rest : rod.Rest;
             }
+        }
+    }
+
+    /// <summary>Each part's words as drawn now, by part (for tests).</summary>
+    public IEnumerable<(int Part, Label3D Label)> Texts => _texts.Select(t => (t.Part, t.Label));
+
+    private void ShowTexts()
+    {
+        _textsRevision = Creation.Revision;
+        foreach (var (part, label, text) in _texts)
+        {
+            if (Creation.FindPart(part) is not { } placed)
+                continue;
+            var definition = Creation.DefinitionOf(part);
+            PartText.Show(label, text, Core.Logic.PartSettings.Find(definition, text.Setting ?? ""), PartText.WordsOf(definition, placed.Settings, text));
         }
     }
 
@@ -457,6 +477,8 @@ public partial class CreationNode : Node3D
         _animated.Clear();
         _animatedParts.Clear();
         _displays.Clear();
+        _texts.Clear();
+        _textsRevision = -1;
         _soils.Clear();
         _partNodes.Clear();
         _visuals.Clear();
@@ -527,6 +549,12 @@ public partial class CreationNode : Node3D
                 AddAimVisual(id, aimed, shown);
             if (definition.Display is not null)
                 _displays.Add(new PartDisplayVisual(Creation.Id, id, definition, visual, shown));
+            if (definition.Display?.Text is { } text)
+            {
+                var label = PartText.Create(text);
+                shown.AddChild(label);
+                _texts.Add((id, label, text));
+            }
             _partNodes[id] = visual;
             node.AddChild(visual);
             _visuals.Add((node, visual, placed));

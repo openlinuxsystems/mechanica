@@ -20,6 +20,7 @@
   "markers": [
     { "type": "part", "ref": "wooden_crate", "at": [-7.5, 0.0, 2.0], "loot": "crate", "loot_rolls": [2, 4] },
     { "type": "part", "ref": "scrap_seat", "at": [2.4, 0.0, 0.0], "yaw": 90.0 },
-    { "type": "part", "ref": "shack_light", "at": [3.0, 0.0, 4.0] }
+    { "type": "part", "ref": "shack_light", "at": [3.0, 0.0, 4.0] },
+    { "type": "part", "ref": "signboard", "at": [-6.0, 0.0, 8.0], "yaw": 0.0, "settings": { "text": "WATER {direction:pond|pond_large} {distance:pond|pond_large}\nWORKSHOP {direction:outpost|poi_02|poi_13} {distance:outpost|poi_02|poi_13}" } }
   ]
 }

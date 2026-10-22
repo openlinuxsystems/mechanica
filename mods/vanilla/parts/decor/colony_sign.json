@@ -1,0 +1,39 @@
+{
+  "id": "colony_sign",
+  "name": "Colony Sign",
+  "description": "A Colony plate on two posts for place names and distances: use it to set its words (3 lines).",
+  "category": "decor",
+  "mass": 5,
+  "durability": 3,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [4, 6, 1],
+  "mesh": "meshes/parts/colony_sign.glb",
+  "icon": "textures/items/colony_sign_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "settings": [
+    {
+      "id": "text",
+      "name": "Text",
+      "type": "text",
+      "max_length": 48,
+      "lines": 3
+    }
+  ],
+  "display": {
+    "text": {
+      "setting": "text",
+      "at": [0, 0.39, 0.004],
+      "size": [
+        0.74,
+        0.36
+      ],
+      "color": "#2b2f35"
+    }
+  }
+}

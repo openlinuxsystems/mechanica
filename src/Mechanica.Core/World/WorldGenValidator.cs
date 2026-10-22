@@ -569,6 +569,9 @@ internal static class WorldGenValidator
             sink.Error(code, $"{path}.loot", $"'{id}' has no inventory to hold loot: loot is for containers.");
         else if (marker.Loot is not null && definition.Inventory?.Slots is { } slots && WorldLoot.RollsOf(marker).Max > slots)
             sink.Warning(code, $"{path}.loot_rolls", $"'{id}' has only {slots} slots, so a fill of more than {slots} draws leaves some out.");
+        if (marker.Settings is { } settings && parts.FindDefinition(id) is { IsPlaceable: true } placeable
+            && Logic.PartSettings.Check(placeable, SignText.Longest(settings)) is { } bad)
+            sink.Error(code, $"{path}.settings", bad);
     }
 
     // A derelict marker names a derelict that loaded (a bare ref is the POI's mod's), and holds no loot.
@@ -794,6 +797,8 @@ internal static class WorldGenValidator
             else if (marker.Loot is not null || marker.LootRolls is not null || marker.RefillDays is not null)
                 sink.Error(code, $"{path}.{(marker.Loot is not null ? "loot" : marker.LootRolls is not null ? "loot_rolls" : "refill_days")}",
                     "loot, loot_rolls and refill_days are for part markers only (a container the world places).");
+            if (marker.Type != PoiMarker.PartType && marker.Settings is not null)
+                sink.Error(code, $"{path}.settings", "settings are for part markers only (a part the world places).");
         }
         for (var i = 0; i < (prefab.Pools?.Count ?? 0); i++)
         {

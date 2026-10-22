@@ -528,6 +528,9 @@ public partial class PartSettingsPanel : CanvasLayer
                 };
                 column.AddChild(Sequence);
                 break;
+            case SettingType.Text:
+                row.AddChild(TextField(setting, value.GetString() ?? ""));
+                break;
             default:
                 var edit = new LineEdit
                 {
@@ -552,6 +555,54 @@ public partial class PartSettingsPanel : CanvasLayer
                 row.AddChild(edit);
                 break;
         }
+        return column;
+    }
+
+    // A text setting (a sign's words): one line edits in place and is sent on Enter; more lines get a box and a Write
+    // button. Both stop at the setting's length and line count, as the host does.
+    private Control TextField(SettingDefinition setting, string text)
+    {
+        var max = setting.MaxLength ?? 0;
+        var lines = setting.Lines ?? 1;
+        if (lines == 1)
+        {
+            var line = Loc.Verbatim(new LineEdit { Name = "Text", Text = text, MaxLength = max, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
+            line.TextSubmitted += value => Send(setting.Id!, JsonSerializer.SerializeToElement(value));
+            return line;
+        }
+        var column = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        var box = Loc.Verbatim(new TextEdit
+        {
+            Name = "Text", Text = text, WrapMode = TextEdit.LineWrappingMode.None,
+            CustomMinimumSize = new Vector2(0, 30 * lines + 12), SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+        });
+        var count = new Label { Name = "Count", HorizontalAlignment = HorizontalAlignment.Right };
+        var write = new Button { Name = "Write", Text = "Write", CustomMinimumSize = new Vector2(96, 32), SizeFlagsHorizontal = Control.SizeFlags.ShrinkEnd };
+        void Changed()
+        {
+            // Keep it inside the limits as it is typed: no line past the count, no character past the length.
+            var value = box.Text.Replace("\r", "");
+            var kept = string.Join("\n", value.Split('\n').Take(lines));
+            if (new System.Globalization.StringInfo(kept).LengthInTextElements > max)
+                kept = new System.Globalization.StringInfo(kept).SubstringByTextElements(0, max);
+            if (kept != box.Text)
+            {
+                var caret = (box.GetCaretLine(), box.GetCaretColumn());
+                box.Text = kept;
+                box.SetCaretLine(Math.Min(caret.Item1, box.GetLineCount() - 1));
+                box.SetCaretColumn(caret.Item2);
+            }
+            count.Text = Loc.T("{0} of {1} characters", new System.Globalization.StringInfo(kept).LengthInTextElements, max);
+        }
+        box.TextChanged += Changed;
+        write.Pressed += () => Send(setting.Id!, JsonSerializer.SerializeToElement(box.Text));
+        Changed();
+        column.AddChild(box);
+        var foot = new HBoxContainer();
+        foot.AddChild(count);
+        count.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        foot.AddChild(write);
+        column.AddChild(foot);
         return column;
     }
 

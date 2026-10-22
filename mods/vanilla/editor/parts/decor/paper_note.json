@@ -1,0 +1,9 @@
+{
+  "format_version": 1,
+  "model": [
+    {
+      "kind": "mesh",
+      "mesh": "meshes/parts/paper_note.glb"
+    }
+  ]
+}

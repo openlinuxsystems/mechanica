@@ -1,0 +1,52 @@
+{
+  "id": "paper_note",
+  "name": "Paper Note",
+  "description": "A sheet of notepaper to tape to a wall, a door or a vehicle: use it to write on it (6 lines).",
+  "category": "decor",
+  "mass": 0.05,
+  "durability": 1,
+  "friction": 0.5,
+  "buoyancy": 0.4,
+  "flammable": true,
+  "stack_size": 50,
+  "sound_material": "wood",
+  "size": [1, 1, 1],
+  "mesh": "meshes/parts/paper_note.glb",
+  "icon": "textures/items/paper_note_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "collision": {
+    "shape": "box",
+    "size": [0.18, 0.24, 0.02],
+    "offset": [0, 0, -0.11]
+  },
+  "sockets": [
+    {
+      "id": "back",
+      "type": "structural",
+      "position": [0, 0, -0.125],
+      "normal": [0, 0, -1]
+    }
+  ],
+  "settings": [
+    {
+      "id": "text",
+      "name": "Text",
+      "type": "text",
+      "max_length": 120,
+      "lines": 6
+    }
+  ],
+  "display": {
+    "text": {
+      "setting": "text",
+      "at": [0, -0.01, -0.116],
+      "size": [
+        0.15,
+        0.19
+      ],
+      "color": "#4a4e54"
+    }
+  }
+}

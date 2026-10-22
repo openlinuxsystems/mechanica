@@ -99,6 +99,7 @@ def warehouse(floors, w, d):
     # Site lights and cones either side of the door, outside (added last: a marker's place in the list is its key).
     markers += [part("construction_light", [x, 0.0, hd + 2.0], yaw=180.0) for x in (-8.0, 8.0)]
     markers += [part("traffic_cone", [x, 0.0, hd + 3.0]) for x in (-5.5, 5.5)]
+    markers.append(sign("colony_sign", [4.5, 0.0, hd + 1.5], FACE_FRONT, "COLONY STORES\nStaff only\nKeys kept upstairs"))
     return pieces, markers, h
 
 
@@ -128,6 +129,20 @@ def derelict(ref, at, yaw=None):
     if yaw is not None:
         marker["yaw"] = float(yaw)
     return marker
+
+
+def sign(ref, at, yaw, text):
+    """A sign the world places with words on it (its text setting). Tokens point the way: {distance:a|b}, {direction:a|b}
+    (docs/world-generation.md, Signs that point the way)."""
+    marker = part(ref, at, yaw)
+    marker["settings"] = {"text": text}
+    return marker
+
+
+# A sign's face is its local +Z, so yaw 0 turns it to face +Z: toward a visitor coming in from the POI's front.
+FACE_FRONT = 0.0
+WORKSHOP = "outpost|poi_02|poi_13"
+WATER = "pond|pond_large"
 
 
 def silos(count, radius, height, spread):
@@ -175,7 +190,8 @@ add("small_ruin", "Small Ruin", [14, 5, 12], "track", placeholder(14, 12, 5, RUI
 add("farmer_shack", "Farmer Shack", [12, 5, 10], "track",
     placeholder(12, 10, 5, WOOD, [box([5, 2.5, 4], [10, 1.25, 4], HAY)]),
     [loot_part("wooden_crate", [-8.0, 0.3, 2.0], "crate", [2, 4]), part("barrel", [-8.0, 0.3, -2.0]),
-     derelict("farm_cart", [8.0, 0.3, -6.0], yaw=20.0)], flora="meadow", ground=None)
+     derelict("farm_cart", [8.0, 0.3, -6.0], yaw=20.0),
+     sign("signboard", [3.0, 0.3, 7.5], FACE_FRONT, "FRESH VEG\nat the farm\nWorkshop {distance:%s} {direction:%s}" % (WORKSHOP, WORKSHOP))], flora="meadow", ground=None)
 add("packing_station_vegetable", "Packing Station (Vegetable)", [36, 8, 24], "road",
     placeholder(36, 24, 8, METAL, [box([3, 3, 0.4], [0, 10, 12.2], "#5fa83a"), box([20, 1.2, 3], [0, 1.0, 15], ROOF)]),
     [loot_part("wooden_crate", [-15.0, 0.3, 14.5], "crate", [2, 4]), part("stacked_crates", [15.0, 0.3, 14.5]),
@@ -187,7 +203,8 @@ add("packing_station_fruit", "Packing Station (Fruit)", [36, 8, 24], "road",
 add("silo_cluster", "Silo Cluster", [30, 18, 30], "road",
     [box([38, 0.3, 38], [0, 0.15, 0], PAD), *silos(4, 4, 18, 8), volume(10, 8, 6, METAL, x=-10, z=12, y=0.3)],
     [loot_part("metal_crate", [2.0, 0.3, 14.0], "crate", [2, 4]), part("warning_light", [17.0, 0.3, 17.0]),
-     derelict("old_tractor", [-10.0, 0.3, -15.0], yaw=80.0)])
+     derelict("old_tractor", [-10.0, 0.3, -15.0], yaw=80.0),
+     sign("colony_sign", [-2.0, 0.3, 17.5], FACE_FRONT, "AGRI WORKS SILOS\nWorkshop {distance:%s} {direction:%s}" % (WORKSHOP, WORKSHOP))])
 add("silo_district", "Silo District", [90, 26, 70], "road",
     [box([98, 0.3, 78], [0, 0.15, 0], PAD),
      *[cylinder(5, 26, [x, 13.3, z], YELLOW) for x in (-30, -18, -6, 6) for z in (-22, -10)],
@@ -195,7 +212,8 @@ add("silo_district", "Silo District", [90, 26, 70], "road",
      box([60, 1, 1], [-12, 24, -16], "#3f6fa8"), box([0.3, 2, 30], [44, 1.3, 20], METAL)],
     [loot_part("metal_crate", [26.0, 0.3, 0.0], "warehouse_crate", [2, 4]), loot_part("wooden_crate", [-20.0, 0.3, 32.0], "crate", [2, 4]),
      part("construction_light", [10.0, 0.3, -30.0]), part("danger_sign", [0.0, 0.3, 37.0], yaw=180.0),
-     derelict("farm_trailer", [30.0, 0.3, 20.0], yaw=10.0), derelict("old_tractor", [30.0, 0.3, 28.0], yaw=10.0)])
+     derelict("farm_trailer", [30.0, 0.3, 20.0], yaw=10.0), derelict("old_tractor", [30.0, 0.3, 28.0], yaw=10.0),
+     sign("colony_sign", [6.0, 0.3, 37.0], FACE_FRONT, "SILO DISTRICT\nFarmbots loose\nKeep out")])
 add("ruin", "Ruin", [30, 10, 24], "track",
     [box([34, 0.3, 28], [0, 0.15, 0], RUIN), volume(30, 0.5, 10, RUIN, z=-12), volume(0.5, 24, 7, RUIN, x=-15),
      volume(12, 0.5, 4, RUIN, x=9, z=12), volume(14, 12, 3, RUIN, x=6, z=-4, y=0.3)],
@@ -210,14 +228,16 @@ add("campsite", "Campsite", [20, 3, 20], "track",
      box([4, 2.8, 5], [0, 1.4, 6], "#8a6a4a"), cylinder(1, 0.4, [0, 0.2, 0], BURNT)],
     # A crate by the tents, a seat facing the fire pit and a light by the hut.
     [loot_part("wooden_crate", [-7.5, 0.0, 2.0], "crate", [2, 4]), part("scrap_seat", [2.4, 0.0, 0.0], yaw=90.0),
-     part("shack_light", [3.0, 0.0, 4.0])], flora="meadow", ground=None)
+     part("shack_light", [3.0, 0.0, 4.0]),
+     sign("signboard", [-6.0, 0.0, 8.0], FACE_FRONT, "WATER {direction:%s} {distance:%s}\nWORKSHOP {direction:%s} {distance:%s}" % (WATER, WATER, WORKSHOP, WORKSHOP))], flora="meadow", ground=None)
 add("large_camp", "Large Camp", [50, 4, 40], "track",
     [box([54, 0.3, 44], [0, 0.15, 0], "#8a7a5a"),
      *[box([4, 3, 5], [x, 1.8, z], "#5f8a4a") for x in (-18, -9, 9, 18) for z in (-12, 12)],
      volume(12, 8, 4, WOOD, y=0.3), *[box([2, 2, 2], [x, 1.3, 18], HAY) for x in (-20, -16, 16, 20)]],
     [loot_part("chest", [0.0, 0.3, -6.0], "crate", [2, 4]), loot_part("wooden_crate", [0.0, 0.3, 8.0], "crate", [2, 4]),
      part("shack_light", [-8.0, 0.3, 0.0]), part("shack_light", [8.0, 0.3, 0.0]), part("scrap_seat", [4.0, 0.3, 6.0], yaw=180.0),
-     part("chair", [-4.0, 0.3, 6.0], yaw=180.0), derelict("go_kart", [0.0, 0.3, 14.0], yaw=90.0)])
+     part("chair", [-4.0, 0.3, 6.0], yaw=180.0), derelict("go_kart", [0.0, 0.3, 14.0], yaw=90.0),
+     sign("signboard", [6.0, 0.3, 20.5], FACE_FRONT, "SETTLERS' CAMP\nTrade, rest, mend\nWorkshop {distance:%s} {direction:%s}" % (WORKSHOP, WORKSHOP))])
 add("growlab", "Growlab", [30, 8, 20], "road",
     placeholder(30, 20, 8, GLASS, [volume(10, 8, 6, METAL, x=-20, y=0.3)]),
     [loot_part("metal_crate", [12.0, 0.3, 12.5], "crate", [2, 4])])
@@ -252,7 +272,8 @@ add("camp", "Camp", [14, 3, 14], "track",
     [box([3, 2.2, 4], [-4, 1.1, -3], TENT, 20), box([3, 2.0, 3.5], [4, 1.0, -2], CANVAS, -25), cylinder(0.8, 0.3, [0, 0.15, 2], BURNT),
      box([2.2, 0.4, 0.5], [-1.8, 0.2, 3.6], WOOD, 70)],
     [loot_part("wooden_crate", [5.0, 0.0, 4.0], "crate", [2, 4]), loot_part("wooden_crate", [-4.0, 0.0, 0.0], "crate", [2, 4]),
-     part("scrap_seat", [2.0, 0.0, 2.0], yaw=90.0), part("shack_light", [1.0, 0.0, -1.5])],
+     part("scrap_seat", [2.0, 0.0, 2.0], yaw=90.0), part("shack_light", [1.0, 0.0, -1.5]),
+     sign("signboard", [-3.5, 0.0, 5.5], FACE_FRONT, "Gone for parts\nWorkshop {distance:%s} {direction:%s}\nBack by dark" % (WORKSHOP, WORKSHOP))],
     ground="dirt", margin=12,
     spacing={"spacing": [570.0, 820.0], "biomes": ["forest", "autumn_forest", "burned_forest"], "priority": 20, "clearance": 48.0})
 add("forest_ruin", "Forest Ruin", [16, 5, 16], "track",
@@ -326,7 +347,8 @@ add("farmbot_scrapyard", "Farmbot Scrapyard", [60, 6, 50], "none",
      part("stacked_crates", [26.0, 0.3, 20.0]), part("scrap_wheel", [14.0, 0.3, -5.0]), part("scrap_wheel", [-15.0, 0.3, 3.0]),
      part("scrap_drivers_seat", [-15.0, 0.3, -1.0], yaw=40.0), part("scrap_gas_engine", [12.0, 0.3, 20.0]),
      derelict("old_tractor", [20.0, 0.3, -6.0], yaw=15.0), derelict("flatbed_hauler", [-5.0, 0.3, -10.0], yaw=90.0),
-     derelict("scrap_buggy", [5.0, 0.3, -5.0], yaw=-10.0)],
+     derelict("scrap_buggy", [5.0, 0.3, -5.0], yaw=-10.0),
+     sign("signboard", [10.0, 0.3, 25.5], FACE_FRONT, "SCRAPYARD\nTake what you need\nMind the Farmbots")],
     ground="burnt")
 add("capsule_scrapyard", "Capsule Scrapyard", [50, 6, 40], "track",
     [box([54, 0.3, 44], [0, 0.15, 0], PAD),
@@ -348,7 +370,8 @@ add("ruin_city", "Ruin City", [160, 40, 140], "road",
     [loot_part("ruin_chest", [0.0, 0.3, -25.0], "ruin_chest", [1, 6], refill_days=5),
      loot_part("wooden_crate", [-40.0, 0.3, -15.0], "crate", [2, 4]), loot_part("metal_crate", [40.0, 0.3, -20.0], "warehouse_crate", [2, 4]),
      loot_part("wooden_crate", [0.0, 0.3, 40.0], "crate", [2, 4]), part("danger_sign", [0.0, 0.3, 70.0], yaw=180.0),
-     part("traffic_cone", [-12.0, 0.6, 24.0]), part("traffic_cone", [12.0, 0.6, 28.0])])
+     part("traffic_cone", [-12.0, 0.6, 24.0]), part("traffic_cone", [12.0, 0.6, 28.0]),
+     sign("colony_sign", [7.0, 0.3, 70.0], FACE_FRONT, "COLONY TOWN\nEVACUATED\nDo not enter")])
 add("haymaze", "Haymaze", [60, 3, 60], "road",
     [box([64, 0.3, 64], [0, 0.15, 0], "#8a7a5a"),
      *[box([w, 3, 2], [x, 1.8, z], HAY) for w, x, z in [(60, 0, -29), (60, 0, 29), (40, -10, -15), (40, 10, 0), (40, -10, 15)]],

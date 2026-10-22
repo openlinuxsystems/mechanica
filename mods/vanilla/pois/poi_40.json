@@ -30,6 +30,7 @@
     { "type": "part", "ref": "wooden_crate", "at": [0.0, 0.3, 40.0], "loot": "crate", "loot_rolls": [2, 4] },
     { "type": "part", "ref": "danger_sign", "at": [0.0, 0.3, 70.0], "yaw": 180.0 },
     { "type": "part", "ref": "traffic_cone", "at": [-12.0, 0.6, 24.0] },
-    { "type": "part", "ref": "traffic_cone", "at": [12.0, 0.6, 28.0] }
+    { "type": "part", "ref": "traffic_cone", "at": [12.0, 0.6, 28.0] },
+    { "type": "part", "ref": "colony_sign", "at": [7.0, 0.3, 70.0], "yaw": 0.0, "settings": { "text": "COLONY TOWN\nEVACUATED\nDo not enter" } }
   ]
 }
