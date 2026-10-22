@@ -175,7 +175,8 @@ public partial class LadderTest : StagedTest
             Me.CurrentInput = PlayerInput.None;
             if (frame == 0)
             {
-                var at = HostBody.GlobalTransform * new Vector3(0.6f, 0.3f, 1.4f);
+                // On the floor half a metre in front of the container (its face is at z = 1.375); 1.4 put the player into it.
+                var at = HostBody.GlobalTransform * new Vector3(0.6f, 0.3f, 0.9f);
                 _host.Main.PlayerSync.HostTeleport(Peer, at);
             }
             var tools = _client.Main.Tools!;
