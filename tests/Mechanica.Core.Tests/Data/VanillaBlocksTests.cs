@@ -230,7 +230,7 @@ public class VanillaBlocksTests
     [InlineData("survival.json", 34)]
     [InlineData("joints.json", 4)]
     [InlineData("decor.json", 35)]
-    [InlineData("parts_building.json", 8)]
+    [InlineData("parts_building.json", 16)]
     [InlineData("containers_stations.json", 3)]
     [InlineData("containers.json", 18)]
     [InlineData("lights_utility.json", 27)]

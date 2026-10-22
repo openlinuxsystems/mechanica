@@ -1,0 +1,20 @@
+{
+  "id": "net_fence",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "net_block",
+      "count": 5
+    }
+  ],
+  "outputs": [
+    {
+      "item": "net_fence",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 2950
+}

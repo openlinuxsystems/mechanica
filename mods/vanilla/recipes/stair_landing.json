@@ -1,0 +1,24 @@
+{
+  "id": "stair_landing",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 6
+    },
+    {
+      "item": "net_block",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "stair_landing",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 214
+}

@@ -4,7 +4,7 @@ using Mechanica.Core.Items;
 namespace Mechanica.Core.Tests.Data;
 
 /// <summary>
-/// The parts map's batches 11 and 12 (stairs, railings, windows, windshields and signs; batches 11a so far): each
+/// The parts map's batches 11 and 12 (stairs, railings, windows, windshields and signs; batches 11a, 11b so far): each
 /// part has the wiki's stats and recipe, its own model and icon (tools/parts_building/build_parts.py) and its place in
 /// the Fabricator's list.
 /// </summary>
@@ -25,6 +25,14 @@ public class PartsBuildingTests
     [InlineData("window_large", 3, 3, 0.2, 0.3, false, 8, 4, 1)]
     [InlineData("windshield_large", 3, 3, 0.2, 0.3, false, 8, 5, 3)]
     [InlineData("window_metal", 10.5, 5, 0.7, 0.1, false, 4, 4, 1)]
+    [InlineData("net_fence", 6, 4, 0.6, 0.2, false, 7, 4, 1)]
+    [InlineData("window_square", 3, 3, 0.2, 0.3, false, 4, 4, 1)]
+    [InlineData("stair_baluster", 6, 4, 0.5, 0.2, false, 1, 4, 1)]
+    [InlineData("stair_banister", 6, 4, 0.5, 0.2, false, 1, 4, 1)]
+    [InlineData("stair_landing", 6, 5, 0.5, 0.2, false, 8, 1, 8)]
+    [InlineData("metal_railing_long", 6, 4, 0.5, 0.2, false, 8, 4, 1)]
+    [InlineData("railing_join", 6, 4, 0.5, 0.2, false, 1, 1, 1)]
+    [InlineData("stair_step", 6, 5, 0.5, 0.2, false, 6, 1, 1)]
     public void TakesTheWikiStatsAtOurSize(string id, double mass, int durability, double friction, double buoyancy,
         bool flammable, int x, int y, int z)
     {
@@ -45,6 +53,14 @@ public class PartsBuildingTests
     [InlineData("window_large", 10, 2920, "glass_block:15", "metal_block:10")]
     [InlineData("windshield_large", 10, 1585, "glass_block:20", "metal_block:10")]
     [InlineData("window_metal", 5, 2930, "metal_block:5", "glass_block:2")]
+    [InlineData("net_fence", 5, 2950, "net_block:5")]
+    [InlineData("window_square", 10, 2910, "glass_block:10", "metal_block:10")]
+    [InlineData("stair_baluster", 2, 248, "metal_block:1")]
+    [InlineData("stair_banister", 2, 246, "metal_block:1")]
+    [InlineData("stair_landing", 5, 214, "metal_block:6", "net_block:2")]
+    [InlineData("metal_railing_long", 2, 242, "metal_block:2")]
+    [InlineData("railing_join", 2, 244, "metal_block:1")]
+    [InlineData("stair_step", 2, 212, "metal_block:1")]
     public void TakesTheWikiRecipeInItsGroup(string id, float time, int order, params string[] inputs)
     {
         var book = RecipeBook.Load(Vanilla.Value);
@@ -67,6 +83,14 @@ public class PartsBuildingTests
     [InlineData("window_large")]
     [InlineData("windshield_large")]
     [InlineData("window_metal")]
+    [InlineData("net_fence")]
+    [InlineData("window_square")]
+    [InlineData("stair_baluster")]
+    [InlineData("stair_banister")]
+    [InlineData("stair_landing")]
+    [InlineData("metal_railing_long")]
+    [InlineData("railing_join")]
+    [InlineData("stair_step")]
     public void HasItsOwnModelAndIcon(string id)
     {
         var part = Part(id);

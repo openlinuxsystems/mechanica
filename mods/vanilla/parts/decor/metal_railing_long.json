@@ -1,0 +1,19 @@
+{
+  "id": "metal_railing_long",
+  "name": "Metal Railing (Long)",
+  "description": "A 2 m Colony handrail on three posts.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 4,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [8, 4, 1],
+  "mesh": "meshes/parts/metal_railing_long.glb",
+  "icon": "textures/items/metal_railing_long_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}
