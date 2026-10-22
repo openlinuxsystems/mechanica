@@ -198,6 +198,21 @@ public class PartValidationTests
     }
 
     [Fact]
+    public void AHeldSprayIsCheckedAndWantsHoldUse()
+    {
+        Assert.Empty(Check(
+            """{ "id": "a", "name": "A", "category": "tool", "mesh": "meshes/a.glb", "held": { "hold_use": true, "spray": { "color": "#f0f0f0", "length": 5, "angle": 20, "size": 0.1 } } }""",
+            mods => mods.File("m", "meshes/a.glb", "x")));
+        var diagnostics = Check("""
+            { "id": "a", "name": "A", "category": "tool", "mesh": "meshes/a.glb",
+              "held": { "spray": { "color": "white", "length": 40, "angle": 90, "size": 0, "fog": 1 } } }
+            """, mods => mods.File("m", "meshes/a.glb", "x"));
+        Assert.Equal(["$.held.spray", "$.held.spray.angle", "$.held.spray.color", "$.held.spray.fog", "$.held.spray.length", "$.held.spray.size"],
+            diagnostics.Select(d => d.JsonPath).Order(StringComparer.Ordinal));
+        Assert.Contains(diagnostics, d => d.JsonPath == "$.held.spray" && d.Message.Contains("hold_use", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void ItemsCannotHaveSockets()
     {
         var error = Single("""

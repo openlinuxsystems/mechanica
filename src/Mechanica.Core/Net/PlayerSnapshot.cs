@@ -55,7 +55,7 @@ public enum BodyFlags : byte
     /// <summary>In a seat.</summary>
     Seated = 8,
 
-    /// <summary>The tool in hand raised: the Sledgehammer up to block, the Connect Tool aimed, the Paint Tool spraying.</summary>
+    /// <summary>The tool in hand raised: the Sledgehammer up to block, the Connect Tool aimed, the Paint Tool spraying, a held item sprayed (Use held).</summary>
     Guard = 16,
 
     /// <summary>On a ladder (<see cref="Player.LadderClimb"/>).</summary>

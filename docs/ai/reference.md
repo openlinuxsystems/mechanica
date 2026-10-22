@@ -2,7 +2,7 @@
 
 <!-- Generated from mechanica.describe by tools/ai/gen-docs.sh. Do not edit by hand. -->
 
-Protocol version 2. 179 methods: 69 actions (change the world), 31 queries (only read it) and 79 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
+Protocol version 2. 180 methods: 70 actions (change the world), 31 queries (only read it) and 79 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
 
 ## Contents
 
@@ -21,7 +21,7 @@ Protocol version 2. 179 methods: 69 actions (change the world), 31 queries (only
 - [Motion and physics primitives](#motion-and-physics-primitives) (7)
 - [Quests](#quests) (3)
 - [Survival](#survival) (12)
-- [Using held items](#using-held-items) (4)
+- [Using held items](#using-held-items) (5)
 - [World](#world) (9)
 - [Editors (editor.*)](#editors-editor) (30)
 - [Lua tools (lua.*)](#lua-tools-lua) (3)
@@ -1265,6 +1265,16 @@ Taking an item in hand, or emptying the hand (EquipItemArgs). Arguments of Equip
 |-------|------|----------|---------|-------------|
 | `slot` | integer or null |  |  | The slot holding the item; omitted (null) empties the hand. |
 
+### `ReleaseItem`
+
+*action, play scope*
+
+Letting go of Use after a held use (ReleaseItemArgs). Arguments of ReleaseItem: the caller lets go of Use after a held use (Hold).
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `slot` | integer or null |  |  | The slot they used, if given; the host lets go of whatever they hold either way. |
+
 ### `ReloadItem`
 
 *action, play scope*
@@ -1287,6 +1297,7 @@ Using the item in a slot (UseItemArgs). Arguments of UseItem: use the item in a 
 | `direction` | number[3] or null |  |  | Where the caller aims from their eyes; the host checks it against where they look. Omitted means where they look. |
 | `creation` | integer or null |  |  | The Creation of the part the item is used on (soil for a seed), if any. Give it with Part. |
 | `part` | integer or null |  |  | The part the item is used on, if any. The script checks reach (farm.soil does). |
+| `hold` | boolean |  | `false` | True when Use stays held after this use (a spray): the script sees holder.using() true every step until ReleaseItem. |
 
 ## World
 

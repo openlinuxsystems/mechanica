@@ -221,6 +221,10 @@ public partial class PlayerController : CharacterBody3D
         _head.Position = new Vector3(0, _eyeHeight, 0) + ShownLocalOffset;
         _bodyMesh.Position = _shape.Position + ShownLocalOffset;
         _lastShown = ShownPosition;
+        // Another camera made current says nothing to this one (a remote player's camera can be its viewport's first,
+        // so current, until the local player's takes over): keep the body's visibility in step with it.
+        if ((_character?.Visible ?? _bodyMesh.Visible) != BodyVisible)
+            UpdateBodyVisibility();
         StepJolt((float)delta);
     }
 

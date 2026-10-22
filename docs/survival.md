@@ -30,7 +30,7 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
 | Key | What it does |
 |-----|--------------|
 | 1 to 9, 0 / scroll | Pick the hotbar slot holding the item; it goes in hand. |
-| Left click (item in hand) | Use it (all Lua item scripts): eat food, fire a weapon, plant a seed in the soil you aim at or water it, or throw the water out of a full bucket. With an empty water bucket in hand, aiming at water fills it. |
+| Left click (item in hand) | Use it (all Lua item scripts): eat food, fire a weapon, plant a seed in the soil you aim at or water it, or throw the water out of a full bucket; hold it with a Fire Extinguisher to spray foam. With an empty water bucket in hand, aiming at water fills it. |
 | G (item in hand) | Drop one of the item on the ground. |
 | E | Harvest the ripe crop you aim at, sleep in the bed you aim at (you respawn there), or pick up the nearest pile of items. |
 | E (dead) | Respawn, once the respawn delay is over. |
@@ -112,6 +112,10 @@ Fire (D13) burns in Survival and Creative alike, on the host, and every player s
   bucket comes back empty. A water cannon's jet takes its own `douse` off every fire along it, so a few shots
   put one out; it fires the full buckets in the Water Containers linked to it, ten jets a bucket (the empty
   buckets stay in the container for now). Fill empty buckets at any water, such as the pond by the crash site.
+  A **Fire Extinguisher** (crafted at the Fabricator, 3 Metal Block and 1 Chemical make 2, or found in loot crates and
+  Bloom Pods) sprays foam while Left click is held: every fire within its `range` and `angle` of where you look loses
+  its `douse` strength a second, so a fire goes out in under a second. One sprays for `spray_seconds` and is used up,
+  then the next in the stack carries on (`scripts/extinguisher.lua`, numbers in its part's `properties`).
 - **Saved** with the world: fires at POI markers by marker (an out one stays out), and a burning part's
   strength on the part.
 
@@ -171,12 +175,13 @@ their item's properties.
 
 | Action | Arguments | Notes |
 |--------|-----------|-------|
-| `UseItem` | `slot`, `direction?`, `creation?`, `part?` | Runs the item's script: eat, fire, plant, water. `direction` (from the caller's eyes) must be within `aim_tolerance` degrees of where they look; omitted means where they look. `creation` and `part` name the part it is used on (the soil a seed goes in, which must be in reach). The script's `can_use` may refuse it; what `on_use` returns is the result (the hitscan potato guns return `{hits}`, the Launcher and Popper `{projectiles}`, food `{health}`, seeds and water the soil). |
+| `UseItem` | `slot`, `direction?`, `creation?`, `part?`, `hold?` | Runs the item's script: eat, fire, plant, water, spray. With `hold` (an item with `held.hold_use`, the Fire Extinguisher) Use stays held after `on_use`: the script sees `holder.using()` every step until `ReleaseItem`. `direction` (from the caller's eyes) must be within `aim_tolerance` degrees of where they look; omitted means where they look. `creation` and `part` name the part it is used on (the soil a seed goes in, which must be in reach). The script's `can_use` may refuse it; what `on_use` returns is the result (the hitscan potato guns return `{hits}`, the Launcher and Popper `{projectiles}`, food `{health}`, seeds and water the soil). |
 | `EquipItem` | `slot?` | Says which scripted item is in hand (its `on_equip` and `on_unequip`); no slot empties the hand. |
 | `ActivatePart` | `creation`, `part` | On a soil part in reach with a ripe crop: harvests it (the soil script's `can_activate` and `on_activate`). Refused with "not ripe yet", "Nothing is growing there." or "Make room in your inventory first."; the result is `{items: [{item, count}]}`. (Crops used to use `Harvest`; that action now gathers world objects with `harvest: true`.) |
 | `Harvest` | `object` | A world object in reach whose kind has `harvest: true` in `worldgen.json` (an oil geyser): what it gives goes into the inventory. Returns `{taken, left}`; what did not fit is left on the ground. |
 | `StartRefine`, `FinishRefine`, `CancelRefine` | `object`, or `creation` and `part`; same; none | Holding E on a resource node (`object`, a tree or rock) or a loose part that refines (`creation`, `part`). `StartRefine` when E goes down, `FinishRefine` once it has been held long enough (refused if the player walked away), `CancelRefine` when it is let go early. `FinishRefine` returns `{taken, left}`. |
 | `AimItem` | `on` | Starts (`true`) or stops aiming the item in hand: right click held with a weapon. |
+| `ReleaseItem` | `slot?` | Lets go of Use after a held use (`UseItem` with `hold`): the script's `on_use_release`. Letting go when nothing is held does nothing. |
 | `ReloadItem` | `slot` | Reloads the item in the slot (its script's `on_reload_item`). |
 | `SetFriendlyFire` | `on` | Host only: turns friendly fire on or off. |
 | `CollectWater` | `point`, `slot?` | A point on water in reach; turns every empty `bucket_item` the caller carries into a full `water_item` (the one in `slot`, or the first, first), each in the same slot when it was the last of its stack; with no room for the rest, the others stay empty. In a pool of a liquid with a `bucket` item they turn into that instead (a Chemical Bucket), and in one with only `collect` the caller gets those items and the buckets stay empty. Returns `{slot}`, where the full bucket is. |

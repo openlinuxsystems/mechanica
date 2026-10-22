@@ -20,6 +20,9 @@ namespace Mechanica.Game.Building;
 /// A weapon with an <c>aim</c> section aims while right click is held: the view zooms in a little and the crosshair
 /// tightens (<c>AimItem</c>); left click fires, and so does letting go when it fires on release. Reload (R) runs
 /// <c>ReloadItem</c>. Any other item's right click picks parts up, as with an empty hand (<see cref="HandTool.PickUp"/>). The rounds loaded and the ammo carried show on its hotbar slot and the HUD (UI spec §10).
+/// An item whose <c>held.hold_use</c> is set (the Fire Extinguisher) is held, not clicked: pressing left click sends
+/// <c>UseItem</c> with <c>hold</c> and letting go sends <c>ReleaseItem</c>, and while it is held the player's guard flag
+/// tells every peer to draw its spray (<see cref="Player.HeldSprays"/>).
 /// <list type="bullet">
 /// <item>An item with a script (food, weapons, seeds, water; chunk 20b): <c>UseItem</c> where the crosshair
 /// points, with the part under it when that is in reach (the soil a seed is planted in). Its Lua decides
@@ -37,6 +40,8 @@ public partial class ItemTool : HandTool
     // The scripted item the host was last told is in hand: (item, slot), or null for none.
     private (string Item, int Slot)? _equipped;
     private bool _aiming;
+    // The held item whose Use is held down (held.hold_use), or null.
+    private (string Item, int Slot)? _holding;
     // When a bucket gesture under way lets the next click start (ms).
     private ulong _busyUntil;
 
@@ -95,7 +100,10 @@ public partial class ItemTool : HandTool
     public void Choose(string? item) => (_chosen, _empty) = (item, item is null);
 
     /// <summary>Uses the item in hand on what the crosshair points at. False when there is nothing to do.</summary>
-    public bool Use(Action<ActionResult>? done = null)
+    public bool Use(Action<ActionResult>? done = null) => Use(false, done);
+
+    // Uses the item in hand; with hold, Use stays held on the host until ReleaseItem.
+    private bool Use(bool hold, Action<ActionResult>? done)
     {
         var hand = InHand;
         var item = hand is null ? null : Survival.Catalog.FindDefinition(hand.Item);
@@ -110,9 +118,50 @@ public partial class ItemTool : HandTool
         if (item is null || !IsScripted(item))
             return false;
         var aim = -Player.Camera.GlobalBasis.Z;
-        Send(ScriptRuntime.UseItem, new UseItemArgs(hand!.Slot, new Vec3(aim.X, aim.Y, aim.Z), aimed?.Node.Creation.Id, aimed?.Part), done);
+        Send(ScriptRuntime.UseItem, new UseItemArgs(hand!.Slot, new Vec3(aim.X, aim.Y, aim.Z), aimed?.Node.Creation.Id, aimed?.Part, hold), done);
         return true;
     }
+
+    /// <summary>True while Use is held down with a held-use item (<c>held.hold_use</c>: the Fire Extinguisher spraying).</summary>
+    public bool Holding => _holding is not null;
+
+    /// <summary>
+    /// Presses Use and keeps it held with an item whose <c>held.hold_use</c> is set: the host runs its <c>on_use</c> and its
+    /// script sees <c>holder.using()</c> until <see cref="LetGo"/>, and every peer sees it spray. False when the item in hand
+    /// is not held to use.
+    /// </summary>
+    public bool Hold(Action<ActionResult>? done = null)
+    {
+        if (InHand is not { } hand || !HoldsUse(hand.Item))
+            return false;
+        if (_holding is not null)
+            return true;
+        var holding = (hand.Item, hand.Slot);
+        _holding = holding;
+        Player.HeldGuard = true;
+        if (!Use(true, result =>
+            {
+                if (!result.Ok && _holding == holding)
+                    LetGo();
+                done?.Invoke(result);
+            }))
+            LetGo();
+        return true;
+    }
+
+    /// <summary>Lets go of a held Use (<see cref="Hold"/>): <c>ReleaseItem</c>, and the spray stops on every peer.</summary>
+    public void LetGo(Action<ActionResult>? done = null)
+    {
+        if (_holding is not { } holding)
+            return;
+        _holding = null;
+        Player.HeldGuard = false;
+        // Not through Send: the answer to the use stays on the HUD.
+        Actions.Request(ScriptRuntime.ReleaseItem, new ReleaseItemArgs(holding.Slot), result => done?.Invoke(result));
+    }
+
+    // An item held to use rather than clicked (a spray).
+    private bool HoldsUse(string item) => Survival.Catalog.FindDefinition(item) is { Held.HoldUse: true } d && IsScripted(d);
 
     /// <summary>
     /// Use (E) on an animal: with a food it eats in hand it feeds it (<see cref="BotActions.FeedBot"/>), towards taming it,
@@ -236,6 +285,8 @@ public partial class ItemTool : HandTool
     {
         if (Pressed(@event, InputActions.Primary))
             Click(Input.IsActionPressed(InputActions.ForceBuild));
+        else if (Released(@event, InputActions.Primary) && _holding is not null)
+            LetGo();
         else if (Pressed(@event, InputActions.Drop))
             DropOne();
         else if (Pressed(@event, InputActions.Reload))
@@ -258,6 +309,8 @@ public partial class ItemTool : HandTool
     {
         if (Time.GetTicksMsec() < _busyUntil)
             return; // the bucket is still swinging from the last one, or the last bite still being eaten
+        if (!place && Hold())
+            return; // a spray: held until left click is let go
         if (BucketGesture(place) is var bucket and not CharacterGesture.None)
         {
             Player.Gesture(bucket);
@@ -298,7 +351,10 @@ public partial class ItemTool : HandTool
     protected override void OnActiveChanged()
     {
         if (!Active)
+        {
             Aim(false);
+            LetGo();
+        }
     }
 
     public override void _Process(double delta)
@@ -306,6 +362,10 @@ public partial class ItemTool : HandTool
         // A release the tool never heard (the mouse freed for a window, another item in hand) ends the aim.
         if (_aiming && (!Active || AimOfHand is null || (ReadDeviceInput && Input.MouseMode != Input.MouseModeEnum.Captured)))
             Aim(false);
+        // So does a held Use: let go unheard, the item gone from the hand (used up) or the player dead.
+        if (_holding is { } holding && (!Active || InHand is not { } held || held.Item != holding.Item || Survival.Own is { Dead: true }
+            || (ReadDeviceInput && (Input.MouseMode != Input.MouseModeEnum.Captured || !Input.IsActionPressed(InputActions.Primary)))))
+            LetGo();
         // Tell the host when the scripted item in hand changes (another item, another tool, death).
         (string Item, int Slot)? want = Active && Survival.Own is not { Dead: true } && InHand is { } hand
             && Survival.Catalog.FindDefinition(hand.Item) is { } d && IsScripted(d) ? (hand.Item, hand.Slot) : null;

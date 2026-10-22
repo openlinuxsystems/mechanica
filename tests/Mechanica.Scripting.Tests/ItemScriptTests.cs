@@ -570,6 +570,115 @@ public sealed class ItemScriptTests : IDisposable
         Assert.DoesNotContain(_rig.Messages, m => m.Kind == ScriptMessageKind.Error);
     }
 
+    // ---- The Fire Extinguisher (mods/vanilla/scripts/extinguisher.lua, Consumables batch C2a) and held Use (C8) ----
+
+    private const float Step = 1f / 60;
+
+    private string Extinguisher() => _rig.AddItem("extinguisher", "scripts/extinguisher.lua", new JsonObject
+    {
+        ["spray_seconds"] = 2, ["range"] = 5, ["angle"] = 25, ["pad"] = 0.6, ["douse"] = 1.5, ["sound_interval"] = 0.4,
+    });
+
+    // Me looks along -z from (0, 1.6, 3): a fire 3 m ahead is in the cone, one 5 m to the side and one 15 m ahead are not.
+    private void LightThreeFires() => F.Fire.LightSites([new Mechanica.Core.Quests.QuestSite(0, "test:camp", Vector3.Zero, 20,
+        [new Mechanica.Core.Quests.QuestMarker(0, "fire", null, Vector3.Zero), new Mechanica.Core.Quests.QuestMarker(1, "fire", null, new Vector3(5, 0, 0)),
+            new Mechanica.Core.Quests.QuestMarker(2, "fire", null, new Vector3(0, 0, -12))])]);
+
+    private void Steps(int count)
+    {
+        for (var i = 0; i < count; i++)
+            _rig.Runtime.Update(Step);
+    }
+
+    [Fact]
+    public void HoldingUseSpraysOutTheFiresInTheConeAndUsesTheExtinguishersUp()
+    {
+        LightThreeFires();
+        var extinguisher = Extinguisher();
+        F.Pockets(Me).Add(extinguisher, 2);
+        var slot = F.SlotOf(Me, extinguisher);
+
+        Assert.True(F.Dispatch(Me, ScriptRuntime.UseItem, new { slot, hold = true }).Ok);
+        Assert.True(_rig.Runtime.IsUsing(Me.Peer));
+        Steps(30); // half a second: 0.75 of the fire ahead gone
+        var strengths = F.Fire.Fires().Select(f => f.Strength).ToList();
+        Assert.Equal(0.25f, strengths[0], 0.02f);
+        Assert.Equal([1f, 1f], strengths[1..]);
+        Steps(30);
+        Assert.Equal([0f, 1f, 1f], F.Fire.Fires().Select(f => f.Strength));
+        Assert.Equal(1, F.Fire.SitesOut("test:camp", "fire"));
+        Assert.Equal(2, F.Pockets(Me).Count(extinguisher));
+        Steps(61); // two seconds of spraying use one up; the next carries on
+        Assert.Equal(1, F.Pockets(Me).Count(extinguisher));
+
+        F.Ok(Me, ScriptRuntime.ReleaseItem, new { });
+        Assert.False(_rig.Runtime.IsUsing(Me.Peer));
+        Steps(240); // let go: no more is used
+        Assert.Equal(1, F.Pockets(Me).Count(extinguisher));
+
+        Assert.True(F.Dispatch(Me, ScriptRuntime.UseItem, new { slot, hold = true }).Ok);
+        Steps(121);
+        Assert.Equal(0, F.Pockets(Me).Count(extinguisher));
+        Steps(10); // nothing left to spray: no error
+        Assert.Equal($"Slot {slot} is empty.", _rig.Refused(Me, slot));
+        Assert.DoesNotContain(_rig.Messages, m => m.Kind == ScriptMessageKind.Error);
+    }
+
+    [Fact]
+    public void AUseWithoutHoldDoesNotSpray()
+    {
+        LightThreeFires();
+        var extinguisher = Extinguisher();
+        F.Pockets(Me).Add(extinguisher, 1);
+
+        Assert.True(_rig.Used(Me, F.SlotOf(Me, extinguisher))["spraying"]!.GetValue<bool>());
+        Assert.False(_rig.Runtime.IsUsing(Me.Peer));
+        Steps(180);
+        Assert.Equal([1f, 1f, 1f], F.Fire.Fires().Select(f => f.Strength));
+        Assert.Equal(1, F.Pockets(Me).Count(extinguisher));
+    }
+
+    [Fact]
+    public void AHeldUseEndsOnReleaseOrWhenTheItemLeavesTheHand()
+    {
+        _rig.Write("scripts/hose.lua", """
+            state.log = state.log or {}
+            function on_use(target) table.insert(state.log, "use") end
+            function on_use_release() table.insert(state.log, "release") end
+            function on_update(dt) if holder.using() then state.held = (state.held or 0) + 1 end end
+            function can_use(target) end
+            """);
+        var hose = _rig.AddItem("hose", "scripts/hose.lua");
+        F.Pockets(Me).Add(hose, 1);
+        F.Pockets(Me).Add(Crop, 1);
+        var slot = F.SlotOf(Me, hose);
+
+        F.Ok(Me, ScriptRuntime.ReleaseItem, new { }); // not holding: nothing to let go
+        Assert.True(F.Dispatch(Me, ScriptRuntime.UseItem, new { slot, hold = true }).Ok);
+        Steps(3);
+        F.Ok(Me, ScriptRuntime.ReleaseItem, new { slot });
+        F.Ok(Me, ScriptRuntime.ReleaseItem, new { }); // twice: one on_use_release
+        Steps(3);
+        Assert.True(F.Dispatch(Me, ScriptRuntime.UseItem, new { slot, hold = true }).Ok);
+        Steps(2);
+        F.Ok(Me, ScriptRuntime.EquipItem, new { slot = F.SlotOf(Me, Crop) }); // another item in hand lets go
+        Assert.False(_rig.Runtime.IsUsing(Me.Peer));
+
+        _rig.Write("scripts/hose.lua", """
+            function on_use(target) return { log = state.log, held = state.held } end
+            """);
+        Assert.Single(_rig.Runtime.CheckForChanges()); // hot reload: the state stays
+        var seen = _rig.Used(Me, slot);
+        Assert.Equal(["use", "release", "use", "release"], seen["log"]!.AsArray().Select(n => n!.GetValue<string>()));
+        Assert.Equal(5.0, seen["held"]!.GetValue<double>());
+
+        Assert.True(F.Dispatch(Me, ScriptRuntime.UseItem, new { slot, hold = true }).Ok);
+        Assert.True(_rig.Runtime.IsUsing(Me.Peer));
+        F.Survival.Damage(Me.Peer, 1000, "test"); // dying lets go too
+        Assert.False(_rig.Runtime.IsUsing(Me.Peer));
+        Assert.DoesNotContain(_rig.Messages, m => m.Kind == ScriptMessageKind.Error);
+    }
+
     [Fact]
     public void ReplacingOneOfAStackMakesRoomForTheNewItem()
     {
