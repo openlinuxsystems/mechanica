@@ -1,13 +1,15 @@
-"""The parts map's batch 7 beds and stations (see part_kit.py, light_kit.py and working_kit.py): the Respawn Bed,
-Fancy Bed, Freezer, Refiner and Anvil. The Fabricator keeps its own model (tools/fabricator).
+"""The parts map's batch 7 beds and stations (see part_kit.py, light_kit.py and working_kit.py): the Fancy Bed,
+Freezer, Refiner and Anvil, and the materials the Respawn Bed's sleeping bag (tools/respawn_bed) is built from. The
+Fabricator keeps its own model (tools/fabricator).
 
 They share the part models' vocabulary (``docs/art-direction.md``: stylised, not cartoony, framed construction, small
 bevels, round only where the real thing is round):
 
 * **Colony Works** for the beds and the Freezer: bone, steel blue and graphite paint over steel, mustard pinstripes and
-  steel bolts. The Respawn Bed is the colony's wooden bunk (it burns), the Fancy Bed its painted steel bed (it does
-  not); both have bone cotton ticking and a steel-blue wool blanket. The Freezer is a bone-enamel cabinet with a
-  steel-blue door, a frost window and the standard two-way IO port (``docs/io-ports.md``) on its right side;
+  steel bolts. The Respawn Bed is the colony's quilted steel-blue sleeping bag on a foam mat (it burns), the Fancy
+  Bed its painted steel bed (it does not), with bone cotton ticking and a steel-blue wool blanket. The Freezer is a
+  bone-enamel cabinet with a steel-blue door, a frost window and the standard two-way IO port (``docs/io-ports.md``)
+  on its right side;
 * **Salvager Tech** for the Refiner, a craftable machine like the Fabricator: hull-dark and gunmetal on a screwed
   base, copper bands and pipes, the Fabricator's port pair (input left, output right) at floor level;
 * **Settler Patchwork** for the Anvil: the camp prop ``anvil_stump`` (tools/structures/props_camp.py) as a part, a
@@ -107,16 +109,6 @@ def pillow(g, center, length, depth, height, mat, turn=0.0):
     K.squircle_loft(g, sections, mat, ring_pts=28, power=3.2, matrix=mtx)
 
 
-def corner_bracket(g, at, sx, sy, h, mat, bolt="steel"):
-    """A painted L bracket on a bed's corner post, facing out of the corner (sx, sy are the corner's signs)."""
-    x, y, z = at
-    t = 0.004
-    box(g, (x + sx * t, y - sy * 0.035, z), (t, 0.035, h), mat, bevel=0.0015)
-    box(g, (x - sx * 0.035, y + sy * t, z), (0.035, t, h), mat, bevel=0.0015)
-    bolts(g, [(x + sx * 2 * t, y - sy * 0.04, z + dz) for dz in (-h * 0.5, h * 0.5)], (sx, 0, 0), bolt, 0.005)
-    bolts(g, [(x - sx * 0.04, y + sy * 2 * t, z + dz) for dz in (-h * 0.5, h * 0.5)], (0, sy, 0), bolt, 0.005)
-
-
 def status_pip(m, g, root, name, at, n, r=0.0075):
     """A cyan status pip: its dark socket in `g` and the glow node (hidden while off)."""
     L.pip_socket(g, at, n, r)
@@ -128,56 +120,6 @@ def port(root, center, normal, mode):
     ob = gc.mount_io_port(root, center, normal, mode)
     ob.name = ob.data.name = f"IOPort_{mode}"
     return ob
-
-
-# =====================================================================================================
-# Respawn Bed (4 x 2 x 8): the colony's wooden bunk
-# =====================================================================================================
-
-def build_respawn_bed(m):
-    root = K.make_empty("RespawnBed")
-    g = Geo()
-    floor, hx, hy = -0.25, 0.5, 1.0
-    post = 0.035
-    px, py = hx - post - 0.012, hy - post - 0.012
-    # four plank posts, the head pair (+y, away from the builder) full height with caps
-    for sx in (-1, 1):
-        for sy in (-1, 1):
-            top = 0.215 if sy > 0 else 0.03
-            box(g, (sx * px, sy * py, (floor + top) / 2), (post, post, (top - floor) / 2), "plank_dark", bevel=0.006)
-            box(g, (sx * px, sy * py, top + 0.008), (post + 0.006, post + 0.006, 0.008), "steel_blue", bevel=0.003)
-            corner_bracket(g, (sx * (px + post), sy * (py + post), -0.115), sx, sy, 0.03, "steel_blue")
-    # side and end rails, a slat deck
-    for sx in (-1, 1):
-        box(g, (sx * (px + 0.006), 0, -0.115), (0.022, py - post, 0.045), "plank", bevel=0.005)
-    for sy in (-1, 1):
-        box(g, (0, sy * (py + 0.006), -0.115), (px - post, 0.022, 0.045), "plank", bevel=0.005)
-    for k in range(9):
-        y = -py + 0.1 + k * (2 * py - 0.2) / 8
-        box(g, (0, y, -0.066), (px - post, 0.045, 0.008), "plank_dark", bevel=0.002)
-    # headboard: three planks between the head posts, a steel-blue rail on top; a low footboard plank
-    for k in range(4):
-        z = -0.045 + k * 0.065
-        box(g, (0, py + 0.004, z), (px - post, 0.014, 0.03), "plank" if k % 2 else "plank_dark", bevel=0.004)
-    box(g, (0, py + 0.004, 0.198), (px - post, 0.02, 0.012), "steel_blue", bevel=0.004)
-    box(g, (0, -py - 0.004, -0.01), (px - post, 0.014, 0.03), "plank_dark", bevel=0.004)
-    # a bone name plate on the footboard, two steel screws (the colony's bunk tag, no text)
-    L.plate(g, (0, -py - 0.02, -0.01), (0.07, 0.003, 0.018), "bone", "steel", n=(0, -1, 0), inset=0.01, r=0.0035, bevel=0.0015)
-    # mattress, blanket over the lower two thirds with a sheet turned down over it, and a pillow
-    mz0, mz1 = -0.058, 0.07
-    box(g, (0, 0, (mz0 + mz1) / 2), (px - post - 0.012, py - post - 0.012, (mz1 - mz0) / 2), "ticking", bevel=0.03)
-    by0, by1 = -py + post - 0.002, 0.42
-    box(g, (0, (by0 + by1) / 2, mz1 - 0.035), (px - post - 0.004, (by1 - by0) / 2, 0.048), "wool", bevel=0.022)
-    box(g, (0, by1 - 0.07, mz1 + 0.008), (px - post - 0.002, 0.075, 0.009), "sheet", bevel=0.007)
-    cylinder(g, (-(px - post - 0.002), by1 + 0.004, mz1 + 0.004), (px - post - 0.002, by1 + 0.004, mz1 + 0.004), 0.016, "sheet", segs=14)
-    for k in (-1, 1):
-        box(g, (0, by0 + 0.33 + k * 0.035, mz1 + 0.0135), (px - post - 0.003, 0.009, 0.0018), "mustard", bevel=0.001)
-    pillow(g, (0, py - post - 0.2, mz1 + 0.045), 0.62, 0.3, 0.1, "sheet", turn=-12)
-    K.make_object("Body", g, m, root)
-    rig = {"root": root, "clips": {}}
-    rig["rest"] = lambda: None
-    rig["states"] = [("MADE", lambda: None)]
-    return rig
 
 
 # =====================================================================================================
