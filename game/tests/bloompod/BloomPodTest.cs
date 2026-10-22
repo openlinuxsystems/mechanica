@@ -9,8 +9,8 @@ namespace Mechanica.Game.Tests;
 /// <summary>
 /// Bloom Pods (the loot pods), host plus a client, on the vanilla world. A green pod near the spawn is drawn on both
 /// peers as its own animated model with its glow, settles shut and idles. The client's sledge makes it play its hit on
-/// both peers; the blow that breaks it leaves a wreck playing the break on both, and one pile of 1 to 3 different items
-/// from the Common loot table. The wreck shrinks away by itself.
+/// both peers; the blow that breaks it leaves a wreck playing the break on both, and 1 to 3 different items from the
+/// Common loot table, a pile each. The wreck shrinks away by itself.
 /// </summary>
 public partial class BloomPodTest : StagedTest
 {
@@ -92,7 +92,7 @@ public partial class BloomPodTest : StagedTest
                 Check(world.ChunkHolding(_pod.Id)!.Animated(_pod.Id)!.Playing == "hit", $"{Who(world)}: it plays its hit");
             return true;
         });
-        Add("it breaks into a wreck and one pile of Common loot", frame =>
+        Add("it breaks into a wreck and a pile per item of Common loot", frame =>
         {
             if (frame % 75 == 40 && !HostWorld.State.IsDestroyed(_pod.Id))
                 Swing();
@@ -105,9 +105,9 @@ public partial class BloomPodTest : StagedTest
                 Check(wreck?.Playing == "break", $"{Who(world)}: its wreck plays the break ({wreck?.Playing})");
             }
             var table = HostWorld.Generator.Data.Definition.LootTables!["common"].Items!.Select(e => Core.Data.Identifiers.Qualify(e.Item!)).ToHashSet();
-            var pile = _host.Main.Survival.Drops.Values.Where(d => d.Items.All(i => table.Contains(i.Item))).ToList();
-            Check(pile.Count == 1, $"one pile of loot ({_host.Main.Survival.Drops.Count} piles)");
-            var items = pile.FirstOrDefault()?.Items ?? [];
+            var piles = _host.Main.Survival.Drops.Values.Where(d => d.Items.All(i => table.Contains(i.Item))).ToList();
+            Check(piles.All(p => p.Items.Count == 1), $"one item per pile ({string.Join("; ", piles.Select(p => string.Join(", ", p.Items)))})");
+            var items = piles.SelectMany(p => p.Items).ToList();
             Check(items.Count is >= 1 and <= 3 && items.Select(i => i.Item).Distinct().Count() == items.Count,
                 $"1 to 3 different items ({string.Join(", ", items)})");
             return true;
