@@ -45,6 +45,21 @@ public sealed class DerelictTests
         Assert.True(creation.Parts.Count >= 50, $"{id} has {creation.Parts.Count} parts");
     }
 
+    [Theory]
+    [InlineData("scrap_buggy", "Workshop")]
+    [InlineData("colony_runabout", "Engine sent")]
+    [InlineData("flatbed_hauler", "scrapyard")]
+    [InlineData("old_tractor", "barn")]
+    public void SomeLeaveANoteSayingWhereThePartsWent(string id, string words)
+    {
+        var spot = Spot(id);
+        var creation = Derelicts.Build(spot, spot.Derelict!, 42, Mods.Value, 7, out var problem)!;
+        Assert.Null(problem);
+        var note = creation.Parts.Single(p => p.Part == "vanilla:paper_note");
+        Assert.Contains(words, note.Settings!["text"].GetString());
+        Assert.Null(Core.Logic.PartSettings.Check(creation.DefinitionOf(note.Id)!, note.Settings!));
+    }
+
     [Fact]
     public void TheSeedPicksWhatIsMissingAndTheSameSeedPicksTheSame()
     {

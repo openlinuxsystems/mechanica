@@ -1887,6 +1887,19 @@
           10
         ],
         "rotation": "-y+x"
+      },
+      {
+        "id": 187,
+        "part": "vanilla:paper_note",
+        "cell": [
+          -1,
+          2,
+          8
+        ],
+        "rotation": "+z+y",
+        "settings": {
+          "text": "COLONY WORKS POOL\nOut of service.\nEngine sent to the\nWorkshop for repair."
+        }
       }
     ],
     "connections": [
@@ -3189,6 +3202,11 @@
         "type": "structural",
         "a": 118,
         "b": 119
+      },
+      {
+        "type": "structural",
+        "a": 118,
+        "b": 187
       },
       {
         "type": "structural",

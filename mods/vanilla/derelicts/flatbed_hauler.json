@@ -3019,6 +3019,19 @@
           18
         ],
         "rotation": "-y+x"
+      },
+      {
+        "id": 301,
+        "part": "vanilla:paper_note",
+        "cell": [
+          -1,
+          3,
+          4
+        ],
+        "rotation": "+z+y",
+        "settings": {
+          "text": "Engine seized again.\nTook it to the\nWorkshop. Spare\nwheels at the\nscrapyard. - Dell"
+        }
       }
     ],
     "connections": [
@@ -4591,6 +4604,11 @@
         "type": "structural",
         "a": 154,
         "b": 160
+      },
+      {
+        "type": "structural",
+        "a": 154,
+        "b": 301
       },
       {
         "type": "structural",
