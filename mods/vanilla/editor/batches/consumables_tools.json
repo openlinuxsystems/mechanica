@@ -1,0 +1,62 @@
+{
+  // Consumables batch C2a (consumables map, Items to make row 4): the Fire Extinguisher. Hold Use and it sprays foam in a
+  // cone in front of the player, putting out the fires in it through the fire system (scripts/extinguisher.lua: range,
+  // angle, douse a second), and uses itself up: one lasts spray_seconds, then the next in the stack carries on. Its held
+  // model's spray (held.spray) is what every player sees while Use is held (held.hold_use). Stats are the wiki's
+  // (2/2/4/7/N, stack 100); the recipe is our own (the wiki gives none), in the Tools group after Paint Ammo. Loot in
+  // mods/vanilla/world/worldgen.json. Model and icon: tools/fire_extinguisher/build_fire_extinguisher.py. Re-run with
+  // tools/author-vanilla.sh.
+  "format_version": 1,
+  "parts": [
+    {
+      "file": "parts/fire_extinguisher.json",
+      "template": "item",
+      "set": {
+        "name": "Fire Extinguisher",
+        "description": "Hold Use to spray foam in front of you: it puts out the fires it reaches. Each one sprays for a couple of seconds and is used up, then the next carries on.",
+        "category": "consumable",
+        "mass": 3,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.7,
+        "flammable": false,
+        "stack_size": 100,
+        "sound_material": "metal",
+        "icon": "textures/items/fire_extinguisher_icon.png",
+        "visual": { "color": "#ffffff", "roughness": 0.6, "metallic": 0 },
+        "held": {
+          "mesh": "meshes/items/fire_extinguisher_held.glb",
+          "offset": [0, 0.01, 0],
+          "rotation": [-90, 0, 180],
+          "scale": 1,
+          "hold_use": true,
+          "spray": { "color": "#f2f3ee", "length": 4.5, "angle": 18, "size": 0.16 }
+        },
+        "sounds": { "spray": "extinguisher_spray", "pickup": "pickup_metal" },
+        "script": "scripts/extinguisher.lua",
+        "properties": {
+          "spray_seconds": 2,
+          "range": 5,
+          "angle": 22,
+          "pad": 0.6,
+          "douse": 1.5,
+          "sound_interval": 0.35
+        }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/fire_extinguisher.glb" }],
+      "recipes": [
+        {
+          "id": "fire_extinguisher",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "metal_block", "count": 3 },
+            { "item": "chemical", "count": 1 }
+          ],
+          "outputs": [{ "item": "fire_extinguisher", "count": 2 }],
+          "time": 10,
+          "order": 2450
+        }
+      ]
+    }
+  ]
+}

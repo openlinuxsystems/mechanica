@@ -455,9 +455,12 @@ public static class CharacterRig
         _ => null,
     };
 
-    /// <summary>True when <paramref name="prop"/> has a raised pose (<see cref="HoldClip"/> with guard), which others see.</summary>
+    /// <summary>
+    /// True when <paramref name="prop"/> has a raised pose (<see cref="HoldClip"/> with guard), which others see, or (a
+    /// plain <see cref="CharacterProp.Item"/>) a held item whose Use is held down: a spray (<c>held.hold_use</c>).
+    /// </summary>
     public static bool CanGuard(CharacterProp prop) =>
-        prop is CharacterProp.Sledgehammer or CharacterProp.ConnectTool or CharacterProp.WeldTool or CharacterProp.PaintTool;
+        prop is CharacterProp.Sledgehammer or CharacterProp.ConnectTool or CharacterProp.WeldTool or CharacterProp.PaintTool or CharacterProp.Item;
 
     /// <summary>
     /// The bit of a player's tint (<see cref="Player.PlayerInput.Tint"/>) that says the Paint Tool is taking paint off;

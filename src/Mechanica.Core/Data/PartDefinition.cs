@@ -1137,6 +1137,42 @@ public sealed record HeldDefinition
     /// </summary>
     public string? Juice { get; init; }
 
+    /// <summary>
+    /// True when Use is held rather than clicked (a spray): the press runs <c>on_use</c> and the script then sees
+    /// <c>holder.using()</c> true every step until Use is let go (<c>ReleaseItem</c>). Omitted means false.
+    /// </summary>
+    public bool? HoldUse { get; init; }
+
+    /// <summary>What every player sees spraying from the held model while its holder holds Use, or null for nothing.</summary>
+    public HeldSprayDefinition? Spray { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// A spray drawn from a held model while its holder holds Use (<see cref="HeldDefinition.HoldUse"/>): a cone of particles
+/// from the model's <c>nozzle</c> node (or its origin) along where the holder looks. Only a look: what it does is the
+/// item's script.
+/// </summary>
+public sealed record HeldSprayDefinition
+{
+    /// <summary>Longest a spray may reach, in m.</summary>
+    public const float MaxLength = 20f;
+
+    /// <summary>The particles' colour (<c>#rrggbb</c>). Omitted means white.</summary>
+    public string? Color { get; init; }
+
+    /// <summary>How far the spray reaches, in m (more than 0, at most <see cref="MaxLength"/>). Omitted means 4.</summary>
+    public float? Length { get; init; }
+
+    /// <summary>Half the cone's opening, in degrees (0 to 60). Omitted means 15.</summary>
+    public float? Angle { get; init; }
+
+    /// <summary>How big each particle is drawn, in m (more than 0, at most 1). Omitted means 0.08.</summary>
+    public float? Size { get; init; }
+
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }

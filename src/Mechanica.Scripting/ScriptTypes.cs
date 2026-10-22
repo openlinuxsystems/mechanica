@@ -60,7 +60,12 @@ public sealed record ScriptCallResult(bool Ok, IReadOnlyList<JsonNode?> Values, 
 /// <param name="Direction">Where the caller aims from their eyes; the host checks it against where they look. Omitted means where they look.</param>
 /// <param name="Creation">The Creation of the part the item is used on (soil for a seed), if any. Give it with <paramref name="Part"/>.</param>
 /// <param name="Part">The part the item is used on, if any. The script checks reach (<c>farm.soil</c> does).</param>
-public sealed record UseItemArgs(int Slot, Mechanica.Core.Data.Vec3? Direction = null, int? Creation = null, int? Part = null);
+/// <param name="Hold">True when Use stays held after this use (a spray): the script sees <c>holder.using()</c> true every step until <c>ReleaseItem</c>.</param>
+public sealed record UseItemArgs(int Slot, Mechanica.Core.Data.Vec3? Direction = null, int? Creation = null, int? Part = null, bool Hold = false);
+
+/// <summary>Arguments of <c>ReleaseItem</c>: the caller lets go of Use after a held use (<see cref="UseItemArgs.Hold"/>).</summary>
+/// <param name="Slot">The slot they used, if given; the host lets go of whatever they hold either way.</param>
+public sealed record ReleaseItemArgs(int? Slot = null);
 
 /// <summary>Arguments of <c>ReloadItem</c>: reload the item in a slot (its script's <c>on_reload_item</c>; UI spec §1, §10).</summary>
 /// <param name="Slot">The slot holding the item.</param>

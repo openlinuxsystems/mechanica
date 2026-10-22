@@ -1018,6 +1018,21 @@ public partial class PartEditorScreen : Control
                 v => SetHeld("Turn held model", x => x with { Rotation = v == Vec3.Zero ? null : v }), -360, 360);
             _partGrid.AddNumber("Held scale", held.Scale, 0.01, HeldDefinition.MaxScale, 0.05, v => SetHeld("Scale held model", x => x with { Scale = (float?)v }),
                 optional: true, fallback: 1, suffix: "×");
+            // A spray (the Fire Extinguisher): Use is held, and every player sees the spray while it is.
+            _partGrid.AddBool("Hold Use", held.HoldUse, v => SetHeld("Set hold Use", x => x with { HoldUse = v == true ? true : null }), optional: true);
+            _partGrid.AddBool("Spray", held.Spray is not null,
+                v => SetHeld("Set spray", x => x with { Spray = v == true ? x.Spray ?? new HeldSprayDefinition() : null }));
+            if (held.Spray is { } spray)
+            {
+                void SetSpray(string label, Func<HeldSprayDefinition, HeldSprayDefinition> change) => SetHeld(label, x => x with { Spray = change(x.Spray!) });
+                _partGrid.AddColor("Spray colour", spray.Color, v => SetSpray("Set spray colour", x => x with { Color = v }));
+                _partGrid.AddNumber("Spray length", spray.Length, 0.1, HeldSprayDefinition.MaxLength, 0.1, v => SetSpray("Set spray length", x => x with { Length = (float?)v }),
+                    optional: true, fallback: 4, suffix: " m");
+                _partGrid.AddNumber("Spray angle", spray.Angle, 0, 60, 1, v => SetSpray("Set spray angle", x => x with { Angle = (float?)v }),
+                    optional: true, fallback: 15, suffix: "°");
+                _partGrid.AddNumber("Spray size", spray.Size, 0.01, 1, 0.01, v => SetSpray("Set spray size", x => x with { Size = (float?)v }),
+                    optional: true, fallback: 0.08, suffix: " m");
+            }
         }
     }
 

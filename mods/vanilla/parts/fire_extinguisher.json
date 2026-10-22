@@ -1,0 +1,46 @@
+{
+  "id": "fire_extinguisher",
+  "name": "Fire Extinguisher",
+  "description": "Hold Use to spray foam in front of you: it puts out the fires it reaches. Each one sprays for a couple of seconds and is used up, then the next carries on.",
+  "category": "consumable",
+  "mass": 3,
+  "durability": 2,
+  "friction": 0.4,
+  "buoyancy": 0.7,
+  "flammable": false,
+  "stack_size": 100,
+  "sound_material": "metal",
+  "mesh": "meshes/items/fire_extinguisher.glb",
+  "icon": "textures/items/fire_extinguisher_icon.png",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.6,
+    "metallic": 0
+  },
+  "script": "scripts/extinguisher.lua",
+  "sounds": {
+    "spray": "extinguisher_spray",
+    "pickup": "pickup_metal"
+  },
+  "held": {
+    "mesh": "meshes/items/fire_extinguisher_held.glb",
+    "offset": [0, 0.01, 0],
+    "rotation": [-90, 0, 180],
+    "scale": 1,
+    "hold_use": true,
+    "spray": {
+      "color": "#f2f3ee",
+      "length": 4.5,
+      "angle": 18,
+      "size": 0.16
+    }
+  },
+  "properties": {
+    "spray_seconds": 2,
+    "range": 5,
+    "angle": 22,
+    "pad": 0.6,
+    "douse": 1.5,
+    "sound_interval": 0.35
+  }
+}

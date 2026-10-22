@@ -150,6 +150,7 @@ Held items have their own hooks (see [Item scripts](#item-scripts)):
 | `on_aim(on)` | The player started (`true`) or stopped (`false`) aiming with right click (`AimItem`): wind up a bow, raise a shield. |
 | `can_use(target)` | Before every use. Return `nil` to allow it, or a string: the reason the host refuses the use. It may read but not change the world. |
 | `on_use(target)` | The player used the item. `target` is `{from, direction, aiming, creation?, part?}`: their eyes, where they aim, whether they hold right click to aim, and the Creation and part in reach under the crosshair. What it returns (plain data) is the `UseItem` action's result. |
+| `on_use_release()` | The player let go of Use after a held use (`UseItem` with `hold`, then `ReleaseItem`), or the item left their hand or they died while holding it. See `holder.using()`. |
 | `on_hit(landing)` | A projectile the script launched landed: `{id, position, hit?, data}`. `hit` is missing when its lifetime ran out. Part and mod scripts have it too. |
 | `can_reload_item()` | Before every reload. Return `nil` to allow it, or a string: the reason the host refuses it. It may read but not change the world. |
 | `on_reload_item()` | The player pressed Reload (R) with the item in hand (`ReloadItem`). An item that does not define it cannot be reloaded. |
@@ -330,6 +331,12 @@ one) in `mods/vanilla/scripts/`.
   `{from, direction, creation?, part?}`, where `creation` and `part` are what the crosshair
   points at within reach, and `aiming`, true while the player holds right click to aim (`AimItem {on}`).
   `EquipItem {slot?}` says what is in hand. `ReloadItem {slot}` runs `can_reload_item`, then `on_reload_item`.
+- **Held Use (a spray).** An item whose part data sets `held.hold_use` (the Fire Extinguisher) is held, not clicked:
+  the player's press sends `UseItem {..., hold: true}`, which runs `on_use` as usual and then keeps Use held on the
+  host, and letting go sends `ReleaseItem {slot?}`, which runs `on_use_release`. In between `holder.using()` is
+  `true`, so the script does its work every step in `on_update(dt)` (douse, use itself up over time). Taking
+  another item or tool, dying or leaving lets go too. The host decides it all; every peer sees the item's
+  `held.spray` while the holder holds Use, through the guard flag players already send.
   A dead player's uses are refused.
 - **`can_use`, `can_reload_item` and the script's setup only read.** Functions that change the world (`item.consume`, `item.replace`, `item.counter`,
   `holder.heal`, `inventory.take`, `inventory.put`, `farm.plant`, `farm.water`, `fire.douse`, `fire.ignite` and the `combat` ones that deal damage
@@ -379,6 +386,7 @@ end
 | `holder.max_health()` | The most health a player can have (`max_health` in `survival.json`). |
 | `holder.heal(amount)` | Gives them up to `amount` health, never past the maximum, and returns their health. |
 | `holder.aiming()` | `true` while they hold right click to aim the item. |
+| `holder.using()` | `true` while they keep Use held after a held use (`UseItem` with `hold`; an item with `held.hold_use`), until they let go (`ReleaseItem`). A spray reads it in `on_update`. |
 
 ### `inventory`
 
