@@ -14,7 +14,7 @@ public class DropAimTests
     {
         var piles = new[] { Pile(1, 0, -3), Pile(2, 0, -2), Pile(3, 1, -1) };
         var from = new Vector3(0, 1.6f, 0);
-        var down = Vector3.Normalize(new Vector3(0, -1.45f, -2));
+        var down = Vector3.Normalize(new Vector3(0, DropAim.Middle - 1.6f, -2));
         Assert.Equal(2, DropAim.Aimed(piles, from, down, 5)?.Id);
         // Something solid nearer than the pile hides it.
         Assert.Null(DropAim.Aimed(piles, from, down, 1));

@@ -107,6 +107,22 @@ public class SurvivalActionsTests
     }
 
     [Fact]
+    public void ADropOfSeveralKindsLiesAsOnePilePerKind()
+    {
+        var first = _f.Survival.AddDrop(new Vector3(4, 0, 4), [new ItemStack(Scrap, 3), new ItemStack(Seed, 2), new ItemStack(Scrap, 5)])!;
+
+        var piles = _f.Survival.Drops.Values.ToList();
+        Assert.Equal(2, piles.Count);
+        Assert.Equal(first, piles[0]);
+        Assert.Equal([new ItemStack(Scrap, 8)], piles[0].Items);
+        Assert.Equal([new ItemStack(Seed, 2)], piles[1].Items);
+        // Spread StackSpacing apart, either side of where it fell.
+        var (a, b) = (piles[0].Position.ToNumerics(), piles[1].Position.ToNumerics());
+        Assert.Equal(SurvivalActions.StackSpacing, Vector3.Distance(a, b), 3);
+        Assert.True(Vector3.Distance(new Vector3(4, 0, 4), (a + b) / 2) < 1e-4f);
+    }
+
+    [Fact]
     public void ACraftedToolMustBeCarriedInSurvivalOnly()
     {
         IBuildCosts costs = _f.Survival;
@@ -595,9 +611,9 @@ public class SurvivalActionsTests
 
         Assert.True(_f.Ok<SledgeResult>(Me, ToolActions.Sledge, new { @object = "4.0.0" }).Broken);
 
-        // Its own drop, then every table entry (3 picks of 3), less the one that is not an item.
-        var items = Assert.Single(_f.Survival.Drops.Values).Items;
-        Assert.Equal(new ItemStack(Scrap, 1), items[0]);
+        // Its own drop, then every table entry (3 picks of 3), less the one that is not an item: a pile per kind.
+        var items = _f.Survival.Drops.Values.Select(d => Assert.Single(d.Items)).ToList();
+        Assert.Equal(Scrap, items[0].Item);
         Assert.Equal([Bomb, Scrap, Seed], items.Select(i => i.Item).Order());
         Assert.InRange(items.Single(i => i.Item == Seed).Count, 2, 4);
     }

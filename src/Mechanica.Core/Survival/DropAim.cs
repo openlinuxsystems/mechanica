@@ -5,7 +5,7 @@ namespace Mechanica.Core.Survival;
 
 /// <summary>
 /// Which pile of items the crosshair is on (UI spec §9: right click picks a loose item up). Piles have no collider,
-/// so each is a sphere of <see cref="Radius"/> round its middle.
+/// so each is a sphere of <see cref="Radius"/> round its middle: the glowing sphere a loose item floats in.
 /// </summary>
 public static class DropAim
 {
@@ -13,7 +13,7 @@ public static class DropAim
     public const float Radius = 0.3f;
 
     /// <summary>Height of a pile's middle above its ground point, in metres.</summary>
-    public const float Middle = 0.15f;
+    public const float Middle = 0.35f;
 
     /// <summary>
     /// The nearest pile the ray from <paramref name="from"/> along <paramref name="direction"/> passes through within

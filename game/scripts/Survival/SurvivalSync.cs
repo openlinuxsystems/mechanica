@@ -63,6 +63,9 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     /// <summary>Part models, for items lying on the ground that have one (a bucket put down). Null shows crates.</summary>
     public PartAssets? Assets { get; init; }
 
+    /// <summary>A new, posed copy of a tool's model, for a tool lying on the ground (<see cref="Ui.ToolIconModels"/>).</summary>
+    public Func<string, Node3D?>? ToolModel { get; set; }
+
     /// <summary>The streamed world: ground, water and world objects. Set before adding to the tree.</summary>
     public WorldStreamer World { get; init; } = null!;
 
@@ -547,7 +550,7 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
         _drops[drop.Id] = drop;
         if (!_dropNodes.TryGetValue(drop.Id, out var node))
         {
-            node = _dropNodes[drop.Id] = new DropPile { Name = $"Drop{drop.Id}" };
+            node = _dropNodes[drop.Id] = new DropPile { Name = $"Drop{drop.Id}", ToolModel = ToolModel };
             AddChild(node);
         }
         node.Show(drop, Catalog, Assets, Settings?.KnockoutBag);

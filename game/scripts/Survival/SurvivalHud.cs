@@ -559,18 +559,27 @@ public partial class SurvivalHud : CanvasLayer
             var (creationId, partId) = (rod.Node.Creation.Id, rod.Part);
             return (Loc.T("hold to refine the {0}", name), () => BeginRefine(creationId, partId, name));
         }
+        // The pile under the crosshair, else the nearest in reach.
         var feet = player.GlobalPosition;
-        var nearest = Survival.Drops.Values
+        var pile = AimedDrop() ?? Survival.Drops.Values
             .Select(d => (Drop: d, Distance: d.Position.ToGodot().DistanceTo(feet)))
             .Where(d => d.Distance <= settings.PickupReach)
             .OrderBy(d => d.Distance)
             .Select(d => d.Drop)
             .FirstOrDefault();
-        if (nearest is null)
+        if (pile is null)
             return null;
-        var label = string.Join(", ", nearest.Items.Select(s => $"{Loc.Mod(Catalog.FindDefinition(s.Item)?.Name ?? s.Item)} x{s.Count}"));
-        return (Loc.T("pick up {0}", label), () => Request(SurvivalActions.PickUp, new PickUpArgs(nearest.Id)));
+        return (Loc.T("pick up {0}", DropLabel(pile)), () => Request(SurvivalActions.PickUp, new PickUpArgs(pile.Id)));
     }
+
+    /// <summary>
+    /// What a pile is called in its pick-up prompt: the item's name, with how many when more than one ("Scrap Metal
+    /// Block x8"); a knockout bag lists everything in it.
+    /// </summary>
+    public string DropLabel(Core.Survival.ItemDrop drop) =>
+        string.Join(", ", drop.Items.Select(s => s.Count > 1 || drop.Items.Count > 1
+            ? $"{Loc.Mod(Catalog.FindDefinition(s.Item)?.Name ?? s.Item)} x{s.Count}"
+            : Loc.Mod(Catalog.FindDefinition(s.Item)?.Name ?? s.Item)));
 
     private string QuestLabel(QuestInteractResult quest) => quest switch
     {
