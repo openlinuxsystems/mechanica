@@ -138,6 +138,8 @@ public static class LuaApi
 
         new("inventory.count", "inventory.count(item)", "How many of an item the holder carries (bare ids are in the item's mod).", "inventory"),
         new("inventory.take", "inventory.take(item, count?)", "Takes count (default 1) of an item from the holder; true, or false when they carry too few.", "inventory"),
+        new("inventory.put", "inventory.put(creation, part, item, count?)", "Puts count (default 1) of an item (not from the holder) into a container part in the holder's reach that takes it: a bucket emptied into a tank; true, or false and why (nothing put).", "inventory"),
+        new("inventory.space", "inventory.space(creation, part, item)", "How many more of an item fit in a container part in the holder's reach (0 when it is full), or nil and why when it is out of reach or does not take that item.", "inventory"),
 
         new("combat.cast", "combat.cast(from, direction, range)", "The first thing a ray hits, skipping the holder: {kind, position, distance, player?, creation?, part?, object?, bot?, type?} or nil; type is a part's qualified type or a world object's kind (birch_tree).", "combat"),
         new("combat.hit", "combat.hit(hit, damage, push?, kind?)", "Deals damage to what a cast hit, pushing a part's Body with push N·s; kind (drill, saw, weapon...) says what world objects take it (a rock outcrop takes only drill). Returns the hit with damage dealt.", "combat"),
@@ -145,7 +147,7 @@ public static class LuaApi
         new("combat.splash", "combat.splash(at, radius, damage, impulse?)", "Damage falling off to 0 at radius m around at, for players, parts and world objects; returns a list of hits.", "combat"),
         new("combat.explode", "combat.explode(at, radius, damage, impulse?)", "An explosion: combat.splash plus the blast every peer sees; returns a list of hits.", "combat"),
         new("combat.pellets", "combat.pellets(direction, count, spread)", "count directions: the first along direction, the rest evenly round a cone of spread degrees.", "combat"),
-        new("combat.projectile", "combat.projectile(from, velocity, options?)", "Launches a projectile ({gravity?, lifetime?, data?, look?, size?}; look \"water\" draws thrown water, size is how big it is drawn in metres, for water the radius its splash spreads over); on_hit runs where it lands. Returns its id.", "combat"),
+        new("combat.projectile", "combat.projectile(from, velocity, options?)", "Launches a projectile ({gravity?, lifetime?, data?, look?, size?}; look \"water\" draws thrown water and \"chemical\" thrown chemical, size is how big it is drawn in metres, for water and chemical the radius its splash spreads over); on_hit runs where it lands. Returns its id.", "combat"),
 
         new("farm.soil", "farm.soil(creation, part)", "A soil part in the holder's reach: {seed?, crop?, stage, ripe, water, capacity}, or nil and why.", "farm"),
         new("farm.plant", "farm.plant(creation, part, seed?)", "Plants seed (default: this item) in empty soil in reach; returns the soil, or nil and why. Takes no items.", "farm"),

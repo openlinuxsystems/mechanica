@@ -543,6 +543,41 @@ public sealed partial class ScriptRuntime
             pockets.Remove(id, count);
             return DynValue.True;
         });
+        // A container part in the holder's reach, as InventoryActions.CheckAccess sees it: the inventory, or why not.
+        (Inventory? Container, string? Why) ContainerArgs(Instance instance, CallbackArguments args, string function)
+        {
+            var creation = (int)LuaValues.Number(args[0], function, 1);
+            var part = (int)LuaValues.Number(args[1], function, 2);
+            var why = _inventories!.CheckAccess(instance.Caller, InventoryRef.OfPart(creation, part), out var container);
+            return (container, why);
+        }
+        Fn(inventory, "put", args =>
+        {
+            var instance = Acting("inventory.put");
+            var id = ItemId(instance, args.AsType(2, "inventory.put", DataType.String).String);
+            var count = args.Count > 3 && !args[3].IsNil() ? Count(args[3], "inventory.put", 4) : 1;
+            if (_catalog!.FindDefinition(id) is not { } item)
+                throw new ScriptRuntimeException($"inventory.put: unknown item '{id}'");
+            var (container, why) = ContainerArgs(instance, args, "inventory.put");
+            if (container is null)
+                return DynValue.NewTuple(DynValue.False, DynValue.NewString(why ?? "There is no container there."));
+            if (!container.Accepts(id))
+                return DynValue.NewTuple(DynValue.False, DynValue.NewString($"That does not take {item.Name ?? id}."));
+            if (container.SpaceFor(id) < count)
+                return DynValue.NewTuple(DynValue.False, DynValue.NewString("There is no room for that."));
+            container.Add(id, count);
+            return DynValue.True;
+        });
+        Fn(inventory, "space", args =>
+        {
+            var instance = ItemNow();
+            var id = ItemId(instance, args.AsType(2, "inventory.space", DataType.String).String);
+            var (container, why) = ContainerArgs(instance, args, "inventory.space");
+            if (container is null)
+                return NilBecause(why ?? "There is no container there.");
+            return container.Accepts(id) ? DynValue.NewNumber(container.SpaceFor(id))
+                : NilBecause($"That does not take {_catalog!.FindDefinition(id)?.Name ?? id}.");
+        });
         globals.Set("inventory", DynValue.NewTable(inventory));
 
         var combat = new Table(script);

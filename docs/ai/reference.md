@@ -1062,7 +1062,7 @@ No params.
 
 *action, play scope*
 
-Filling a bucket at water. Arguments of CollectWater: fill every empty bucket the caller carries where they aim at water.
+Filling a bucket at water, or at a pool of another liquid that has a full bucket of its own. Arguments of CollectWater: fill every empty bucket the caller carries where they aim at water, or at a pool of a liquid that fills buckets too (a chemical pool gives Chemical Buckets).
 
 | Param | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|

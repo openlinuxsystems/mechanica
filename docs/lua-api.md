@@ -325,7 +325,7 @@ one) in `mods/vanilla/scripts/`.
   `EquipItem {slot?}` says what is in hand. `ReloadItem {slot}` runs `can_reload_item`, then `on_reload_item`.
   A dead player's uses are refused.
 - **`can_use`, `can_reload_item` and the script's setup only read.** Functions that change the world (`item.consume`, `item.replace`, `item.counter`,
-  `holder.heal`, `inventory.take`, `farm.plant`, `farm.water`, `fire.douse`, `fire.ignite` and the `combat` ones that deal damage
+  `holder.heal`, `inventory.take`, `inventory.put`, `farm.plant`, `farm.water`, `fire.douse`, `fire.ignite` and the `combat` ones that deal damage
   or launch) raise an error there.
 - **Damage follows the world's rules.** In Creative nothing hurts players; with friendly fire off
   (the default) no shot, splash or part script hurts a player, but a player's own splash still hurts them.
@@ -381,6 +381,8 @@ The holder's inventory. Item ids may be bare (`potato`, in the item's own mod) o
 |----------|---------|
 | `inventory.count(item)` | How many of `item` they carry. |
 | `inventory.take(item, count?)` | Takes `count` (default 1). `true`, or `false` (and nothing taken) when they carry fewer. |
+| `inventory.put(creation, part, item, count?)` | Puts `count` (default 1) of `item` into a container part (its `inventory` section) the holder can reach and open, as a bucket is emptied into a tank: the items are made, not taken from the holder. `true`, or `false` and why (out of reach, it doesn't take that item, no room), with nothing put. |
+| `inventory.space(creation, part, item)` | How many more of `item` fit in that container part (0 when it is full), or `nil` and why when the holder can't reach or open it or it doesn't take `item`. Read only, so `can_use` may call it. |
 
 Part and mod scripts can use every `combat` function, `farm.soil`, `farm.water` and `farm.near` too (a saw, a drill, a water
 cannon, a mounted gun or a mortar), and both kinds use [`fire`](#fire). They act for the host, skip nothing (aim rays
@@ -402,7 +404,7 @@ are the same primitives bots use (chunk 21).
 | `combat.splash(at, radius, damage, impulse?)` | Hurts every player, part and world object within `radius` m of `at`, falling off from `damage` at the centre to 0 at the edge, and pushes parts away with up to `impulse` N·s. A list of hits. `radius` is at most `max_overlap_radius`. |
 | `combat.explode(at, radius, damage, impulse?)` | An explosion: the same damage and push as `combat.splash`, and every peer sees the blast (a fireball, a flash and smoke as big as `radius`). Play its sound with `sound.play`. A list of hits. |
 | `combat.pellets(direction, count, spread)` | `count` (at most 64) unit directions: the first along `direction`, the rest evenly round a cone of `spread` degrees. No randomness, so every replay agrees. |
-| `combat.projectile(from, velocity, options?)` | Launches a projectile from `from` at `velocity` m/s. `options`: `gravity` (a `vec3`, default `world.gravity()`), `lifetime` (s, default and at most `max_projectile_lifetime`), `data` (passed to `on_hit`), `look` (how clients draw it: `"water"` is a blob of water that splashes where it lands; default a plain ball), `size` (how big the look is drawn, in metres, up to 10: for `"water"` the radius its splash covers, crown, spray, mist and a wet patch; default 1.2). It flies on the host, every client draws it along its arc, and `on_hit` runs where it lands; it deals no damage by itself. Returns its id, or `false` and the reason when `max_projectiles` are already in flight. |
+| `combat.projectile(from, velocity, options?)` | Launches a projectile from `from` at `velocity` m/s. `options`: `gravity` (a `vec3`, default `world.gravity()`), `lifetime` (s, default and at most `max_projectile_lifetime`), `data` (passed to `on_hit`), `look` (how clients draw it: `"water"` is a blob of water that splashes where it lands, `"chemical"` the same in glowing green; default a plain ball), `size` (how big the look is drawn, in metres, up to 10: for `"water"` and `"chemical"` the radius its splash covers, crown, spray, mist and a wet patch; default 1.2). It flies on the host, every client draws it along its arc, and `on_hit` runs where it lands; it deals no damage by itself. Returns its id, or `false` and the reason when `max_projectiles` are already in flight. |
 
 ### `farm`
 

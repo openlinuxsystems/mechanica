@@ -128,6 +128,12 @@ their item's properties.
   and throwing (`watering.lua`, with `item.replace`) empties one at a time; each swaps one for the other in the
   same slot, so the bucket in hand stays in hand. How it moves in the hand
   is `bucket` in `game/data/character.json`.
+- A pool of a liquid with a `bucket` (worldgen `liquids[]`; vanilla's chemical pools name `chemical_bucket`) fills
+  buckets with that instead: `CollectWater` there turns every empty bucket carried into a Chemical Bucket (Parts map
+  E11; no recipe). Its script (`chemical_bucket.lua`) pours `properties.count` Chemical into a container in reach that
+  takes it (the Chemical Container), through `inventory.put`, or throws it like water (a green `chemical` projectile
+  that waters nothing and puts out no fire); either way the bucket comes back empty. A liquid with only `collect` gives
+  its items and leaves the bucket empty.
 - Items and parts: `seed`, `soil` and `respawn_point` in part data
   ([Part Data Schema](part-data-schema.md#survival)). Food, weapons, seeds and the water bucket are
   item scripts (`food.lua`, `potato_gun.lua`, `seed.lua`, `bucket.lua` and `watering.lua` in `mods/vanilla/scripts/`)
@@ -160,7 +166,7 @@ their item's properties.
 | `AimItem` | `on` | Starts (`true`) or stops aiming the item in hand: right click held with a weapon. |
 | `ReloadItem` | `slot` | Reloads the item in the slot (its script's `on_reload_item`). |
 | `SetFriendlyFire` | `on` | Host only: turns friendly fire on or off. |
-| `CollectWater` | `point`, `slot?` | A point on water in reach; turns every empty `bucket_item` the caller carries into a full `water_item` (the one in `slot`, or the first, first), each in the same slot when it was the last of its stack; with no room for the rest, the others stay empty. Returns `{slot}`, where the full bucket is. |
+| `CollectWater` | `point`, `slot?` | A point on water in reach; turns every empty `bucket_item` the caller carries into a full `water_item` (the one in `slot`, or the first, first), each in the same slot when it was the last of its stack; with no room for the rest, the others stay empty. In a pool of a liquid with a `bucket` item they turn into that instead (a Chemical Bucket), and in one with only `collect` the caller gets those items and the buckets stay empty. Returns `{slot}`, where the full bucket is. |
 | `SetSpawn` | `creation`, `part` | A `respawn_point` part in reach. |
 | `DropItems` | `slot`, `count`, `at`, `from` | Tosses the stack (or `count` of it) in front of you; `from` takes it from a container in reach instead of your inventory, and `at` places it there with Force build (it then stays). |
 | `PickUp` | `drop` | A pile within `pickup_reach`. |

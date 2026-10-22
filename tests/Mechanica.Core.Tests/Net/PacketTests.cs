@@ -81,6 +81,9 @@ public class WorldSnapshotTests
         new PlayerState(8, 10, Vector3.One, Vector3.Zero, 0f, 0f, BodyFlags.OnFloor, CharacterProp.Item, Held: 65535),
         new PlayerState(9, 11, Vector3.One, Vector3.Zero, 0f, 0f, BodyFlags.OnFloor, Ground: new PlayerGround(42, 3, new Vector3(0.5f, 0.125f, -2f))),
         new PlayerState(10, 12, Vector3.One, Vector3.Zero, 0f, 0f),
+        // On a ladder (Parts batch 17a), carried by its Body, a Chemical Bucket in hand.
+        new PlayerState(11, 13, Vector3.One, Vector3.UnitY * 2f, 0f, 0f, BodyFlags.Climbing, CharacterProp.ChemicalBucketFull,
+            Ground: new PlayerGround(9017, 0, new Vector3(0f, 1.2f, 0.4f))),
     ]);
 
     [Fact]

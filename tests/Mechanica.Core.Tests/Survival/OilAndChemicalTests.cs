@@ -12,6 +12,7 @@ public class OilAndChemicalTests
 {
     private const string Oil = "test:crude_oil";
     private const string Chemical = "test:chemical";
+    private const string ChemicalBucket = "test:chemical_bucket";
 
     private readonly SurvivalFixture _f = new(new SurvivalSettings { BucketItem = EmptyBucket, WaterItem = Bucket, Reach = 5, WaterSeconds = 1 });
 
@@ -23,6 +24,7 @@ public class OilAndChemicalTests
         _f.Catalog.Add(Oil, new PartDefinition { Id = "crude_oil", Name = "Crude Oil", Category = PartCategory.Resource, StackSize = 20,
             Sounds = new Dictionary<string, string> { ["pickup"] = "pickup_fuel" } });
         _f.Catalog.Add(Chemical, new PartDefinition { Id = "chemical", Name = "Chemical", Category = PartCategory.Resource, StackSize = 20 });
+        _f.Catalog.Add(ChemicalBucket, new PartDefinition { Id = "chemical_bucket", Name = "Chemical Bucket", Category = PartCategory.Consumable, StackSize = 1 });
         _f.World.Objects[_geyser] = new WorldObjectPlacement(_geyser, new WorldObjectDefinition
         {
             Id = "oil_geyser", Harvest = true, Regrow = 3600, Drops = [new ObjectDrop { Item = Oil, Count = 1, CountMax = 4 }],
@@ -115,6 +117,33 @@ public class OilAndChemicalTests
         Assert.Equal(2, _f.Pockets(Me).Count(Chemical));
         // Above the surface is not in the pool, and there is no sea there either.
         Assert.Equal("There is no water there.", _f.Refused(Me, SurvivalActions.CollectWater, new { point = new Vec3(0, 0.5f, 2), slot }));
+    }
+
+    [Fact]
+    public void APoolWithABucketFillsEveryEmptyBucketCarriedWithIt()
+    {
+        // Parts map E11: the vanilla chemical pool names the Chemical Bucket, so dipping fills buckets as the sea does, in place.
+        _f.World.Pools.Add(Pool(new LiquidDefinition
+        {
+            Id = "chemical", Damage = 10, Bucket = ChemicalBucket, Collect = new ObjectDrop { Item = Chemical, Count = 1 },
+        }));
+        _f.Pockets(Me).Add(EmptyBucket, 2);
+        var slot = _f.SlotOf(Me, EmptyBucket);
+        var dip = new { point = new Vec3(0, -0.5f, 2), slot };
+        Assert.Equal(new CollectWaterResult(slot), _f.Ok<CollectWaterResult>(Me, SurvivalActions.CollectWater, dip));
+        Assert.Equal((0, 2, 0, 0), (_f.Pockets(Me).Count(EmptyBucket), _f.Pockets(Me).Count(ChemicalBucket), _f.Pockets(Me).Count(Chemical),
+            _f.Pockets(Me).Count(Bucket)));
+        Assert.Equal(ChemicalBucket, _f.Pockets(Me)[slot]!.Item);
+        _f.World.Now += 1;
+        Assert.StartsWith("That slot holds no empty", _f.Refused(Me, SurvivalActions.CollectWater, dip));
+    }
+
+    [Fact]
+    public void APoolWhoseBucketIsNoItemCannotBeHeld()
+    {
+        _f.World.Pools.Add(Pool(new LiquidDefinition { Id = "chemical", Bucket = "test:no_such_bucket" }));
+        _f.Pockets(Me).Add(EmptyBucket, 1);
+        Assert.Equal("A bucket cannot hold that.", _f.Refused(Me, SurvivalActions.CollectWater, new { point = new Vec3(0, -0.5f, 2) }));
     }
 
     [Fact]

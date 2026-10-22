@@ -250,6 +250,10 @@ public partial class SurvivalHud : CanvasLayer
             hints.Add($"[{GameInput.Label(InputActions.Interact)}] {what.Label}");
         else if (own is not { Dead: true } && Notice() is { } notice)
             hints.Add(notice);
+        // On a ladder (Parts map E2): forward and back climb, Jump lets go.
+        if (own is not { Dead: true } && Players.LocalPlayer is { Climbing: true })
+            hints.Add(Loc.T("[{0}] [{1}] climb   [{2}] jump off", GameInput.Label(InputActions.MoveForward), GameInput.Label(InputActions.MoveBack),
+                GameInput.Label(InputActions.Jump)));
         if (own is not { Dead: true } && Upgrades is { IsOpen: false } upgrades && upgrades.Aimed() is { } part && upgrades.CanUpgrade(part))
             hints.Add($"[{GameInput.Label(InputActions.Upgrade)}] {Loc.T("upgrade")}");
         _hint.Text = string.Join("   ", hints);

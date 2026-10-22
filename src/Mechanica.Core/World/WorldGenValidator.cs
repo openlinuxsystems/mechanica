@@ -213,6 +213,10 @@ internal static class WorldGenValidator
             if (liquid.EdgeColor is not null)
                 Color(liquid.EdgeColor, $"{path}.edge_color", sink);
             NonNegative(liquid.Damage, $"{path}.damage", sink);
+            if (liquid.Bucket is { } bucket && !PartValidator.IsItemRef(bucket))
+                sink.Error(Code, $"{path}.bucket", "bucket must be an item id or 'mod_id:item_id'.");
+            if (liquid.Bucket is not null && liquid.Water)
+                sink.Error(Code, $"{path}.bucket", "water fills buckets with water; give bucket only to other liquids.");
             if (liquid.Collect is { } collect)
             {
                 KnownKeys.WarnUnknown(collect.Extra, $"{path}.collect", sink, typeof(ObjectDrop));

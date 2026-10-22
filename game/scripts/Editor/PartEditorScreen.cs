@@ -979,6 +979,7 @@ public partial class PartEditorScreen : Control
             }
             _partGrid.AddBool("Respawn point", d.RespawnPoint, v => Set("Set respawn point", x => x with { RespawnPoint = v == true ? true : null }), optional: true);
             _partGrid.AddBool("Ground only", d.GroundOnly, v => Set("Set ground only", x => x with { GroundOnly = v == true ? true : null }), optional: true);
+            _partGrid.AddBool("Climbable", d.Climbable, v => Set("Set climbable", x => x with { Climbable = v == true ? true : null }), optional: true);
             if (d.GroundOnly == true)
                 _partGrid.AddNumber("Steepest ground", d.MaxSlope, 0, 90, 1, v => Set("Set steepest ground", x => x with { MaxSlope = (float?)v }), optional: true, suffix: "°");
             // A Soil Bag sets a soil mound down on the ground; the mound is placed from, and picked up as, the bag.

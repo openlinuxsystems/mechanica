@@ -1066,6 +1066,8 @@ public class WorldGenTests
     [InlineData("""{ "biomes": [{ "id": "a" }], "liquids": [{ "id": "goo", "edge_color": "scum" }] }""", "$.liquids[0].edge_color")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "liquids": [{ "id": "goo" }, { "id": "goo" }] }""", "$.liquids[1].id")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "liquids": [{ "id": "goo", "collect": { "item": "goo", "count": 0 } }] }""", "$.liquids[0].collect.count")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "liquids": [{ "id": "goo", "bucket": "../goo" }] }""", "$.liquids[0].bucket")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "liquids": [{ "id": "pond", "water": true, "bucket": "goo_bucket" }] }""", "$.liquids[0].bucket")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "regrow": 0 }] }""", "$.objects[0].regrow")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "harvest": true, "refine": true }] }""", "$.objects[0].harvest")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "drops": [{ "item": "x", "count": 3, "count_max": 2 }] }] }""", "$.objects[0].drops[0].count_max")]

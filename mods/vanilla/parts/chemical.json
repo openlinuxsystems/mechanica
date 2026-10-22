@@ -1,7 +1,7 @@
 {
   "id": "chemical",
   "name": "Chemical",
-  "description": "Glowing green chemical from a chemical pool. Dip an empty Water Bucket in one to collect it.",
+  "description": "Glowing green chemical from a chemical pool. Dip an empty Water Bucket in one and pour it into a Chemical Container.",
   "category": "resource",
   "mass": 1,
   "stack_size": 20,

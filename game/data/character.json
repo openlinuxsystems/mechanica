@@ -87,6 +87,7 @@
   "item_poses": {
     "water_bucket": { "prop": "water_bucket", "gesture": "bucket_fill" },
     "water_bucket_full": { "prop": "water_bucket_full", "gesture": "bucket_throw" },
+    "chemical_bucket": { "prop": "chemical_bucket_full", "gesture": "bucket_throw" },
     "potato_blaster": { "prop": "potato_blaster", "gesture": "fire_gun" },
     "potato_scattergun": { "prop": "potato_scattergun", "gesture": "fire_gun" },
     "potato_launcher": { "prop": "potato_launcher", "gesture": "fire_gun" },

@@ -17,10 +17,12 @@ namespace Mechanica.Core.Characters;
 /// <param name="Seat">How the seat holds a seated character (null: <see cref="SeatStyle.Default"/>). <see cref="Velocity"/> is
 /// then the seat's own, which bounces the body.</param>
 /// <param name="Dead">Dead, until the respawn: the body collapses (<c>death</c>) and lies there (<c>downed</c>).</param>
+/// <param name="Climbing">On a ladder: the climb clip plays, its pace set by <see cref="Velocity"/>'s vertical part, and the hands
+/// leave what they hold for the rungs.</param>
 public readonly record struct CharacterPose(
     Vector3 Velocity, float Yaw, float Pitch, bool OnFloor, bool Swimming = false, bool Crawl = false, bool Seated = false,
     CharacterProp Prop = CharacterProp.None, CharacterGesture Gesture = CharacterGesture.None, byte GestureCount = 0,
-    bool Guard = false, SeatStyle? Seat = null, bool Dead = false);
+    bool Guard = false, SeatStyle? Seat = null, bool Dead = false, bool Climbing = false);
 
 /// <summary>Something a character did this frame that makes a sound.</summary>
 public enum CharacterEvent
@@ -70,6 +72,9 @@ public enum CharacterMode
 
     /// <summary>In a seat.</summary>
     Sit,
+
+    /// <summary>On a ladder.</summary>
+    Climb,
 }
 
 /// <summary>One clip's contribution to a pose.</summary>
@@ -110,6 +115,8 @@ public sealed class CharacterAnimator
     private float _clock;
     private float _phase;
     private float _swimPhase;
+    // Where in the climb cycle the body is, 0 to 1: it moves on with the height climbed, so hands and feet keep to the rungs.
+    private float _climbPhase;
     private float _airTime;
     private bool _jumped;
     private float _peakFall;
@@ -163,6 +170,9 @@ public sealed class CharacterAnimator
         _modeWeights[(int)CharacterMode.Ground] = 1f;
         _nextFidget = _settings.Motion.FidgetAfter[0];
     }
+
+    /// <summary>Metres climbed in one cycle of the <c>climb</c> clip: each hand and foot moves up two rungs of a ladder (0.25 m apart).</summary>
+    public const float ClimbCycleMetres = 0.5f;
 
     /// <summary>True when this animator poses the local player's first-person arms.</summary>
     public bool FirstPerson { get; }
@@ -372,13 +382,14 @@ public sealed class CharacterAnimator
         var down = Grounded ? GestureWeight : 0f;
         Twist *= 1f - down;
         Lean *= 1f - MathF.Max(down, LegsWeight);
-        ShowProp = Prop != CharacterProp.None && _modeWeights[(int)CharacterMode.Swim] < 0.5f && _modeWeights[(int)CharacterMode.Sit] < 0.5f && !Grounded;
+        ShowProp = Prop != CharacterProp.None && _modeWeights[(int)CharacterMode.Swim] < 0.5f && _modeWeights[(int)CharacterMode.Sit] < 0.5f
+            && _modeWeights[(int)CharacterMode.Climb] < 0.5f && !Grounded;
     }
 
     // Jumps, landings, water and the item in hand.
     private void Track(CharacterPose pose, Vector3 velocity, float delta)
     {
-        if (_wasOnFloor && !pose.OnFloor && !pose.Swimming && !pose.Seated && velocity.Y > _settings.JumpDetectSpeed)
+        if (_wasOnFloor && !pose.OnFloor && !pose.Swimming && !pose.Seated && !pose.Climbing && velocity.Y > _settings.JumpDetectSpeed)
         {
             _jumped = true;
             _airTime = 0f;
@@ -386,7 +397,7 @@ public sealed class CharacterAnimator
             // Taking off at a run is a leap, one leg out in front.
             _jumpClip = new Vector2(velocity.X, velocity.Z).Length() >= _settings.Motion.RunJumpSpeed && _lengths.ContainsKey("jump_run") ? "jump_run" : "jump";
         }
-        if (!pose.OnFloor && !pose.Swimming && !pose.Seated)
+        if (!pose.OnFloor && !pose.Swimming && !pose.Seated && !pose.Climbing)
         {
             _airTime += delta;
             _peakFall = MathF.Max(_peakFall, -velocity.Y);
@@ -480,6 +491,7 @@ public sealed class CharacterAnimator
 
     private CharacterMode Choose(CharacterPose pose) =>
         pose.Seated ? CharacterMode.Sit
+        : pose.Climbing ? CharacterMode.Climb
         : pose.Swimming ? CharacterMode.Swim
         : !pose.OnFloor && (_jumped || _airTime > _settings.AirGrace) ? CharacterMode.Air
         : pose.Crawl ? CharacterMode.Crouch
@@ -546,7 +558,7 @@ public sealed class CharacterAnimator
         var step = _settings.BodyTurnRate * MathF.PI / 180f * delta;
         // Turning the look turns the body with it; the feet then catch up with where they should point.
         _bodyTurn = Toward(_bodyTurn, target, step);
-        Twist = pose.Seated || Mode is CharacterMode.Swim ? 0f : -_bodyTurn * TwistShare();
+        Twist = pose.Seated || Mode is CharacterMode.Swim or CharacterMode.Climb ? 0f : -_bodyTurn * TwistShare();
     }
 
     // All of the turn standing, less of it as the body gets moving (a runner's shoulders follow the hips a little).
@@ -635,6 +647,7 @@ public sealed class CharacterAnimator
         var air = eased[(int)CharacterMode.Air];
         var swim = eased[(int)CharacterMode.Swim];
         var sit = eased[(int)CharacterMode.Sit];
+        var climb = eased[(int)CharacterMode.Climb];
 
         // One beat for walking and crouching, so a crossfade between them keeps the feet in step.
         var steps = Mode is CharacterMode.Ground or CharacterMode.Crouch;
@@ -688,6 +701,18 @@ public sealed class CharacterAnimator
             AddBlend(_swim, horizontal, _swimPhase, swim);
         if (sit > 0f)
             AddSit(pose.Seat ?? SeatStyle.Default, sit);
+        // Climbing plays the cycle forward going up and backward coming down; held still it holds where it is.
+        if (pose.Climbing)
+            _climbPhase = (_climbPhase + Finite(pose.Velocity).Y * delta / ClimbCycleMetres) % 1f;
+        if (_climbPhase < 0f)
+            _climbPhase += 1f;
+        if (climb > 0f)
+        {
+            if (_lengths.TryGetValue("climb", out var climbLength))
+                Add("climb", _climbPhase * climbLength, climb);
+            else
+                Add("fall", _clock, climb);
+        }
         if (_body.Count == 0)
             Add("idle", _clock, 1f);
     }
@@ -771,8 +796,8 @@ public sealed class CharacterAnimator
 
     private void BuildUpper(CharacterPose pose, float delta)
     {
-        // Hands are busy swimming; a seated player holds the controls.
-        var free = Mode is not (CharacterMode.Swim or CharacterMode.Sit) && !Grounded;
+        // Hands are busy swimming or on the rungs; a seated player holds the controls.
+        var free = Mode is not (CharacterMode.Swim or CharacterMode.Sit or CharacterMode.Climb) && !Grounded;
         var want = free ? Version(CharacterRig.HoldClip(_prop, pose.Guard)) : null;
         if (want is not null && _lengths.ContainsKey(want))
             _holds.TryAdd(want, 0f);
@@ -910,7 +935,7 @@ public sealed class CharacterAnimator
 
     // How long a gesture plays: its own length unless the settings give it another (a first-person version or a
     // variant lasts as long as the clip it stands in for).
-    private static bool IsBucket(CharacterProp prop) => prop is CharacterProp.WaterBucket or CharacterProp.WaterBucketFull;
+    private static bool IsBucket(CharacterProp prop) => prop is CharacterProp.WaterBucket or CharacterProp.WaterBucketFull or CharacterProp.ChemicalBucketFull;
 
     private float GestureLength(string clip) =>
         _settings.GestureSeconds.TryGetValue(GestureName(clip), out var seconds) ? seconds : _lengths[clip] * (1f - GestureStart(clip));
