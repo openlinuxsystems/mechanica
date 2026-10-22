@@ -683,7 +683,7 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 
 | Order | Group | Vanilla recipes, in order |
 |-------|-------|---------------------------|
-| 100 | Blocks | Each block then its wedge, scrap first: scrap wood, scrap metal, scrap stone, sand, Wood Blocks 1-3, cardboard, barrier, insulation, carpet, Metal Blocks 1-3, extruded metal, punched steel, net, solid net, striped net, square mesh, diamond plate, aluminum, rusted metal, worn metal, path light, hull plate, hull floor, brick, tile, worn tile, Concrete Blocks 1-3, cracked concrete, concrete slab, plaster, painted wall, glass, glass tile, armored glass, ice, plastic, bubble plastic |
+| 100 | Blocks | Each block then its wedge, scrap first: scrap wood, scrap metal, scrap stone, sand, Wood Blocks 1-3, cardboard, barrier, insulation, carpet, Metal Blocks 1-3, extruded metal, punched steel, net, solid net, striped net, square mesh, diamond plate, aluminum, rusted metal, worn metal, path light, hull plate, hull floor, brick, tile, worn tile, Concrete Blocks 1-3, cracked concrete, concrete slab, plaster, painted wall, glass, glass tile, armored glass, ice, plastic, bubble plastic; then `concave_wedge` (190-199, a shape part) |
 | 200 | Ramps, stairs and railings | `ramp_block`, `stairs_block`, `ladder`, `metal_railing` |
 | 300 | Beams and frames | `ibeam_stub`, `ibeam_short`, `ibeam_long`, `ibeam_corner`, `ibeam_end`, `ibeam_holder`, `u_beam`, `metal_column_short`, `metal_column`, `metal_support`, `support_bracket`, `stand_support`, `support_pillar`, `lattice_pillar`, `support_pillar_stand`, `support_truss_small`, `support_truss`, `support_truss_large`, `tower_pole`, `tower_pole_top`, `door_frame`, `window_frame` |
 | 400 | Pipes | `small_pipe_short`, `small_pipe_long`, `small_pipe_bend`, `small_pipe_corner`, `small_pipe_tee`, `small_pipe_cross`, `small_pipe_four_way_tee`, `small_pipe_five_way`, `small_pipe_six_way`, `valve`, `large_pipe_short`, `large_pipe_long`, `large_pipe_corner`, `large_pipe_tee`, `main_pipe_short`, `main_pipe_long`, `main_pipe_corner`, `main_pipe_tee`, `main_pipe_extension`, `main_pipe_mount`, `main_pipe_cap`, `main_pipe_compressor` |
@@ -697,7 +697,7 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 | 1200 | Logic | `switch_scrap`, `switch`, `button`, `logic_gate`, `timer`, `sensor`, `alarm_clock` |
 | 1300 | Working parts | `drill`, `plasma_drill`, `saw_blade`, `water_cannon`, `potato_blaster_mounted`, `explosive_canister_small`, `explosive_canister_large` |
 | 1400 | Sound | `horn`, `radio` |
-| 1500 | Vehicle body | `bumper_front`, `bumper_rear`, `mud_flap`, `exhaust_pipe`, `license_plate`, `roof_rack`, `antenna`, `windshield`, `side_window` |
+| 1500 | Vehicle body | `bumper_front`, `bumper_rear`, `mud_flap`, `exhaust_pipe`, `license_plate`, `roof_rack`, `antenna`, `windshield`, `windshield_large`, `side_window` (new windshields take 1580-1599) |
 | 1600 | Lights | `shack_light`, `glowstick`, `fluorescent_light`, `packing_lamp`, `interior_light`, `headlight`, `spotlight`, `construction_light`, `warning_light`, `beacon_scrap`, `beacon`, `warehouse_spotlight`, `frame_beam_light`, `neon_sign`, `protector_sign` |
 | 1700 | Storage | `chest` (Scrap Chest), `small_chest`, `large_chest`, `cargo_chest`, `barrel`, `locker`, `tool_cabinet`, `file_cabinet`, `fridge`, `chemical_container`, `water_container`, `potato_ammo_container`, `dispenser`, `broken_microwave`, `ruin_chest` |
 | 1800 | Stations | `portable_fabricator`, `refiner`, `respawn_bed`, `fancy_bed`, `freezer`, `ice_block_freezer` (the Freezer's one recipe) |
@@ -711,6 +711,7 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 | 2600 | Refined materials | `wood_rod`, `pine_rod`, `stone_rod`, `metal_rod` |
 | 2700 | Crafting materials | `glue` |
 | 2800 | Ducts, conduits and cables | `duct_short`, `duct_long`, `duct_corner`, `duct_tee`, `duct_end`, `duct_holder`, `metal_tube`, `tubes_short`, `tubes_long`, `tubes_corner`, `tubes_tee`, `wires_short`, `wires_long`, `wires_bend`, `wires_concave_bend`, `wires_convex_bend` |
+| 2900 | Windows and fences | `window_large`, `window_metal` |
 | 3000 | Farm and shack decor | `produce_box_carrot`, `produce_box_potato`, `produce_box_tomato`, `produce_box_mixed`, `stacked_crates`, `grass_planter`, `plant_container`, `plant_container_open`, `vending_machine`, `grazer_head_topper`, `duck_statuette`, `mannequin_hand`, `mannequin_boot`, `shack_awning` |
 | 3100 | Industrial and site decor | `tank_small`, `tank_medium`, `tank_large`, `juice_drum`, `coil_segment`, `coil_corner`, `fuse_box`, `air_conditioner`, `vent_grid`, `crane_body`, `crane_hook`, `broken_concrete_medium`, `broken_concrete_large`, `hull_door`, `nut`, `screw`, `steel_pallet`, `dish_antenna`, `reflector_dish`, `reflector_antenna` |
 

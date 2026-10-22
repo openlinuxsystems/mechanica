@@ -1,0 +1,20 @@
+{
+  "id": "concave_wedge",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "concave_wedge",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 190
+}

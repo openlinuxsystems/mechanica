@@ -1,0 +1,79 @@
+using Mechanica.Core.Data;
+using Mechanica.Core.Items;
+
+namespace Mechanica.Core.Tests.Data;
+
+/// <summary>
+/// The parts map's batches 11 and 12 (stairs, railings, windows, windshields and signs; batches 11a so far): each
+/// part has the wiki's stats and recipe, its own model and icon (tools/parts_building/build_parts.py) and its place in
+/// the Fabricator's list.
+/// </summary>
+public class PartsBuildingTests
+{
+    private static readonly Lazy<ModLoadResult> Vanilla = new(() => ModLoader.LoadAll(Path.Combine(TestMods.RepoRoot, "mods")));
+    private static readonly string Mod = Path.Combine(TestMods.RepoRoot, "mods", "vanilla");
+
+    private static PartDefinition Part(string id) =>
+        Vanilla.Value.FindDefinition(id) ?? throw new Xunit.Sdk.XunitException($"vanilla has no item '{id}'.");
+
+    [Theory]
+    [InlineData("ramp_block", 6, 5, 0.5, 0.2, false, 4, 4, 4)]
+    [InlineData("metal_railing", 6, 4, 0.5, 0.2, false, 4, 4, 1)]
+    [InlineData("windshield", 3, 3, 0.2, 0.3, false, 6, 4, 2)]
+    [InlineData("side_window", 3, 3, 0.2, 0.3, false, 4, 3, 1)]
+    [InlineData("concave_wedge", 7.5, 4, 0.5, 0.1, false, 1, 1, 1)]
+    [InlineData("window_large", 3, 3, 0.2, 0.3, false, 8, 4, 1)]
+    [InlineData("windshield_large", 3, 3, 0.2, 0.3, false, 8, 5, 3)]
+    [InlineData("window_metal", 10.5, 5, 0.7, 0.1, false, 4, 4, 1)]
+    public void TakesTheWikiStatsAtOurSize(string id, double mass, int durability, double friction, double buoyancy,
+        bool flammable, int x, int y, int z)
+    {
+        var part = Part(id);
+
+        Assert.Equal((mass, durability, friction, buoyancy, flammable, 20),
+            (Math.Round((double)part.Mass!.Value, 3), (int)part.Durability!.Value, Math.Round((double)part.Friction!.Value, 3),
+                Math.Round((double)part.Buoyancy!.Value, 3), part.Flammable!.Value, part.StackSize!.Value));
+        Assert.Equal(new GridSize(x, y, z), part.Size);
+    }
+
+    [Theory]
+    [InlineData("ramp_block", 2, 210, "scrap_metal_block:8", "scrap_wood_block:8")]
+    [InlineData("metal_railing", 2, 240, "scrap_metal_block:8")]
+    [InlineData("windshield", 10, 1580, "glass_block:10", "metal_block:5")]
+    [InlineData("side_window", 10, 1590, "glass_block:5", "metal_block:5")]
+    [InlineData("concave_wedge", 2, 190, "metal_block:1")]
+    [InlineData("window_large", 10, 2920, "glass_block:15", "metal_block:10")]
+    [InlineData("windshield_large", 10, 1585, "glass_block:20", "metal_block:10")]
+    [InlineData("window_metal", 5, 2930, "metal_block:5", "glass_block:2")]
+    public void TakesTheWikiRecipeInItsGroup(string id, float time, int order, params string[] inputs)
+    {
+        var book = RecipeBook.Load(Vanilla.Value);
+        var recipe = book.Find(id)!;
+
+        Assert.Equal(["vanilla:fabricator"], recipe.Stations);
+        Assert.Equal(inputs.Select(i => $"vanilla:{i}"), recipe.Inputs.Select(i => $"{i.Item}:{i.Count}"));
+        Assert.Equal(1, recipe.Outputs.Single().Count);
+        Assert.Equal(time, recipe.Time);
+        Assert.Equal(order, recipe.Definition.Order);
+        Assert.Single(book.All, r => r.Outputs.Any(o => o.Item == $"vanilla:{id}"));
+    }
+
+    [Theory]
+    [InlineData("ramp_block")]
+    [InlineData("metal_railing")]
+    [InlineData("windshield")]
+    [InlineData("side_window")]
+    [InlineData("concave_wedge")]
+    [InlineData("window_large")]
+    [InlineData("windshield_large")]
+    [InlineData("window_metal")]
+    public void HasItsOwnModelAndIcon(string id)
+    {
+        var part = Part(id);
+
+        Assert.Equal($"meshes/parts/{id}.glb", part.Mesh);
+        Assert.True(File.Exists(Path.Combine(Mod, part.Mesh!)), $"{id} has a model");
+        Assert.Equal($"textures/items/{id}_icon.png", part.Icon);
+        Assert.True(File.Exists(Path.Combine(Mod, part.Icon!)), $"{id} has an icon");
+    }
+}

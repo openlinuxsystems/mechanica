@@ -334,38 +334,6 @@
       ]
     },
     {
-      "file": "parts/decor/metal_railing.json",
-      "template": "decor",
-      "set": {
-        "name": "Metal Railing",
-        "description": "A 1 m section of railing for walkways and stairs.",
-        "mass": 6,
-        "durability": 4,
-        "flammable": false,
-        "sound_material": "metal",
-        "stack_size": 20,
-        "size": [4, 4, 1],
-        "visual": { "color": "#c8a020", "roughness": 0.5, "metallic": 0.6 }
-      },
-      "model": [
-        { "kind": "box", "size": [1, 0.04, 0.04], "position": [0, 0.48, 0] },
-        { "kind": "box", "size": [1, 0.03, 0.03], "position": [0, 0.1, 0] },
-        { "kind": "box", "size": [0.04, 1, 0.04], "position": [-0.48, 0, 0] },
-        { "kind": "box", "size": [0.04, 1, 0.04], "position": [0.48, 0, 0] },
-        { "kind": "box", "size": [0.03, 1, 0.03] }
-      ],
-      "recipes": [
-        {
-          "id": "metal_railing",
-          "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 8 }],
-          "outputs": [{ "item": "metal_railing", "count": 1 }],
-          "time": 2,
-          "order": 240
-        }
-      ]
-    },
-    {
       "file": "parts/decor/wooden_table.json",
       "template": "decor",
       "set": {
@@ -739,58 +707,6 @@
       ]
     },
     {
-      "file": "parts/decor/windshield.json",
-      "template": "decor",
-      "set": {
-        "name": "Windshield",
-        "description": "A sloped glass pane for the front of a cabin.",
-        "mass": 8,
-        "durability": 2,
-        "flammable": false,
-        "sound_material": "glass",
-        "stack_size": 20,
-        "size": [6, 4, 2],
-        "visual": { "color": "#a8d0e0", "roughness": 0.05, "metallic": 0, "opacity": 0.35 }
-      },
-      "model": [{ "kind": "box", "size": [1.5, 1.05, 0.03], "rotation": [-25, 0, 0] }],
-      "recipes": [
-        {
-          "id": "windshield",
-          "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 4 }, { "item": "component_kit", "count": 1 }],
-          "outputs": [{ "item": "windshield", "count": 1 }],
-          "time": 2,
-          "order": 1580
-        }
-      ]
-    },
-    {
-      "file": "parts/decor/side_window.json",
-      "template": "decor",
-      "set": {
-        "name": "Side Window",
-        "description": "A small glass pane in a frame.",
-        "mass": 4,
-        "durability": 2,
-        "flammable": false,
-        "sound_material": "glass",
-        "stack_size": 20,
-        "size": [4, 3, 1],
-        "visual": { "color": "#a8d0e0", "roughness": 0.05, "metallic": 0, "opacity": 0.35 }
-      },
-      "model": [{ "kind": "box", "size": [1, 0.75, 0.03] }],
-      "recipes": [
-        {
-          "id": "side_window",
-          "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 4 }],
-          "outputs": [{ "item": "side_window", "count": 1 }],
-          "time": 2,
-          "order": 1590
-        }
-      ]
-    },
-    {
       "file": "parts/decor/exhaust_pipe.json",
       "template": "decor",
       "set": {
@@ -1063,33 +979,6 @@
           "outputs": [{ "item": "stairs_block", "count": 1 }],
           "time": 2,
           "order": 220
-        }
-      ]
-    },
-    {
-      "file": "parts/decor/ramp_block.json",
-      "template": "decor",
-      "set": {
-        "name": "Ramp Block",
-        "description": "A 1 m by 1 m slope for driving up.",
-        "mass": 45,
-        "durability": 6,
-        "flammable": false,
-        "sound_material": "concrete",
-        "stack_size": 20,
-        "size": [4, 4, 4],
-        "visual": { "color": "#d4d4d4", "texture": "textures/blocks/concrete.png", "roughness": 0.7, "metallic": 0.0 }
-      },
-      "model": [{ "kind": "wedge", "size": [1, 1, 1], "rotation": [0, 180, 0] }],
-      "collision_from_model": true,
-      "recipes": [
-        {
-          "id": "ramp_block",
-          "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 8 }, { "item": "scrap_wood_block", "count": 8 }],
-          "outputs": [{ "item": "ramp_block", "count": 1 }],
-          "time": 2,
-          "order": 210
         }
       ]
     },
