@@ -3,9 +3,11 @@
 What it builds (procedurally, from scratch: no .blend inputs, no downloads):
 
 * ``mods/vanilla/meshes/items/soil_bag.glb`` - the Soil Bag, 5 x 1 x 3 blocks (1.25 m long, 0.25 m high, 0.75 m
-  deep), centred on its origin: a low, pillowy burlap sack in muted tan-brown with piped seams along every edge, a
-  twine cord along the top tied in a knot in the middle with two short tails, and a sprout stamped in darker brown on
-  both long sides. Three materials: the burlap (a baked box-chart atlas with a normal map), the twine and the piping.
+  deep), centred on its origin: a plump printed plastic sack of garden soil, as sold in a shop, from the invented
+  brand Rootwell (the artwork is ``bag_print.py``): bright yellow with a green band at one end, "GARDEN SOIL" in big
+  green letters and our crops on a bed of soil on top, so it reads as a soil bag at hotbar size. The body pinches
+  in toward both ends, where crimped heat seals stick out. Two materials: the printed plastic (a baked box-chart
+  atlas with a normal map) and the seals.
 * ``mods/vanilla/meshes/soil.glb`` - the soil mound a bag spills into on the ground: 3 x 3 blocks (0.75 m square),
   about half a block (0.125 m) high, sitting on the bottom of its 0.25 m cell. A low rounded mound with a slightly
   raised middle, lumpy clods, soft irregular edges sloping to the ground and a few crumbs at its foot. Its texture is
@@ -57,13 +59,13 @@ BAG_HALF = (0.625, 0.375, 0.125)
 BAG_BODY = (0.6, 0.34, 0.09)        # the sack before it bulges
 BAG_BULGE = (0.025, 0.035, 0.016, 0.035)   # x, y, top, bottom: how far the middles of the sides bulge out
 BAG_RADIUS = 0.045
-PIPE_R = 0.0058
-ROPE_R = 0.0085
+BAG_PINCH = (0.62, 0.3, 0.06)       # top, bottom, depth: how much the sack narrows into its sealed ends
+SEAL = (0.578, 0.624, 0.0045)       # the heat seals: from x, to x, half thickness
 MOUND_HALF = 0.375
 MOUND_HEIGHT = 0.105                # the rim's top; the crown and the clods add about 0.015
 MOUND_RIM = 0.13                    # how far in from the edge the slope reaches the top
 MOUND_BASE = -0.125                 # the bottom of the part's cell
-BAG_TEX = 1536
+BAG_TEX = 2048
 MOUND_TEX = 1024
 
 
@@ -71,14 +73,64 @@ MOUND_TEX = 1024
 # The Soil Bag
 # =====================================================================================================
 
-def bag_top(x, y=0.0):
-    """Height of the bag's top surface over (x, y), away from the rounded edges."""
-    return float(bulged([(x, y, BAG_BODY[2])])[0][2])
+def pinch_at(x):
+    """0 in the middle of the bag, rising to 1 at its sealed ends."""
+    return rt.smoothstep(0.34, BAG_BODY[0] + 0.01, np.abs(x))
+
+
+def pinched(v):
+    """The sack narrowing into its seals: the top drops most (the bag lies on its back), the bottom less."""
+    p = pinch_at(v[:, 0])
+    out = v.copy()
+    out[:, 2] *= 1 - np.where(v[:, 2] > 0, BAG_PINCH[0], BAG_PINCH[1]) * p
+    out[:, 1] *= 1 - BAG_PINCH[2] * p
+    return out
+
+
+def seal_z():
+    """Height of the middle of the pinched ends, where the seals come out."""
+    top, bottom = BAG_BODY[2] * (1 - BAG_PINCH[0]), -BAG_BODY[2] * (1 - BAG_PINCH[1])
+    return (top + bottom) / 2
+
+
+def seals():
+    """The two crimped heat seals: thin flaps across the ends, rippled across their width (the crimp), each with
+    its own strip of the seal texture (u 0..0.5 the yellow end, 0.5..1 the green end). Returns verts, faces, uvs."""
+    x0, x1, t = SEAL
+    hy = BAG_BODY[1] * (1 - BAG_PINCH[2]) - 0.018
+    zc = seal_z()
+    ys = np.linspace(-hy, hy, 97)
+    verts, faces, uvs = [], [], []
+    for sx in (1, -1):
+        u0 = 0.5 if sx > 0 else 0.0
+        base = len(verts)
+        for j, y in enumerate(ys):
+            ripple = 0.0016 * (1 if j % 2 else -1)
+            for x in (x0, x1):
+                for zs in (1, -1):
+                    verts.append((sx * x, float(y), zc + zs * t + ripple))
+        n = len(ys)
+
+        def vid(j, xi, zi):
+            return base + j * 4 + xi * 2 + zi
+
+        for j in range(n - 1):
+            for zi, flip in ((0, False), (1, True)):           # top and bottom sheets
+                q = [vid(j, 0, zi), vid(j, 1, zi), vid(j + 1, 1, zi), vid(j + 1, 0, zi)]
+                faces.append(q[::-1] if flip != (sx < 0) else q)
+            q = [vid(j, 1, 0), vid(j, 1, 1), vid(j + 1, 1, 1), vid(j + 1, 1, 0)]   # the outer edge
+            faces.append(q if sx > 0 else q[::-1])
+        for j in (0, n - 1):                                    # the two short edges
+            q = [vid(j, 0, 0), vid(j, 1, 0), vid(j, 1, 1), vid(j, 0, 1)]
+            faces.append(q if (j == 0) == (sx > 0) else q[::-1])
+        for f in faces[len(uvs):]:
+            uvs.append([(u0 + 0.5 * (j // 4) / (n - 1) * 0.98 + 0.005, 0.5) for j in [k - base for k in f]])
+    return verts, faces, uvs
 
 
 def bulged(v):
     """Points on the plain rounded box moved to the bag's shape: the sides' middles bulge out (the long sides most,
-    the top least), with soft wrinkles in the cloth, never past the bag's box."""
+    the top least), the ends pinch in toward the seals, with soft wrinkles in the plastic, never past the bag's box."""
     bx, by, bz = BAG_BODY
     v = np.asarray(v, float)
     u = np.clip(np.abs(v) / np.array(BAG_BODY), 0, 1) ** 2
@@ -87,6 +139,7 @@ def bulged(v):
     out[:, 1] *= 1 + BAG_BULGE[1] / by * (1 - u[:, 0]) * (1 - u[:, 2])
     top = np.where(v[:, 2] > 0, BAG_BULGE[2], BAG_BULGE[3]) / bz
     out[:, 2] *= 1 + top * (1 - u[:, 0]) * (1 - u[:, 1])
+    out = pinched(out)
     out *= (1 + 0.006 * rt.Noise3(71).fbm(v, 7.0, octaves=3))[:, None]
     return np.clip(out, -np.array(BAG_HALF), np.array(BAG_HALF))
 
@@ -99,39 +152,6 @@ def bag_body():
     cz = br.axis_coords(bz, rows, [-0.02, 0.0, 0.02])
     verts, faces = br.rounded_box(BAG_BODY, [cx, cy, cz], BAG_RADIUS)
     return [tuple(float(c) for c in p) for p in bulged(verts)], faces
-
-
-def piping_paths():
-    """The piped seams: a loop round the top edge, one round the bottom edge, and the four upright corner edges,
-    each along the middle of its rounded edge (45 degrees between the two sides it joins), sunk half into the cloth."""
-    bx, by, bz = BAG_BODY
-    r = BAG_RADIUS
-    ix, iy, iz = bx - r, by - r, bz - r
-    sink = PIPE_R * 0.45
-    paths = []
-    # the inner rectangle's corners, counter-clockwise, and the outward direction each side leaves at
-    corners = [((ix, -iy), -90.0), ((ix, iy), 0.0), ((-ix, iy), 90.0), ((-ix, -iy), 180.0)]
-    for zs in (1, -1):
-        loop = []
-        for k, ((cx, cy), start) in enumerate(corners):
-            # round the corner (the outward direction turns 90 degrees about the corner), then run the next side
-            for ang in np.linspace(start, start + 90.0, 10)[:-1]:
-                h = (math.cos(math.radians(ang)), math.sin(math.radians(ang)))
-                loop.append((cx, cy, h))
-            (nx, ny), _ = corners[(k + 1) % 4]
-            h = (math.cos(math.radians(start + 90)), math.sin(math.radians(start + 90)))
-            for t in np.linspace(0, 1, 40)[:-1]:
-                loop.append((cx + (nx - cx) * t, cy + (ny - cy) * t, h))
-        loop = [np.array([cx, cy, zs * iz]) + np.array([h[0], h[1], zs]) * math.sqrt(0.5) * (r - sink)
-                for cx, cy, h in loop]
-        loop.append(loop[0])
-        paths.append((bulged(loop), PIPE_R, None, True))
-    for sx in (1, -1):
-        for sy in (1, -1):
-            d = np.array([sx, sy, 0.0]) / math.sqrt(2)
-            col = [np.array([sx * ix, sy * iy, z]) + d * (r - sink) for z in np.linspace(-iz - 0.02, iz + 0.02, 6)]
-            paths.append((bulged(col), PIPE_R, None, False))
-    return paths
 
 
 def tube(path, radius, ring=10, taper=None, closed=False):
@@ -173,34 +193,6 @@ def tube(path, radius, ring=10, taper=None, closed=False):
     return verts, faces, fuv
 
 
-def rope_paths():
-    """The cord along the top, the knot in the middle and its two tails."""
-    paths = []
-    xs = np.linspace(-0.56, 0.56, 90)
-    cord = []
-    for x in xs:
-        tuck = 0.03 * rt.smoothstep(0.48, 0.56, abs(x))
-        cord.append((x, 0.003 * math.sin(x * 9.0), bag_top(x) + ROPE_R * 0.35 - tuck))
-    paths.append((np.array(cord), ROPE_R, None, False))
-    # the knot: a squashed trefoil sitting on the cord
-    top = bag_top(0.0)
-    t = np.linspace(0, 2 * math.pi, 121)
-    s = 0.0098
-    knot = np.stack([s * (np.sin(t) + 2 * np.sin(2 * t)), s * (np.cos(t) - 2 * np.cos(2 * t)) * 0.75,
-                     top + 0.0085 + 0.45 * s * -np.sin(3 * t)], -1)
-    paths.append((knot, ROPE_R * 0.95, None, True))
-    # two tails lying forward over the top
-    for side, end in ((1, (0.055, -0.15)), (-1, (-0.035, -0.12))):
-        pts = []
-        for k in range(24):
-            u = k / 23
-            x = side * 0.012 + (end[0] - side * 0.012) * u + 0.006 * math.sin(u * 5 * side)
-            y = -0.012 + (end[1] + 0.012) * u
-            pts.append((x, y, max(bag_top(x, y) + ROPE_R * 0.6, top + 0.012 * (1 - u) ** 2)))
-        paths.append((np.array(pts), ROPE_R * 0.85, lambda u: 1.0 - 0.45 * rt.smoothstep(0.75, 1.0, u), False))
-    return paths
-
-
 def mesh_object(name, verts, faces, face_uvs, material, smooth_angle=60):
     me = bpy.data.meshes.new(name)
     me.from_pydata(verts, [], faces)
@@ -222,7 +214,7 @@ def mesh_object(name, verts, faces, face_uvs, material, smooth_angle=60):
 def build_bag():
     verts, faces = bag_body()
     charts, size, s, pad = rt.box_charts(BAG_HALF, BAG_TEX, BAG_TEX)
-    albedo, normal, _ = rt.bake(charts, size, s, pad, st.BagSurface(BAG_HALF, 404), normal_strength=1.0, shade=0.3)
+    albedo, normal, _ = rt.bake(charts, size, s, pad, st.PrintedBag(BAG_HALF, 404), normal_strength=1.0, shade=0.3)
     co = np.array(verts)
     face_uvs = []
     for f in faces:
@@ -233,33 +225,17 @@ def build_bag():
             nrm += np.array([(a[1] - b[1]) * (a[2] + b[2]), (a[2] - b[2]) * (a[0] + b[0]), (a[0] - b[0]) * (a[1] + b[1])])
         c = rt.chart_of_normal(charts, nrm)
         face_uvs.append([rt.chart_uv(c, p, size, s, pad) for p in pts])
-    burlap = br.make_material("soil_bag", albedo, normal, rough=0.92)
-    body = mesh_object("SoilBag", verts, faces, face_uvs, burlap, smooth_angle=70)
+    plastic = br.make_material("soil_bag", albedo, normal, rough=0.55)
+    body = mesh_object("SoilBag", verts, faces, face_uvs, plastic, smooth_angle=70)
 
-    rope_rgb, rope_h = st.rope_texture()
-    rope_n = st.normal_from_height(rope_h * 0.0012, 4600)
-    twine = br.make_material("soil_bag_twine", rope_rgb, rope_n, rough=0.85)
-    rv, rf, ruv = [], [], []
-    for path, radius, taper, closed in rope_paths():
-        v, f, uv = tube(path, radius, taper=taper, closed=closed)
-        base = len(rv)
-        rv += v
-        rf += [[i + base for i in q] for q in f]
-        ruv += uv
-    rope = mesh_object("SoilBagTwine", rv, rf, ruv, twine, smooth_angle=80)
-    pipe_rgb, pipe_h = st.rope_texture(seed=37, light=st.BURLAP_LIGHT, dark=st.BURLAP_DARK, strands=5)
-    piping = br.make_material("soil_bag_piping", pipe_rgb, st.normal_from_height(pipe_h * 0.0008, 4600), rough=0.92)
-    pv, pf, puv = [], [], []
-    for path, radius, taper, closed in piping_paths():
-        v, f, uv = tube(path, radius, ring=8, taper=taper, closed=closed)
-        base = len(pv)
-        pv += v
-        pf += [[i + base for i in q] for q in f]
-        puv += uv
-    pipe = mesh_object("SoilBagPiping", pv, pf, puv, piping, smooth_angle=80)
-    # one object, three materials
+    sv, sf, suv = seals()
+    seal_rgb, seal_h = st.seal_texture()
+    seal_mat = br.make_material("soil_bag_seal", seal_rgb, st.normal_from_height(seal_h * 0.0006, 2048), rough=0.5)
+    seal_mat.use_backface_culling = False            # a thin flap: seen from both sides
+    seal = mesh_object("SoilBagSeals", sv, sf, suv, seal_mat, smooth_angle=30)
+    # one object, two materials
     for o in bpy.context.scene.objects:
-        o.select_set(o in (body, rope, pipe))
+        o.select_set(o in (body, seal))
     bpy.context.view_layer.objects.active = body
     bpy.ops.object.join()
     return body
