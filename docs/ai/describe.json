@@ -2382,6 +2382,31 @@
       }
     },
     {
+      "name": "ReleaseItem",
+      "kind": "action",
+      "group": "scripting",
+      "scope": "play",
+      "description": "Letting go of Use after a held use (ReleaseItemArgs). Arguments of ReleaseItem: the caller lets go of Use after a held use (Hold).",
+      "params": {
+        "description": "Arguments of ReleaseItem: the caller lets go of Use after a held use (Hold).",
+        "type": "object",
+        "properties": {
+          "slot": {
+            "description": "The slot they used, if given; the host lets go of whatever they hold either way.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "ReleasePart",
       "kind": "action",
       "group": "logic",
@@ -3361,6 +3386,11 @@
                 "type": "null"
               }
             ]
+          },
+          "hold": {
+            "description": "True when Use stays held after this use (a spray): the script sees holder.using() true every step until ReleaseItem.",
+            "type": "boolean",
+            "default": false
           }
         },
         "required": [

@@ -36,6 +36,7 @@ public static class LuaApi
         new("on_aim", "function on_aim(on)", "Item scripts: the player holding the item started (true) or stopped (false) aiming with right click (AimItem).", "Hooks"),
         new("can_use", "function can_use(target)", "Item scripts: return nil to allow a use, or the reason it is refused. May not change the world.", "Hooks"),
         new("on_use", "function on_use(target)", "Item scripts: the player used the item (target has from, direction and aiming, plus creation and part when aimed at a part in reach); the return value is the action's result.", "Hooks"),
+        new("on_use_release", "function on_use_release()", "Item scripts: the player let go of Use after a held use (UseItem with hold, ReleaseItem), or the item left their hand while they held it.", "Hooks"),
         new("on_hit", "function on_hit(landing)", "A projectile the script launched (combat.projectile) landed: {id, position, hit?, data}.", "Hooks"),
         new("can_reload_item", "function can_reload_item()", "Item scripts: return nil to allow a reload, or the reason it is refused. May not change the world.", "Hooks"),
         new("on_reload_item", "function on_reload_item()", "Item scripts: the player pressed Reload (R) with the item in hand (ReloadItem). An item without it cannot be reloaded.", "Hooks"),
@@ -142,6 +143,7 @@ public static class LuaApi
         new("holder.max_health", "holder.max_health()", "The most health a player can have.", "holder"),
         new("holder.heal", "holder.heal(amount)", "Gives the holder health, up to the maximum; returns their health.", "holder"),
         new("holder.aiming", "holder.aiming()", "True while the holder holds right click to aim the item (AimItem).", "holder"),
+        new("holder.using", "holder.using()", "True while the holder keeps Use held after a held use (UseItem with hold, an item with held.hold_use), until they let go (ReleaseItem): a spray reads it in on_update.", "holder"),
 
         new("inventory.count", "inventory.count(item)", "How many of an item the holder carries (bare ids are in the item's mod).", "inventory"),
         new("inventory.take", "inventory.take(item, count?)", "Takes count (default 1) of an item from the holder; true, or false when they carry too few.", "inventory"),

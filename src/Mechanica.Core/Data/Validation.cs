@@ -607,6 +607,19 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             if (held.Scale is { } scale && !(scale > 0 && scale <= HeldDefinition.MaxScale))
                 sink.Error(Code, "$.held.scale", $"scale must be more than 0 and at most {HeldDefinition.MaxScale} (got {scale}).");
             CheckColor(held.Juice, "$.held.juice", sink);
+            if (held.Spray is { } spray)
+            {
+                CheckColor(spray.Color, "$.held.spray.color", sink);
+                if (spray.Length is { } length && !(length > 0 && length <= HeldSprayDefinition.MaxLength))
+                    sink.Error(Code, "$.held.spray.length", $"length must be more than 0 and at most {HeldSprayDefinition.MaxLength} m (got {length}).");
+                if (spray.Angle is { } angle && !(angle >= 0 && angle <= 60))
+                    sink.Error(Code, "$.held.spray.angle", $"angle must be 0 to 60 degrees (got {angle}).");
+                if (spray.Size is { } size && !(size > 0 && size <= 1))
+                    sink.Error(Code, "$.held.spray.size", $"size must be more than 0 and at most 1 m (got {size}).");
+                if (held.HoldUse != true)
+                    sink.Warning(Code, "$.held.spray", "a spray only shows while Use is held: set held.hold_use.");
+                KnownKeys.WarnUnknown(spray.Extra, "$.held.spray", sink, typeof(HeldSprayDefinition));
+            }
             KnownKeys.WarnUnknown(held.Extra, "$.held", sink, typeof(HeldDefinition));
             static bool Within(float v) => float.IsFinite(v) && Math.Abs(v) <= HeldDefinition.MaxOffset;
         }

@@ -18,7 +18,7 @@ namespace Mechanica.Core.Player;
 /// <param name="GestureCount">Goes up by one with every gesture, so a repeat is still seen as new.</param>
 /// <param name="Guard">
 /// The tool in hand is raised, for how others see them: the Sledgehammer held up to block, the Connect Tool aimed at a
-/// node, the Paint Tool spraying (<see cref="CharacterRig.CanGuard"/>).
+/// node, the Paint Tool spraying, a held item sprayed with Use held (<see cref="CharacterRig.CanGuard"/>).
 /// </param>
 /// <param name="Tint">
 /// The Paint Tool's colour, for how others see its tubes and its spray: the palette index, plus

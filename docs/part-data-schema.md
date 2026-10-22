@@ -426,6 +426,8 @@ item carries a model in the right hand, and every other player sees it too.
 | `held.rotation` | [x, y, z] degrees | Turns the model in the hand (X, then Y, then Z). Default [0, 0, 0]. |
 | `held.scale` | number, more than 0 to 4 | Scales the model. Default 1. |
 | `held.juice` | `#rrggbb` | Food: the colour of the juice each bite sprays. Default: the item's `visual.color`. |
+| `held.hold_use` | bool | Use is held, not clicked (a spray): the press sends `UseItem` with `hold` and letting go `ReleaseItem`, and the item's script sees `holder.using()` every step in between (see [Lua API](lua-api.md#item-scripts)). Default false. |
+| `held.spray` | object | What every player sees spraying from the held model while its holder holds Use (`hold_use`): particles from the model's `nozzle` node (or its origin) along where the holder looks. `color` (`#rrggbb`, default white), `length` (m, more than 0 to 20, default 4), `angle` (half the cone's opening in degrees, 0 to 60, default 15), `size` (each particle in m, more than 0 to 1, default 0.08). Only a look: match it to what the script does. |
 
 ```json
 "held": { "mesh": "meshes/torch_held.glb", "offset": [0, 0.05, 0], "rotation": [0, 90, 0], "scale": 0.8 }
@@ -751,7 +753,7 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 | 2100 | Road signs | `stop_sign`, `caution_sign`, `construction_sign`, `falling_objects_sign`, `danger_sign`, `skull_sign`, `beware_bots_sign`, `no_entry_sign`, `speed_limit_sign`, `direction_arrow_left`, `direction_arrow_straight`, `direction_arrow_right`, `exit_sign`, `welcome_sign`, `hard_work_sign`, `sale_sign` |
 | 2200 | Road and site | `traffic_cone`, `barrier_tape`, `outpost_sign`, `warehouse_key_sign`, `banner_holder`, `billboard` |
 | 2300 | Nature | `fallen_log`, `tree_trunk` |
-| 2400 | Tools | `connect_tool`, `weld_tool`, `paint_tool`, `paint_ammo` |
+| 2400 | Tools | `connect_tool`, `weld_tool`, `paint_tool`, `paint_ammo`, `fire_extinguisher` |
 | 2500 | Weapons | `potato_blaster`, `potato_scattergun`, `potato_launcher`, `popper` |
 | 2600 | Refined materials | `wood_rod`, `pine_rod`, `stone_rod`, `metal_rod` |
 | 2700 | Crafting materials | `glue` |

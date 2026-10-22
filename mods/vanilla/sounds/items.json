@@ -166,6 +166,18 @@
       "max_distance": 25
     },
     {
+      "id": "extinguisher_spray",
+      "clips": [
+        "sounds/building/paint_spray.ogg",
+        "sounds/building/paint_spray_2.ogg"
+      ],
+      "volume_db": 2,
+      "pitch": 0.62,
+      "pitch_variation": 0.06,
+      "max_distance": 25,
+      "max_instances": 4
+    },
+    {
       "id": "water_splash",
       "clips": [
         "sounds/items/water_splash.ogg",

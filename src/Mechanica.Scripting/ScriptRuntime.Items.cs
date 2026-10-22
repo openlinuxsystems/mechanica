@@ -29,6 +29,9 @@ public sealed partial class ScriptRuntime
     /// <summary>Action name for starting or stopping aiming the item in hand (<see cref="AimItemArgs"/>).</summary>
     public const string AimItem = "AimItem";
 
+    /// <summary>Action name for letting go of Use after a held use (<see cref="ReleaseItemArgs"/>).</summary>
+    public const string ReleaseItem = "ReleaseItem";
+
     // Most pellets one combat.pellets call may make.
     private const int MaxPellets = 64;
 
@@ -44,6 +47,8 @@ public sealed partial class ScriptRuntime
     // True while on_hit runs for a landed projectile (see Reaching).
     private bool _landing;
     private readonly HashSet<int> _aiming = [];
+    // Players holding Use down after a held use (UseItem with hold), until ReleaseItem.
+    private readonly HashSet<int> _using = [];
     private IPartCatalog? _catalog;
     private SurvivalActions? _survival;
     private InventoryActions? _inventories;
@@ -75,6 +80,7 @@ public sealed partial class ScriptRuntime
         _dispatcher.Register<EquipItemArgs>(EquipItem, ValidateEquip, ApplyEquip);
         _dispatcher.Register<ReloadItemArgs>(ReloadItem, ValidateReload, ApplyReload);
         _dispatcher.Register<AimItemArgs>(AimItem, ValidateAim, ApplyAim);
+        _dispatcher.Register<ReleaseItemArgs>(ReleaseItem, (_, _) => null, ApplyRelease);
         survival.ProjectileLanded += OnProjectileLanded;
         survival.PartDamaged += OnPartDamaged;
         survival.VitalsChanged += peer =>
@@ -89,6 +95,9 @@ public sealed partial class ScriptRuntime
 
     /// <summary>True while <paramref name="peer"/> aims the item in hand (right click held).</summary>
     public bool IsAiming(int peer) => _aiming.Contains(peer);
+
+    /// <summary>True while <paramref name="peer"/> holds Use down after a held use (<see cref="UseItemArgs.Hold"/>), until they let go.</summary>
+    public bool IsUsing(int peer) => _using.Contains(peer);
 
     /// <summary>Every held-item script instance, by player then item.</summary>
     public IReadOnlyList<ItemScriptInfo> ItemInstances =>
@@ -140,6 +149,9 @@ public sealed partial class ScriptRuntime
         var direction = args.Direction is { } d ? Vector3.Normalize(d.ToNumerics()) : _survival.World.LookOf(caller.Peer);
         var values = CallItem(instance, Hooks.OnUse, ItemPhase.Acting, Target(instance, eye, direction, args))
             ?? throw new InvalidOperationException($"the {instance.PartType} script failed: {instance.Fault}");
+        // Held Use: the script sees holder.using() until ReleaseItem, while the item stays in hand.
+        if (args.Hold && _held.TryGetValue(caller.Peer, out var held) && held.Item == id)
+            _using.Add(caller.Peer);
         if (values.Length == 0 || values[0].IsNil())
             return null;
         try
@@ -210,6 +222,21 @@ public sealed partial class ScriptRuntime
         return null;
     }
 
+    private JsonElement? ApplyRelease(ActionCaller caller, ReleaseItemArgs args)
+    {
+        StopUsing(caller.Peer);
+        return null;
+    }
+
+    // Lets go of a held Use: on_use_release for the item in hand.
+    private void StopUsing(int peer)
+    {
+        if (!_using.Remove(peer))
+            return;
+        if (_held.TryGetValue(peer, out var held) && _items.TryGetValue((peer, held.Item), out var instance) && instance.Fault is null)
+            CallItem(instance, Hooks.OnUseRelease, ItemPhase.Acting);
+    }
+
     // on_update(dt) for the item each living player holds, after the parts' on_update.
     private void UpdateHeldItems(DynValue dt)
     {
@@ -261,6 +288,7 @@ public sealed partial class ScriptRuntime
 
     private void Unequip(int peer)
     {
+        StopUsing(peer);
         _aiming.Remove(peer);
         if (!_held.Remove(peer, out var held))
             return;
@@ -384,6 +412,7 @@ public sealed partial class ScriptRuntime
         foreach (var peer in _held.Keys.Where(p => !players.Contains(p)).ToList())
             _held.Remove(peer);
         _aiming.RemoveWhere(p => !players.Contains(p));
+        _using.RemoveWhere(p => !players.Contains(p));
     }
 
     private void ClearItems()
@@ -392,6 +421,7 @@ public sealed partial class ScriptRuntime
         _savedItemStates.Clear();
         _held.Clear();
         _aiming.Clear();
+        _using.Clear();
         _flights.Clear();
     }
 
@@ -524,6 +554,7 @@ public sealed partial class ScriptRuntime
             return DynValue.NewNumber(_survival!.Heal(instance.Holder!.Value, LuaValues.Number(args[0], "holder.heal", 1)));
         });
         Fn(holder, "aiming", _ => DynValue.NewBoolean(_aiming.Contains(ItemNow().Holder!.Value)));
+        Fn(holder, "using", _ => DynValue.NewBoolean(_using.Contains(ItemNow().Holder!.Value)));
         globals.Set("holder", DynValue.NewTable(holder));
 
         var inventory = new Table(script);

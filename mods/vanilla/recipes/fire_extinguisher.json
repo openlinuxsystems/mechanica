@@ -1,0 +1,24 @@
+{
+  "id": "fire_extinguisher",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 3
+    },
+    {
+      "item": "chemical",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "fire_extinguisher",
+      "count": 2
+    }
+  ],
+  "time": 10,
+  "order": 2450
+}

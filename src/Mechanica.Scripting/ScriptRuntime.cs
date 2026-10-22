@@ -159,6 +159,9 @@ public sealed partial class ScriptRuntime
         /// <summary><c>on_use(target)</c>: the player used the item; what it returns is the action's value.</summary>
         public const string OnUse = "on_use";
 
+        /// <summary><c>on_use_release()</c>: the player let go of Use after a held use (<c>UseItem</c> with <c>hold</c>).</summary>
+        public const string OnUseRelease = "on_use_release";
+
         /// <summary><c>on_hit(landing)</c>: a projectile the script launched hit something or ran out of time.</summary>
         public const string OnHit = "on_hit";
 

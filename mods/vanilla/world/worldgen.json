@@ -758,6 +758,7 @@
         { "item": "tomato_seed", "count": 2, "count_max": 4, "weight": 1.0 },
         { "item": "glowstick", "count": 1, "count_max": 2, "weight": 1.0 },
         { "item": "paint_ammo", "count": 5, "count_max": 10, "weight": 1.0 },
+        { "item": "fire_extinguisher", "count": 2, "count_max": 4, "weight": 1.0 },
         { "item": "circuit_board", "count": 1, "weight": 1.0 }
       ]
     },
@@ -770,6 +771,7 @@
         { "item": "gasoline", "count": 2, "count_max": 4, "weight": 2.0 },
         { "item": "chemical", "count": 2, "count_max": 3, "weight": 2.0 },
         { "item": "glowstick", "count": 2, "count_max": 4, "weight": 1.0 },
+        { "item": "fire_extinguisher", "count": 2, "count_max": 4, "weight": 1.0 },
         { "item": "popper", "count": 1, "weight": 1.0 }
       ]
     },
@@ -829,6 +831,7 @@
         { "item": "battery_pack", "count": 1, "weight": 1.0 },
         { "item": "tomato_seed", "count": 2, "count_max": 4, "weight": 1.0 },
         { "item": "cotton_seed", "count": 2, "count_max": 4, "weight": 1.0 },
+        { "item": "fire_extinguisher", "count": 2, "count_max": 4, "weight": 1.0 },
         { "item": "popper", "count": 1, "weight": 1.0 }
       ]
     },
@@ -843,6 +846,7 @@
         { "item": "carrot_seed", "count": 2, "count_max": 4, "weight": 1.0 },
         { "item": "potato_seed", "count": 2, "count_max": 4, "weight": 1.0 },
         { "item": "gasoline", "count": 1, "count_max": 2, "weight": 1.0 },
+        { "item": "fire_extinguisher", "count": 2, "count_max": 4, "weight": 1.0 },
         { "item": "glue", "count": 1, "weight": 1.0 }
       ]
     },
@@ -857,6 +861,7 @@
         { "item": "glue", "count": 1, "count_max": 3, "weight": 2.0 },
         { "item": "chemical", "count": 1, "count_max": 2, "weight": 1.0 },
         { "item": "paint_ammo", "count": 10, "count_max": 20, "weight": 1.0 },
+        { "item": "fire_extinguisher", "count": 2, "count_max": 4, "weight": 1.0 },
         { "item": "metal_rod", "count": 2, "count_max": 5, "weight": 1.0 }
       ]
     }
