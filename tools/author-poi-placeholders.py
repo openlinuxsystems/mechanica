@@ -303,7 +303,7 @@ add("capsule_scrapyard", "Capsule Scrapyard", [50, 6, 40], "track",
      loot_part("metal_crate", [-22.0, 0.3, 0.0], "warehouse_crate", [2, 4]), loot_part("wooden_crate", [22.0, 0.3, 0.0], "crate", [2, 4]),
      part("shelf_unit", [-6.0, 0.3, -19.5], yaw=180.0), part("shelf_unit", [6.0, 0.3, -19.5], yaw=180.0),
      part("construction_light", [-24.0, 0.3, -18.0]), part("construction_light", [24.0, 0.3, -18.0]),
-     part("battery_pack", [-4.0, 0.3, 0.0]), part("scrap_wheel", [4.0, 0.3, 0.0]), part("warning_light", [0.0, 0.3, -18.5])])
+     part("battery", [-4.0, 0.3, 0.0]), part("scrap_wheel", [4.0, 0.3, 0.0]), part("warning_light", [0.0, 0.3, -18.5])])
 add("ruin_city", "Ruin City", [160, 40, 140], "road",
     [box([168, 0.3, 148], [0, 0.15, 0], RUIN),
      *[volume(w, d, h, RUIN, x=x, z=z, y=0.3) for w, d, h, x, z in

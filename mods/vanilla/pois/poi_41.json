@@ -34,7 +34,7 @@
     { "type": "part", "ref": "shelf_unit", "at": [6.0, 0.3, -19.5], "yaw": 180.0 },
     { "type": "part", "ref": "construction_light", "at": [-24.0, 0.3, -18.0] },
     { "type": "part", "ref": "construction_light", "at": [24.0, 0.3, -18.0] },
-    { "type": "part", "ref": "battery_pack", "at": [-4.0, 0.3, 0.0] },
+    { "type": "part", "ref": "battery", "at": [-4.0, 0.3, 0.0] },
     { "type": "part", "ref": "scrap_wheel", "at": [4.0, 0.3, 0.0] },
     { "type": "part", "ref": "warning_light", "at": [0.0, 0.3, -18.5] }
   ]

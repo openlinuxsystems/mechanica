@@ -254,7 +254,7 @@ somewhere to look (all in `worldgen.json`, checked by `FindablesTests`):
   Electric Engine, Thruster, Off Road Wheels and a Driver's Seat.
 - **POIs are furnished with parts to take** (`part` markers, so each is a real part a player can pick up for good):
   the scrapyards have warning signs, cones, shelves, site lights, crates, a refilling Ruin Chest and loose wheels, seats,
-  an engine or a battery; the Scrap City Garage has wheels and a seat on its forecourt; camps a Scrap Seat by the fire
+  an engine or a Battery; the Scrap City Garage has wheels and a seat on its forecourt; camps a Scrap Seat by the fire
   and a Shack Light; kiosks a sale sign; warehouses site lights, cones and the Warehouse Key Sign at the door; the
   Workshop its bed and sign; the haymaze a Ruin Chest in its heart; and the other sites a crate or two. Each
   warehouse's top floor has a locker that always holds the **Warehouse Key** (table `warehouse_office`), the only place

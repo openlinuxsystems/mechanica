@@ -74,7 +74,7 @@ public sealed class FindablesTests
     [Theory]
     [InlineData("farmbot_scrapyard", "beware_bots_sign")]
     [InlineData("farmbot_scrapyard", "scrap_gas_engine")]
-    [InlineData("poi_41", "battery_pack")]
+    [InlineData("poi_41", "battery")]
     [InlineData("poi_50", "wheel")]
     [InlineData("camp", "scrap_seat")]
     [InlineData("roadside_kiosk", "sale_sign")]
