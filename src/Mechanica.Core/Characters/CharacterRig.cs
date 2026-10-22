@@ -56,6 +56,12 @@ public enum CharacterProp : byte
 
     /// <summary>The water bucket full of chemical (a Chemical Bucket, Parts map E11): the water bucket's model, its liquid green.</summary>
     ChemicalBucketFull,
+
+    /// <summary>
+    /// A drink (consumables batch C2: food whose data says <c>drink</c>): the bottle upright in the fist, drunk with
+    /// <see cref="CharacterGesture.Drink"/>.
+    /// </summary>
+    Drink,
 }
 
 /// <summary>
@@ -126,6 +132,12 @@ public enum CharacterGesture : byte
 
     /// <summary>Installing an item a quest marker takes (the Master Battery into its bay): both hands push it home.</summary>
     Install,
+
+    /// <summary>
+    /// Drinking (consumables batch C2): a drink in hand (food whose data says <c>drink</c>) is tipped up to the lips for
+    /// quick gulps (<see cref="CharacterSettings.Drink"/>).
+    /// </summary>
+    Drink,
 }
 
 /// <summary>How hard a hit throws a player about (<see cref="CharacterAnimator.React"/>).</summary>
@@ -300,7 +312,7 @@ public static class CharacterRig
         "hold_bag", "bag_spill", "bag_lift", "bag_lower", "hold_bag_fp", "bag_spill_fp", "bag_lift_fp", "bag_lower_fp",
         "hold_paint", "hold_paint_aim", "paint_draw", "paint_stow", "paint_reload",
         "hold_paint_fp", "hold_paint_aim_fp", "paint_draw_fp", "paint_stow_fp", "paint_spray_fp", "paint_reload_fp",
-        "hold_food", "hold_food_fp", "eat_fp",
+        "hold_food", "hold_food_fp", "eat_fp", "hold_drink", "hold_drink_fp", "drink", "drink_fp",
     ];
 
     /// <summary>
@@ -338,6 +350,7 @@ public static class CharacterRig
         CharacterProp.WaterBucketFull or CharacterProp.ChemicalBucketFull => "hold_bucket_full",
         CharacterProp.Item => "hold_item",
         CharacterProp.Food => "hold_food",
+        CharacterProp.Drink => "hold_drink",
         CharacterProp.RefineTool => "hold_refine",
         CharacterProp.SoilBag => "hold_bag",
         _ => "hold_tool",
@@ -396,6 +409,7 @@ public static class CharacterRig
         CharacterGesture.BagSpill => "bag_spill",
         CharacterGesture.PaintReload => "paint_reload",
         CharacterGesture.Install => "install",
+        CharacterGesture.Drink => "drink",
         _ => null,
     };
 
@@ -469,8 +483,8 @@ public static class CharacterRig
     public const byte TintErase = 0x80;
 
     /// <summary><paramref name="prop"/> when it is a known value, otherwise <see cref="CharacterProp.None"/>.</summary>
-    public static CharacterProp Sanitize(CharacterProp prop) => prop <= CharacterProp.ChemicalBucketFull ? prop : CharacterProp.None;
+    public static CharacterProp Sanitize(CharacterProp prop) => prop <= CharacterProp.Drink ? prop : CharacterProp.None;
 
     /// <summary><paramref name="gesture"/> when it is a known value, otherwise <see cref="CharacterGesture.None"/>.</summary>
-    public static CharacterGesture Sanitize(CharacterGesture gesture) => gesture <= CharacterGesture.PaintReload ? gesture : CharacterGesture.None;
+    public static CharacterGesture Sanitize(CharacterGesture gesture) => gesture <= CharacterGesture.Drink ? gesture : CharacterGesture.None;
 }

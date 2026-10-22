@@ -339,6 +339,9 @@ in `properties`. The vanilla scripts read these properties:
 | Script | Property | Meaning |
 |--------|----------|---------|
 | `scripts/food.lua` | `health` | Health one eaten item gives back. |
+| | `drink` | `true` for a drink (Bloom Tea, Grazer Shake): it is held in the `hold_drink` pose, drunk with the `drink` clip and its `drink` sound (else its `eat` sound), and the player may keep sprinting while drinking. Food stops a sprint until it is eaten. |
+| | `eat_seconds` (s, up to 10) | How long one eat or drink takes: no more is eaten until it is over (the host checks it, a little leniently). Omitted means the clip's length (`eat.seconds` or `drink.seconds` in `character.json`). |
+| `scripts/fertilizer.lua` | `boost` | How many times faster the crop it is used on grows, until harvest (more than 1, at most 100). It still needs water. |
 | `scripts/potato_gun.lua` | `damage` | Damage per hit, or at the centre of a splash. |
 | | `interval` (s) | Shortest time between shots. |
 | | `range` (m) | How far a hitscan shot reaches. |
@@ -444,6 +447,11 @@ Without them the whole model shows until it is gone. Each bite sprays juice (`he
 In first person the arms use `hold_food_fp` and `eat_fp`, posed for the first-person camera: the palm in the lower right of
 the view, brought up under the camera for each bite. A long food lies across the palm with the end that is bitten toward the
 little finger (vanilla's carrot); its bitten versions take that end off.
+
+A drink (`properties.drink`) is held upright in the fist (`hold_drink`, `hold_drink_fp`) and drunk with the `drink` clip
+(`drink_fp` in first person): the bottle is lifted, tipped to the lips for two gulps and lowered, timed by `drink` in
+`character.json`; each gulp plays the item's `drink` sound, with no juice. Vanilla's bottles have their base at the
+model's origin and stand along the thumb.
 
 ```json
 "held": { "mesh": "meshes/items/tomato_held.glb", "offset": [-0.0373, 0.0413, 0.0015], "rotation": [-3.37, -180, -45], "juice": "#c83a2a" }
@@ -748,7 +756,7 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 | 1600 | Lights | `shack_light`, `glowstick`, `fluorescent_light`, `packing_lamp`, `interior_light`, `headlight`, `spotlight`, `construction_light`, `warning_light`, `beacon_scrap`, `beacon`, `warehouse_spotlight`, `frame_beam_light`, `neon_sign`, `protector_sign` |
 | 1700 | Storage | `chest` (Scrap Chest), `small_chest`, `large_chest`, `cargo_chest`, `barrel`, `locker`, `tool_cabinet`, `file_cabinet`, `fridge`, `chemical_container`, `water_container`, `potato_ammo_container`, `resource_collector`, `vacuum_pipe`, `vacuum_pipe_corner`, `vacuum_pump`, `dispenser`, `broken_microwave`, `ruin_chest` |
 | 1800 | Stations | `portable_fabricator`, `refiner`, `respawn_bed`, `fancy_bed`, `freezer`, `ice_block_freezer` (the Freezer's one recipe) |
-| 1900 | Farming | `soil_bag`, `water_bucket`, `feeding_trough`, `lead`, `growbed` |
+| 1900 | Farming | `soil_bag`, `water_bucket`, `feeding_trough`, `lead`, `growbed`, `fertilizer` |
 | 2000 | Furniture | `stool`, `chair`, `toilet`, `bathtub`, `anvil`, `cash_register`, `wooden_table`, `metal_table`, `office_table`, `table_support`, `office_chair_base`, `cubicle_wall`, `shelf_unit`, `shelf_pillar`, `shelf_support`, `shelf_support_tall`, `pallet`, `stall_door`, `sink`, `mattress`, `pillow`, `mug`, `calendar`, `toilet_paper` |
 | 2100 | Road signs | `stop_sign`, `caution_sign`, `construction_sign`, `falling_objects_sign`, `danger_sign`, `skull_sign`, `beware_bots_sign`, `no_entry_sign`, `speed_limit_sign`, `direction_arrow_left`, `direction_arrow_straight`, `direction_arrow_right`, `exit_sign`, `welcome_sign`, `hard_work_sign`, `sale_sign` |
 | 2200 | Road and site | `traffic_cone`, `barrier_tape`, `outpost_sign`, `warehouse_key_sign`, `banner_holder`, `billboard` |

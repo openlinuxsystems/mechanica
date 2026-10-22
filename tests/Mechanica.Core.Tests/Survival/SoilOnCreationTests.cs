@@ -103,6 +103,33 @@ public sealed class SoilOnCreationTests
     }
 
     [Fact]
+    public void FertilizerBoostsAGrowingCropAndTheBoostSavesWithTheCreation()
+    {
+        var cart = Cart();
+        Assert.Equal("Nothing is growing there.", _f.Survival.CheckBoost(Me, cart.Id, 4, 15));
+        _f.Survival.PlantSeed(Me, cart.Id, 4, Seed);
+        Assert.Equal("A boost must be more than 1 and at most 100.", _f.Survival.CheckBoost(Me, cart.Id, 4, 1));
+        Assert.Equal("A boost must be more than 1 and at most 100.", _f.Survival.CheckBoost(Me, cart.Id, 4, float.NaN));
+        Assert.Equal(15f, _f.Survival.BoostSoil(Me, cart.Id, 4, 15).Boost);
+        Assert.Equal("That crop already grows that fast.", _f.Survival.CheckBoost(Me, cart.Id, 4, 15));
+        Assert.Throws<InvalidOperationException>(() => _f.Survival.BoostSoil(Me, cart.Id, 4, 10));
+
+        var json = CreationJson.Write(cart);
+        Assert.Contains("\"boost\"", json);
+        var diagnostics = new List<DataDiagnostic>();
+        var read = CreationJson.Read(json, _f.Catalog, "test", diagnostics)!;
+        Assert.Empty(diagnostics);
+        Assert.Equal(15f, read.SoilOf(4)!.Boost);
+        Assert.Equal(15f, _f.Survival.SoilViewOf(read, 4).Boost);
+
+        cart.SoilOf(4)!.Set(grown: 40, stage: SoilState.Stages);
+        Assert.Equal("That crop is already ripe.", _f.Survival.CheckBoost(Me, cart.Id, 4, 20));
+        cart.SoilOf(4)!.Clear();
+        Assert.Equal(1f, cart.SoilOf(4)!.Boost);
+        Assert.DoesNotContain("\"boost\"", CreationJson.Write(cart));
+    }
+
+    [Fact]
     public void SoilTakesOnlyTheSeedsItsDataLists()
     {
         var cart = Cart();

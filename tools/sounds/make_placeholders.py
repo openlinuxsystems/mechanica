@@ -793,7 +793,14 @@ ev("items", "seed_place", lambda rng: edges(peak(band(noise(rng, 0.3), 200, 2500
 ev("items", "seed_pickup", lambda rng: edges(peak(band(noise(rng, 0.25), 400, 3500) * decay(0.25, 0.04), 0.5)), pitch_variation=0.1, **QUIET)
 ev("items", "eat_crunch", lambda rng: edges(peak(mix(0.5, *[(band(noise(rng, 0.08), 1000, 7000) * decay(0.08, 0.02), i * 0.12) for i in range(4)]), 0.6)), variants=2, pitch_variation=0.1, **QUIET)
 ev("items", "eat_soft", lambda rng: edges(peak(mix(0.5, *[(band(noise(rng, 0.12), 200, 1500) * decay(0.12, 0.04), i * 0.15) for i in range(3)]), 0.5)), pitch_variation=0.1, **QUIET)
-ev("items", "blaster_fire", lambda rng: edges(peak(mix(0.4, (thud(rng, 0.3, 60, 2000, 0.03, 1.0), 0), (glide(600, 200, 0.12) * decay(0.12, 0.04), 0)), 0.85)), variants=2, pitch_variation=0.06, max_distance=50.0)
+# A gulp from a bottle (consumables batch C2, Bloom Tea and Grazer Shake): a low throat thump under a short liquid glug.
+ev("items", "drink_gulp", lambda rng: edges(peak(mix(0.32, (thud(rng, 0.16, 60, 500, 0.035, 0.7), 0),
+                                                    (band(glide(260, 150, 0.14) * decay(0.14, 0.05) + noise(rng, 0.14) * 0.15, 120, 1400) * 0.8, 0.03)), 0.5)),
+   variants=2, pitch_variation=0.08, **QUIET)
+# Fertilizer shaken out over a crop: a dry rattle of granules on soil.
+ev("items", "fertilizer_use", lambda rng: edges(peak(mix(0.6, *[(band(noise(rng, 0.03), 2500, 8000) * decay(0.03, 0.006) * rng.uniform(0.3, 1.0), rng.uniform(0.0, 0.5)) for _ in range(40)],
+                                                     (band(noise(rng, 0.5), 300, 2500) * decay(0.5, 0.2) * 0.35, 0.02)), 0.5)), pitch_variation=0.08, **QUIET)
+ev("items", "blaster_fire",lambda rng: edges(peak(mix(0.4, (thud(rng, 0.3, 60, 2000, 0.03, 1.0), 0), (glide(600, 200, 0.12) * decay(0.12, 0.04), 0)), 0.85)), variants=2, pitch_variation=0.06, max_distance=50.0)
 ev("items", "blaster_reload", lambda rng: edges(peak(mix(0.5, (click(rng, 1200, 0.1), 0), (click(rng, 900, 0.1), 0.25)), 0.6)), **QUIET)
 ev("items", "scattergun_fire", lambda rng: edges(peak(mix(0.6, (boom(rng, 0.5, 0.9), 0), (band(noise(rng, 0.3), 1000, 6000) * decay(0.3, 0.05), 0)), 0.9)), pitch_variation=0.05, max_distance=60.0)
 ev("items", "scattergun_pump", lambda rng: edges(peak(mix(0.5, (click(rng, 700, 0.15), 0), (click(rng, 1100, 0.15), 0.2)), 0.7)), **QUIET)

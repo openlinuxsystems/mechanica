@@ -100,7 +100,8 @@ end
 - What `on_use` returns is the `UseItem` action's result, which agents and tests read.
 
 If eating something should only ever heal, vanilla's `scripts/food.lua` already does this; an item can use it
-with `"script": "vanilla:scripts/food.lua"` and its own `health` property.
+with `"script": "vanilla:scripts/food.lua"` and its own `health` property (plus `"drink": true` for a drink and
+`eat_seconds`, how long one takes; see [the vanilla scripts' properties](part-data-schema.md#survival)).
 
 ## 2. A gun: the Pea Shooter
 

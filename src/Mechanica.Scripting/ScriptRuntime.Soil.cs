@@ -54,6 +54,7 @@ public sealed partial class ScriptRuntime
             table.Set("stage", DynValue.NewNumber(state.Stage));
             table.Set("stages", DynValue.NewNumber(SoilState.Stages));
             table.Set("soaked", DynValue.NewBoolean(state.Soaked));
+            table.Set("boost", DynValue.NewNumber(state.Boost));
             if (state.Updated is { } updated)
                 table.Set("updated", DynValue.NewNumber(updated));
             return DynValue.NewTable(table);
@@ -64,7 +65,7 @@ public sealed partial class ScriptRuntime
             var (creation, state) = OwnSoil("soil.set", mustExist: true)!.Value;
             var values = args.AsType(0, "soil.set", DataType.Table).Table;
             float? Field(string name) => values.Get(name) is { } v && !v.IsNil() ? LuaValues.Number(v, $"soil.set ({name})", 1) : null;
-            var (grown, water, stage) = (Field("grown"), Field("water"), Field("stage"));
+            var (grown, water, stage, boost) = (Field("grown"), Field("water"), Field("stage"), Field("boost"));
             // A world.time() stamp stays a double: a float would lose its fraction after a few days of play.
             var updated = values.Get("updated") switch
             {
@@ -80,7 +81,7 @@ public sealed partial class ScriptRuntime
                 water = Math.Min(w, definition?.Capacity ?? 0);
             try
             {
-                state.Set(grown, water, stage is { } st ? (int)st : null, updated, SoilState.WetAt(definition));
+                state.Set(grown, water, stage is { } st ? (int)st : null, updated, SoilState.WetAt(definition), boost);
             }
             catch (ArgumentOutOfRangeException e)
             {

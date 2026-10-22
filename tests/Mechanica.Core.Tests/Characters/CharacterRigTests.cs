@@ -43,7 +43,7 @@ public class CharacterRigTests
     public void TheRefineToolIsAPropWithItsOwnDrawWorkAndStowClips()
     {
         Assert.Equal(CharacterProp.RefineTool, CharacterRig.Sanitize(CharacterProp.RefineTool));
-        Assert.Equal(CharacterProp.None, CharacterRig.Sanitize((CharacterProp)(CharacterProp.ChemicalBucketFull + 1)));
+        Assert.Equal(CharacterProp.None, CharacterRig.Sanitize((CharacterProp)(CharacterProp.Drink + 1)));
         Assert.Equal("refine_tool", CharacterRig.PropNode(CharacterProp.RefineTool));
         Assert.Equal("hold_refine", CharacterRig.HoldClip(CharacterProp.RefineTool));
         Assert.Equal("refine_draw", CharacterRig.DrawClip(CharacterProp.RefineTool));
@@ -84,7 +84,7 @@ public class CharacterRigTests
     {
         Assert.Equal(CharacterProp.SoilBag, CharacterRig.Sanitize(CharacterProp.SoilBag));
         Assert.Equal(CharacterGesture.BagSpill, CharacterRig.Sanitize(CharacterGesture.BagSpill));
-        Assert.Equal(CharacterGesture.None, CharacterRig.Sanitize((CharacterGesture)(CharacterGesture.PaintReload + 1)));
+        Assert.Equal(CharacterGesture.None, CharacterRig.Sanitize((CharacterGesture)(CharacterGesture.Drink + 1)));
         Assert.Equal("soil_bag", CharacterRig.PropNode(CharacterProp.SoilBag));
         Assert.Equal("hold_bag", CharacterRig.HoldClip(CharacterProp.SoilBag));
         Assert.Equal("bag_lift", CharacterRig.DrawClip(CharacterProp.SoilBag));
@@ -119,4 +119,16 @@ public class CharacterRigTests
     [InlineData(0.86f, -1)]
     [InlineData(1.4f, -1)]
     public void BitesFollowTheEatClip(float seconds, int bites) => Assert.Equal(bites, new EatSettings().BitesAt(seconds));
+
+    [Fact]
+    public void DrinksHoldTheirOwnPropAndPlayTheDrinkClip()
+    {
+        Assert.Equal("hold_drink", CharacterRig.HoldClip(CharacterProp.Drink));
+        Assert.Equal("drink", CharacterRig.GestureClip(CharacterGesture.Drink));
+        Assert.Equal(CharacterProp.Drink, CharacterRig.Sanitize(CharacterProp.Drink));
+        Assert.Equal(CharacterGesture.Drink, CharacterRig.Sanitize(CharacterGesture.Drink));
+        Assert.Equal(CharacterGesture.Install, CharacterRig.Sanitize(CharacterGesture.Install));
+        foreach (var clip in new[] { "hold_drink", "hold_drink_fp", "drink", "drink_fp" })
+            Assert.Contains(clip, CharacterRig.UpperBodyClips);
+    }
 }

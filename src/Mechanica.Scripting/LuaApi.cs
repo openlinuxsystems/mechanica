@@ -119,9 +119,9 @@ public static class LuaApi
         new("sound.set_parameter", "sound.set_parameter(handle, name, value)", "Bends one of the part's loops (pitch, volume or the event's own parameters); returns true or false, reason.", "sound"),
         new("sound.stop", "sound.stop(handle)", "Stops one of the part's loops; returns true or false, reason.", "sound"),
 
-        new("soil.get", "soil.get()", "This soil part's stored state: {seed?, grown, water, stage, stages, updated?, soaked}; soaked is true once the soil has been fully wet since it was last dry.", "soil"),
-        new("soil.set", "soil.set(values)", "Stores any of grown, water, stage and updated ({grown = 12, stage = 1}); the soil script decides growth.", "soil"),
-        new("soil.clear", "soil.clear()", "Takes the crop out of this soil, leaving its water.", "soil"),
+        new("soil.get", "soil.get()", "This soil part's stored state: {seed?, grown, water, stage, stages, updated?, soaked, boost}; soaked is true once the soil has been fully wet since it was last dry, and boost is how many times faster than normal the crop grows (1 normally, until the harvest).", "soil"),
+        new("soil.set", "soil.set(values)", "Stores any of grown, water, stage, updated and boost (1 to 100, with a crop planted) ({grown = 12, stage = 1}); the soil script decides growth.", "soil"),
+        new("soil.clear", "soil.clear()", "Takes the crop out of this soil, leaving its water; its boost goes back to 1.", "soil"),
 
         new("player.can_give", "player.can_give(peer, items)", "True when every {item, count} in items fits in the player's inventory, or false and why.", "player"),
         new("player.give", "player.give(peer, items)", "Puts every {item, count} in the player's inventory, or nothing when they don't all fit; true, or false and why.", "player"),
@@ -158,10 +158,11 @@ public static class LuaApi
         new("combat.pellets", "combat.pellets(direction, count, spread)", "count directions: the first along direction, the rest evenly round a cone of spread degrees.", "combat"),
         new("combat.projectile", "combat.projectile(from, velocity, options?)", "Launches a projectile ({gravity?, lifetime?, data?, look?, size?}; look \"water\" draws thrown water and \"chemical\" thrown chemical, size is how big it is drawn in metres, for water and chemical the radius its splash spreads over); on_hit runs where it lands. Returns its id.", "combat"),
 
-        new("farm.soil", "farm.soil(creation, part)", "A soil part in the holder's reach: {seed?, crop?, stage, ripe, water, capacity}, or nil and why.", "farm"),
+        new("farm.soil", "farm.soil(creation, part)", "A soil part in the holder's reach: {seed?, crop?, stage, ripe, water, capacity, boost}, or nil and why.", "farm"),
         new("farm.plant", "farm.plant(creation, part, seed?)", "Plants seed (default: this item) in empty soil in reach; returns the soil, or nil and why. Takes no items.", "farm"),
         new("farm.can_plant", "farm.can_plant(creation, part, seed?)", "True when seed (default: this item) could be planted there now (soil in reach, empty, and one it grows), or nil and why. Only reads, so can_use may call it.", "farm"),
         new("farm.water", "farm.water(creation, part, seconds)", "Adds seconds of water to soil in reach, up to its capacity; returns the soil, or nil and why. Takes no items.", "farm"),
+        new("farm.boost", "farm.boost(creation, part, boost)", "Makes the crop growing in soil in reach grow boost times faster (more than 1, at most 100) until it is harvested; returns the soil, or nil and why (nothing growing, ripe, or boosted that much already). Takes no items.", "farm"),
         new("farm.near", "farm.near(position, radius)", "Soil parts within radius m of position, nearest first: a list of {creation, part}.", "farm"),
 
         new("fire.near", "fire.near(position, radius)", "Fires burning within radius m of position, nearest first: a list of {id, position, strength, creation?, part?}.", "fire"),

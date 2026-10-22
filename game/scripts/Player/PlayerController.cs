@@ -382,6 +382,15 @@ public partial class PlayerController : CharacterBody3D
     /// <summary>The held model shown after the last tick or snapshot (<see cref="HeldItem"/>).</summary>
     public ushort ShownHeld { get; private set; }
 
+    /// <summary>
+    /// Until when (<see cref="Time.GetTicksMsec"/>) the local player cannot sprint: while they eat (consumables batch C2;
+    /// drinking leaves sprint alone). Their input sends no sprint until then.
+    /// </summary>
+    public ulong NoSprintUntil { get; set; }
+
+    /// <summary>False while the local player eats (<see cref="NoSprintUntil"/>).</summary>
+    public bool CanSprint => Time.GetTicksMsec() >= NoSprintUntil;
+
     /// <summary>How the body stands after the last tick (or snapshot, for players this peer does not simulate).</summary>
     public BodyFlags Body { get; private set; } = BodyFlags.OnFloor;
 

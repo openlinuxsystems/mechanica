@@ -265,9 +265,9 @@ sets the `pose` readout `on` while growing and `off` otherwise, and harvests `so
 
 | Function | Returns |
 |----------|---------|
-| `soil.get()` | `{seed?, grown, water, stage, stages, updated?, soaked}`: the planted seed (qualified id), seconds of growth done, seconds of water left, the growth stage (0 to `stages`, which is 4; `stages` is ripe), the `world.time()` growth was last worked out at (missing until the script first sets it), and whether the soil has been fully wet since it was last dry (it then looks drying rather than lightly watered). `nil` once the part is gone. |
-| `soil.set(values)` | Stores any of `grown`, `water`, `stage` and `updated` (`soil.set{grown = 12, stage = 1, updated = world.time()}`); what is left out stays. `grown` and `stage` only apply with something planted; water is kept to the soil's `capacity`. A new stage or the soil running dry is sent to clients. |
-| `soil.clear()` | Takes the crop out (a harvest), leaving the water. |
+| `soil.get()` | `{seed?, grown, water, stage, stages, updated?, soaked, boost}`: the planted seed (qualified id), seconds of growth done, seconds of water left, the growth stage (0 to `stages`, which is 4; `stages` is ripe), the `world.time()` growth was last worked out at (missing until the script first sets it), whether the soil has been fully wet since it was last dry (it then looks drying rather than lightly watered), and how many times faster than normal the crop grows (1, or Fertilizer's boost until the harvest; `soil.lua` multiplies its growth by it). `nil` once the part is gone. |
+| `soil.set(values)` | Stores any of `grown`, `water`, `stage`, `updated` and `boost` (`soil.set{grown = 12, stage = 1, updated = world.time()}`); what is left out stays. `grown`, `stage` and `boost` (1 to 100) only apply with something planted; water is kept to the soil's `capacity`. A new stage, a new boost or the soil running dry is sent to clients. |
+| `soil.clear()` | Takes the crop out (a harvest), leaving the water; the boost goes back to 1. |
 
 A parked Creation runs no `on_update`, so soil works growth out from the time since `updated` whenever it
 runs; the crop it gets is the same as growing step by step.
@@ -432,10 +432,11 @@ soil part's own script ([`soil`](#soil)); the seed's `seed` section sets what gr
 
 | Function | Returns |
 |----------|---------|
-| `farm.soil(creation, part)` | The soil table. |
+| `farm.soil(creation, part)` | The soil table: `{seed?, crop?, stage, ripe, water, capacity, boost}`. |
 | `farm.plant(creation, part, seed?)` | Plants `seed` (an item with a `seed` section; default this item) in empty soil and returns the soil table. It takes nothing from the inventory: use `item.consume`. |
 | `farm.can_plant(creation, part, seed?)` | `true` when `farm.plant` would plant `seed` (default this item) there now, or `nil` and the reason: not soil, out of reach, something already growing, or soil whose `soil.seeds` does not list it (a Growbed). It only reads, so `can_use` may call it. |
 | `farm.water(creation, part, seconds)` | Adds `seconds` of water, up to `capacity`, and returns the soil table. Takes nothing from the inventory either. |
+| `farm.boost(creation, part, boost)` | Makes the crop growing there grow `boost` times faster (more than 1, at most 100) until it is harvested, and returns the soil table; `nil` and the reason when nothing is growing, it is ripe, or it already grows that fast. Takes nothing from the inventory (Fertilizer's `fertilizer.lua` uses `item.consume`). |
 | `farm.near(position, radius)` | Soil parts within `radius` m of `position` (at most `max_overlap_radius`), nearest first: a list of `{creation, part}`, for watering where a splash lands. |
 
 ## `fire`

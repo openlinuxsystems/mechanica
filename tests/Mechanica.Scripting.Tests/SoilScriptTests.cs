@@ -62,6 +62,39 @@ public sealed class SoilScriptTests : IDisposable
     }
 
     [Fact]
+    public void FertilizerMakesACropGrowFasterOnTheSameWaterUntilTheHarvest()
+    {
+        // Consumables batch C2: fertilizer.lua boosts the soil, soil.lua multiplies the boost into growth.
+        var fertilizer = _rig.AddItem("fertilizer", "scripts/fertilizer.lua", new JsonObject { ["boost"] = 15 });
+        F.Pockets(Me).Add(fertilizer, 3);
+        var slot = F.SlotOf(Me, fertilizer);
+        var soil = F.Add(Soil, new Vector3(0, 0, 1));
+        _rig.Runtime.Update(1);
+
+        Assert.Equal("Aim at a growing crop to use the Fertilizer.", _rig.Refused(Me, slot));
+        Assert.Equal("Plant something there first.", _rig.Refused(Me, slot, on: (soil, 1)));
+        F.Survival.PlantSeed(Me, soil, 1, Seed);
+        var used = _rig.Used(Me, slot, on: (soil, 1));
+        Assert.Equal(15.0, used["boost"]!.GetValue<double>());
+        Assert.Equal((15f, 2), (State(soil).Boost, F.Pockets(Me).Count(fertilizer)));
+        Assert.Equal(15f, View(soil).Boost);
+        Assert.Equal("That crop is already fertilized.", _rig.Refused(Me, slot, on: (soil, 1)));
+
+        _rig.Runtime.Update(5);
+        Assert.Equal(0f, State(soil).Grown); // still needs water
+        F.Survival.WaterSoil(Me, soil, 1, 60);
+        _rig.Runtime.Update(1); // 1 s of water at 2 x 15: 30 of 40 s of growth
+        Assert.Equal((30f, 59f, 3), (State(soil).Grown, View(soil).Water, View(soil).Stage));
+        _rig.Runtime.Update(5);
+        Assert.True(View(soil).Ripe);
+        Assert.Equal("That crop is already ripe.", _rig.Refused(Me, slot, on: (soil, 1)));
+
+        Activate(Me, soil);
+        Assert.Equal(1f, State(soil).Boost); // the harvest clears it
+        Assert.DoesNotContain(_rig.Messages, m => m.Kind != ScriptMessageKind.Print);
+    }
+
+    [Fact]
     public void SoilOnACreationGrowsOnBatteriesAndGivesItsFixedYield()
     {
         // A Growbed-like soil part (E9) built into a Creation with a container: each Scrap (its battery) grows for 10 s.

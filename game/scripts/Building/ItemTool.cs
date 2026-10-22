@@ -70,9 +70,13 @@ public partial class ItemTool : HandTool
         {
             if (InHand is not { } hand)
                 return null;
-            var category = Survival.Catalog.FindDefinition(hand.Item)?.Category;
-            var name = category is { } c ? System.Text.Json.JsonNamingPolicy.SnakeCaseLower.ConvertName(c.ToString()) : null;
-            return Characters?.PoseFor(hand.Item, name) ?? ItemPose.Default;
+            var definition = Survival.Catalog.FindDefinition(hand.Item);
+            var name = definition?.Category is { } c ? System.Text.Json.JsonNamingPolicy.SnakeCaseLower.ConvertName(c.ToString()) : null;
+            var pose = Characters?.PoseFor(hand.Item, name) ?? ItemPose.Default;
+            // A drink (its data's drink flag) is held as a bottle and drunk rather than eaten.
+            return pose.Prop == CharacterProp.Food && FoodUse.Of(definition).Drink
+                ? new ItemPose { Prop = CharacterProp.Drink, Gesture = CharacterGesture.Drink }
+                : pose;
         }
     }
 
@@ -317,19 +321,25 @@ public partial class ItemTool : HandTool
             AfterRelease(bucket, place ? () => PlaceOne() : () => Use());
             return;
         }
-        if (!place && PoseInHand is { Prop: CharacterProp.Food } food && Characters is { } characters)
+        if (!place && PoseInHand is { Prop: CharacterProp.Food or CharacterProp.Drink } food && Characters is { } characters)
         {
             // Food is eaten only once the host has taken it (not at full health): then the bites play, and no more is
-            // eaten until the clip is over.
-            _busyUntil = Time.GetTicksMsec() + (ulong)(characters.Eat.Seconds * 1000f);
+            // eaten until it is over (the food's eat_seconds, else its clip's length). A drink plays the drink clip's
+            // gulps instead, and leaves sprint alone; eating stops the player sprinting meanwhile.
+            var use = FoodUse.Of(Survival.Catalog.FindDefinition(InHand!.Item));
+            var drink = food.Prop == CharacterProp.Drink;
+            var seconds = use.SecondsOr(drink ? characters.Drink.Seconds : characters.Eat.Seconds);
+            _busyUntil = Time.GetTicksMsec() + (ulong)(seconds * 1000f);
+            if (!drink)
+                Player.NoSprintUntil = _busyUntil;
             if (!Use(result =>
                 {
                     if (!result.Ok)
-                        _busyUntil = 0;
+                        _busyUntil = Player.NoSprintUntil = 0;
                     else if (IsInsideTree())
                         Player.Gesture(food.Gesture);
                 }))
-                _busyUntil = 0;
+                _busyUntil = Player.NoSprintUntil = 0;
             return;
         }
         Player.Gesture(PoseInHand?.Gesture ?? CharacterGesture.None);

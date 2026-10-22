@@ -757,6 +757,15 @@ public sealed partial class ScriptRuntime
             return _survival!.CheckWater(caller, creation, part) is { } bad ? NilBecause(bad)
                 : SoilTable(script, _survival.WaterSoil(caller, creation, part, seconds));
         });
+        Fn(farm, "boost", args =>
+        {
+            var (_, caller, _) = Combatant("farm.boost", acting: true);
+            caller = Reaching(caller);
+            var (creation, part) = SoilArgs(args, "farm.boost");
+            var boost = LuaValues.Number(args[2], "farm.boost", 3);
+            return _survival!.CheckBoost(caller, creation, part, boost) is { } bad ? NilBecause(bad)
+                : SoilTable(script, _survival.BoostSoil(caller, creation, part, boost));
+        });
         Fn(farm, "near", args =>
         {
             Combatant("farm.near", acting: false);
@@ -784,7 +793,7 @@ public sealed partial class ScriptRuntime
     // nil plus why, the way farm functions refuse.
     private static DynValue NilBecause(string reason) => DynValue.NewTuple(DynValue.Nil, DynValue.NewString(reason));
 
-    // A soil part as scripts see it: {seed?, crop?, stage, ripe, water, capacity}.
+    // A soil part as scripts see it: {seed?, crop?, stage, ripe, water, capacity, boost}.
     private static DynValue SoilTable(Script script, SoilView view)
     {
         var table = new Table(script);
@@ -796,6 +805,7 @@ public sealed partial class ScriptRuntime
         table.Set("ripe", DynValue.NewBoolean(view.Ripe));
         table.Set("water", DynValue.NewNumber(view.Water));
         table.Set("capacity", DynValue.NewNumber(view.Capacity));
+        table.Set("boost", DynValue.NewNumber(view.Boost));
         return DynValue.NewTable(table);
     }
 

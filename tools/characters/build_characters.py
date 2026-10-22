@@ -4124,6 +4124,97 @@ def clip_eat_fp(t):
     return oneshot([(0.0, h), (0.22, up), (0.3, bite), (0.4, pull), (0.52, bite), (0.62, pull), (0.86, h), (1.4, h)], t)
 
 
+# Drinks (consumables batch C2: Bloom Tea, Grazer Shake): the bottle is held upright in the fist, its axis along the
+# thumb (hold_drink). Drinking tips it up to the lips, the head going back for two gulps, then brings it down again: the
+# game plays the drink's gulp sound at each and takes the bottle away when it is gone (character.json "drink"). Quick, as
+# Scrap Mechanic's drinks (2/3 s), and the player may sprint meanwhile.
+DRINK_SECONDS = 20 / FPS
+DRINK_GRIP = np.array([-0.13, -0.27, 1.1])            # the fist round the bottle, held low in front
+DRINK_HAND = ((0.25, -0.85, -0.2), (0.12, -0.15, 1.0))   # fingers forward, thumb (and the bottle's top) up
+DRINK_NECK = 0.1                                       # from the fist's centre up the bottle to its mouth
+DRINK_POLE = (-1.0, 0.1, -0.6)
+
+
+def drink_arm(grip=DRINK_GRIP, hand=DRINK_HAND):
+    return arm_ik_from_grip("r", grip, *hand, pole=DRINK_POLE)
+
+
+def lips_arm(tip, mouth=MOUTH + np.array([0.0, -0.005, 0.035])):
+    """The bottle's mouth at the lips, its base raised `tip` degrees past level toward the face (0: level)."""
+    a = math.radians(tip)
+    w = norm(np.array([0.06, math.cos(a), -math.sin(a)]))          # up the bottle, base to mouth
+    d = norm(np.array([0.85, -0.1, 0.0]) - np.dot([0.85, -0.1, 0.0], w) * w)   # fingers round it, across the face
+    return arm_ik_from_grip("r", mouth - w * DRINK_NECK, d, w, pole=(-1.0, 0.1, -0.9))
+
+
+def clip_hold_drink(t, T=2.0):
+    ph = 2 * math.pi * t / T
+    s = upper_base(t, T)
+    relaxed_left(s, ph)
+    s["arm_r"] = drink_arm(DRINK_GRIP + np.array([0, 0, 0.004 * math.sin(ph)]))
+    s["fingers_r"] = 62.0
+    s["thumb_r"] = 34.0
+    return s
+
+
+def drink_keys(h, up_arm, tip_arm, gulp_arm, head_up=(-6.0, -10.0), head_gulp=(-9.0, -14.0)):
+    up = with_right_arm(h, arm_r=up_arm, neck=(2.0, 0, 0), head=(2.0, 0, 0))
+    tip = with_right_arm(h, arm_r=tip_arm, neck=(head_up[0], 0, 0), head=(head_up[1], 0, 0), chest=(-3.0, 0, 0))
+    gulp = with_right_arm(tip, arm_r=gulp_arm, neck=(head_gulp[0], 0, 0), head=(head_gulp[1], 0, 0), chest=(-4.0, 0, 0))
+    return [(0.0, h), (0.12, up), (0.2, tip), (0.25, gulp), (0.32, tip), (0.4, gulp), (0.48, tip), (0.58, up),
+            (DRINK_SECONDS, h)]
+
+
+def clip_drink(t):
+    """2/3 s: the bottle up to the lips and tipped, two gulps with the head going back, then down again."""
+    h = clip_hold_drink(0.0)
+    up_arm = arm_ik_from_grip("r", MOUTH + np.array([0.0, -0.12, -0.12]), (0.6, -0.6, 0.1), (0.1, 0.2, 1.0),
+                              pole=(-1.0, 0.1, -0.5))
+    return oneshot(drink_keys(h, up_arm, lips_arm(28.0), lips_arm(42.0)), t)
+
+
+# First person: the fist holds the bottle upright at the lower right of the view; drinking brings it in under the camera
+# and tips it up, its base rising into the middle of the view.
+DRINK_GRIP_FP = np.array([-0.18, -0.38, 1.07])
+DRINK_HAND_FP = ((0.3, -0.85, -0.1), (0.15, -0.25, 1.0))
+DRINK_MOUTH_FP = np.array([-0.03, -0.1, 1.17])         # just under and in front of the eye
+
+
+def drink_fp_key(grip, hand, pole=FOOD_POLE_FP):
+    s = upper_base(0.0)
+    s["arm_r"] = arm_ik_from_grip("r", np.asarray(grip, float), *hand, pole=pole, space="world")
+    s["arm_l"] = arm_ik_from_grip("l", np.array(FPB_LEFT_FIST), (0.0, 0.0, -1.0), (0.0, -1.0, 0.0), space="world")
+    s["fingers_r"] = 62.0
+    s["thumb_r"] = 34.0
+    s.update({k: v for k, v in FP_BODY.items() if k != "space"})
+    return s
+
+
+def lips_fp_key(tip):
+    a = math.radians(tip)
+    w = norm(np.array([0.4, math.cos(a), -math.sin(a)]))
+    d = norm(np.array([1.0, 0.0, 0.1]) - np.dot([1.0, 0.0, 0.1], w) * w)
+    return drink_fp_key(DRINK_MOUTH_FP - w * DRINK_NECK, (d, w), pole=(-0.5, 0.3, -1.0))
+
+
+def clip_hold_drink_fp(t, T=2.0):
+    ph = 2 * math.pi * t / T
+    s = drink_fp_key(DRINK_GRIP_FP + np.array([0.0, 0.0, 0.004 * math.sin(ph)]), DRINK_HAND_FP)
+    base = upper_base(t, T, 0.5)
+    s["shoulder_l"], s["shoulder_r"] = base["shoulder_l"], base["shoulder_r"]
+    return s
+
+
+def clip_drink_fp(t):
+    """The drink clip's timing seen from the eyes: the bottle comes in under the camera and tips up for two gulps."""
+    h = clip_hold_drink_fp(0.0)
+    up = drink_fp_key(DRINK_MOUTH_FP + np.array([-0.05, -0.2, -0.06]), ((0.6, -0.7, 0.1), (0.1, 0.1, 1.0)))
+    tip, gulp = lips_fp_key(32.0), lips_fp_key(50.0)
+    keys = [(0.0, h), (0.12, up), (0.2, tip), (0.25, gulp), (0.32, tip), (0.4, gulp), (0.48, tip), (0.58, up),
+            (DRINK_SECONDS, h)]
+    return oneshot(keys, t)
+
+
 def clip_throw(t):
     h = clip_hold_item(0.0)
     back = with_right_arm(h, arm_r=item_arm(np.array([-0.27, 0.12, 1.62]), d=(-0.3, 0.6, 0.6), w=(0.0, -0.7, 0.6)),
@@ -5722,6 +5813,10 @@ CLIPS = {
     "hold_food_fp": (clip_hold_food_fp, 2.0, True, True),
     "eat": (clip_eat, 1.4, False, True),
     "eat_fp": (clip_eat_fp, 1.4, False, True),
+    "hold_drink": (clip_hold_drink, 2.0, True, True),
+    "hold_drink_fp": (clip_hold_drink_fp, 2.0, True, True),
+    "drink": (clip_drink, DRINK_SECONDS, False, True),
+    "drink_fp": (clip_drink_fp, DRINK_SECONDS, False, True),
     "throw": (clip_throw, 0.5, False, False),
     "plant": (clip_plant, 0.8, False, True),
     "pour": (clip_pour, 0.8, False, True),

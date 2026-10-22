@@ -56,6 +56,15 @@ public sealed class SoilState
     /// </summary>
     public bool Soaked { get; private set; }
 
+    /// <summary>
+    /// How many times faster than normal the planted crop grows (1 normally): Fertilizer (consumables batch C2) raises it
+    /// and the soil's script multiplies it into growth. Planting and harvesting (<see cref="Clear"/>) put it back to 1.
+    /// </summary>
+    public float Boost { get; private set; } = 1f;
+
+    /// <summary>Most a boost can be (<see cref="Set"/>).</summary>
+    public const float MaxBoost = 100f;
+
     /// <summary>True when nothing is planted and the soil is dry, so there is nothing to keep.</summary>
     public bool IsEmpty => Seed is null && Water <= 0;
 
@@ -86,15 +95,17 @@ public sealed class SoilState
         Seed = seed;
         Grown = 0;
         Stage = 0;
+        Boost = 1f;
         Revision++;
     }
 
-    /// <summary>Takes the crop out (a harvest, or a bot destroying it), leaving the water.</summary>
+    /// <summary>Takes the crop out (a harvest, or a bot destroying it), leaving the water; the crop's boost goes with it.</summary>
     public void Clear()
     {
         Seed = null;
         Grown = 0;
         Stage = 0;
+        Boost = 1f;
         Revision++;
     }
 
@@ -110,12 +121,12 @@ public sealed class SoilState
     }
 
     /// <summary>
-    /// Stores what the soil script worked out. Null leaves a value as it is. <paramref name="grown"/> and
-    /// <paramref name="stage"/> only apply with something planted. With <paramref name="wetAt"/> (seconds of water that
+    /// Stores what the soil script worked out. Null leaves a value as it is. <paramref name="grown"/>,
+    /// <paramref name="stage"/> and <paramref name="boost"/> (1 to <see cref="MaxBoost"/>) only apply with something planted. With <paramref name="wetAt"/> (seconds of water that
     /// look fully wet) a change of <see cref="Wetness"/> counts as a change players see; without it only wet and dry do.
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">A value is negative or not finite, or the stage is past <see cref="Stages"/>.</exception>
-    public void Set(float? grown = null, float? water = null, int? stage = null, double? updated = null, float? wetAt = null)
+    public void Set(float? grown = null, float? water = null, int? stage = null, double? updated = null, float? wetAt = null, float? boost = null)
     {
         if (grown is { } g && !(float.IsFinite(g) && g >= 0))
             throw new ArgumentOutOfRangeException(nameof(grown), "grown must be 0 or more seconds.");
@@ -125,11 +136,14 @@ public sealed class SoilState
             throw new ArgumentOutOfRangeException(nameof(stage), $"stage must be 0 to {Stages}.");
         if (updated is { } u && !(double.IsFinite(u) && u >= 0))
             throw new ArgumentOutOfRangeException(nameof(updated), "updated must be 0 or more seconds.");
-        var (oldStage, wasWet, oldLook) = (Stage, Water > 0, Wetness(wetAt ?? float.PositiveInfinity));
+        if (boost is { } b && !(float.IsFinite(b) && b is >= 1f and <= MaxBoost))
+            throw new ArgumentOutOfRangeException(nameof(boost), $"boost must be from 1 to {MaxBoost:0}.");
+        var (oldStage, wasWet, oldLook, oldBoost) = (Stage, Water > 0, Wetness(wetAt ?? float.PositiveInfinity), Boost);
         if (Seed is not null)
         {
             Grown = grown ?? Grown;
             Stage = stage ?? Stage;
+            Boost = boost ?? Boost;
         }
         Water = water ?? Water;
         Updated = updated ?? Updated;
@@ -137,14 +151,15 @@ public sealed class SoilState
             Soaked = false;
         else if (wetAt is { } at && Water >= at)
             Soaked = true;
-        if (Stage != oldStage || wasWet != Water > 0 || (wetAt is { } look && Wetness(look) != oldLook))
+        if (Stage != oldStage || wasWet != Water > 0 || Boost != oldBoost || (wetAt is { } look && Wetness(look) != oldLook))
             Revision++;
     }
 
     /// <summary>Sets every value at once, as when a save is loaded.</summary>
-    public void Load(string? seed, float grown, float water, int stage = 0, double? updated = null, bool soaked = false)
+    public void Load(string? seed, float grown, float water, int stage = 0, double? updated = null, bool soaked = false, float boost = 1f)
     {
         Seed = seed;
+        Boost = seed is null || !float.IsFinite(boost) ? 1f : Math.Clamp(boost, 1f, MaxBoost);
         Grown = seed is null ? 0 : Math.Max(0, grown);
         Water = Math.Max(0, water);
         Stage = seed is null ? 0 : Math.Clamp(stage, 0, Stages);

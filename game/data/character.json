@@ -97,6 +97,7 @@
     "potato_seed": { "prop": "item", "gesture": "plant" },
     "tomato_seed": { "prop": "item", "gesture": "plant" },
     "cotton_seed": { "prop": "item", "gesture": "plant" },
+    "fertilizer": { "prop": "item", "gesture": "plant" },
     "soil_bag": { "prop": "soil_bag", "gesture": "bag_spill" },
     // Held by its handle and sprayed while Use is held (held.hold_use): no gesture of its own.
     "fire_extinguisher": { "prop": "item" }
@@ -154,6 +155,14 @@
     "bites": [0.3, 0.52],
     "gone": 0.86,
     "seconds": 1.4
+  },
+  // Drinking (consumables batch C2; build_characters.py drink_keys): a drink (food with properties.drink) plays the drink
+  // clip instead: seconds into it of each gulp (the drink's sound plays), when the bottle is gone from the hand, and how
+  // long the clip is. A drink's properties.eat_seconds says how long one takes; sprinting is allowed while drinking.
+  "drink": {
+    "bites": [0.25, 0.4],
+    "gone": 0.6,
+    "seconds": 0.67
   },
   "head_pitch_share": 0.6,
   // First-person arms: where the arms-only model stands from the camera (right, up, back, in metres) and how far it tips forward.

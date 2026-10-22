@@ -132,7 +132,7 @@ move the whole body; `hold_tool`, `hold_heavy`,
 chest height, tip forward, with a slow sway), `hold_connect_aim` (raised and aimed while a node is under the crosshair or a
 drag is on), `hold_weld` and `hold_weld_aim` (the Weld Tool held, and raised while a part is selected) and the one-shot
 gestures (`sledge_swing`, `tool_use`, `weld` (the Weld Tool pushed in and held while a weld registers),
-`paint_spray`, `fire_gun`, `eat`, `throw`, `plant`, `pour`, `interact`, `hurt`, `connect_click` when a link is made or
+`paint_spray`, `fire_gun`, `eat`, `drink`, `throw`, `plant`, `pour`, `interact`, `hurt`, `connect_click` when a link is made or
 taken away, `connect_reverse` when a bearing is reversed) move only the upper body
 from the spine up, over whatever the legs are doing. The swings and throws (`sledge_swing`, `sledge_swing_side`,
 `sledge_swing_back`, `throw`, `bucket_throw`) also key the hips and legs: standing still, the knees load and the hips drive
@@ -179,4 +179,6 @@ code (with the bpy module installed), and `tools/capture-animations.sh OUT_DIR [
 world as GIFs and MP4s (`CAPTURE_ONLY=walk,run_side` keeps matching moves). A mod item gets the pose of its category (`consumable` rests on
 the palm and eats, `weapon` throws) unless it is listed in `item_poses`. The `eat` section of `character.json` says when the
 `eat` clip's bites land (`bites`), when the food is gone (`gone`) and how long the clip runs (`seconds`); a food's held model
-shows its bitten versions by them (see [Food in hand](part-data-schema.md#food-in-hand)).
+shows its bitten versions by them (see [Food in hand](part-data-schema.md#food-in-hand)). A drink (`properties.drink`)
+is held upright in the fist (`hold_drink`, `hold_drink_fp`) and drunk with `drink` (`drink_fp` in first person): lifted,
+tipped to the lips for two gulps and lowered; the `drink` section times its gulps the same way.
