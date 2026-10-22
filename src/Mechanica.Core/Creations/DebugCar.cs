@@ -73,7 +73,7 @@ public static class DebugCar
     public const int Length = 12;
 
     /// <summary>The cell row of the front and rear axles.</summary>
-    public const int FrontAxle = 1, RearAxle = 10;
+    public const int FrontAxle = 1, RearAxle = 9;
 
     /// <summary>
     /// The cell under the middle of the car at wheel-bottom height: the deck's centre, a cell down for the rear axle and
@@ -104,7 +104,8 @@ public static class DebugCar
         Place(car, "vanilla:scrap_metal_block", new GridCell(2, -2, FrontAxle));
         foreach (var x in new[] { 1, 0, 3, 4, 5 })
             Place(car, "vanilla:scrap_metal_block", new GridCell(x, -2, FrontAxle));
-        // The rear axle: a beam under the deck.
+        // The rear axle: a beam under the deck, right under the engine so the driven wheels carry its weight (they grip
+        // well enough to push the free front wheels up a step from standing).
         for (var x = 0; x < Width; x++)
             Place(car, "vanilla:scrap_metal_block", new GridCell(x, -1, RearAxle));
 
