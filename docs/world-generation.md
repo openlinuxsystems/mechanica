@@ -182,7 +182,7 @@ change (usually `vanilla`). Every patch applies in load order on top of the last
 | `biomes[].scatter[].roadside` | Stands the rule's objects beside the roads: each cell a road crosses takes the centre-line point nearest its spot and puts the object `gap` metres (default 3; more than the object's `footprint` plus 1) out from the edge of the bed, turned so its front (+z) faces the road and its x axis runs along it. `road` keeps it to `road`s or `track`s (omitted: either). `side` is `left` or `right` of the road's direction, to keep a line of poles on one side, `outside`, the outside of the road's bend there (guard rails, chevron signs), or `either` (the default), the side the cell's spot falls on. `even: true` takes each cell's middle instead of a random spot, so the objects stand about a `spacing` apart, as a pole line does. `junction` (metres) keeps the rule within that distance along the road of a junction (direction signs), and `bend` (degrees) to where the road turns at least that much over the 40 m round the spot (curve signs, guard rails). Never on a bridge, nor where the ground is more than 2.5 m above or below the road. A scene's pieces turn with it, so a scene can line a road too: its `gap` need only be more than 1, since each piece keeps its own footprint plus 1 m off the road. The road is looked for within 48 m of a cell's spot, so keep `spacing` under about 90 and make rare things rare with `chance`. |
 | `biomes[].scatter[].near` | Keeps the rule close to other scattered things, as fields round the farms: a spot is used only when a spot of a rule that scatters one of `objects` (ids of objects or scenes, none of them scattered with a `near` of its own) lies within `within` metres (default 150, at most 400) on ground that suits it. `pois` (POI ids, `other_mod:id` for another mod's) does the same for POIs: the spot must lie within `within` metres of the edge of one of them. A rule needs `objects`, `pois` or both. Omitted: anywhere. |
 | `biomes[].scatter[].away` | Keeps the rule clear of POIs: no object (its `footprint` included) stands within `distance` metres (default 100, at most 1000) of the edge of one of `pois` (POI ids, `other_mod:id` for another mod's). The bot factions' sites keep 100 m from the Workshops this way. Omitted: anywhere. |
-| `loot_tables` | Weighted item lists by id that objects' `loot` picks from, and that the world's containers are filled from (a POI `part` marker's `loot`, see [Loot in containers](#loot-in-containers)): each has `items[]` of `item`, `count` (default 1), `count_max` (at least `count`) and `weight` (relative odds, default 1). Vanilla has `common`, `epic` and `legendary`, for the green, purple and gold Bloom Pods, and `locker`, `file_cabinet`, `microwave`, `ruin_chest`, `crate` (POI loot crates) and `warehouse_crate` for the containers. |
+| `loot_tables` | Weighted item lists by id that objects' `loot` picks from, and that the world's containers are filled from (a POI `part` marker's `loot`, see [Loot in containers](#loot-in-containers)): each has `items[]` of `item`, `count` (default 1), `count_max` (at least `count`) and `weight` (relative odds, default 1). Vanilla has `common`, `epic` and `legendary`, for the green, purple and gold Bloom Pods, `locker`, `file_cabinet`, `microwave`, `ruin_chest`, `crate` (POI loot crates), `warehouse_crate` and `warehouse_office` (the Warehouse Key) for the containers, and `wreck_car`, `wreck_truck`, `wreck_tractor`, `wreck_machine`, `wreck_air` and `wreck_small` for the vehicle wrecks (see [Parts to find](#parts-to-find)). |
 | `day_length` | Seconds of world time (the scripts' clock, which saves carry on) in an in-game day, which day counts in the data are in (a `part` marker's `refill_days`). Default 1440, Scrap Mechanic's 24 minutes. |
 | `objects[]` | Destructible world objects. Use catalog ids (`birch_tree`, `rock_node`, `boulder`, ...). `footprint` is the radius other scattered objects keep clear of; `sink` lowers the object into the ground. |
 | `objects[].health` | Damage the object takes before it breaks (Sledgehammer, weapons, splash). Omitted means it cannot be broken. Damage is not saved: a part-felled tree is whole again after a restart. |
@@ -229,6 +229,38 @@ slowly. Green pods stand in the open; purple and gold ones are `perch`ed on clif
 rarest (about 60, 18 and 6 in the vanilla world). They settle shut when they come into view, shudder when hit and burst
 apart when broken, leaving their loot in one pile.
 
+### Parts to find
+
+Breaking things in the world pays in real parts, not only scrap, so a player hunting for a wheel or an engine has
+somewhere to look (all in `worldgen.json`, checked by `FindablesTests`):
+
+- **Vehicle wrecks** break down (Sledgehammer, drill, saw, weapons, blasts) into a pile of Scrap Metal Blocks plus a
+  few parts from their wreck table: cars, vans and pickups (300 health, `wreck_car`: wheels, bearings, a gas
+  container, seats, headlights, now and then an engine), trucks, buses and trailers (500, `wreck_truck`), tractors
+  (400, `wreck_tractor`: Off Road Wheels, a saddle), excavators, bulldozers, cranes, forklifts and harvesters (500,
+  `wreck_machine`: pistons, controllers, sensors) and the rover, hovercraft, helicopter and plane (500, `wreck_air`:
+  rotors, hover jets, batteries, the odd Electric Engine or Thruster). Motorbikes, quads and scooters roll
+  `wreck_small` (Scrap Wheels, a seat, a Scrap Gas Engine). Train wagons, boats and the lighthouse stay scenery.
+- **Vehicle bits** give what they are: an engine block a Scrap Gas Engine (30%) and an exhaust, a car seat a Scrap
+  Seat, tyre stacks Scrap Wheels, a mine cart its wheels, a thresher tyre cairn an Off Road Wheel (30%).
+- **Roadside signs and cones** give the part: stop, caution and speed limit signs and traffic cones themselves, road
+  signs a direction arrow or a caution sign, painted signboards a sale sign.
+- **Camp, farm and street props** give what they are made of now and then: pallets, ladders, tables, stools, barrels,
+  lantern posts (a Shack Light), battery racks (Batteries), traffic lights (a Warning Light), vending machines (Bloom
+  Tea).
+- **Containers and Bloom Pods** hold parts as well as materials: crates bearings, Scrap Wheels, switches, buttons,
+  lights and pipes; ruin chests bearings, wheels and the odd Scrap Gas Engine; warehouse crates Gas Engines, wheels,
+  gas containers, controllers, sensors and suspension; purple pods wheels, suspension and engines; gold pods the
+  Electric Engine, Thruster, Off Road Wheels and a Driver's Seat.
+- **POIs are furnished with parts to take** (`part` markers, so each is a real part a player can pick up for good):
+  the scrapyards have warning signs, cones, shelves, site lights, crates, a refilling Ruin Chest and loose wheels, seats,
+  an engine or a Battery; the Scrap City Garage has wheels and a seat on its forecourt; camps a Scrap Seat by the fire
+  and a Shack Light; kiosks a sale sign; warehouses site lights, cones and the Warehouse Key Sign at the door; the
+  Workshop its bed and sign; the haymaze a Ruin Chest in its heart; and the other sites a crate or two. Each
+  warehouse's top floor has a locker that always holds the **Warehouse Key** (table `warehouse_office`), the only place
+  the world gives one. The placeholder POIs' markers are in `tools/author-poi-placeholders.py`: add new ones at the end of
+  a list, since a marker's place in its POI is the key a save keeps its part (and whether it was taken) under.
+
 ### Scenes
 
 Scrap Mechanic's land never goes long without something to look at: a fence line, a hay field with a scarecrow, a
@@ -236,7 +268,8 @@ wrecked harvester. Scenes do that between Mechanica's POIs. Each is an object wi
 the biomes scatter like any other, placed before their trees and rocks so those keep clear of it. The props are
 modelled by `tools/structures/props*.py` (`meshes/world/props/`, built with `build_structures.py props`) in the
 families of [art-direction.md](art-direction.md): Settler wood breaks into Scrap Wood Blocks and loose metal into Scrap
-Metal Blocks, while the old colony's pipes, barriers and wrecks are too big to break.
+Metal Blocks, while the old colony's pipes and barriers are too big to break. See [Parts to find](#parts-to-find) for
+the props that give real parts.
 
 | Scene | Biomes | What it lays out |
 |-------|--------|------------------|

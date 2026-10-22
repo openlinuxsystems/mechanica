@@ -16,5 +16,9 @@
     { "shape": "box", "size": [40.0, 16.0, 30.0], "at": [0.0, 8.3, 0.0], "color": "#7d858c" },
     { "shape": "cylinder", "radius": 2.0, "height": 28.0, "at": [14.0, 14.3, -10.0], "color": "#4a4f55" },
     { "shape": "box", "size": [8.0, 0.4, 12.0], "at": [0.0, 6.0, 21.0], "color": "#7d858c" }
+  ],
+  "markers": [
+    { "type": "part", "ref": "metal_crate", "at": [-17.0, 0.3, 17.5], "loot": "warehouse_crate", "loot_rolls": [2, 4] },
+    { "type": "part", "ref": "beware_bots_sign", "at": [8.0, 0.3, 18.5], "yaw": 180.0 }
   ]
 }

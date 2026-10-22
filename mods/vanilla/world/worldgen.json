@@ -746,6 +746,91 @@
   // What Bloom Pods (and any object with "loot") pick from when they break, and what the world's containers (POI part
   // markers with "loot") are filled from: different entries, odds by weight.
   "loot_tables": {
+    // What wrecks give when broken down (their "loot"): the parts a vehicle like that had, a few at a time. The
+    // derelicts players repair want exactly these.
+    "wreck_car": {
+      "items": [
+        { "item": "wheel", "count": 1, "count_max": 2, "weight": 3.0 },
+        { "item": "scrap_wheel", "count": 1, "count_max": 2, "weight": 3.0 },
+        { "item": "bearing", "count": 1, "count_max": 2, "weight": 3.0 },
+        { "item": "gas_container", "count": 1, "weight": 2.0 },
+        { "item": "sport_suspension", "count": 1, "weight": 1.0 },
+        { "item": "scrap_drivers_seat", "count": 1, "weight": 2.0 },
+        { "item": "passenger_seat", "count": 1, "weight": 1.0 },
+        { "item": "headlight", "count": 1, "count_max": 2, "weight": 2.0 },
+        { "item": "license_plate", "count": 1, "weight": 1.0 },
+        { "item": "horn", "count": 1, "weight": 1.0 },
+        { "item": "glass_block", "count": 2, "count_max": 6, "weight": 2.0 },
+        { "item": "battery_pack", "count": 1, "weight": 1.0 },
+        { "item": "scrap_gas_engine", "count": 1, "weight": 1.0 },
+        { "item": "gas_engine", "count": 1, "weight": 0.4 }
+      ]
+    },
+    "wreck_truck": {
+      "items": [
+        { "item": "wheel", "count": 2, "count_max": 4, "weight": 3.0 },
+        { "item": "big_wheel", "count": 1, "count_max": 2, "weight": 1.0 },
+        { "item": "offroad_suspension", "count": 1, "weight": 1.0 },
+        { "item": "bearing", "count": 1, "count_max": 3, "weight": 3.0 },
+        { "item": "gas_container", "count": 1, "weight": 2.0 },
+        { "item": "scrap_drivers_seat", "count": 1, "weight": 2.0 },
+        { "item": "headlight", "count": 1, "count_max": 2, "weight": 2.0 },
+        { "item": "horn", "count": 1, "weight": 1.0 },
+        { "item": "metal_block", "count": 4, "count_max": 10, "weight": 2.0 },
+        { "item": "exhaust_pipe", "count": 1, "weight": 1.0 },
+        { "item": "scrap_gas_engine", "count": 1, "weight": 1.0 },
+        { "item": "gas_engine", "count": 1, "weight": 0.6 }
+      ]
+    },
+    "wreck_tractor": {
+      "items": [
+        { "item": "big_wheel", "count": 1, "count_max": 2, "weight": 3.0 },
+        { "item": "scrap_wheel", "count": 1, "count_max": 2, "weight": 2.0 },
+        { "item": "offroad_suspension", "count": 1, "weight": 1.0 },
+        { "item": "bearing", "count": 1, "count_max": 2, "weight": 2.0 },
+        { "item": "drivers_saddle", "count": 1, "weight": 1.0 },
+        { "item": "scrap_drivers_seat", "count": 1, "weight": 2.0 },
+        { "item": "controller", "count": 1, "weight": 0.5 },
+        { "item": "exhaust_pipe", "count": 1, "weight": 1.0 },
+        { "item": "scrap_gas_engine", "count": 1, "weight": 2.0 },
+        { "item": "gas_engine", "count": 1, "weight": 0.5 }
+      ]
+    },
+    "wreck_machine": {
+      "items": [
+        { "item": "piston", "count": 1, "count_max": 2, "weight": 3.0 },
+        { "item": "big_wheel", "count": 1, "count_max": 2, "weight": 2.0 },
+        { "item": "bearing", "count": 2, "count_max": 4, "weight": 3.0 },
+        { "item": "offroad_suspension", "count": 1, "weight": 1.0 },
+        { "item": "controller", "count": 1, "weight": 1.0 },
+        { "item": "sensor", "count": 1, "weight": 1.0 },
+        { "item": "warning_light", "count": 1, "weight": 1.0 },
+        { "item": "metal_block", "count": 6, "count_max": 12, "weight": 2.0 },
+        { "item": "gas_engine", "count": 1, "weight": 0.6 }
+      ]
+    },
+    "wreck_air": {
+      "items": [
+        { "item": "rotor", "count": 1, "weight": 1.0 },
+        { "item": "hover_jet", "count": 1, "weight": 1.0 },
+        { "item": "thruster", "count": 1, "weight": 0.4 },
+        { "item": "electric_engine", "count": 1, "weight": 0.6 },
+        { "item": "battery_pack", "count": 1, "count_max": 3, "weight": 3.0 },
+        { "item": "battery", "count": 1, "weight": 1.0 },
+        { "item": "circuit_board", "count": 1, "count_max": 2, "weight": 2.0 },
+        { "item": "spotlight", "count": 1, "weight": 1.0 },
+        { "item": "hull_plate_block", "count": 4, "count_max": 8, "weight": 2.0 }
+      ]
+    },
+    "wreck_small": {
+      "items": [
+        { "item": "scrap_wheel", "count": 1, "count_max": 2, "weight": 4.0 },
+        { "item": "bearing", "count": 1, "weight": 2.0 },
+        { "item": "scrap_seat", "count": 1, "weight": 2.0 },
+        { "item": "headlight", "count": 1, "weight": 1.0 },
+        { "item": "scrap_gas_engine", "count": 1, "weight": 1.0 }
+      ]
+    },
     "common": {
       "items": [
         { "item": "scrap_metal_block", "count": 12, "count_max": 24, "weight": 4.0 },
@@ -777,7 +862,12 @@
         { "item": "popper", "count": 1, "weight": 1.0 },
         { "item": "bloom_tea", "count": 2, "count_max": 3, "weight": 2.0 },
         { "item": "fertilizer", "count": 2, "count_max": 4, "weight": 1.0 },
-        { "item": "grazer_shake", "count": 1, "weight": 1.0 }
+        { "item": "grazer_shake", "count": 1, "weight": 1.0 },
+        { "item": "wheel", "count": 2, "count_max": 4, "weight": 2.0 },
+        { "item": "sport_suspension", "count": 1, "count_max": 2, "weight": 1.0 },
+        { "item": "scrap_gas_engine", "count": 1, "weight": 1.5 },
+        { "item": "controller", "count": 1, "weight": 1.0 },
+        { "item": "gas_container", "count": 1, "weight": 1.0 }
       ]
     },
     "legendary": {
@@ -788,7 +878,12 @@
         { "item": "chemical", "count": 3, "count_max": 5, "weight": 2.0 },
         { "item": "popper", "count": 1, "count_max": 2, "weight": 2.0 },
         { "item": "potato_blaster", "count": 1, "weight": 1.0 },
-        { "item": "grazer_shake", "count": 1, "count_max": 2, "weight": 2.0 }
+        { "item": "grazer_shake", "count": 1, "count_max": 2, "weight": 2.0 },
+        { "item": "electric_engine", "count": 1, "weight": 1.5 },
+        { "item": "gas_engine", "count": 1, "weight": 2.0 },
+        { "item": "thruster", "count": 1, "weight": 1.0 },
+        { "item": "big_wheel", "count": 2, "count_max": 4, "weight": 1.5 },
+        { "item": "drivers_seat", "count": 1, "weight": 1.0 }
       ]
     },
     // What the world's containers come filled with (POI part markers' "loot"; draws from "loot_rolls"), as Scrap
@@ -796,6 +891,12 @@
     // microwave scrap or a circuit board; ruin chests (which refill, "refill_days") a bit of everything. Resources stay
     // plentiful. Bloom Tea and Grazer Shake are loot only (consumables batch C2): tea in crates, lockers and Bloom Pods, the
     // full-heal shake rarer (lockers, purple and gold pods); Fertilizer in pods, crates and ruin chests.
+    // The Warehouse Key: one locker on each warehouse's top floor holds it (the only place the world gives one).
+    "warehouse_office": {
+      "items": [
+        { "item": "warehouse_key", "count": 1, "weight": 1.0 }
+      ]
+    },
     "locker": {
       "items": [
         { "item": "carrot", "count": 2, "count_max": 5, "weight": 3.0 },
@@ -817,7 +918,8 @@
         { "item": "component_kit", "count": 1, "count_max": 2, "weight": 3.0 },
         { "item": "circuit_board", "count": 1, "weight": 2.0 },
         { "item": "beeswax", "count": 1, "count_max": 2, "weight": 1.0 },
-        { "item": "battery_pack", "count": 1, "weight": 1.0 }
+        { "item": "battery_pack", "count": 1, "weight": 1.0 },
+        { "item": "alarm_clock", "count": 1, "weight": 1.0 }
       ]
     },
     "microwave": {
@@ -843,7 +945,12 @@
         { "item": "fire_extinguisher", "count": 2, "count_max": 4, "weight": 1.0 },
         { "item": "popper", "count": 1, "weight": 1.0 },
         { "item": "bloom_tea", "count": 1, "count_max": 2, "weight": 1.0 },
-        { "item": "fertilizer", "count": 1, "count_max": 3, "weight": 1.0 }
+        { "item": "fertilizer", "count": 1, "count_max": 3, "weight": 1.0 },
+        { "item": "bearing", "count": 1, "count_max": 2, "weight": 1.0 },
+        { "item": "scrap_wheel", "count": 1, "count_max": 2, "weight": 1.0 },
+        { "item": "scrap_gas_engine", "count": 1, "weight": 0.5 },
+        { "item": "shack_light", "count": 1, "weight": 1.0 },
+        { "item": "skull_sign", "count": 1, "weight": 0.5 }
       ]
     },
     // The POI loot crates (wooden crates at camps, ruins, kiosks and the like, and the Workshops' chest and dispenser).
@@ -860,7 +967,13 @@
         { "item": "fire_extinguisher", "count": 2, "count_max": 4, "weight": 1.0 },
         { "item": "glue", "count": 1, "weight": 1.0 },
         { "item": "bloom_tea", "count": 1, "count_max": 2, "weight": 1.5 },
-        { "item": "fertilizer", "count": 1, "count_max": 2, "weight": 1.0 }
+        { "item": "fertilizer", "count": 1, "count_max": 2, "weight": 1.0 },
+        { "item": "bearing", "count": 1, "count_max": 2, "weight": 1.5 },
+        { "item": "scrap_wheel", "count": 1, "count_max": 2, "weight": 1.5 },
+        { "item": "switch", "count": 1, "weight": 1.0 },
+        { "item": "button", "count": 1, "weight": 1.0 },
+        { "item": "construction_light", "count": 1, "weight": 1.0 },
+        { "item": "small_pipe_long", "count": 2, "count_max": 4, "weight": 1.0 }
       ]
     },
     // The warehouses' metal crates.
@@ -875,7 +988,14 @@
         { "item": "chemical", "count": 1, "count_max": 2, "weight": 1.0 },
         { "item": "paint_ammo", "count": 10, "count_max": 20, "weight": 1.0 },
         { "item": "fire_extinguisher", "count": 2, "count_max": 4, "weight": 1.0 },
-        { "item": "metal_rod", "count": 2, "count_max": 5, "weight": 1.0 }
+        { "item": "metal_rod", "count": 2, "count_max": 5, "weight": 1.0 },
+        { "item": "gas_engine", "count": 1, "weight": 1.0 },
+        { "item": "wheel", "count": 2, "count_max": 4, "weight": 1.5 },
+        { "item": "gas_container", "count": 1, "weight": 1.0 },
+        { "item": "controller", "count": 1, "weight": 1.0 },
+        { "item": "sensor", "count": 1, "weight": 1.0 },
+        { "item": "sport_suspension", "count": 1, "count_max": 2, "weight": 1.0 },
+        { "item": "warehouse_spotlight", "count": 1, "weight": 0.5 }
       ]
     }
   },
@@ -1450,7 +1570,7 @@
       "health": 30.0,
       "damage_from": ["sledge", "saw", "explosion", "weapon"],
       "sounds": { "hit": "leafy_hit" },
-      "drops": [{ "item": "scrap_wood_block", "count": 12, "count_max": 20 }]
+      "drops": [{ "item": "scrap_wood_block", "count": 12, "count_max": 20 }, { "item": "scrap_wheel", "count": 1, "chance": 0.4 }]
     },
     {
       "id": "hay_bale",
@@ -1508,7 +1628,7 @@
       "health": 60.0,
       "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
       "sounds": { "hit": "impact_metal" },
-      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }]
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }, { "item": "barrel", "count": 1, "chance": 0.3 }]
     },
     {
       "id": "log_pile",
@@ -1841,7 +1961,7 @@
       "health": 60.0,
       "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
       "sounds": { "hit": "impact_metal" },
-      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 12 }]
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 12 }, { "item": "scrap_wheel", "count": 1, "chance": 0.4 }]
     },
     {
       "id": "outhouse",
@@ -2012,7 +2132,7 @@
       "health": 30.0,
       "damage_from": ["sledge", "saw", "explosion", "weapon"],
       "sounds": { "hit": "leafy_hit" },
-      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 12 }]
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 12 }, { "item": "ladder", "count": 1, "chance": 0.5 }]
     },
     {
       "id": "wooden_table",
@@ -2024,7 +2144,7 @@
       "health": 30.0,
       "damage_from": ["sledge", "saw", "explosion", "weapon"],
       "sounds": { "hit": "leafy_hit" },
-      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 12 }]
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 12 }, { "item": "wooden_table", "count": 1, "chance": 0.5 }]
     },
     {
       "id": "stool",
@@ -2036,7 +2156,7 @@
       "health": 30.0,
       "damage_from": ["sledge", "saw", "explosion", "weapon"],
       "sounds": { "hit": "leafy_hit" },
-      "drops": [{ "item": "scrap_wood_block", "count": 4, "count_max": 4 }]
+      "drops": [{ "item": "scrap_wood_block", "count": 4, "count_max": 4 }, { "item": "stool", "count": 1, "chance": 0.5 }]
     },
     {
       "id": "drying_rack",
@@ -2072,7 +2192,7 @@
       "health": 30.0,
       "damage_from": ["sledge", "saw", "explosion", "weapon"],
       "sounds": { "hit": "leafy_hit" },
-      "drops": [{ "item": "scrap_wood_block", "count": 4, "count_max": 8 }]
+      "drops": [{ "item": "scrap_wood_block", "count": 4, "count_max": 8 }, { "item": "shack_light", "count": 1, "chance": 0.5 }]
     },
     {
       "id": "water_tower_small",
@@ -2234,7 +2354,7 @@
       "health": 30.0,
       "damage_from": ["sledge", "saw", "explosion", "weapon"],
       "sounds": { "hit": "leafy_hit" },
-      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 16 }]
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 16 }, { "item": "pallet", "count": 1, "chance": 0.5 }]
     },
     {
       "id": "forklift_wreck",
@@ -2243,7 +2363,11 @@
       "footprint": 1.9,
       "sink": 0.04,
       "max_slope": 0.35,
-      "damage_from": []
+      "health": 500.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 40, "count_max": 60 }],
+      "loot": { "table": "wreck_machine", "picks": 2, "picks_max": 3 }
     },
     {
       "id": "car_wreck",
@@ -2252,7 +2376,11 @@
       "footprint": 2.1,
       "sink": 0.04,
       "max_slope": 0.35,
-      "damage_from": []
+      "health": 300.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 24, "count_max": 36 }],
+      "loot": { "table": "wreck_car", "picks": 1, "picks_max": 3 }
     },
     {
       "id": "truck_wreck",
@@ -2261,7 +2389,11 @@
       "footprint": 3.8,
       "sink": 0.04,
       "max_slope": 0.35,
-      "damage_from": []
+      "health": 500.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 40, "count_max": 60 }],
+      "loot": { "table": "wreck_truck", "picks": 2, "picks_max": 3 }
     },
     {
       "id": "tractor_wreck",
@@ -2270,7 +2402,11 @@
       "footprint": 2.2,
       "sink": 0.04,
       "max_slope": 0.35,
-      "damage_from": []
+      "health": 400.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 30, "count_max": 44 }],
+      "loot": { "table": "wreck_tractor", "picks": 2, "picks_max": 3 }
     },
     {
       "id": "ibeam_long",
@@ -2282,7 +2418,7 @@
       "health": 60.0,
       "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
       "sounds": { "hit": "impact_metal" },
-      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 20 }]
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 20 }, { "item": "ibeam_long", "count": 1, "chance": 0.5 }]
     },
     {
       "id": "large_pipe_corner",
@@ -2302,7 +2438,7 @@
       "max_slope": 0.35,
       "health": 15.0,
       "damage_from": ["sledge", "saw", "explosion", "weapon"],
-      "drops": []
+      "drops": [{ "item": "traffic_cone", "count": 1 }]
     },
     {
       "id": "stop_sign",
@@ -2314,7 +2450,7 @@
       "health": 60.0,
       "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
       "sounds": { "hit": "impact_metal" },
-      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }]
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }, { "item": "stop_sign", "count": 1 }]
     },
     {
       "id": "caution_sign",
@@ -2326,7 +2462,7 @@
       "health": 60.0,
       "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
       "sounds": { "hit": "impact_metal" },
-      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }]
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }, { "item": "caution_sign", "count": 1 }]
     },
     {
       "id": "speed_limit_sign",
@@ -2338,7 +2474,7 @@
       "health": 60.0,
       "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
       "sounds": { "hit": "impact_metal" },
-      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }]
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }, { "item": "speed_limit_sign", "count": 1 }]
     },
     {
       "id": "conveyor_section",
@@ -3673,7 +3809,7 @@
       "max_slope": 0.35,
       "health": 15.0,
       "damage_from": ["sledge", "saw", "explosion", "weapon"],
-      "drops": []
+      "drops": [{ "item": "scrap_wheel", "count": 1, "count_max": 2 }]
     },
     {
       "id": "tire_swing",
@@ -3721,7 +3857,7 @@
       "health": 30.0,
       "damage_from": ["sledge", "saw", "explosion", "weapon"],
       "sounds": { "hit": "leafy_hit" },
-      "drops": [{ "item": "scrap_wood_block", "count": 4, "count_max": 8 }]
+      "drops": [{ "item": "scrap_wood_block", "count": 4, "count_max": 8 }, { "item": "sale_sign", "count": 1, "chance": 0.5 }]
     },
     {
       "id": "scrap_windmill_turbine",
@@ -3805,7 +3941,7 @@
       "health": 60.0,
       "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
       "sounds": { "hit": "impact_metal" },
-      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }]
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }, { "item": "battery_pack", "count": 1, "count_max": 2 }]
     },
     {
       "id": "scrap_heap_mixed",
@@ -3898,7 +4034,7 @@
       "health": 60.0,
       "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
       "sounds": { "hit": "impact_metal" },
-      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }]
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }, { "item": "warning_light", "count": 1, "chance": 0.5 }]
     },
     {
       "id": "traffic_light_fallen",
@@ -3910,7 +4046,7 @@
       "health": 60.0,
       "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
       "sounds": { "hit": "impact_metal" },
-      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }]
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }, { "item": "warning_light", "count": 1, "chance": 0.5 }]
     },
     {
       "id": "road_barrier_arm",
@@ -3997,7 +4133,7 @@
       "health": 60.0,
       "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
       "sounds": { "hit": "impact_metal" },
-      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 20 }]
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 20 }, { "item": "bloom_tea", "count": 1, "count_max": 2, "chance": 0.5 }]
     },
     {
       "id": "fire_hydrant",
@@ -4138,7 +4274,7 @@
       "health": 60.0,
       "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
       "sounds": { "hit": "impact_metal" },
-      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }]
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }, { "item": "caution_sign", "count": 1, "chance": 0.5 }]
     },
     {
       "id": "bus_wreck",
@@ -4147,7 +4283,11 @@
       "footprint": 5.5,
       "sink": 0.04,
       "max_slope": 0.35,
-      "damage_from": []
+      "health": 500.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 40, "count_max": 60 }],
+      "loot": { "table": "wreck_truck", "picks": 2, "picks_max": 3 }
     },
     {
       "id": "storage_tank_tall",
@@ -4273,7 +4413,11 @@
       "footprint": 3.6,
       "sink": 0.04,
       "max_slope": 0.35,
-      "damage_from": []
+      "health": 500.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 40, "count_max": 60 }],
+      "loot": { "table": "wreck_machine", "picks": 2, "picks_max": 3 }
     },
     {
       "id": "crane_mobile_wreck",
@@ -4282,7 +4426,11 @@
       "footprint": 5.6,
       "sink": 0.04,
       "max_slope": 0.35,
-      "damage_from": []
+      "health": 500.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 40, "count_max": 60 }],
+      "loot": { "table": "wreck_machine", "picks": 2, "picks_max": 3 }
     },
     {
       "id": "excavator_wreck",
@@ -4291,7 +4439,11 @@
       "footprint": 4.3,
       "sink": 0.04,
       "max_slope": 0.35,
-      "damage_from": []
+      "health": 500.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 40, "count_max": 60 }],
+      "loot": { "table": "wreck_machine", "picks": 2, "picks_max": 3 }
     },
     {
       "id": "bulldozer_wreck",
@@ -4300,7 +4452,11 @@
       "footprint": 5.0,
       "sink": 0.04,
       "max_slope": 0.35,
-      "damage_from": []
+      "health": 500.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 40, "count_max": 60 }],
+      "loot": { "table": "wreck_machine", "picks": 2, "picks_max": 3 }
     },
     {
       "id": "dump_truck_wreck",
@@ -4309,7 +4465,11 @@
       "footprint": 4.6,
       "sink": 0.04,
       "max_slope": 0.35,
-      "damage_from": []
+      "health": 500.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 40, "count_max": 60 }],
+      "loot": { "table": "wreck_truck", "picks": 2, "picks_max": 3 }
     },
     {
       "id": "steel_beam_stack",
@@ -4648,7 +4808,11 @@
       "footprint": 2.7,
       "sink": 0.04,
       "max_slope": 0.35,
-      "damage_from": []
+      "health": 300.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 24, "count_max": 36 }],
+      "loot": { "table": "wreck_car", "picks": 1, "picks_max": 3 }
     },
     {
       "id": "pickup_wreck",
@@ -4657,7 +4821,11 @@
       "footprint": 2.8,
       "sink": 0.04,
       "max_slope": 0.35,
-      "damage_from": []
+      "health": 300.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 24, "count_max": 36 }],
+      "loot": { "table": "wreck_car", "picks": 1, "picks_max": 3 }
     },
     {
       "id": "sports_car_wreck",
@@ -4666,7 +4834,11 @@
       "footprint": 2.6,
       "sink": 0.04,
       "max_slope": 0.35,
-      "damage_from": []
+      "health": 300.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 24, "count_max": 36 }],
+      "loot": { "table": "wreck_car", "picks": 1, "picks_max": 3 }
     },
     {
       "id": "delivery_truck_wreck",
@@ -4675,7 +4847,11 @@
       "footprint": 4.3,
       "sink": 0.04,
       "max_slope": 0.35,
-      "damage_from": []
+      "health": 500.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 40, "count_max": 60 }],
+      "loot": { "table": "wreck_truck", "picks": 2, "picks_max": 3 }
     },
     {
       "id": "tanker_trailer_wreck",
@@ -4684,7 +4860,11 @@
       "footprint": 4.3,
       "sink": 0.04,
       "max_slope": 0.35,
-      "damage_from": []
+      "health": 500.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 40, "count_max": 60 }],
+      "loot": { "table": "wreck_truck", "picks": 2, "picks_max": 3 }
     },
     {
       "id": "flatbed_trailer",
@@ -4693,7 +4873,11 @@
       "footprint": 4.2,
       "sink": 0.04,
       "max_slope": 0.35,
-      "damage_from": []
+      "health": 500.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 40, "count_max": 60 }],
+      "loot": { "table": "wreck_truck", "picks": 2, "picks_max": 3 }
     },
     {
       "id": "motorbike_wreck",
@@ -4705,7 +4889,8 @@
       "health": 60.0,
       "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
       "sounds": { "hit": "impact_metal" },
-      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 20 }]
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 20 }],
+      "loot": { "table": "wreck_small", "picks": 1, "picks_max": 2 }
     },
     {
       "id": "bicycle_rusty",
@@ -4717,7 +4902,7 @@
       "health": 60.0,
       "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
       "sounds": { "hit": "impact_metal" },
-      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }]
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }, { "item": "scrap_wheel", "count": 1, "chance": 0.5 }]
     },
     {
       "id": "train_wagon_wreck",
@@ -4766,7 +4951,7 @@
       "health": 60.0,
       "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
       "sounds": { "hit": "impact_metal" },
-      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 20 }]
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 20 }, { "item": "scrap_wheel", "count": 1, "count_max": 2 }, { "item": "bearing", "count": 1, "chance": 0.3 }]
     },
     {
       "id": "golf_cart_wreck",
@@ -4775,7 +4960,11 @@
       "footprint": 1.7,
       "sink": 0.04,
       "max_slope": 0.35,
-      "damage_from": []
+      "health": 300.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 24, "count_max": 36 }],
+      "loot": { "table": "wreck_car", "picks": 1, "picks_max": 3 }
     },
     {
       "id": "quad_bike_wreck",
@@ -4787,7 +4976,8 @@
       "health": 60.0,
       "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
       "sounds": { "hit": "impact_metal" },
-      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 20 }]
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 20 }],
+      "loot": { "table": "wreck_small", "picks": 1, "picks_max": 2 }
     },
     {
       "id": "boat_trailer",
@@ -4805,7 +4995,11 @@
       "footprint": 4.8,
       "sink": 0.04,
       "max_slope": 0.35,
-      "damage_from": []
+      "health": 500.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 40, "count_max": 60 }],
+      "loot": { "table": "wreck_machine", "picks": 2, "picks_max": 3 }
     },
     {
       "id": "colony_rover_wreck",
@@ -4814,7 +5008,11 @@
       "footprint": 3.0,
       "sink": 0.04,
       "max_slope": 0.35,
-      "damage_from": []
+      "health": 500.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 40, "count_max": 60 }],
+      "loot": { "table": "wreck_air", "picks": 2, "picks_max": 3 }
     },
     {
       "id": "hovercraft_wreck",
@@ -4823,7 +5021,11 @@
       "footprint": 3.5,
       "sink": 0.04,
       "max_slope": 0.35,
-      "damage_from": []
+      "health": 500.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 40, "count_max": 60 }],
+      "loot": { "table": "wreck_air", "picks": 2, "picks_max": 3 }
     },
     {
       "id": "airplane_tail",
@@ -4841,7 +5043,11 @@
       "footprint": 4.6,
       "sink": 0.04,
       "max_slope": 0.35,
-      "damage_from": []
+      "health": 500.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 40, "count_max": 60 }],
+      "loot": { "table": "wreck_air", "picks": 2, "picks_max": 3 }
     },
     {
       "id": "small_plane_wreck",
@@ -4850,7 +5056,11 @@
       "footprint": 5.0,
       "sink": 0.04,
       "max_slope": 0.35,
-      "damage_from": []
+      "health": 500.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 40, "count_max": 60 }],
+      "loot": { "table": "wreck_air", "picks": 2, "picks_max": 3 }
     },
     {
       "id": "wheel_loose_big",
@@ -4871,7 +5081,7 @@
       "health": 60.0,
       "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
       "sounds": { "hit": "impact_metal" },
-      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 16 }]
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 16 }, { "item": "scrap_gas_engine", "count": 1, "chance": 0.3 }, { "item": "gas_engine", "count": 1, "chance": 0.05 }, { "item": "exhaust_pipe", "count": 1, "chance": 0.3 }]
     },
     {
       "id": "car_seat",
@@ -4883,7 +5093,7 @@
       "health": 60.0,
       "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
       "sounds": { "hit": "impact_metal" },
-      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }]
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }, { "item": "scrap_seat", "count": 1, "chance": 0.6 }, { "item": "scrap_drivers_seat", "count": 1, "chance": 0.3 }]
     },
     {
       "id": "stone_arch_small",
@@ -5497,7 +5707,7 @@
       "health": 60.0,
       "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
       "sounds": { "hit": "impact_metal" },
-      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }]
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }, { "item": "scrap_seat", "count": 1, "chance": 0.6 }]
     },
     {
       "id": "med_kit_crate",
@@ -8339,7 +8549,7 @@
       "health": 60.0,
       "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
       "sounds": { "hit": "impact_metal" },
-      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }]
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }, { "item": "direction_arrow_straight", "count": 1 }]
     },
     {
       "id": "road_sign_warning_curve",
@@ -8351,7 +8561,7 @@
       "health": 60.0,
       "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
       "sounds": { "hit": "impact_metal" },
-      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }]
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }, { "item": "direction_arrow_left", "count": 1, "chance": 0.5 }, { "item": "direction_arrow_right", "count": 1, "chance": 0.5 }]
     },
     {
       "id": "road_sign_animal",
@@ -8363,7 +8573,7 @@
       "health": 60.0,
       "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
       "sounds": { "hit": "impact_metal" },
-      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }]
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }, { "item": "caution_sign", "count": 1 }]
     },
     {
       "id": "km_marker",
@@ -8421,7 +8631,7 @@
       "health": 30.0,
       "damage_from": ["sledge", "saw", "explosion", "weapon"],
       "sounds": { "hit": "leafy_hit" },
-      "drops": [{ "item": "scrap_wood_block", "count": 4, "count_max": 8 }]
+      "drops": [{ "item": "scrap_wood_block", "count": 4, "count_max": 8 }, { "item": "welcome_sign", "count": 1, "chance": 0.3 }]
     },
     {
       "id": "abandoned_shopping_cart",
@@ -8433,7 +8643,7 @@
       "health": 60.0,
       "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
       "sounds": { "hit": "impact_metal" },
-      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }]
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }, { "item": "scrap_wheel", "count": 1, "chance": 0.3 }]
     },
     {
       "id": "roadside_tire_pile",
@@ -8444,7 +8654,7 @@
       "max_slope": 0.35,
       "health": 15.0,
       "damage_from": ["sledge", "saw", "explosion", "weapon"],
-      "drops": []
+      "drops": [{ "item": "scrap_wheel", "count": 1, "count_max": 2 }]
     },
     {
       "id": "road_cone_cluster",
@@ -8455,7 +8665,7 @@
       "max_slope": 0.35,
       "health": 15.0,
       "damage_from": ["sledge", "saw", "explosion", "weapon"],
-      "drops": []
+      "drops": [{ "item": "traffic_cone", "count": 2, "count_max": 4 }]
     },
     {
       "id": "broken_down_scooter",
@@ -8467,7 +8677,8 @@
       "health": 60.0,
       "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
       "sounds": { "hit": "impact_metal" },
-      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 20 }]
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 20 }],
+      "loot": { "table": "wreck_small", "picks": 1, "picks_max": 2 }
     },
     {
       "id": "colony_cable_pole",
@@ -8866,7 +9077,7 @@
       "health": 60.0,
       "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
       "sounds": { "hit": "impact_metal" },
-      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 6 }]
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 6 }, { "item": "big_wheel", "count": 1, "chance": 0.3 }]
     },
     {
       "id": "thresher_tilled_scar",

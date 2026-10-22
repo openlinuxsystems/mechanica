@@ -16,5 +16,10 @@
     { "shape": "box", "size": [3.0, 2.4, 4.0], "at": [5.0, 1.2, -3.0], "yaw": -15.0, "color": "#5f8a4a" },
     { "shape": "box", "size": [4.0, 2.8, 5.0], "at": [0.0, 1.4, 6.0], "color": "#8a6a4a" },
     { "shape": "cylinder", "radius": 1.0, "height": 0.4, "at": [0.0, 0.2, 0.0], "color": "#3a3430" }
+  ],
+  "markers": [
+    { "type": "part", "ref": "wooden_crate", "at": [-7.5, 0.0, 2.0], "loot": "crate", "loot_rolls": [2, 4] },
+    { "type": "part", "ref": "scrap_seat", "at": [2.4, 0.0, 0.0], "yaw": 90.0 },
+    { "type": "part", "ref": "shack_light", "at": [3.0, 0.0, 4.0] }
   ]
 }

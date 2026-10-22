@@ -16,5 +16,9 @@
     { "shape": "box", "size": [36.0, 8.0, 24.0], "at": [0.0, 4.3, 0.0], "color": "#7d858c" },
     { "shape": "box", "size": [3.0, 3.0, 0.4], "at": [0.0, 10.0, 12.2], "color": "#5fa83a" },
     { "shape": "box", "size": [20.0, 1.2, 3.0], "at": [0.0, 1.0, 15.0], "color": "#4a4f55" }
+  ],
+  "markers": [
+    { "type": "part", "ref": "wooden_crate", "at": [-15.0, 0.3, 14.5], "loot": "crate", "loot_rolls": [2, 4] },
+    { "type": "part", "ref": "stacked_crates", "at": [15.0, 0.3, 14.5] }
   ]
 }

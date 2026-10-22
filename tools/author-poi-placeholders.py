@@ -80,13 +80,14 @@ def warehouse(floors, w, d):
     markers = [{"type": "door", "ref": "warehouse_key", "at": [0.0, 0.0, hd]}]
     for f in range(floors):
         markers.append({"type": "bot", "ref": bots[f], "at": [(-4.0 if f % 2 else 0.0), 4 * f + 0.3, -hd / 2]})
-    markers.append({"type": "item", "ref": "warehouse_key", "at": [hw - 4, 4 * (floors - 1) + 0.3, -hd + 4]})
+    # The Warehouse Key, in a locker against the back wall of the top floor (it always holds one).
+    markers.append(loot_part("locker", [hw - 4, 4 * (floors - 1) + 0.3, -hd + 0.5], "warehouse_office", [1, 1], yaw=180.0))
     # A loot crate on every floor: metal crates, a wooden one on the top floor.
     for f in range(floors):
         crate = "metal_crate" if f < floors - 1 else "wooden_crate"
         markers.append(loot_part(crate, [(-hw + 4) if f % 2 == 0 else (hw - 4), 4 * f + 0.3, -hd + 4],
                                  "warehouse_crate" if f < floors - 1 else "crate", [2, 5] if f < floors - 1 else [2, 4]))
-    markers.append({"type": "item", "ref": "warehouse_key_sign", "at": [0.0, 0.0, hd + 4]})
+    markers.append(part("warehouse_key_sign", [-4.5, 0.0, hd + 1.5], yaw=180.0))
     # Staff lockers and a file cabinet against the back wall (its inner face is 0.2 m in) of the ground floor and of the
     # top floor's office corner, facing into the hall (+z).
     for f in (0, floors - 1):
@@ -95,6 +96,9 @@ def warehouse(floors, w, d):
         markers.append(loot_part("locker", [side * (hw - 10), y, -hd + 0.5], "locker", [1, 4], yaw=180.0))
         markers.append(loot_part("locker", [side * (hw - 10.75), y, -hd + 0.5], "locker", [1, 4], yaw=180.0))
         markers.append(loot_part("file_cabinet", [side * (hw - 12), y, -hd + 0.65], "file_cabinet", [1, 3], yaw=180.0))
+    # Site lights and cones either side of the door, outside (added last: a marker's place in the list is its key).
+    markers += [part("construction_light", [x, 0.0, hd + 2.0], yaw=180.0) for x in (-8.0, 8.0)]
+    markers += [part("traffic_cone", [x, 0.0, hd + 3.0]) for x in (-5.5, 5.5)]
     return pieces, markers, h
 
 
@@ -107,6 +111,14 @@ def loot_part(part, at, loot, rolls, yaw=None, refill_days=None):
     marker["loot_rolls"] = rolls
     if refill_days is not None:
         marker["refill_days"] = float(refill_days)
+    return marker
+
+
+def part(ref, at, yaw=None):
+    """A part the world places for players to find and take (a part marker, at the middle of its bottom face)."""
+    marker = {"type": "part", "ref": ref, "at": [float(v) for v in at]}
+    if yaw is not None:
+        marker["yaw"] = float(yaw)
     return marker
 
 
@@ -150,37 +162,55 @@ for floors, poi_id, name, (w, d) in [(2, "warehouse_small", "Warehouse (2 floors
     pieces, markers, h = warehouse(floors, w, d)
     add(poi_id, name, [w, h + 4.3, d], "road", pieces, markers)
 
-add("small_ruin", "Small Ruin", [14, 5, 12], "track", placeholder(14, 12, 5, RUIN), flora="meadow", ground=None)
+add("small_ruin", "Small Ruin", [14, 5, 12], "track", placeholder(14, 12, 5, RUIN),
+    [loot_part("wooden_crate", [-9.0, 0.3, 2.0], "crate", [2, 4])], flora="meadow", ground=None)
 add("farmer_shack", "Farmer Shack", [12, 5, 10], "track",
-    placeholder(12, 10, 5, WOOD, [box([5, 2.5, 4], [10, 1.25, 4], HAY)]), flora="meadow", ground=None)
+    placeholder(12, 10, 5, WOOD, [box([5, 2.5, 4], [10, 1.25, 4], HAY)]),
+    [loot_part("wooden_crate", [-8.0, 0.3, 2.0], "crate", [2, 4]), part("barrel", [-8.0, 0.3, -2.0])], flora="meadow", ground=None)
 add("packing_station_vegetable", "Packing Station (Vegetable)", [36, 8, 24], "road",
-    placeholder(36, 24, 8, METAL, [box([3, 3, 0.4], [0, 10, 12.2], "#5fa83a"), box([20, 1.2, 3], [0, 1.0, 15], ROOF)]))
+    placeholder(36, 24, 8, METAL, [box([3, 3, 0.4], [0, 10, 12.2], "#5fa83a"), box([20, 1.2, 3], [0, 1.0, 15], ROOF)]),
+    [loot_part("wooden_crate", [-15.0, 0.3, 14.5], "crate", [2, 4]), part("stacked_crates", [15.0, 0.3, 14.5])])
 add("packing_station_fruit", "Packing Station (Fruit)", [36, 8, 24], "road",
-    placeholder(36, 24, 8, METAL, [box([3, 3, 0.4], [0, 10, 12.2], "#c8402f"), box([20, 1.2, 3], [0, 1.0, 15], ROOF)]))
+    placeholder(36, 24, 8, METAL, [box([3, 3, 0.4], [0, 10, 12.2], "#c8402f"), box([20, 1.2, 3], [0, 1.0, 15], ROOF)]),
+    [loot_part("wooden_crate", [-15.0, 0.3, 14.5], "crate", [2, 4]), part("stacked_crates", [15.0, 0.3, 14.5])])
 add("silo_cluster", "Silo Cluster", [30, 18, 30], "road",
-    [box([38, 0.3, 38], [0, 0.15, 0], PAD), *silos(4, 4, 18, 8), volume(10, 8, 6, METAL, x=-10, z=12, y=0.3)])
+    [box([38, 0.3, 38], [0, 0.15, 0], PAD), *silos(4, 4, 18, 8), volume(10, 8, 6, METAL, x=-10, z=12, y=0.3)],
+    [loot_part("metal_crate", [2.0, 0.3, 14.0], "crate", [2, 4]), part("warning_light", [17.0, 0.3, 17.0])])
 add("silo_district", "Silo District", [90, 26, 70], "road",
     [box([98, 0.3, 78], [0, 0.15, 0], PAD),
      *[cylinder(5, 26, [x, 13.3, z], YELLOW) for x in (-30, -18, -6, 6) for z in (-22, -10)],
      volume(30, 20, 12, METAL, x=26, z=-14, y=0.3), volume(24, 16, 10, METAL, x=-20, z=20, y=0.3),
-     box([60, 1, 1], [-12, 24, -16], "#3f6fa8"), box([0.3, 2, 30], [44, 1.3, 20], METAL)])
+     box([60, 1, 1], [-12, 24, -16], "#3f6fa8"), box([0.3, 2, 30], [44, 1.3, 20], METAL)],
+    [loot_part("metal_crate", [26.0, 0.3, 0.0], "warehouse_crate", [2, 4]), loot_part("wooden_crate", [-20.0, 0.3, 32.0], "crate", [2, 4]),
+     part("construction_light", [10.0, 0.3, -30.0]), part("danger_sign", [0.0, 0.3, 37.0], yaw=180.0)])
 add("ruin", "Ruin", [30, 10, 24], "track",
     [box([34, 0.3, 28], [0, 0.15, 0], RUIN), volume(30, 0.5, 10, RUIN, z=-12), volume(0.5, 24, 7, RUIN, x=-15),
-     volume(12, 0.5, 4, RUIN, x=9, z=12), volume(14, 12, 3, RUIN, x=6, z=-4, y=0.3)], flora="meadow", ground=None)
+     volume(12, 0.5, 4, RUIN, x=9, z=12), volume(14, 12, 3, RUIN, x=6, z=-4, y=0.3)],
+    [loot_part("wooden_crate", [-10.0, 0.3, 4.0], "crate", [2, 4]), part("skull_sign", [-14.5, 0.3, 8.0], yaw=-90.0)],
+    flora="meadow", ground=None)
 add("mountain_lookout", "Mountain Lookout", [10, 14, 10], "track",
     [box([14, 0.3, 14], [0, 0.15, 0], RUIN), *[cylinder(0.4, 12, [x, 6.3, z], METAL) for x in (-4, 4) for z in (-4, 4)],
-     box([10, 2.5, 10], [0, 13.5, 0], RUIN)], flora="mountain", ground=None)
+     box([10, 2.5, 10], [0, 13.5, 0], RUIN)],
+    [loot_part("wooden_crate", [2.5, 14.75, 2.5], "crate", [2, 4])], flora="mountain", ground=None)
 add("campsite", "Campsite", [20, 3, 20], "track",
     [box([3, 2.4, 4], [-5, 1.2, -4], "#5f8a4a", 20), box([3, 2.4, 4], [5, 1.2, -3], "#5f8a4a", -15),
-     box([4, 2.8, 5], [0, 1.4, 6], "#8a6a4a"), cylinder(1, 0.4, [0, 0.2, 0], BURNT)], flora="meadow", ground=None)
+     box([4, 2.8, 5], [0, 1.4, 6], "#8a6a4a"), cylinder(1, 0.4, [0, 0.2, 0], BURNT)],
+    # A crate by the tents, a seat facing the fire pit and a light by the hut.
+    [loot_part("wooden_crate", [-7.5, 0.0, 2.0], "crate", [2, 4]), part("scrap_seat", [2.4, 0.0, 0.0], yaw=90.0),
+     part("shack_light", [3.0, 0.0, 4.0])], flora="meadow", ground=None)
 add("large_camp", "Large Camp", [50, 4, 40], "track",
     [box([54, 0.3, 44], [0, 0.15, 0], "#8a7a5a"),
      *[box([4, 3, 5], [x, 1.8, z], "#5f8a4a") for x in (-18, -9, 9, 18) for z in (-12, 12)],
-     volume(12, 8, 4, WOOD, y=0.3), *[box([2, 2, 2], [x, 1.3, 18], HAY) for x in (-20, -16, 16, 20)]])
+     volume(12, 8, 4, WOOD, y=0.3), *[box([2, 2, 2], [x, 1.3, 18], HAY) for x in (-20, -16, 16, 20)]],
+    [loot_part("chest", [0.0, 0.3, -6.0], "crate", [2, 4]), loot_part("wooden_crate", [0.0, 0.3, 8.0], "crate", [2, 4]),
+     part("shack_light", [-8.0, 0.3, 0.0]), part("shack_light", [8.0, 0.3, 0.0]), part("scrap_seat", [4.0, 0.3, 6.0], yaw=180.0),
+     part("chair", [-4.0, 0.3, 6.0], yaw=180.0)])
 add("growlab", "Growlab", [30, 8, 20], "road",
-    placeholder(30, 20, 8, GLASS, [volume(10, 8, 6, METAL, x=-20, y=0.3)]))
+    placeholder(30, 20, 8, GLASS, [volume(10, 8, 6, METAL, x=-20, y=0.3)]),
+    [loot_part("metal_crate", [12.0, 0.3, 12.5], "crate", [2, 4])])
 add("farmers_hideout", "Farmers Hideout", [40, 16, 30], "road",
-    placeholder(40, 30, 16, METAL, [cylinder(2, 28, [14, 14.3, -10], ROOF), box([8, 0.4, 12], [0, 6, 21], METAL)]))
+    placeholder(40, 30, 16, METAL, [cylinder(2, 28, [14, 14.3, -10], ROOF), box([8, 0.4, 12], [0, 6, 21], METAL)]),
+    [loot_part("metal_crate", [-17.0, 0.3, 17.5], "warehouse_crate", [2, 4]), part("beware_bots_sign", [8.0, 0.3, 18.5], yaw=180.0)])
 # Chemical pools (Chemical item: an empty bucket dipped in one; standing in one hurts) and oil geysers (Crude Oil by hand).
 add("chemical_lake_facility", "Chemical Lake Facility", [40, 10, 30], "track",
     placeholder(40, 30, 10, RUIN, [box([1, 1, 18], [-10, 0.8, 26], YELLOW), box([1, 1, 18], [10, 0.8, 26], YELLOW)]),
@@ -208,7 +238,8 @@ CROP = "#6aa84f"
 add("camp", "Camp", [14, 3, 14], "track",
     [box([3, 2.2, 4], [-4, 1.1, -3], TENT, 20), box([3, 2.0, 3.5], [4, 1.0, -2], CANVAS, -25), cylinder(0.8, 0.3, [0, 0.15, 2], BURNT),
      box([2.2, 0.4, 0.5], [-1.8, 0.2, 3.6], WOOD, 70)],
-    [loot_part("wooden_crate", [5.0, 0.0, 4.0], "crate", [2, 4]), loot_part("wooden_crate", [-4.0, 0.0, 0.0], "crate", [2, 4])],
+    [loot_part("wooden_crate", [5.0, 0.0, 4.0], "crate", [2, 4]), loot_part("wooden_crate", [-4.0, 0.0, 0.0], "crate", [2, 4]),
+     part("scrap_seat", [2.0, 0.0, 2.0], yaw=90.0), part("shack_light", [1.0, 0.0, -1.5])],
     ground="dirt", margin=12,
     spacing={"spacing": [570.0, 820.0], "biomes": ["forest", "autumn_forest", "burned_forest"], "priority": 20, "clearance": 48.0})
 add("forest_ruin", "Forest Ruin", [16, 5, 16], "track",
@@ -222,7 +253,8 @@ add("forest_ruin", "Forest Ruin", [16, 5, 16], "track",
 add("roadside_kiosk", "Roadside Kiosk", [6, 3.5, 5], "none",
     [box([10, 0.2, 8], [0, 0.1, 0], PAD), box([5, 2.6, 3.5], [0, 1.5, 0.5], WOOD), box([6, 0.2, 2], [0, 2.9, -1.8], CANVAS, 0),
      box([5, 1, 0.3], [0, 1.0, -1.4], WOOD), box([0.2, 2.2, 0.2], [3.8, 1.1, -3.2], METAL), box([1.6, 1, 0.1], [3.8, 2.6, -3.2], YELLOW)],
-    [loot_part("wooden_crate", [0.0, 0.2, -2.4], "crate", [2, 4]), loot_part("wooden_crate", [-3.5, 0.2, 2.0], "crate", [2, 4])],
+    [loot_part("wooden_crate", [0.0, 0.2, -2.4], "crate", [2, 4]), loot_part("wooden_crate", [-3.5, 0.2, 2.0], "crate", [2, 4]),
+     part("sale_sign", [-2.6, 0.2, -3.2])],
     margin=6,
     spacing={"spacing": [520.0, 900.0], "biomes": ["meadow", "forest", "field", "desert", "autumn_forest", "burned_forest"],
              "priority": 40, "clearance": 0.0, "roadside": 8.0})
@@ -250,24 +282,52 @@ add("farmbot_scrapyard", "Farmbot Scrapyard", [60, 6, 50], "none",
     [box([64, 0.3, 54], [0, 0.15, 0], BURNT),
      *[box([s, s / 2, s], [x, s / 4 + 0.3, z], "#6a5a52", (x * 7) % 45) for s, x, z in
        [(10, -18, -12), (8, 6, -16), (12, 16, 6), (7, -8, 10), (9, -22, 14), (6, 24, -18)]],
-     box([60, 2, 0.4], [0, 1.3, -25], METAL), box([0.4, 2, 50], [30, 1.3, 0], METAL)], ground="burnt")
+     box([60, 2, 0.4], [0, 1.3, -25], METAL), box([0.4, 2, 50], [30, 1.3, 0], METAL)],
+    # Warning signs and cones at the open (south) edge, crates and a refilling chest among the heaps, shelves against the
+    # back fence, site lights, and loose parts off the dead Farmbots' machines.
+    [part("beware_bots_sign", [-3.0, 0.3, 26.0], yaw=180.0), part("danger_sign", [3.0, 0.3, 26.0], yaw=180.0),
+     part("traffic_cone", [-6.0, 0.3, 25.0]), part("traffic_cone", [6.0, 0.3, 25.0]),
+     loot_part("ruin_chest", [0.0, 0.3, 0.0], "ruin_chest", [1, 6], refill_days=5),
+     loot_part("metal_crate", [-14.0, 0.3, -21.0], "warehouse_crate", [2, 4]), loot_part("wooden_crate", [-27.0, 0.3, 0.0], "crate", [2, 4]),
+     part("shelf_unit", [-6.0, 0.3, -24.5], yaw=180.0), part("shelf_unit", [-2.0, 0.3, -24.5], yaw=180.0),
+     part("construction_light", [27.0, 0.3, -8.0]), part("construction_light", [-29.0, 0.3, 22.0]),
+     part("stacked_crates", [26.0, 0.3, 20.0]), part("scrap_wheel", [14.0, 0.3, -5.0]), part("scrap_wheel", [-15.0, 0.3, 3.0]),
+     part("scrap_drivers_seat", [-15.0, 0.3, -1.0], yaw=40.0), part("scrap_gas_engine", [12.0, 0.3, 20.0])],
+    ground="burnt")
 add("capsule_scrapyard", "Capsule Scrapyard", [50, 6, 40], "track",
     [box([54, 0.3, 44], [0, 0.15, 0], PAD),
      *[cylinder(2.5, 5, [x, 2.8, z], "#c9d2d8") for x in (-16, -8, 0, 8, 16) for z in (-10, 10)],
-     box([50, 2, 0.4], [0, 1.3, -20], METAL)])
+     box([50, 2, 0.4], [0, 1.3, -20], METAL)],
+    # Signs at the gate, crates at the ends of the aisle, parts salvaged from the capsules on shelves and in the aisle.
+    [part("danger_sign", [-3.0, 0.3, 21.0], yaw=180.0), part("beware_bots_sign", [3.0, 0.3, 21.0], yaw=180.0),
+     loot_part("metal_crate", [-22.0, 0.3, 0.0], "warehouse_crate", [2, 4]), loot_part("wooden_crate", [22.0, 0.3, 0.0], "crate", [2, 4]),
+     part("shelf_unit", [-6.0, 0.3, -19.5], yaw=180.0), part("shelf_unit", [6.0, 0.3, -19.5], yaw=180.0),
+     part("construction_light", [-24.0, 0.3, -18.0]), part("construction_light", [24.0, 0.3, -18.0]),
+     part("battery", [-4.0, 0.3, 0.0]), part("scrap_wheel", [4.0, 0.3, 0.0]), part("warning_light", [0.0, 0.3, -18.5])])
 add("ruin_city", "Ruin City", [160, 40, 140], "road",
     [box([168, 0.3, 148], [0, 0.15, 0], RUIN),
      *[volume(w, d, h, RUIN, x=x, z=z, y=0.3) for w, d, h, x, z in
        [(30, 24, 40, -50, -40), (24, 24, 28, -10, -50), (36, 20, 34, 40, -44), (20, 30, 22, -56, 10),
         (28, 28, 36, 50, 8), (40, 18, 16, 0, 0), (22, 22, 30, -30, 48), (30, 20, 24, 30, 50)]],
-     box([150, 0.3, 10], [0, 0.45, 26], "#5a5e62")])
+     box([150, 0.3, 10], [0, 0.45, 26], "#5a5e62")],
+    [loot_part("ruin_chest", [0.0, 0.3, -25.0], "ruin_chest", [1, 6], refill_days=5),
+     loot_part("wooden_crate", [-40.0, 0.3, -15.0], "crate", [2, 4]), loot_part("metal_crate", [40.0, 0.3, -20.0], "warehouse_crate", [2, 4]),
+     loot_part("wooden_crate", [0.0, 0.3, 40.0], "crate", [2, 4]), part("danger_sign", [0.0, 0.3, 70.0], yaw=180.0),
+     part("traffic_cone", [-12.0, 0.6, 24.0]), part("traffic_cone", [12.0, 0.6, 28.0])])
 add("haymaze", "Haymaze", [60, 3, 60], "road",
     [box([64, 0.3, 64], [0, 0.15, 0], "#8a7a5a"),
      *[box([w, 3, 2], [x, 1.8, z], HAY) for w, x, z in [(60, 0, -29), (60, 0, 29), (40, -10, -15), (40, 10, 0), (40, -10, 15)]],
-     *[box([2, 3, d], [x, 1.8, z], HAY) for d, x, z in [(52, -29, 0), (52, 29, 0), (14, 0, -22), (14, 15, 22)]]])
+     *[box([2, 3, d], [x, 1.8, z], HAY) for d, x, z in [(52, -29, 0), (52, 29, 0), (14, 0, -22), (14, 15, 22)]]],
+    # The prize at the heart of the maze: a chest that fills again 5 days after it is emptied, and a crate on the way.
+    [loot_part("ruin_chest", [-20.0, 0.3, -7.0], "ruin_chest", [1, 6], refill_days=5), loot_part("wooden_crate", [20.0, 0.3, 8.0], "crate", [2, 4])])
 add("scrap_city_garage", "Scrap City Garage", [60, 12, 40], "road",
     placeholder(60, 40, 12, METAL, [box([16, 8, 0.4], [-12, 4.3, 20.2], ROOF), box([16, 8, 0.4], [12, 4.3, 20.2], ROOF),
-                                    cylinder(3, 6, [20, 15.3, -10], YELLOW)]))
+                                    cylinder(3, 6, [20, 15.3, -10], YELLOW)]),
+    # On the forecourt in front of the doors: crates, a sale sign, cones, a light, and wheels and a seat waiting for a car.
+    [loot_part("metal_crate", [-26.0, 0.3, 22.5], "warehouse_crate", [2, 4]), part("stacked_crates", [26.0, 0.3, 22.5]),
+     part("sale_sign", [0.0, 0.3, 22.0], yaw=180.0), part("construction_light", [-2.5, 0.3, 22.5]),
+     part("traffic_cone", [-21.0, 0.3, 23.0]), part("traffic_cone", [21.0, 0.3, 23.0]),
+     part("wheel", [32.0, 0.3, 2.0]), part("wheel", [32.0, 0.3, -1.0]), part("scrap_drivers_seat", [32.0, 0.3, -6.0], yaw=-90.0)])
 
 
 def inline(value):

@@ -28,8 +28,10 @@
     // The supply dispenser by the right bay's front pier, facing into the bay, and a chest by the tool chests at the back
     // (clear of the tyre stacks): both come filled once from the crate loot table.
     { "type": "part", "ref": "dispenser", "at": [12.0, 0.02, 2.5], "yaw": 90.0, "loot": "crate", "loot_rolls": [2, 4] },
-    { "type": "item", "ref": "respawn_bed", "at": [-11.6, 0.02, -1.5] },
+    // A bed in the office (sleep in it to wake here), and the Workshop sign on the forecourt, facing the road: players may
+    // take either.
+    { "type": "part", "ref": "respawn_bed", "at": [-11.6, 0.02, -1.5] },
     { "type": "part", "ref": "chest", "at": [2.4, 0.02, -11.2], "yaw": 180.0, "loot": "crate", "loot_rolls": [2, 4] },
-    { "type": "item", "ref": "outpost_sign", "at": [10.0, 0.02, 13.0] }
+    { "type": "part", "ref": "outpost_sign", "at": [10.0, 0.02, 13.0], "yaw": 180.0 }
   ]
 }
