@@ -20,6 +20,7 @@ import bpy
 from mathutils import Vector
 
 import kit as K
+import sv04_layout as LAY
 import frame as FR
 from families import M, glow, GUNMETAL, CYAN, COPPER, MUSTARD, BONE, STEEL, GRAPHITE, WOOD, WARM
 
@@ -37,8 +38,7 @@ CARGO = {
     "tan": ("#a27c55", "Building", "wood, concrete, glass"),
 }
 # the racks, aft to fore; each row is (port lower, port upper, starboard lower, starboard upper)
-RACKS = [("red", "tan", "blue", "red"), ("green", "red", "yellow", "tan"),
-         ("blue", "yellow", "red", "green"), ("tan", "blue", "green", "yellow")]
+RACKS = LAY.RACKS
 
 PALETTES = {
     # the reference look: light grey hull, gunmetal frames
@@ -590,7 +590,7 @@ def bridge(P, rnd, mats, lights=True):
         K.point("bridge_fill", (0, 26.0, 3.2), "#e2f5ff", 250, 1.5).parent = P
 
 
-def cargo_ship(o=(0, 0, 0), yaw=0, name="sv04", palette="dark", seed=7, lights=True, spine_break=None, keep=None):
+def cargo_ship(o=(0, 0, 0), yaw=0, name="sv04", palette="dark", seed=7, lights=True, spine_break=None, keep=None, power_core=True):
     """The ship under an empty. spine_break (a y) builds the spine in two pieces; keep (container codes) leaves the
     other containers out. CONTAINERS lists all sixteen afterwards: code, colour, rack position, tier."""
     rnd = random.Random(seed)
@@ -682,14 +682,18 @@ def cargo_ship(o=(0, 0, 0), yaw=0, name="sv04", palette="dark", seed=7, lights=T
     # ---- engineering (port aft): the Power Core with the Master Battery's empty bay, a workbench and tool wall
     ROOMS["Engineering"] = (-4.4, -21.0)
     shelf(root, (-4.0, -18.35, 0), 2.6, 180, rnd)
-    FR.framed_box(root, "power_core", (-4.6, -23.2, 1.3), (2.2, 1.2, 2.6), M(GRAPHITE, metal=0.3), gm, fw=0.1, screws=gm)
-    FR.screen(root, (-4.6, -22.58, 2.1), 1.2, 0.5, M(GRAPHITE), glow("#ff6a4d", 1.6))   # dead: no battery
-    K.box("battery_bay", (0.9, 0.5, 0.9), K.mat("bay_hole", "#0b0c0e", rough=0.9), loc=(-4.6, -22.62, 0.9), bev=0.02, parent=root)
-    FR.hazard(root, (-4.6, -22.56, 1.45), 1.2, 0.1, must, haz_k, n=8)
-    for x in (-6.2, -3.0):
-        K.cyl("core_coil_core", 0.22, 2.2, gm, loc=(x, -23.3, 1.1), bev=0.02, parent=root)
-        for k in range(9):
-            K.torus("core_coil", 0.27, 0.05, cu, loc=(x, -23.3, 0.3 + k * 0.2), parent=root)
+    # The Power Core stands at sv04_layout.BAY_AT, its coils behind it: in the game it is its own model with the install
+    # clips (tools/master_battery, sv04_battery_bay.glb); power_core=False leaves it out for that.
+    bx, by, bz = LAY.BAY_AT
+    if power_core:
+        FR.framed_box(root, "power_core", (bx, by, bz + 1.2), (1.8, 1.4, 2.4), M(GRAPHITE, metal=0.3), gm, fw=0.1, screws=gm)
+        FR.screen(root, (bx, by + 0.72, bz + 1.9), 1.0, 0.45, M(GRAPHITE), glow("#ff6a4d", 1.6))   # dead: no battery
+        K.box("battery_bay", (0.62, 0.5, 0.52), K.mat("bay_hole", "#0b0c0e", rough=0.9), loc=(bx, by + 0.5, bz + 0.64), bev=0.02, parent=root)
+        FR.hazard(root, (bx, by + 0.73, bz + 1.0), 0.8, 0.08, must, haz_k, n=8)
+    for x in (bx - 0.5, bx + 0.5):
+        K.cyl("core_coil_core", 0.22, 1.6, gm, loc=(x, by - 1.05, bz + 1.2), bev=0.02, parent=root)
+        for k in range(8):
+            K.torus("core_coil", 0.26, 0.05, cu, loc=(x, by - 1.05, bz + 0.55 + k * 0.18), parent=root)
     for k in range(3):
         K.cyl("core_pipe", 0.11, 5.4, cu if k == 1 else gm, loc=(-7.0, -21.0, 3.2 + k * 0.3), rot=(90, 0, 0), segs=12, bev=0, parent=root)
     table(root, (-6.6, -19.6, 0), (1.4, 1.6))

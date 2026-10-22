@@ -18,38 +18,14 @@ from mathutils import Euler, Matrix, Vector
 import kit as K
 import frame as FR
 import cargo_ship as S
+import sv04_layout as L
 from families import M, glow, GUNMETAL, CYAN, COPPER, MUSTARD, BONE, STEEL, GRAPHITE, WOOD
 
-SPINE_BREAK = 1.0
-KEEP = {"SV4-112", "SV4-131", "SV4-215", "SV4-309"}      # the containers left crushed in their racks
-
-# Each piece turns about its pivot (its middle on the ship's deck line) and comes to rest with the pivot at the given
-# world position, rotated (deg, XYZ). The aft block hit first and stopped soonest; the bow slid on furthest.
-PIVOTS = {"aft": (0.0, -21.0, 0.0), "spine_a": (0.0, -5.5, 0.0), "spine_b": (0.0, 7.5, 0.0), "bow": (0.0, 23.0, 0.0)}
-PIECES = {
-    "aft": ((-7.0, -27.0, 1.75), (1.5, -9.0, 16.0)),
-    "spine_a": ((-2.0, -9.5, 1.3), (-3.0, -38.0, 38.0)),
-    "spine_b": ((3.5, 4.0, 1.05), (2.0, 14.0, -22.0)),
-    "bow": ((6.0, 21.5, 1.45), (-4.0, 8.0, -9.0)),
-}
-# The containers lost in the sky: (code, x, y, yaw, roll) where each burst open, around the furrow and back along
-# the flight path (-Y). In the game these are their own models with loot around them.
-SCATTER = [
-    ("SV4-118", -38.0, -58.0, 30.0, 8.0), ("SV4-120", 22.0, -64.0, -50.0, -6.0), ("SV4-207", -60.0, -110.0, 75.0, 12.0),
-    ("SV4-233", 48.0, -118.0, 10.0, -90.0), ("SV4-240", -14.0, -150.0, -20.0, 5.0), ("SV4-301", 70.0, -36.0, 120.0, 4.0),
-    ("SV4-316", -72.0, -18.0, 200.0, -10.0), ("SV4-322", 30.0, -190.0, 60.0, 90.0), ("SV4-405", -36.0, 40.0, -70.0, 7.0),
-    ("SV4-411", 54.0, 30.0, 160.0, -5.0), ("SV4-420", -96.0, -170.0, 15.0, 9.0), ("SV4-438", 92.0, -140.0, -110.0, 6.0),
-]
-# Fires (on the ground or on the wreck, world positions): the ones at the three ways in must be put out to get in.
-FIRES = [
-    ("airlock", None, (7.6, 16.6, 0.0), 1.2),       # outside the bow's starboard airlock (bow-local)
-    ("mess_door", None, (8.4, -15.0, 0.0), 1.1),    # outside the aft block's starboard side door (aft-local)
-    ("spine_end", None, (0.0, -11.2, 0.0), 1.3),    # in the aft block's torn front, where the spine was (aft-local)
-    ("engine_room", None, (2.5, -27.5, 0.0), 0.9),  # inside, by an engine feed (aft-local)
-    ("bridge", None, (3.0, 23.6, 0.0), 0.7),        # inside, by the starboard wall stations (bow-local)
-    ("spine_a", None, (0.0, -6.0, 0.0), 0.9),       # in the corridor of the first spine piece (spine_a-local)
-]
-FIRE_PIECE = {"airlock": "bow", "mess_door": "aft", "spine_end": "aft", "engine_room": "aft", "bridge": "bow", "spine_a": "spine_a"}
+SPINE_BREAK, KEEP, PIVOTS, PIECES, SCATTER = L.SPINE_BREAK, set(L.KEEP), L.PIVOTS, L.PIECES, L.SCATTER
+# The world objects each container colour's spilled cargo becomes (mods/vanilla/world/worldgen.json: cargo_spill_<kind>).
+SPILLS = {"red": "metal", "blue": "electronics", "yellow": "fuel", "green": "farming", "tan": "building"}
+FIRES = [(key, None, p, sc) for key, _, p, sc in L.FIRES]
+FIRE_PIECE = {key: piece for key, piece, _, _ in L.FIRES}
 
 
 def _bake(objs):
@@ -91,9 +67,9 @@ def torn_rim(P, y, hw, zb, zt, cb, ct, dirn, mats, rnd, n=22):
     cables and pipe ends hanging out."""
     poly = S.octagon(hw, zb, zt, cb, ct)
     per = [Vector((x, z)) for x, z in poly]
-    L = sum((per[(i + 1) % 8] - per[i]).length for i in range(8))
+    perim = sum((per[(i + 1) % 8] - per[i]).length for i in range(8))
     for k in range(n):
-        t = (k + rnd.random() * 0.5) / n * L
+        t = (k + rnd.random() * 0.5) / n * perim
         i = 0
         while t > (per[(i + 1) % 8] - per[i]).length:
             t -= (per[(i + 1) % 8] - per[i]).length
@@ -172,15 +148,16 @@ def smoke(P, loc, h=14.0, rnd=None):
         K.sphere("smoke", r, m, loc=(x + 5.0 * t * t + rnd.uniform(-0.6, 0.6), y + 2.5 * t * t + rnd.uniform(-0.6, 0.6), z + 1.8 + h * t), parent=P)
 
 
-def burst_container(code, colour, o, yaw, roll, rnd, name=None):
+def burst_container(code, colour, o, yaw, roll, rnd, name=None, ground=True):
     """A container that fell and burst: half dug in, doors blown open (one leaf torn off), its cargo spilled out of the
-    doors in a fan. Origin on the ground under its middle."""
+    doors in a fan. Origin on the ground under its middle. ground=False leaves out the crater and the spill (the game
+    paints the ground and places the spill as cargo_spill_* objects)."""
     root = K.link(bpy.data.objects.new(name or f"burst_{code}", None))
     root.location = o
     root.rotation_euler = (0, 0, math.radians(yaw))
     body = K.link(bpy.data.objects.new("body", None))
     body.parent = root
-    body.location = (0, 0, 1.05)
+    body.location = (0, 0, L.CONTAINER_MIDDLE)
     body.rotation_euler = (math.radians(rnd.uniform(-6, 6)), math.radians(roll), 0)
     c = S.container(body, (0, 0, 0), colour, code, rnd)
     # hollow it and open the door end
@@ -200,17 +177,23 @@ def burst_container(code, colour, o, yaw, roll, rnd, name=None):
     for k in range(5):
         K.box("dent", (0.6, 0.6, 0.06), M(col, metal=0.25, wear=0.7), loc=(1.2, -2.6 + k * 0.15, 0.9 - k * 0.1), rot=(rnd.uniform(-30, 30), rnd.uniform(-30, 30), 0), bev=0.01, parent=c)
     # the dirt it threw up, the spill fan in front of the doors
-    K.disc("crater", 4.2, K.mat("dirt", "#5b4a36", rough=1.0, noise_scale=2.0), (0, 0), z=0.02, wobble=0.25, seed=rnd.randint(0, 99)).parent = root
-    spill(root, colour, rnd)
+    if ground:
+        K.disc("crater", 4.2, K.mat("dirt", "#5b4a36", rough=1.0, noise_scale=2.0), (0, 0), z=0.02, wobble=0.25, seed=rnd.randint(0, 99)).parent = root
+        spill(root, colour, rnd)
     return root
 
 
-def spill(P, colour, rnd, n=14):
-    """Cargo of one kind fanned out from the doors (+Y)."""
+def spill(P, colour, rnd, n=14, pile=None):
+    """Cargo of one kind fanned out from the doors (+Y), or heaped within pile metres of the origin."""
     for k in range(n):
-        a = rnd.uniform(-0.8, 0.8)
-        d = rnd.uniform(3.3, 8.0)
-        x, y = d * math.sin(a), d * math.cos(a)
+        if pile:
+            a = rnd.uniform(0, 2 * math.pi)
+            d = pile * math.sqrt(rnd.random())
+            x, y = d * math.cos(a), d * math.sin(a)
+        else:
+            a = rnd.uniform(-0.8, 0.8)
+            d = rnd.uniform(3.3, 8.0)
+            x, y = d * math.sin(a), d * math.cos(a)
         yaw = rnd.uniform(0, 360)
         if colour == "red":      # scrap metal sheets, metal blocks, bearings
             r = rnd.random()
@@ -255,11 +238,11 @@ def spill(P, colour, rnd, n=14):
                 K.box("glass_pane", (0.6, 0.4, 0.02), K.mat("glass_shard", "#9fd2e2", rough=0.05, emit="#9fd2e2", emit_strength=0.1), loc=(x, y, 0.02), rot=(0, 0, yaw), bev=0, parent=P)
 
 
-def wreck(o=(0, 0, 0), yaw=0, name="sv04_wreck", seed=21, scene=True):
+def wreck(o=(0, 0, 0), yaw=0, name="sv04_wreck", seed=21, scene=True, power_core=True):
     """The broken ship: empties 'aft', 'spine_a', 'spine_b', 'bow' (each a model in the game) under one root.
     scene adds what the game places itself: the furrow and scorch, fires, smoke, debris (review renders)."""
     rnd = random.Random(seed)
-    ship = S.cargo_ship(name="sv04_parts", lights=False, spine_break=SPINE_BREAK, keep=KEEP, seed=7)
+    ship = S.cargo_ship(name="sv04_parts", lights=False, spine_break=SPINE_BREAK, keep=KEEP, seed=7, power_core=power_core)
     ship.location = (0, 0, 0)
     bpy.context.view_layer.update()
     pal = S.PALETTES["dark"]
@@ -348,7 +331,10 @@ def wreck(o=(0, 0, 0), yaw=0, name="sv04_wreck", seed=21, scene=True):
         P.location = loc
         P.rotation_euler = Euler([math.radians(a) for a in rot], "XYZ")
     # the lost housing lies upside-down off the port side of the furrow
-    lost.matrix_world = Matrix.Translation((-20.0, -26.0, 9.6)) @ Euler((math.radians(170), math.radians(12), math.radians(40))).to_matrix().to_4x4()
+    for ch in lost.children:
+        ch.location -= Vector(L.HOUSING_CENTRE)
+    loc, rot = L.HOUSING_LYING
+    lost.matrix_basis = Matrix.Translation(loc) @ Euler([math.radians(a) for a in rot], "XYZ").to_matrix().to_4x4()
     bpy.context.view_layer.update()
 
     if not scene:
@@ -379,15 +365,28 @@ def wreck(o=(0, 0, 0), yaw=0, name="sv04_wreck", seed=21, scene=True):
 
 def scatter(root, rnd, only=None):
     """The burst containers round the site, with a fire on every third one."""
-    by_code = {c["code"]: c for c in S.CONTAINERS}
+    slots = L.slots()
     out = []
-    for i, (code, x, y, yaw, roll) in enumerate(SCATTER):
+    for i, (code, x, y, yaw) in enumerate(SCATTER):
         if only and code not in only:
             continue
-        c = by_code[code]
-        b = burst_container(code, c["colour"], (x, y, 0), yaw, roll, rnd)
+        b = burst_container(code, slots[code][0], (x, y, 0), yaw, rnd.uniform(-8, 8), rnd)
         b.parent = root
         if i % 3 == 0:
             blaze(b, (1.0, 5.0, 0.0), 0.7, rnd)
         out.append(b)
     return out
+
+
+def burst_model(colour, seed=5):
+    """A burst container of one colour for the game (sv04_container_<colour>.glb): no crater or spill."""
+    rnd = random.Random(seed)
+    code = next(c for c, (col, _, _) in L.slots().items() if col == colour)
+    return burst_container(code, colour, (0, 0, 0), 0, 4.0, rnd, name=f"container_{colour}", ground=False)
+
+
+def spill_pile(colour, seed=9):
+    """A heap of one container colour's cargo (a cargo_spill_* world object): about 2 m across."""
+    root = K.link(bpy.data.objects.new(f"spill_{colour}", None))
+    spill(root, colour, random.Random(seed), n=12, pile=0.9)
+    return root

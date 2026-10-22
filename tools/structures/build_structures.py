@@ -3,10 +3,13 @@
 What it builds (procedurally, from scratch: no .blend inputs, no downloads), each with its origin on the ground at the
 structure's centre (glTF +Y up, front towards +Z):
 
-* ``meshes/structures/sv04_fore.glb`` and ``sv04_aft.glb`` - the SV-04 Salvager broken in two (Salvager Tech): the
-  fore section with the bridge, crew quarters and engineering, and the aft section with the cargo hold and the
-  engine room. Both share the ship's origin, so the crash site places them at the same point. The port nacelle tore
-  off in flight: ``sv04_nacelle.glb`` is it, lying where it fell (the opening cinematic shows it go).
+* ``meshes/structures/sv04_{aft,spine_a,spine_b,bow}.glb`` and ``sv04_housing.glb`` - the SV-04 Salvager, a salvage
+  freighter (Salvager Tech; cargo_ship.py), as it lies after the crash (crash_site.py, laid out by sv04_layout.py):
+  the aft block (engine room, engineering, medbay, crew quarters, mess), the cargo spine broken in two with four
+  containers still crushed in its racks, the bow (bridge, cargo control, the starboard airlock), and the port engine
+  housing the explosion tore off. All share the wreck's origin, so the crash site places them at the same point.
+  ``sv04_container_<colour>.glb`` are the containers lost in the sky, burst open where they landed, and
+  ``meshes/world/cargo_spill_<kind>.glb`` the heaps of cargo they spilled (world objects).
 * ``meshes/structures/relay_beacon_dead.glb`` - a dead Colony relay beacon (Colony Works).
 * ``meshes/structures/settler_shack.glb`` - the farmer's half-dome shack with its trade counter and fenced garden
   (Settler Patchwork).
@@ -45,8 +48,9 @@ How to run (Blender as a Python module, no Blender UI needed):
     python tools/structures/build_structures.py props props_fields    # only the props of the modules named
     python tools/structures/build_structures.py landmarks [landmark_ziggurat ...]   # only the landmarks
     python tools/structures/build_structures.py formations            # only the rock formations (or the ones named)
+    python tools/structures/build_structures.py sv04                  # only the SV-04 wreck, its containers and spills
 
-The outputs are committed; re-run this script after changing it (or kit.py, frame.py, families.py, ship.py,
+The outputs are committed; re-run this script after changing it (or kit.py, frame.py, families.py, ship.py, cargo_ship.py, crash_site.py, sv04_layout.py,
 workshop.py, landmarks.py, props*.py, rock_formations.py, textures.py) and commit the result. The build is deterministic (seeded noise only).
 """
 
@@ -89,6 +93,7 @@ import rock_formations  # noqa: E402
 import factions_bots_a  # noqa: E402
 import factions_bots_b  # noqa: E402
 import ship as S  # noqa: E402
+import crash_site as CS  # noqa: E402
 import workshop as W  # noqa: E402
 import landmarks as LM  # noqa: E402
 
@@ -107,13 +112,17 @@ def report(name, counts):
 
 
 def ship():
+    """The SV-04 wreck (crash_site.py, laid out by sv04_layout.py): its four pieces and the lost engine housing, all
+    sharing the wreck's origin, then a burst container of each colour and a heap of each colour's cargo."""
     fresh()
-    root = S.salvager_ship(game=True)
-    fore = next(c for c in root.children if c.name.startswith("fore"))
-    aft = next(c for c in root.children if c.name.startswith("aft"))
-    report("sv04_fore", K.export(fore, STRUCTURES / "sv04_fore.glb", frame=root))
-    report("sv04_aft", K.export(aft, STRUCTURES / "sv04_aft.glb", frame=root))
-    single("sv04_nacelle", lambda: S.lost_nacelle())
+    root, pieces = CS.wreck(scene=False, power_core=False)
+    for key, piece in pieces.items():
+        report(f"sv04_{key}", K.export(piece, STRUCTURES / f"sv04_{key}.glb", frame=root))
+    lost = next(c for c in root.children if c.name.startswith("lost_housing"))
+    report("sv04_housing", K.export(lost, STRUCTURES / "sv04_housing.glb", frame=root))
+    for colour, kind in CS.SPILLS.items():
+        single(f"sv04_container_{colour}", lambda colour=colour: CS.burst_model(colour))
+        single(f"cargo_spill_{kind}", lambda colour=colour: CS.spill_pile(colour), WORLD, collider=False)
 
 
 def single(name, build, folder=STRUCTURES, collider=True):
@@ -177,6 +186,9 @@ def main():
         return
     if sys.argv[1:2] == ["formations"]:
         formations(sys.argv[2:])
+        return
+    if sys.argv[1:2] == ["sv04"]:
+        ship()
         return
     ship()
     single("relay_beacon_dead", lambda: F.dead_beacon())
