@@ -92,6 +92,17 @@ public partial class InventoryCapture : Node
             if (_fabricator is { } station)
                 Screen.Show(station);
         });
+        // The recipe with the most inputs: the card's middle scrolls and the window keeps its size.
+        Shot($"{tag}_08_fabricator_most_inputs", 10, () =>
+        {
+            var most = Screen.RecipeRows.Select(r => r.Recipe).MaxBy(r =>
+            {
+                Screen.Choose(r);
+                return Screen.PreviewInputs.Count;
+            });
+            if (most is not null)
+                Screen.Choose(most);
+        });
         // The Fabricator's Upgrade dialog: with enough Component Kits, short of them, then after upgrading.
         Shot($"{tag}_09_upgrade", 20, () =>
         {

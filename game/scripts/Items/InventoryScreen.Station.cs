@@ -76,6 +76,7 @@ public partial class InventoryScreen
     private Label _previewDescription = null!;
     private Label _previewTime = null!;
     private HFlowContainer _previewInputs = null!;
+    private ScrollContainer _detailScroll = null!;
     private readonly List<(Label Count, string Name, bool Missing)> _materialRows = [];
     private string _previewKey = "";
     private Label _reason = null!;
@@ -152,6 +153,9 @@ public partial class InventoryScreen
     /// <summary>The category tabs shown (those with recipes at this station).</summary>
     public IReadOnlyList<InventoryTab> TabsShown => [.. TabOrder.Where((_, i) => _filterButtons[i].Visible)];
 
+    /// <summary>The detail card's scrolling middle (stats, description, materials).</summary>
+    public ScrollContainer DetailScroll => _detailScroll;
+
     /// <summary>The main window and the detail card.</summary>
     public IReadOnlyList<Control> StationPanels => [_main, _card];
 
@@ -174,6 +178,8 @@ public partial class InventoryScreen
     /// <summary>Shows <paramref name="recipe"/> (a qualified id) in the detail card.</summary>
     public void Choose(string recipe)
     {
+        if (_chosen != recipe)
+            _detailScroll.ScrollVertical = 0;
         _chosen = recipe;
         RefreshStation();
     }
@@ -384,27 +390,32 @@ public partial class InventoryScreen
         _previewSubtitle = Loc.Verbatim(new Label { Name = "PreviewSubtitle", ThemeTypeVariation = "MutedLabel", TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis });
         names.AddChild(_previewSubtitle);
         column.AddChild(names);
+        // Everything between the name and the Craft bar scrolls, so a recipe with many inputs or a long description never
+        // makes the card (and the window) taller than its fixed size and the Craft bar stays in view.
+        _detailScroll = new ScrollContainer { Name = "DetailScroll", SizeFlagsVertical = Control.SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+        var details = new VBoxContainer { Name = "Details", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        details.AddThemeConstantOverride("separation", 8);
+        _detailScroll.AddChild(details);
+        column.AddChild(_detailScroll);
         _stats = new PanelContainer { Name = "Stats", ThemeTypeVariation = "InsetPanel" };
         _statRows = new GridContainer { Name = "StatRows", Columns = 3 };
         _statRows.AddThemeConstantOverride("h_separation", 10);
         _statRows.AddThemeConstantOverride("v_separation", 2);
         _stats.AddChild(_statRows);
-        column.AddChild(_stats);
-        var description = new ScrollContainer { Name = "DescriptionScroll", SizeFlagsVertical = Control.SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, CustomMinimumSize = new Vector2(0, 36) };
+        details.AddChild(_stats);
         _previewDescription = Loc.Verbatim(new Label { Name = "PreviewDescription", ThemeTypeVariation = "MutedLabel", AutowrapMode = TextServer.AutowrapMode.WordSmart, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
-        description.AddChild(_previewDescription);
-        column.AddChild(description);
+        details.AddChild(_previewDescription);
         var materials = new HBoxContainer();
         materials.AddChild(new Label { Text = "Materials", ThemeTypeVariation = "SectionLabel", Uppercase = true, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
         _previewTime = Loc.Verbatim(new Label { Name = "PreviewTime", ThemeTypeVariation = "NumericLabel", TooltipText = "Time at this station's speed", MouseFilter = Control.MouseFilterEnum.Stop });
         materials.AddChild(_previewTime);
-        column.AddChild(materials);
+        details.AddChild(materials);
         _previewInputs = new HFlowContainer { Name = "PreviewInputs" };
         _previewInputs.AddThemeConstantOverride("h_separation", 10);
         _previewInputs.AddThemeConstantOverride("v_separation", 6);
-        column.AddChild(_previewInputs);
+        details.AddChild(_previewInputs);
         _reason = Loc.Verbatim(new Label { Name = "Reason", ThemeTypeVariation = "ErrorTextLabel", AutowrapMode = TextServer.AutowrapMode.WordSmart, Visible = false });
-        column.AddChild(_reason);
+        details.AddChild(_reason);
         var actions = new HBoxContainer { Name = "CraftBar" };
         actions.AddThemeConstantOverride("separation", 8);
         _quantity = new QuantityStepper { Name = "Quantity", MaxValue = Inventory.Settings!.MaxCraftCount };
@@ -428,8 +439,8 @@ public partial class InventoryScreen
             _newRecipes = new HashSet<string>();
         if (_stationMode)
         {
-            _status.Reparent(_card.GetChild(0));
-            _card.GetChild(0).MoveChild(_status, _reason.GetIndex() + 1);
+            _status.Reparent(_reason.GetParent());
+            _reason.GetParent().MoveChild(_status, _reason.GetIndex() + 1);
             _status.ThemeTypeVariation = "ErrorTextLabel";
             SetStorage(_storageOpen);
         }
