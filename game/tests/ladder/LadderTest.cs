@@ -238,8 +238,17 @@ public partial class LadderTest : StagedTest
             Check(_climbed, "it climbed a metre and more on the ladder");
             Check(Mathf.Abs(HostSide.GlobalPosition.Y - top) < 0.15f, $"the client stands on the deck at the ladder's top ({HostSide.GlobalPosition.Y:F2} vs {top:F2})");
             Check(Me.Ground?.Creation == Rig, "on the rig");
-            Check(Me.GlobalPosition.DistanceTo(HostSide.GlobalPosition) < 0.3f, "the client and the host agree where");
             return true;
+        });
+        // Compared once the client stops: while it walks, the host's copy trails it by the input delay.
+        Add("standing still on the deck, the client and the host agree where", frame =>
+        {
+            Hold(Vector3.Zero);
+            Me.CurrentInput = PlayerInput.None;
+            var apart = Me.GlobalPosition.DistanceTo(HostSide.GlobalPosition);
+            if (apart < 0.3f)
+                return Check(true, "the client and the host agree where");
+            return frame >= 60 && Fail($"the client and the host agree where ({apart:F2} m apart)");
         });
         Add("walking back onto the ladder from the deck gets on it to climb down", frame =>
         {
