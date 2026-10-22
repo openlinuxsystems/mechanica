@@ -185,9 +185,9 @@ public partial class SurvivalTest : StagedTest
                 HostSurvival.Damage(Peer, 30, "test");
             if (frame == 10)
                 Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Carrot)));
-            if (_results.Count == 0 || _client.Main.Survival.Own!.Health != 80 || Count(Carrot) != 4)
+            if (_results.Count == 0 || _client.Main.Survival.Own!.Health != 95 || Count(Carrot) != 4)
                 return false;
-            Check(_results[0].Ok, $"a carrot heals 10 ({_results[0]})");
+            Check(_results[0].Ok, $"a carrot heals 25 ({_results[0]})");
             return true;
         });
         Stage("the item in hand eats too", frame =>
@@ -195,12 +195,12 @@ public partial class SurvivalTest : StagedTest
             var item = _client.Main.Tools!.Item;
             if (frame == 0)
             {
-                HostSurvival.Damage(Peer, 10, "test");
+                HostSurvival.Damage(Peer, 25, "test");
                 item.Choose(Carrot);
             }
             if (frame == 10)
                 Check(item.InHand?.Item == Carrot && item.Use(_results.Add), "the Item tool eats the carrot in hand");
-            return _results.Count > 0 && _client.Main.Survival.Own!.Health == 80 && Count(Carrot) == 3;
+            return _results.Count > 0 && _client.Main.Survival.Own!.Health == 95 && Count(Carrot) == 3;
         });
         Stage("with friendly fire off the client's shot does not hurt the host", frame =>
         {

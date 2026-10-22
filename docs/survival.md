@@ -42,6 +42,9 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
   Any part with `respawn_point` is a bed: vanilla has the Respawn Bed, a sleeping bag on a foam mat (it burns), and the
   steel Fancy Bed (it does not, and is tougher). You respawn standing on top of the bed: on its collision box when that
   is a box (the sleeping bag's is lower than its block), else on the top of its size.
+- **Food:** left click with food in hand eats it and heals you: a Carrot 25, a Tomato 20 and a Potato 8 (the Potato is
+  mostly potato-weapon ammo). Carrots and tomatoes stack to 10, potatoes to 50. Every player starts with 3 carrots.
+  The heal is the item's `properties.health`, read by `food.lua`.
 - **Ice:** the Freezer is a crafting station with one recipe: a full Water Bucket becomes 20 Ice Blocks in a minute,
   and the empty bucket comes back into the Freezer's slots with the ice.
 - **Farming:** aim a Soil Bag at the ground (no steeper than 17°) to spill out a 3×3 soil mound (with Force build held,
@@ -138,7 +141,8 @@ their item's properties.
   is `bucket` in `game/data/character.json`.
 - A pool of a liquid with a `bucket` (worldgen `liquids[]`; vanilla's chemical pools name `chemical_bucket`) fills
   buckets with that instead: `CollectWater` there turns every empty bucket carried into a Chemical Bucket (Parts map
-  E11; no recipe). Its script (`chemical_bucket.lua`) pours `properties.count` Chemical into a container in reach that
+  E11). The Fabricator empties one into 5 Chemical and gives the empty Water Bucket back (recipe `chemical`, 5 s: a
+  recipe's second output). Its script (`chemical_bucket.lua`) pours `properties.count` Chemical into a container in reach that
   takes it (the Chemical Container), through `inventory.put`, or throws it like water (a green `chemical` projectile
   that waters nothing and puts out no fire); either way the bucket comes back empty. A liquid with only `collect` gives
   its items and leaves the bucket empty.
@@ -152,7 +156,8 @@ their item's properties.
   and its growth speed; the script reads both with `world.item`. The host keeps only what the script stores
   on the soil (seed, growth, water, stage and when growth was last worked out): that is what is saved, sent
   to clients and read by bots and raids. Vanilla's items and soil are authored by the Part Editor batch
-  `mods/vanilla/editor/batches/survival.json`. Soil on a Creation (the Growbed, parts map E9) is the same: its state is
+  `mods/vanilla/editor/batches/survival.json`; the produce, the seeds, Chemical and Gasoline by
+  `mods/vanilla/editor/batches/consumables.json` (consumables batch C1). Soil on a Creation (the Growbed, parts map E9) is the same: its state is
   per part, so it follows the part through splits and welds and saves in the Creation. `soil.yield` and `soil.seeds` fix
   its harvest and the seeds it takes (checked by the host in `CheckPlant`, which `farm.can_plant` asks), and `soil.lua`'s
   `charge_item` / `charge_time` properties power it. The Growbed is in `mods/vanilla/editor/batches/parts_farming.json`.

@@ -617,8 +617,8 @@ public sealed class LogicScriptTests : IDisposable
         Steps(2);
         Assert.Equal(0f, readouts.Number(Car, battery, "charge"));
 
-        // 20 of its 50 batteries (5 slots of 10): the gauge eases up to 0.4 over 0.3 s.
-        creation.InventoryOf(battery)!.Add("vanilla:battery_pack", 20);
+        // 40 of its 100 batteries (5 slots of 20): the gauge eases up to 0.4 over 0.3 s.
+        creation.InventoryOf(battery)!.Add("vanilla:battery_pack", 40);
         Steps(6);
         Assert.InRange(readouts.Number(Car, battery, "charge")!.Value, 0.01f, 0.39f);
         Steps(30);
@@ -627,7 +627,7 @@ public sealed class LogicScriptTests : IDisposable
         // An engine drew one: it eases down.
         creation.InventoryOf(battery)!.Remove("vanilla:battery_pack", 1);
         Steps(60);
-        Assert.Equal(0.38f, readouts.Number(Car, battery, "charge"));
+        Assert.Equal(0.39f, readouts.Number(Car, battery, "charge"));
     }
 
     [Fact]
