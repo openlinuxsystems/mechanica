@@ -38,6 +38,10 @@
     { "type": "part", "ref": "scrap_wheel", "at": [14.0, 0.3, -5.0] },
     { "type": "part", "ref": "scrap_wheel", "at": [-15.0, 0.3, 3.0] },
     { "type": "part", "ref": "scrap_drivers_seat", "at": [-15.0, 0.3, -1.0], "yaw": 40.0 },
-    { "type": "part", "ref": "scrap_gas_engine", "at": [12.0, 0.3, 20.0] }
+    { "type": "part", "ref": "scrap_gas_engine", "at": [12.0, 0.3, 20.0] },
+    { "type": "derelict", "ref": "old_tractor", "at": [20.0, 0.3, -6.0], "yaw": 15.0 },
+    { "type": "derelict", "ref": "flatbed_hauler", "at": [-5.0, 0.3, -10.0], "yaw": 90.0 },
+    { "type": "derelict", "ref": "scrap_buggy", "at": [5.0, 0.3, -5.0], "yaw": -10.0 },
+    { "type": "part", "ref": "signboard", "at": [10.0, 0.3, 25.5], "yaw": 0.0, "settings": { "text": "SCRAPYARD\nTake what you need\nMind the Farmbots" } }
   ]
 }

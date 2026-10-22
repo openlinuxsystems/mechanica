@@ -104,10 +104,11 @@ public class ContentLayersTests : IDisposable
     }
 
     [Fact]
-    public void CharactersAndPoisCanBePatched()
+    public void CharactersPoisAndDerelictsCanBePatched()
     {
         _mods.File("tweaks", "overrides/vanilla/characters/scrapper_male.patch.json", """{ "name": "Mechanic" }""")
-            .File("tweaks", "overrides/vanilla/pois/camp.patch.json", """{ "name": "Big Camp" }""");
+            .File("tweaks", "overrides/vanilla/pois/camp.patch.json", """{ "name": "Big Camp" }""")
+            .File("tweaks", "overrides/vanilla/derelicts/go_kart.patch.json", """{ "missing": [] }""");
         var content = Load();
 
         var characters = CharacterBook.Load(content);
@@ -118,6 +119,7 @@ public class ContentLayersTests : IDisposable
         Assert.Equal("Mechanic", characters.Find("scrapper_male")!.Name);
         Assert.Equal("vanilla:scrapper_male", characters.Default!.QualifiedId);
         Assert.Equal("Big Camp", world.Pois.Single(p => p.QualifiedId == "vanilla:camp").Prefab.Name);
+        Assert.Empty(world.Derelicts["vanilla:go_kart"].Definition.Missing!);
     }
 
     [Fact]

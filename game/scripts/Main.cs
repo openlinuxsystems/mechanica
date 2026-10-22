@@ -1229,8 +1229,14 @@ public partial class Main : Node3D
         };
         var spots = WorldParts.SpotsOf(Streamer.Generator);
         _refillSpots = spots.Where(s => s.Loot?.RefillSeconds is not null).ToDictionary(s => s.Key, StringComparer.Ordinal);
-        var plan = WorldParts.Reconcile(spots, Creations.All.ToList(), new LoadedParts(this), Build.NextCreationId,
-            Streamer.State.IsDestroyed);
+        var plan = WorldParts.Reconcile([.. spots, .. Derelicts.SpotsOf(Streamer.Generator)], Creations.All.ToList(), new LoadedParts(this), Build.NextCreationId,
+            Streamer.State.IsDestroyed, Streamer.Generator.Seed);
+        // A derelict is placed once: its marker is saved as used, like a taken world part's.
+        foreach (var key in plan.Used ?? [])
+        {
+            if (WorldParts.ObjectOf(key) is { } used)
+                Streamer.State.Destroy(used);
+        }
         foreach (var id in plan.Remove)
             Creations.Remove(id);
         foreach (var id in plan.Moved)
@@ -1240,7 +1246,7 @@ public partial class Main : Node3D
         foreach (var problem in plan.Problems)
             GD.PushWarning($"[world] a part marker places nothing: {problem}");
         if (plan.Add.Count + plan.Remove.Count + plan.Moved.Count > 0)
-            GD.Print($"[world] world parts: {plan.Add.Count} placed, {plan.Moved.Count} put back, {plan.Remove.Count} removed");
+            GD.Print($"[world] world parts: {plan.Add.Count} placed ({plan.Used?.Count ?? 0} derelicts), {plan.Moved.Count} put back, {plan.Remove.Count} removed");
     }
 
     // Once, on the host of a new world, when the debug car is wanted (see DebugCar).

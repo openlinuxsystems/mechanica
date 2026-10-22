@@ -63,6 +63,8 @@ namespace Mechanica.Game.Tools;
 /// (<c>tools/capture-opening.sh</c>, which can also record the whole of it).
 /// Given <c>drops</c> it kills a Rakehand and shows its loot lying as glowing piles, the Use prompt naming the one aimed at,
 /// and a row of items of every kind (<c>tools/capture-drops.sh</c>).
+/// Given <c>derelicts</c> it shows each derelict vehicle whole and as a world leaves it, then the roadside and field sites
+/// that hold them (<c>tools/capture-derelicts.sh</c>).
 /// Given <c>consumables</c> it shows Bloom Tea and a Grazer Shake held and drunk, Fertilizer in hand, and a tomato crop
 /// beside a fertilized one (<c>tools/capture-consumables.sh</c>); given <c>grazer_products</c>, a tame Grazer eating from its
 /// Feeding Trough until its milk is ready, the milk collected and held, and Grazer Steak dropped by a Grazer and held.
@@ -128,12 +130,14 @@ public partial class CaptureScene : Node
         var beds = args.Length > 1 && args[1] == "beds";
         var extinguisher = args.Length > 1 && args[1] == "extinguisher";
         var drops = args.Length > 1 && args[1] == "drops";
-        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !factions && !ladder && !beds && !extinguisher && !drops && !connectLines && !husbandry && !consumables && !grazerProducts && !fields && !gauges && !building && args[1] != "survey" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        var derelicts = args.Length > 1 && args[1] == "derelicts";
+        var signs = args.Length > 1 && args[1] == "signs";
+        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !factions && !ladder && !beds && !extinguisher && !drops && !derelicts && !signs && !connectLines && !husbandry && !consumables && !grazerProducts && !fields && !gauges && !building && args[1] != "survey" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         // Building the block wall needs Creative: free parts and no build reach.
-        _main.Options = LaunchOptions.Offline with { Seed = args.Length > 1 && args[1] == "survey" ? 1 : 7, GameMode = blocks || building || soil || wheels || portable || liftCapture || connectLines || husbandry || consumables ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
+        _main.Options = LaunchOptions.Offline with { Seed = args.Length > 1 && args[1] == "survey" ? 1 : 7, GameMode = blocks || building || signs || soil || wheels || portable || liftCapture || connectLines || husbandry || consumables ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
         // The button shots show the HUD (the creation hotbar), which only a main reading the devices builds.
         _main.ReadDeviceInput = icons || wheels || button || engineMenu || connectLines || gauges || drops;
         _main.DebugCar = debugCar;
@@ -295,6 +299,11 @@ public partial class CaptureScene : Node
             SmallPoiShots();
             return;
         }
+        if (signs)
+        {
+            SignShots(args.Length > 2 && args[2] == "meadow");
+            return;
+        }
         if (building)
         {
             BuildingPartShots(args.Length > 2 ? args[2] : null);
@@ -318,6 +327,11 @@ public partial class CaptureScene : Node
         if (beds)
         {
             BedShots();
+            return;
+        }
+        if (derelicts)
+        {
+            DerelictShots();
             return;
         }
         if (borders)

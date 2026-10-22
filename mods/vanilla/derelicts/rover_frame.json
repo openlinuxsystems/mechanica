@@ -1,0 +1,2057 @@
+{
+  "id": "rover_frame",
+  "name": "Rover Frame",
+  "missing": [
+    {
+      "part": "electric_engine",
+      "chance": 0.9
+    },
+    {
+      "part": "battery",
+      "chance": 0.8
+    },
+    {
+      "part": "wheel",
+      "chance": 0.5
+    },
+    {
+      "part": "headlight",
+      "chance": 0.5,
+      "count_max": 2
+    }
+  ],
+  "creation": {
+    "format_version": 1,
+    "id": 0,
+    "parts": [
+      {
+        "id": 1,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          0,
+          0,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 2,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          0,
+          0,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 3,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          0,
+          0,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 4,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          0,
+          0,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 5,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          0,
+          0,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 6,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          0,
+          0,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 7,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          0,
+          0,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 8,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          0,
+          0,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 9,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          0,
+          0,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 10,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          0,
+          0,
+          9
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 11,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          0,
+          0,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 12,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          0,
+          0,
+          11
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 13,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          1,
+          0,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 14,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          1,
+          0,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 15,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          1,
+          0,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 16,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          1,
+          0,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 17,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          1,
+          0,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 18,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          1,
+          0,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 19,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          1,
+          0,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 20,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          1,
+          0,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 21,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          1,
+          0,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 22,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          1,
+          0,
+          9
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 23,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          1,
+          0,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 24,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          1,
+          0,
+          11
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 25,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          2,
+          0,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 26,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          2,
+          0,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 27,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          2,
+          0,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 28,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          2,
+          0,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 29,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          2,
+          0,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 30,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          2,
+          0,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 31,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          2,
+          0,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 32,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          2,
+          0,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 33,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          2,
+          0,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 34,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          2,
+          0,
+          9
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 35,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          2,
+          0,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 36,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          2,
+          0,
+          11
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 37,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          3,
+          0,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 38,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          3,
+          0,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 39,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          3,
+          0,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 40,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          3,
+          0,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 41,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          3,
+          0,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 42,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          3,
+          0,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 43,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          3,
+          0,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 44,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          3,
+          0,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 45,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          3,
+          0,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 46,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          3,
+          0,
+          9
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 47,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          3,
+          0,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 48,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          3,
+          0,
+          11
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 49,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          4,
+          0,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 50,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          4,
+          0,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 51,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          4,
+          0,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 52,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          4,
+          0,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 53,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          4,
+          0,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 54,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          4,
+          0,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 55,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          4,
+          0,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 56,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          4,
+          0,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 57,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          4,
+          0,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 58,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          4,
+          0,
+          9
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 59,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          4,
+          0,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 60,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          4,
+          0,
+          11
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 61,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          5,
+          0,
+          0
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 62,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          5,
+          0,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 63,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          5,
+          0,
+          2
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 64,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          5,
+          0,
+          3
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 65,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          5,
+          0,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 66,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          5,
+          0,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 67,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          5,
+          0,
+          6
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 68,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          5,
+          0,
+          7
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 69,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          5,
+          0,
+          8
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 70,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          5,
+          0,
+          9
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 71,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          5,
+          0,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 72,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          5,
+          0,
+          11
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 73,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          0,
+          1,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 74,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          0,
+          2,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 75,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          0,
+          3,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 76,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          5,
+          1,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 77,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          5,
+          2,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 78,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          5,
+          3,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 79,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          0,
+          4,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 80,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          1,
+          4,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 81,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          2,
+          4,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 82,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          3,
+          4,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 83,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          4,
+          4,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 84,
+        "part": "vanilla:hull_plate_block",
+        "cell": [
+          5,
+          4,
+          4
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 85,
+        "part": "vanilla:headlight",
+        "cell": [
+          1,
+          0,
+          -1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 86,
+        "part": "vanilla:headlight",
+        "cell": [
+          4,
+          0,
+          -1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 87,
+        "part": "vanilla:drivers_seat",
+        "cell": [
+          1,
+          1,
+          5
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 88,
+        "part": "vanilla:electric_engine",
+        "cell": [
+          0,
+          1,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 89,
+        "part": "vanilla:battery",
+        "cell": [
+          2,
+          1,
+          9
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 90,
+        "part": "vanilla:bearing",
+        "cell": [
+          2,
+          -1,
+          1
+        ],
+        "rotation": "+x-y"
+      },
+      {
+        "id": 91,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          2,
+          -2,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 92,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          1,
+          -2,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 93,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          0,
+          -2,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 94,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          3,
+          -2,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 95,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          4,
+          -2,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 96,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          5,
+          -2,
+          1
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 97,
+        "part": "vanilla:bearing",
+        "cell": [
+          -1,
+          -2,
+          1
+        ],
+        "rotation": "+y-x"
+      },
+      {
+        "id": 98,
+        "part": "vanilla:wheel",
+        "cell": [
+          -2,
+          -3,
+          0
+        ],
+        "rotation": "+y-x"
+      },
+      {
+        "id": 99,
+        "part": "vanilla:bearing",
+        "cell": [
+          6,
+          -2,
+          1
+        ],
+        "rotation": "-y+x"
+      },
+      {
+        "id": 100,
+        "part": "vanilla:wheel",
+        "cell": [
+          7,
+          -1,
+          0
+        ],
+        "rotation": "-y+x"
+      },
+      {
+        "id": 101,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          0,
+          -1,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 102,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          5,
+          -1,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 103,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          0,
+          -2,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 104,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          1,
+          -2,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 105,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          2,
+          -2,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 106,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          3,
+          -2,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 107,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          4,
+          -2,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 108,
+        "part": "vanilla:scrap_metal_block",
+        "cell": [
+          5,
+          -2,
+          10
+        ],
+        "rotation": "+x+y"
+      },
+      {
+        "id": 109,
+        "part": "vanilla:bearing",
+        "cell": [
+          -1,
+          -2,
+          10
+        ],
+        "rotation": "+y-x"
+      },
+      {
+        "id": 110,
+        "part": "vanilla:wheel",
+        "cell": [
+          -2,
+          -3,
+          9
+        ],
+        "rotation": "+y-x"
+      },
+      {
+        "id": 111,
+        "part": "vanilla:bearing",
+        "cell": [
+          6,
+          -2,
+          10
+        ],
+        "rotation": "-y+x"
+      },
+      {
+        "id": 112,
+        "part": "vanilla:wheel",
+        "cell": [
+          7,
+          -1,
+          9
+        ],
+        "rotation": "-y+x"
+      }
+    ],
+    "connections": [
+      {
+        "type": "structural",
+        "a": 1,
+        "b": 2
+      },
+      {
+        "type": "structural",
+        "a": 1,
+        "b": 13
+      },
+      {
+        "type": "structural",
+        "a": 2,
+        "b": 3
+      },
+      {
+        "type": "structural",
+        "a": 2,
+        "b": 14
+      },
+      {
+        "type": "structural",
+        "a": 3,
+        "b": 4
+      },
+      {
+        "type": "structural",
+        "a": 3,
+        "b": 15
+      },
+      {
+        "type": "structural",
+        "a": 4,
+        "b": 5
+      },
+      {
+        "type": "structural",
+        "a": 4,
+        "b": 16
+      },
+      {
+        "type": "structural",
+        "a": 5,
+        "b": 6
+      },
+      {
+        "type": "structural",
+        "a": 5,
+        "b": 17
+      },
+      {
+        "type": "structural",
+        "a": 5,
+        "b": 73
+      },
+      {
+        "type": "structural",
+        "a": 6,
+        "b": 7
+      },
+      {
+        "type": "structural",
+        "a": 6,
+        "b": 18
+      },
+      {
+        "type": "structural",
+        "a": 7,
+        "b": 8
+      },
+      {
+        "type": "structural",
+        "a": 7,
+        "b": 19
+      },
+      {
+        "type": "structural",
+        "a": 8,
+        "b": 9
+      },
+      {
+        "type": "structural",
+        "a": 8,
+        "b": 20
+      },
+      {
+        "type": "structural",
+        "a": 9,
+        "b": 10
+      },
+      {
+        "type": "structural",
+        "a": 9,
+        "b": 21
+      },
+      {
+        "type": "structural",
+        "a": 10,
+        "b": 11
+      },
+      {
+        "type": "structural",
+        "a": 10,
+        "b": 22
+      },
+      {
+        "type": "structural",
+        "a": 11,
+        "b": 12
+      },
+      {
+        "type": "structural",
+        "a": 11,
+        "b": 23
+      },
+      {
+        "type": "structural",
+        "a": 11,
+        "b": 88
+      },
+      {
+        "type": "structural",
+        "a": 11,
+        "b": 101
+      },
+      {
+        "type": "structural",
+        "a": 12,
+        "b": 24
+      },
+      {
+        "type": "structural",
+        "a": 12,
+        "b": 88
+      },
+      {
+        "type": "structural",
+        "a": 13,
+        "b": 14
+      },
+      {
+        "type": "structural",
+        "a": 13,
+        "b": 25
+      },
+      {
+        "type": "structural",
+        "a": 13,
+        "b": 85
+      },
+      {
+        "type": "structural",
+        "a": 14,
+        "b": 15
+      },
+      {
+        "type": "structural",
+        "a": 14,
+        "b": 26
+      },
+      {
+        "type": "structural",
+        "a": 15,
+        "b": 16
+      },
+      {
+        "type": "structural",
+        "a": 15,
+        "b": 27
+      },
+      {
+        "type": "structural",
+        "a": 16,
+        "b": 17
+      },
+      {
+        "type": "structural",
+        "a": 16,
+        "b": 28
+      },
+      {
+        "type": "structural",
+        "a": 17,
+        "b": 18
+      },
+      {
+        "type": "structural",
+        "a": 17,
+        "b": 29
+      },
+      {
+        "type": "structural",
+        "a": 18,
+        "b": 19
+      },
+      {
+        "type": "structural",
+        "a": 18,
+        "b": 30
+      },
+      {
+        "type": "structural",
+        "a": 19,
+        "b": 20
+      },
+      {
+        "type": "structural",
+        "a": 19,
+        "b": 31
+      },
+      {
+        "type": "structural",
+        "a": 20,
+        "b": 21
+      },
+      {
+        "type": "structural",
+        "a": 20,
+        "b": 32
+      },
+      {
+        "type": "structural",
+        "a": 21,
+        "b": 22
+      },
+      {
+        "type": "structural",
+        "a": 21,
+        "b": 33
+      },
+      {
+        "type": "structural",
+        "a": 22,
+        "b": 23
+      },
+      {
+        "type": "structural",
+        "a": 22,
+        "b": 34
+      },
+      {
+        "type": "structural",
+        "a": 23,
+        "b": 24
+      },
+      {
+        "type": "structural",
+        "a": 23,
+        "b": 35
+      },
+      {
+        "type": "structural",
+        "a": 23,
+        "b": 88
+      },
+      {
+        "type": "structural",
+        "a": 24,
+        "b": 36
+      },
+      {
+        "type": "structural",
+        "a": 24,
+        "b": 88
+      },
+      {
+        "type": "structural",
+        "a": 25,
+        "b": 26
+      },
+      {
+        "type": "structural",
+        "a": 25,
+        "b": 37
+      },
+      {
+        "type": "structural",
+        "a": 26,
+        "b": 27
+      },
+      {
+        "type": "structural",
+        "a": 26,
+        "b": 38
+      },
+      {
+        "type": "structural",
+        "a": 26,
+        "b": 90
+      },
+      {
+        "type": "structural",
+        "a": 27,
+        "b": 28
+      },
+      {
+        "type": "structural",
+        "a": 27,
+        "b": 39
+      },
+      {
+        "type": "structural",
+        "a": 28,
+        "b": 29
+      },
+      {
+        "type": "structural",
+        "a": 28,
+        "b": 40
+      },
+      {
+        "type": "structural",
+        "a": 29,
+        "b": 30
+      },
+      {
+        "type": "structural",
+        "a": 29,
+        "b": 41
+      },
+      {
+        "type": "structural",
+        "a": 30,
+        "b": 31
+      },
+      {
+        "type": "structural",
+        "a": 30,
+        "b": 42
+      },
+      {
+        "type": "structural",
+        "a": 31,
+        "b": 32
+      },
+      {
+        "type": "structural",
+        "a": 31,
+        "b": 43
+      },
+      {
+        "type": "structural",
+        "a": 31,
+        "b": 87
+      },
+      {
+        "type": "structural",
+        "a": 32,
+        "b": 33
+      },
+      {
+        "type": "structural",
+        "a": 32,
+        "b": 44
+      },
+      {
+        "type": "structural",
+        "a": 32,
+        "b": 87
+      },
+      {
+        "type": "structural",
+        "a": 33,
+        "b": 34
+      },
+      {
+        "type": "structural",
+        "a": 33,
+        "b": 45
+      },
+      {
+        "type": "structural",
+        "a": 34,
+        "b": 35
+      },
+      {
+        "type": "structural",
+        "a": 34,
+        "b": 46
+      },
+      {
+        "type": "structural",
+        "a": 35,
+        "b": 36
+      },
+      {
+        "type": "structural",
+        "a": 35,
+        "b": 47
+      },
+      {
+        "type": "structural",
+        "a": 36,
+        "b": 48
+      },
+      {
+        "type": "structural",
+        "a": 37,
+        "b": 38
+      },
+      {
+        "type": "structural",
+        "a": 37,
+        "b": 49
+      },
+      {
+        "type": "structural",
+        "a": 38,
+        "b": 39
+      },
+      {
+        "type": "structural",
+        "a": 38,
+        "b": 50
+      },
+      {
+        "type": "structural",
+        "a": 39,
+        "b": 40
+      },
+      {
+        "type": "structural",
+        "a": 39,
+        "b": 51
+      },
+      {
+        "type": "structural",
+        "a": 40,
+        "b": 41
+      },
+      {
+        "type": "structural",
+        "a": 40,
+        "b": 52
+      },
+      {
+        "type": "structural",
+        "a": 41,
+        "b": 42
+      },
+      {
+        "type": "structural",
+        "a": 41,
+        "b": 53
+      },
+      {
+        "type": "structural",
+        "a": 42,
+        "b": 43
+      },
+      {
+        "type": "structural",
+        "a": 42,
+        "b": 54
+      },
+      {
+        "type": "structural",
+        "a": 43,
+        "b": 44
+      },
+      {
+        "type": "structural",
+        "a": 43,
+        "b": 55
+      },
+      {
+        "type": "structural",
+        "a": 43,
+        "b": 87
+      },
+      {
+        "type": "structural",
+        "a": 44,
+        "b": 45
+      },
+      {
+        "type": "structural",
+        "a": 44,
+        "b": 56
+      },
+      {
+        "type": "structural",
+        "a": 44,
+        "b": 87
+      },
+      {
+        "type": "structural",
+        "a": 45,
+        "b": 46
+      },
+      {
+        "type": "structural",
+        "a": 45,
+        "b": 57
+      },
+      {
+        "type": "structural",
+        "a": 46,
+        "b": 47
+      },
+      {
+        "type": "structural",
+        "a": 46,
+        "b": 58
+      },
+      {
+        "type": "structural",
+        "a": 47,
+        "b": 48
+      },
+      {
+        "type": "structural",
+        "a": 47,
+        "b": 59
+      },
+      {
+        "type": "structural",
+        "a": 47,
+        "b": 89
+      },
+      {
+        "type": "structural",
+        "a": 48,
+        "b": 60
+      },
+      {
+        "type": "structural",
+        "a": 49,
+        "b": 50
+      },
+      {
+        "type": "structural",
+        "a": 49,
+        "b": 61
+      },
+      {
+        "type": "structural",
+        "a": 49,
+        "b": 86
+      },
+      {
+        "type": "structural",
+        "a": 50,
+        "b": 51
+      },
+      {
+        "type": "structural",
+        "a": 50,
+        "b": 62
+      },
+      {
+        "type": "structural",
+        "a": 51,
+        "b": 52
+      },
+      {
+        "type": "structural",
+        "a": 51,
+        "b": 63
+      },
+      {
+        "type": "structural",
+        "a": 52,
+        "b": 53
+      },
+      {
+        "type": "structural",
+        "a": 52,
+        "b": 64
+      },
+      {
+        "type": "structural",
+        "a": 53,
+        "b": 54
+      },
+      {
+        "type": "structural",
+        "a": 53,
+        "b": 65
+      },
+      {
+        "type": "structural",
+        "a": 54,
+        "b": 55
+      },
+      {
+        "type": "structural",
+        "a": 54,
+        "b": 66
+      },
+      {
+        "type": "structural",
+        "a": 55,
+        "b": 56
+      },
+      {
+        "type": "structural",
+        "a": 55,
+        "b": 67
+      },
+      {
+        "type": "structural",
+        "a": 56,
+        "b": 57
+      },
+      {
+        "type": "structural",
+        "a": 56,
+        "b": 68
+      },
+      {
+        "type": "structural",
+        "a": 57,
+        "b": 58
+      },
+      {
+        "type": "structural",
+        "a": 57,
+        "b": 69
+      },
+      {
+        "type": "structural",
+        "a": 58,
+        "b": 59
+      },
+      {
+        "type": "structural",
+        "a": 58,
+        "b": 70
+      },
+      {
+        "type": "structural",
+        "a": 59,
+        "b": 60
+      },
+      {
+        "type": "structural",
+        "a": 59,
+        "b": 71
+      },
+      {
+        "type": "structural",
+        "a": 59,
+        "b": 89
+      },
+      {
+        "type": "structural",
+        "a": 60,
+        "b": 72
+      },
+      {
+        "type": "structural",
+        "a": 61,
+        "b": 62
+      },
+      {
+        "type": "structural",
+        "a": 62,
+        "b": 63
+      },
+      {
+        "type": "structural",
+        "a": 63,
+        "b": 64
+      },
+      {
+        "type": "structural",
+        "a": 64,
+        "b": 65
+      },
+      {
+        "type": "structural",
+        "a": 65,
+        "b": 66
+      },
+      {
+        "type": "structural",
+        "a": 65,
+        "b": 76
+      },
+      {
+        "type": "structural",
+        "a": 66,
+        "b": 67
+      },
+      {
+        "type": "structural",
+        "a": 67,
+        "b": 68
+      },
+      {
+        "type": "structural",
+        "a": 68,
+        "b": 69
+      },
+      {
+        "type": "structural",
+        "a": 69,
+        "b": 70
+      },
+      {
+        "type": "structural",
+        "a": 70,
+        "b": 71
+      },
+      {
+        "type": "structural",
+        "a": 71,
+        "b": 72
+      },
+      {
+        "type": "structural",
+        "a": 71,
+        "b": 102
+      },
+      {
+        "type": "structural",
+        "a": 73,
+        "b": 74
+      },
+      {
+        "type": "structural",
+        "a": 74,
+        "b": 75
+      },
+      {
+        "type": "structural",
+        "a": 75,
+        "b": 79
+      },
+      {
+        "type": "structural",
+        "a": 76,
+        "b": 77
+      },
+      {
+        "type": "structural",
+        "a": 77,
+        "b": 78
+      },
+      {
+        "type": "structural",
+        "a": 78,
+        "b": 84
+      },
+      {
+        "type": "structural",
+        "a": 79,
+        "b": 80
+      },
+      {
+        "type": "structural",
+        "a": 80,
+        "b": 81
+      },
+      {
+        "type": "structural",
+        "a": 81,
+        "b": 82
+      },
+      {
+        "type": "structural",
+        "a": 82,
+        "b": 83
+      },
+      {
+        "type": "structural",
+        "a": 83,
+        "b": 84
+      },
+      {
+        "type": "rotational",
+        "a": 90,
+        "a_socket": "rotor",
+        "b": 91
+      },
+      {
+        "type": "structural",
+        "a": 91,
+        "b": 92
+      },
+      {
+        "type": "structural",
+        "a": 91,
+        "b": 94
+      },
+      {
+        "type": "structural",
+        "a": 92,
+        "b": 93
+      },
+      {
+        "type": "structural",
+        "a": 93,
+        "b": 97
+      },
+      {
+        "type": "structural",
+        "a": 94,
+        "b": 95
+      },
+      {
+        "type": "structural",
+        "a": 95,
+        "b": 96
+      },
+      {
+        "type": "structural",
+        "a": 96,
+        "b": 99
+      },
+      {
+        "type": "rotational",
+        "a": 97,
+        "a_socket": "rotor",
+        "b": 98,
+        "b_socket": "hub"
+      },
+      {
+        "type": "rotational",
+        "a": 99,
+        "a_socket": "rotor",
+        "b": 100,
+        "b_socket": "hub"
+      },
+      {
+        "type": "structural",
+        "a": 101,
+        "b": 103
+      },
+      {
+        "type": "structural",
+        "a": 102,
+        "b": 108
+      },
+      {
+        "type": "structural",
+        "a": 103,
+        "b": 104
+      },
+      {
+        "type": "structural",
+        "a": 103,
+        "b": 109
+      },
+      {
+        "type": "structural",
+        "a": 104,
+        "b": 105
+      },
+      {
+        "type": "structural",
+        "a": 105,
+        "b": 106
+      },
+      {
+        "type": "structural",
+        "a": 106,
+        "b": 107
+      },
+      {
+        "type": "structural",
+        "a": 107,
+        "b": 108
+      },
+      {
+        "type": "structural",
+        "a": 108,
+        "b": 111
+      },
+      {
+        "type": "rotational",
+        "a": 109,
+        "a_socket": "rotor",
+        "b": 110,
+        "b_socket": "hub"
+      },
+      {
+        "type": "rotational",
+        "a": 111,
+        "a_socket": "rotor",
+        "b": 112,
+        "b_socket": "hub"
+      }
+    ],
+    "links": [
+      {
+        "from": 87,
+        "to": 88
+      },
+      {
+        "from": 87,
+        "to": 90
+      },
+      {
+        "from": 88,
+        "to": 109
+      },
+      {
+        "from": 88,
+        "to": 111
+      },
+      {
+        "from": 89,
+        "to": 88
+      }
+    ]
+  }
+}

@@ -1479,6 +1479,12 @@ public sealed record PoiMarker
     public const string PartType = "part";
 
     /// <summary>
+    /// Marker type that leaves a derelict vehicle there, once, for anyone to take (<see cref="Ref"/> is its id; see
+    /// <see cref="Derelicts"/>).
+    /// </summary>
+    public const string DerelictType = "derelict";
+
+    /// <summary>
     /// <paramref name="id"/> qualified as a marker's <see cref="Ref"/> means it: a bare id names something of the mod of
     /// the POI <paramref name="poi"/> (<c>mod_id:poi_id</c>), a <c>mod_id:id</c> is kept.
     /// </summary>
@@ -1515,6 +1521,13 @@ public sealed record PoiMarker
     /// from <see cref="Loot"/>. Omitted: it is filled once and never again.
     /// </summary>
     public float? RefillDays { get; init; }
+
+    /// <summary>
+    /// For a <see cref="PartType"/> marker: values for the part's settings, by setting id, that it is placed with (a sign's
+    /// words). Each must fit its setting. Words may point the way to other places in the world (<see cref="SignText"/>:
+    /// <c>{distance:outpost}</c>, <c>{direction:outpost}</c>, <c>{name:outpost}</c>). Omitted: the part's defaults.
+    /// </summary>
+    public Dictionary<string, JsonElement>? Settings { get; init; }
 
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]

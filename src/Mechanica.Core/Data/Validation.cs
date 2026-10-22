@@ -893,6 +893,20 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             CheckColor(effect.Color, $"{path}.color", sink);
             KnownKeys.WarnUnknown(effect.Extra, path, sink, typeof(EffectDefinition));
         }
+        if (display.Text is { } text)
+        {
+            if (part.Settings?.FirstOrDefault(s => s.Id == text.Setting) is not { Type: SettingType.Text })
+                sink.Error(Code, $"{p}.text.setting", "setting must name one of the part's text settings.");
+            if (!Inside(text.At))
+                sink.Error(Code, $"{p}.text.at", "the text's centre is outside the part's footprint.");
+            if (text.Facing is { } f && !(f.Y == 0 && ((MathF.Abs(f.X) == 1 && f.Z == 0) || (f.X == 0 && MathF.Abs(f.Z) == 1))))
+                sink.Error(Code, $"{p}.text.facing", "facing is one of [1, 0, 0], [-1, 0, 0], [0, 0, 1] or [0, 0, -1].");
+            if (text.Size is not { Count: 2 } size || size.Any(v => !(v > 0 && float.IsFinite(v))))
+                sink.Error(Code, $"{p}.text.size", "size is [width, height] in m, both above 0.");
+            CheckColor(text.Color, $"{p}.text.color", sink);
+            RequirePositive(text.MaxHeight, $"{p}.text.max_height", "max_height (m)", false, "a text", sink);
+            KnownKeys.WarnUnknown(text.Extra, $"{p}.text", sink, typeof(TextDisplayDefinition));
+        }
         KnownKeys.WarnUnknown(display.Extra, p, sink, typeof(DisplayDefinition));
     }
 
@@ -987,6 +1001,12 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
                     if (setting.Type == SettingType.Sequence)
                         RequirePositive(setting.MaxSpeed, $"{path}.max_speed", "max_speed", true, "a sequence", sink);
                     break;
+                case SettingType.Text:
+                    if (setting.MaxLength is not (>= 1 and <= SettingDefinition.MaxTextLength))
+                        sink.Error(Code, $"{path}.max_length", $"max_length (1 to {SettingDefinition.MaxTextLength}) is required for a text setting.");
+                    if (setting.Lines is not (null or (>= 1 and <= SettingDefinition.MaxTextLines)))
+                        sink.Error(Code, $"{path}.lines", $"lines must be from 1 to {SettingDefinition.MaxTextLines}.");
+                    break;
                 case SettingType.Choice:
                     if (setting.Options is not { Count: > 0 } options)
                         sink.Error(Code, $"{path}.options", "a choice setting needs at least one option.");
@@ -994,6 +1014,8 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
                         sink.Error(Code, $"{path}.options", "options must be distinct lowercase snake_case ids.");
                     break;
             }
+            if ((setting.MaxLength is not null || setting.Lines is not null) && setting.Type != SettingType.Text)
+                sink.Error(Code, $"{path}.max_length", "only a text setting has max_length and lines.");
             if (setting.MaxSpeed is not null && setting.Type != SettingType.Sequence)
                 sink.Error(Code, $"{path}.max_speed", "only a sequence setting has max_speed.");
             if (setting.Preview is { } preview && (setting.Type != SettingType.Sequence || !Identifiers.IsValid(preview)))

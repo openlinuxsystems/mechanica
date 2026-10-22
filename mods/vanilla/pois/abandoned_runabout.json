@@ -1,0 +1,20 @@
+{
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
+  // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
+  "id": "abandoned_runabout",
+  "name": "Abandoned Runabout",
+  "radius": 16.0,
+  "size": [6.0, 2.0, 6.0],
+  "road": "none",
+  "placement": { "spacing": [1200.0, 1800.0], "biomes": ["meadow", "field", "desert", "autumn_forest"], "priority": 42, "clearance": 0.0, "roadside": 10.0 },
+  "terrain": [
+    { "op": "flatten", "radius": 13.0, "blend": 3.0 }
+  ],
+  "pieces": [
+    { "shape": "box", "size": [1.2, 0.5, 0.8], "at": [-3.0, 0.25, -2.0], "yaw": 25.0, "color": "#7d858c" }
+  ],
+  "markers": [
+    { "type": "derelict", "ref": "colony_runabout", "at": [0.0, 0.0, 0.0], "yaw": -12.0 },
+    { "type": "part", "ref": "wooden_crate", "at": [3.0, 0.0, -2.5], "loot": "crate", "loot_rolls": [2, 4] }
+  ]
+}

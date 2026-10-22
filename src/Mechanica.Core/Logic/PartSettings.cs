@@ -43,6 +43,7 @@ public static class PartSettings
         SettingType.Choice => Element(setting.Options?.FirstOrDefault() ?? ""),
         SettingType.Toggle => Element(false),
         SettingType.Sequence => Element(Array.Empty<object>()),
+        SettingType.Text => Element(""),
         _ => Element(Array.Empty<float>()),
     };
 
@@ -75,6 +76,8 @@ public static class PartSettings
                 return null;
             case SettingType.Sequence:
                 return CheckSequence(setting, name, value);
+            case SettingType.Text:
+                return CheckText(setting, name, value);
             default:
                 return $"{name} has no type.";
         }
@@ -200,7 +203,22 @@ public static class PartSettings
         return null;
     }
 
-    private static bool InRange(SettingDefinition setting, float value) =>
+    private static string? CheckText(SettingDefinition setting, string? name, JsonElement value)
+    {
+        if (value.ValueKind != JsonValueKind.String)
+            return $"{name} must be text.";
+        var text = value.GetString()!;
+        if (new System.Globalization.StringInfo(text).LengthInTextElements > (setting.MaxLength ?? 0))
+            return $"{name} holds at most {setting.MaxLength} characters.";
+        if (text.Count(c => c == '\n') + 1 > (setting.Lines ?? 1))
+            return setting.Lines is null or 1 ? $"{name} is one line." : $"{name} holds at most {setting.Lines} lines.";
+        if (text.Any(c => c != '\n' && (char.IsControl(c) || char.GetUnicodeCategory(c) is System.Globalization.UnicodeCategory.Format
+                or System.Globalization.UnicodeCategory.LineSeparator or System.Globalization.UnicodeCategory.ParagraphSeparator)))
+            return $"{name} may not hold control characters.";
+        return null;
+    }
+
+        private static bool InRange(SettingDefinition setting, float value) =>
         value >= (setting.Min ?? float.NegativeInfinity) && value <= (setting.Max ?? float.PositiveInfinity);
 
     private static JsonElement Element<T>(T value) => JsonSerializer.SerializeToElement(value);

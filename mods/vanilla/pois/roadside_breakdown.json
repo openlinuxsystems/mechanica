@@ -1,0 +1,21 @@
+{
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
+  // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
+  "id": "roadside_breakdown",
+  "name": "Roadside Breakdown",
+  "radius": 16.0,
+  "size": [6.0, 2.0, 6.0],
+  "road": "none",
+  "placement": { "spacing": [1100.0, 1600.0], "biomes": ["meadow", "field", "desert", "forest", "autumn_forest"], "priority": 41, "clearance": 0.0, "roadside": 9.0 },
+  "terrain": [
+    { "op": "flatten", "radius": 13.0, "blend": 3.0 }
+  ],
+  "pieces": [
+    { "shape": "box", "size": [0.3, 0.6, 0.3], "at": [-3.2, 0.3, 2.8], "color": "#7d858c" }
+  ],
+  "markers": [
+    { "type": "derelict", "ref": "scrap_buggy", "at": [0.0, 0.0, 0.0], "yaw": 8.0 },
+    { "type": "part", "ref": "traffic_cone", "at": [-2.5, 0.0, 3.0] },
+    { "type": "part", "ref": "caution_sign", "at": [2.6, 0.0, 3.2], "yaw": 180.0 }
+  ]
+}

@@ -569,6 +569,21 @@ internal static class WorldGenValidator
             sink.Error(code, $"{path}.loot", $"'{id}' has no inventory to hold loot: loot is for containers.");
         else if (marker.Loot is not null && definition.Inventory?.Slots is { } slots && WorldLoot.RollsOf(marker).Max > slots)
             sink.Warning(code, $"{path}.loot_rolls", $"'{id}' has only {slots} slots, so a fill of more than {slots} draws leaves some out.");
+        if (marker.Settings is { } settings && parts.FindDefinition(id) is { IsPlaceable: true } placeable
+            && Logic.PartSettings.Check(placeable, SignText.Longest(settings)) is { } bad)
+            sink.Error(code, $"{path}.settings", bad);
+    }
+
+    // A derelict marker names a derelict that loaded (a bare ref is the POI's mod's), and holds no loot.
+    private static void CheckDerelictMarker(PoiMarker marker, string path, DiagnosticSink sink, IReadOnlySet<string>? derelictIds, string modId)
+    {
+        const string code = DiagnosticCodes.PoiInvalid;
+        if (marker.Loot is not null || marker.LootRolls is not null || marker.RefillDays is not null)
+            sink.Error(code, $"{path}.loot", "a derelict marker holds no loot: put a container in the derelict instead.");
+        if (string.IsNullOrEmpty(marker.Ref))
+            sink.Error(code, $"{path}.ref", "a derelict marker needs the id of the derelict it puts there.");
+        else if (derelictIds is not null && !derelictIds.Contains(marker.Ref.Contains(':') ? marker.Ref : $"{modId}:{marker.Ref}"))
+            sink.Error(code, $"{path}.ref", $"'{marker.Ref}' is not a derelict in the loaded mods' derelicts/ folders.");
     }
 
     // A part marker's loot: a table that exists, a [min, max] count of draws and a refill time, the last two only with loot.
@@ -614,7 +629,7 @@ internal static class WorldGenValidator
     /// <param name="lootTables">The world's loot tables, which a <c>part</c> marker's <c>loot</c> names one of; null skips the check.</param>
     public static void Validate(PoiPrefab prefab, IReadOnlyList<string> biomeIds, DiagnosticSink sink, IReadOnlyCollection<string> groundIds,
         IReadOnlyCollection<string>? objectIds = null, IReadOnlyCollection<string>? liquidIds = null, IPartCatalog? parts = null,
-        string? modId = null, IReadOnlyDictionary<string, LootTableDefinition>? lootTables = null)
+        string? modId = null, IReadOnlyDictionary<string, LootTableDefinition>? lootTables = null, IReadOnlySet<string>? derelictIds = null)
     {
         const string code = DiagnosticCodes.PoiInvalid;
         KnownKeys.WarnUnknown(prefab.Extra, "$", sink, typeof(PoiPrefab));
@@ -777,9 +792,13 @@ internal static class WorldGenValidator
                 sink.Error(code, $"{path}.ref", $"an object marker needs the id of a world object in the world generation rules (got '{marker.Ref}').");
             if (marker.Type == PoiMarker.PartType)
                 CheckPartMarker(marker, path, sink, parts, modId ?? Identifiers.VanillaModId, lootTables);
+            else if (marker.Type == PoiMarker.DerelictType)
+                CheckDerelictMarker(marker, path, sink, derelictIds, modId ?? Identifiers.VanillaModId);
             else if (marker.Loot is not null || marker.LootRolls is not null || marker.RefillDays is not null)
                 sink.Error(code, $"{path}.{(marker.Loot is not null ? "loot" : marker.LootRolls is not null ? "loot_rolls" : "refill_days")}",
                     "loot, loot_rolls and refill_days are for part markers only (a container the world places).");
+            if (marker.Type != PoiMarker.PartType && marker.Settings is not null)
+                sink.Error(code, $"{path}.settings", "settings are for part markers only (a part the world places).");
         }
         for (var i = 0; i < (prefab.Pools?.Count ?? 0); i++)
         {

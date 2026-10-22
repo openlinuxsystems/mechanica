@@ -33,6 +33,8 @@
     { "type": "part", "ref": "shack_light", "at": [-8.0, 0.3, 0.0] },
     { "type": "part", "ref": "shack_light", "at": [8.0, 0.3, 0.0] },
     { "type": "part", "ref": "scrap_seat", "at": [4.0, 0.3, 6.0], "yaw": 180.0 },
-    { "type": "part", "ref": "chair", "at": [-4.0, 0.3, 6.0], "yaw": 180.0 }
+    { "type": "part", "ref": "chair", "at": [-4.0, 0.3, 6.0], "yaw": 180.0 },
+    { "type": "derelict", "ref": "go_kart", "at": [0.0, 0.3, 14.0], "yaw": 90.0 },
+    { "type": "part", "ref": "signboard", "at": [6.0, 0.3, 20.5], "yaw": 0.0, "settings": { "text": "SETTLERS' CAMP\nTrade, rest, mend\nWorkshop {distance:outpost|poi_02|poi_13} {direction:outpost|poi_02|poi_13}" } }
   ]
 }

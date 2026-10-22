@@ -11,14 +11,25 @@ namespace Mechanica.Core.World;
 /// <param name="Floor">World point its bottom face stands on: the marker's position.</param>
 /// <param name="Yaw">Turn about +Y in radians, the POI's and the marker's (0: the part's front, local -Z, faces -Z).</param>
 /// <param name="Loot">What a container's marker fills it with (<see cref="WorldLoot"/>), or null for none.</param>
-public sealed record WorldPartSpot(string Key, string Poi, string Part, Vector3 Floor, float Yaw, WorldPartLoot? Loot = null);
+/// <param name="Derelict">
+/// For a <c>derelict</c> marker, the derelict it leaves there (<see cref="Derelicts"/>; <paramref name="Part"/> is then its
+/// id), or null for a part marker.
+/// </param>
+/// <param name="Settings">The marker's values for the part's settings (<see cref="PoiMarker.Settings"/>), or null for its defaults.</param>
+public sealed record WorldPartSpot(string Key, string Poi, string Part, Vector3 Floor, float Yaw, WorldPartLoot? Loot = null,
+    LoadedDerelict? Derelict = null, IReadOnlyDictionary<string, System.Text.Json.JsonElement>? Settings = null);
 
 /// <summary>What the host does to bring the world's own parts in line with the markers (<see cref="WorldParts.Reconcile"/>).</summary>
 /// <param name="Add">New world-owned Creations to add (parked: the streamer brings each in when a player comes near).</param>
 /// <param name="Remove">World-owned Creations whose marker is gone (the world's content changed), to remove.</param>
 /// <param name="Moved">World-owned Creations put back on their marker (its place changed), already re-posed.</param>
 /// <param name="Problems">Markers that place nothing, and why.</param>
-public sealed record WorldPartPlan(IReadOnlyList<Creation> Add, IReadOnlyList<int> Remove, IReadOnlyList<int> Moved, IReadOnlyList<string> Problems);
+/// <param name="Used">
+/// Keys of the derelict markers whose derelicts are in <paramref name="Add"/>: the host records each as used
+/// (<see cref="WorldParts.ObjectOf"/>), so it places no other.
+/// </param>
+public sealed record WorldPartPlan(IReadOnlyList<Creation> Add, IReadOnlyList<int> Remove, IReadOnlyList<int> Moved, IReadOnlyList<string> Problems,
+    IReadOnlyList<string>? Used = null);
 
 /// <summary>
 /// The world's own working parts (a Workshop's Fabricator): every <c>part</c> marker of a placed POI puts one part there,
@@ -69,7 +80,8 @@ public static class WorldParts
             {
                 var key = KeyOf(m.Poi.Poi.QualifiedId, m.Index, m.Poi.Index);
                 return new WorldPartSpot(key, m.Poi.Poi.QualifiedId, PoiMarker.Qualify(m.Marker.Ref!, m.Poi.Poi.QualifiedId), m.Position, m.Yaw,
-                    WorldLoot.Of(m.Marker, key, world.Data.Definition, world.Seed));
+                    WorldLoot.Of(m.Marker, key, world.Data.Definition, world.Seed),
+                    Settings: SignText.Resolve(m.Marker.Settings, m.Position, m.Poi.Poi.QualifiedId, world.Pois));
             }),
     ];
 
@@ -88,8 +100,9 @@ public static class WorldParts
 
     /// <summary>
     /// The world-owned Creation for <paramref name="spot"/> with id <paramref name="id"/>: its part, anchored and posed
-    /// (<see cref="PoseFor"/>), simulated by the host, and a container filled with the spot's loot (its first fill,
-    /// <see cref="WorldLoot.Fill"/>). Null with <paramref name="problem"/> when the part is unknown or cannot be placed.
+    /// (<see cref="PoseFor"/>), simulated by the host, set to the spot's settings, and a container filled with the spot's loot
+    /// (its first fill, <see cref="WorldLoot.Fill"/>). Null with <paramref name="problem"/> when the part is unknown or cannot
+    /// be placed, or a setting does not fit it.
     /// </summary>
     public static Creation? Build(WorldPartSpot spot, int id, IPartCatalog catalog, out string? problem)
     {
@@ -101,6 +114,16 @@ public static class WorldParts
         }
         creation.SetAnchored(placed.Id, true);
         creation.SetAllBodyPoses(PoseFor(creation.DefinitionOf(placed.Id), spot));
+        if (spot.Settings is { Count: > 0 } settings)
+        {
+            var definition = creation.DefinitionOf(placed.Id);
+            if (Logic.PartSettings.Check(definition, settings) is { } bad)
+            {
+                problem = $"{spot.Key}: {bad}";
+                return null;
+            }
+            creation.SetPartSettings(placed.Id, Logic.PartSettings.Apply(definition, null, settings.ToDictionary(e => e.Key, e => (System.Text.Json.JsonElement?)e.Value)));
+        }
         if (spot.Loot is { } loot && creation.InventoryOf(placed.Id) is { } inventory)
             WorldLoot.Fill(inventory, loot, creation.WorldLoot = new WorldLootState());
         problem = null;
@@ -112,12 +135,15 @@ public static class WorldParts
     /// a spot without one gets a new Creation (ids from <paramref name="nextId"/>), unless a player took its part
     /// (<paramref name="taken"/> says so of its <see cref="ObjectOf"/> id); one standing at a spot keeps its contents and is
     /// put back on the marker if it is off it; one whose spot is gone, holds another part, or repeats a key, is removed.
-    /// Creations players made are never touched. Changes nothing but the poses of <see cref="WorldPartPlan.Moved"/>.
+    /// Creations players made are never touched. A derelict marker (<see cref="WorldPartSpot.Derelict"/>) that is not used
+    /// yet gets its derelict, rolled from <paramref name="worldSeed"/>, and is listed in <see cref="WorldPartPlan.Used"/>.
+    /// Changes nothing but the poses of <see cref="WorldPartPlan.Moved"/>.
     /// </summary>
     public static WorldPartPlan Reconcile(IReadOnlyList<WorldPartSpot> spots, IEnumerable<Creation> existing, IPartCatalog catalog, Func<int> nextId,
-        Func<WorldObjectId, bool>? taken = null)
+        Func<WorldObjectId, bool>? taken = null, long worldSeed = 0)
     {
         var add = new List<Creation>();
+        var used = new List<string>();
         var remove = new List<int>();
         var moved = new List<int>();
         var problems = new List<string>();
@@ -132,6 +158,20 @@ public static class WorldParts
         {
             if (!seen.Add(spot.Key))
                 continue;
+            // A derelict is nobody's once placed: it is placed once, when its marker is not used yet.
+            if (spot.Derelict is { } derelict)
+            {
+                if (taken is not null && ObjectOf(spot.Key) is { } usedId && taken(usedId))
+                    continue;
+                if (Derelicts.Build(spot, derelict, nextId(), catalog, worldSeed, out var why) is { } left)
+                {
+                    add.Add(left);
+                    used.Add(spot.Key);
+                }
+                else
+                    problems.Add(why!);
+                continue;
+            }
             if (standing.Remove(spot.Key, out var found))
             {
                 if (found.Parts.Count == 1 && Identifiers.Qualify(found.Parts.First().Part) == Identifiers.Qualify(spot.Part))
@@ -158,6 +198,6 @@ public static class WorldParts
         }
         remove.AddRange(standing.Values.Select(c => c.Id));
         remove.Sort();
-        return new WorldPartPlan(add, remove, moved, problems);
+        return new WorldPartPlan(add, remove, moved, problems, used);
     }
 }
