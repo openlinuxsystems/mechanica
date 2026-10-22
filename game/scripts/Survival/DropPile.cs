@@ -7,47 +7,71 @@ using Mechanica.Game.Ui;
 namespace Mechanica.Game.Survival;
 
 /// <summary>
-/// Shows a pile of items lying on the ground (<see cref="ItemDrop"/>): the knockout bag when a knocked-out player
-/// dropped it, the item itself when it is one item with a model of its own (a bucket put down), otherwise a small
-/// crate in the first item's colour, with a label of what it holds. It has no collider; players pick it up by
-/// standing near it. A tossed pile (<see cref="ItemDrop.TossedFrom"/>) first flies from the player's hand in a short
-/// tumbling arc to where it lies.
+/// Shows a pile of items lying on the ground (<see cref="ItemDrop"/>). A knocked-out player's pile is the knockout bag,
+/// standing on the ground with a label of what it holds. Any other pile is one kind of item (the host lays one pile per
+/// kind), shown as in Scrap Mechanic: the item's own model (<see cref="DropModels"/>; a block as the block), sized
+/// <see cref="ItemSize"/> across, floating and slowly turning inside a glowing sphere with a beam of light rising
+/// from it (<see cref="DropGlow"/>); the pick-up prompt names it. It has no collider; players pick it up by aiming at
+/// the sphere or standing near it. A tossed pile (<see cref="ItemDrop.TossedFrom"/>) first flies from the player's hand
+/// in a short tumbling arc to where it lies.
 /// </summary>
 public partial class DropPile : Node3D
 {
     /// <summary>Seconds a tossed pile takes to fly from the hand to the ground.</summary>
     public const double TossSeconds = 0.45;
 
+    /// <summary>How far across a loose item's model is drawn, in metres, whatever its own size (a seed packet, a chest).</summary>
+    public const float ItemSize = 0.3f;
+
     private const float Size = 0.3f;
-    // A single item's own model smaller than this across (a seed packet) is scaled up to it, so it can be seen and
-    // picked up in the grass.
-    private const float ItemSize = 0.3f;
     private const float LabelGap = 0.12f;
     // How far above the higher end the arc's middle rises, in metres.
     private const float TossLift = 0.5f;
+    // A loose item turns this fast (radians a second) and bobs this far up and down (metres) once every BobSeconds.
+    private const float Spin = 0.9f;
+    private const float Bob = 0.025f;
+    private const float BobSeconds = 2.4f;
 
     private MeshInstance3D _box = null!;
     private Label3D _label = null!;
     private Node3D? _model;
     private string? _modelKey;
+    // The model's middle and scale, so it can be turned about its middle.
+    private Vector3 _centre;
+    private float _scale = 1f;
+    private bool _floating;
+    private double _clock;
+    private Node3D _glow = null!;
     private Tween? _toss;
 
     /// <summary>The pile shown.</summary>
     public ItemDrop? Drop { get; private set; }
 
-    /// <summary>What the label reads.</summary>
+    /// <summary>What the label reads (shown over a knockout bag only; a loose item's prompt names it).</summary>
     public string Text => _label.Text;
 
     /// <summary>The model standing in place of the crate (the knockout bag or the item's own), if any.</summary>
     public Node3D? Model => _model;
 
+    /// <summary>The glowing sphere and beam round a loose item (hidden for a knockout bag).</summary>
+    public Node3D Glow => _glow;
+
     /// <summary>True while a tossed pile is still flying to the ground.</summary>
     public bool Flying => _toss?.IsRunning() == true;
+
+    /// <summary>A new, posed copy of a tool's model, or null when it has none (<see cref="ToolIconModels"/>).</summary>
+    public Func<string, Node3D?>? ToolModel { get; init; }
 
     public override void _Ready()
     {
         _box = new MeshInstance3D { Name = "Box", Mesh = new BoxMesh { Size = new Vector3(Size, Size, Size) }, Position = new Vector3(0, Size / 2, 0) };
         AddChild(_box);
+        _glow = new Node3D { Name = "Aura", Visible = false };
+        var sphere = DropGlow.Sphere();
+        sphere.Position = new Vector3(0, DropAim.Middle, 0);
+        _glow.AddChild(sphere);
+        _glow.AddChild(DropGlow.Beam());
+        AddChild(_glow);
         _label = new Label3D
         {
             // Names are the mods' own text, in a mod's translation when it has one.
@@ -60,28 +84,46 @@ public partial class DropPile : Node3D
             PixelSize = 0.004f,
             FontSize = 32,
             OutlineSize = 8,
+            Visible = false,
         };
         AddChild(_label);
     }
 
+    public override void _Process(double delta)
+    {
+        if (!_floating || _model is null)
+            return;
+        _clock += delta;
+        Pose();
+    }
+
     /// <summary>
     /// Shows <paramref name="drop"/>, naming its items from <paramref name="catalog"/>. With <paramref name="assets"/>, a
-    /// knocked-out player's pile is drawn as <paramref name="knockoutBag"/> (a <c>mod:path</c> model) and a pile of
-    /// one kind of item that has a mesh as that item.
+    /// knocked-out player's pile is drawn as <paramref name="knockoutBag"/> (a <c>mod:path</c> model) and any other as
+    /// its item.
     /// </summary>
     public void Show(ItemDrop drop, IPartCatalog catalog, PartAssets? assets = null, string? knockoutBag = null)
     {
-        if (drop.KnockedOut && knockoutBag is not null)
-            ShowModel("bag:" + knockoutBag, () => assets?.InstantiateScene(knockoutBag, Identifiers.VanillaModId));
+        var bag = drop.KnockedOut && knockoutBag is not null;
+        if (bag)
+            ShowModel("bag:" + knockoutBag, floating: false, () => assets?.InstantiateScene(knockoutBag!, Identifiers.VanillaModId));
         else
-            ShowItem(drop.Items is [var only] ? only.Item : null, catalog, assets);
+        {
+            var item = drop.Items.FirstOrDefault()?.Item;
+            ShowModel(item, floating: true, () => item is null ? null : DropModels.Build(item, catalog, assets, ToolModel));
+        }
         var landing = drop.Position.ToGodot();
+        if (Drop is null)
+            // Neighbouring items turn out of step.
+            _clock = drop.Id * 0.77;
         if (drop.TossedFrom is { } from && Drop is null)
             Toss(from.ToGodot(), landing);
         else if (!Flying)
             Position = landing;
         Drop = drop;
         _label.Text = string.Join("\n", drop.Items.Select(s => $"{Loc.Mod(catalog.FindDefinition(s.Item)?.Name ?? s.Item)} x{s.Count}"));
+        _label.Visible = drop.KnockedOut && !Flying;
+        _glow.Visible = !drop.KnockedOut;
         var color = drop.Items.Select(s => catalog.FindDefinition(s.Item)?.Visual?.Color).FirstOrDefault(c => c is not null);
         _box.MaterialOverride = new StandardMaterial3D { AlbedoColor = color is null ? new Color(0.6f, 0.5f, 0.35f) : Color.FromHtml(color) };
     }
@@ -107,50 +149,48 @@ public partial class DropPile : Node3D
         {
             Position = Drop?.Position.ToGodot() ?? to;
             Basis = Basis.Identity;
-            _label.Visible = true;
+            _label.Visible = Drop?.KnockedOut == true;
         }));
     }
 
-    // The item's own model standing on the ground in place of the crate, or the crate when it has none.
-    private void ShowItem(string? item, IPartCatalog catalog, PartAssets? assets) => ShowModel(item, minSize: ItemSize, make: () =>
-    {
-        if (item is null || assets is null || catalog.FindDefinition(item) is not { Mesh: not null } definition
-            || assets.ModelFor(Identifiers.Qualify(item), definition) is not { IsPlaceholder: false, Meshes.Count: > 0 } model)
-            return null;
-        var node = new Node3D();
-        foreach (var mesh in model.Meshes)
-            node.AddChild(mesh.Instantiate());
-        return node;
-    });
-
-    // Puts the model `make` builds (once per key) on the ground in place of the crate, or the crate when it makes none.
-    private void ShowModel(string? key, Func<Node3D?> make, float minSize = 0f)
+    // Puts the model `make` builds (once per key) in place of the crate, or the crate when it makes none: a loose item
+    // (`floating`) sized ItemSize across and floating in the glow, the knockout bag standing on the ground as it is.
+    private void ShowModel(string? key, bool floating, Func<Node3D?> make)
     {
         if (key == _modelKey)
             return;
         _modelKey = key;
         _model?.QueueFree();
         _model = key is null ? null : make();
-        if (_model is not null)
-        {
-            _model.Name = "Model";
-            AddChild(_model);
-            // Stand it on the ground, whatever its origin.
-            var bounds = _model.FindChildren("*", nameof(MeshInstance3D), owned: false).OfType<MeshInstance3D>()
-                .Select(m => RelativeTo(m, _model) * m.GetAabb()).Aggregate((a, b) => a.Merge(b));
-            var across = bounds.Size[(int)bounds.GetLongestAxisIndex()];
-            if (across > 0f && across < minSize)
-            {
-                var scale = minSize / across;
-                _model.Scale = Vector3.One * scale;
-                bounds = new Aabb(bounds.Position * scale, bounds.Size * scale);
-            }
-            _model.Position = new Vector3(-bounds.GetCenter().X, -bounds.Position.Y, -bounds.GetCenter().Z);
-            _label.Position = new Vector3(0, bounds.Size.Y + LabelGap, 0);
-        }
-        else
-            _label.Position = new Vector3(0, Size + LabelGap, 0);
+        _floating = floating;
         _box.Visible = _model is null;
+        _box.Position = new Vector3(0, floating ? DropAim.Middle : Size / 2, 0);
+        _label.Position = new Vector3(0, Size + LabelGap, 0);
+        if (_model is null)
+            return;
+        _model.Name = "Model";
+        AddChild(_model);
+        var bounds = _model.FindChildren("*", nameof(MeshInstance3D), owned: false).OfType<MeshInstance3D>()
+            .Select(m => RelativeTo(m, _model) * m.GetAabb()).Aggregate((a, b) => a.Merge(b));
+        _centre = bounds.GetCenter();
+        if (floating)
+        {
+            var across = bounds.Size[(int)bounds.GetLongestAxisIndex()];
+            _scale = across > 0f ? ItemSize / across : 1f;
+            Pose();
+            return;
+        }
+        // Stand it on the ground, whatever its origin.
+        _model.Position = new Vector3(-_centre.X, -bounds.Position.Y, -_centre.Z);
+        _label.Position = new Vector3(0, bounds.Size.Y + LabelGap, 0);
+    }
+
+    // A loose item's model, turned about its middle and bobbing at the middle of the glow.
+    private void Pose()
+    {
+        var turn = new Basis(Vector3.Up, (float)(_clock * Spin)).Scaled(Vector3.One * _scale);
+        var lift = DropAim.Middle + Bob * Mathf.Sin((float)(_clock * Mathf.Tau / BobSeconds));
+        _model!.Transform = new Transform3D(turn, new Vector3(0, lift, 0) - turn * _centre);
     }
 
     // A node's transform in the space of one of its ancestors.

@@ -1375,18 +1375,42 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// <summary>Plays <paramref name="item"/>'s pick-up sound at <paramref name="at"/> (something was collected there).</summary>
     public void PlayPickupSound(string item, Vector3 at) => PlayPickup(item, at);
 
+    /// <summary>Metres between the piles one drop of several kinds of item spreads into (<see cref="AddDrop"/>).</summary>
+    public const float StackSpacing = 0.5f;
+
     /// <summary>
-    /// Puts a pile of items on the ground below <paramref name="at"/>, or exactly at it when <paramref name="placed"/>
-    /// (Force Build: it then never expires). Returns it, or null when there was nothing to drop. Past
-    /// <see cref="SurvivalSettings.MaxDrops"/> piles the oldest goes. <paramref name="knockedOut"/> marks what a
-    /// knocked-out player dropped (<see cref="ItemDrop.KnockedOut"/>), and <paramref name="owner"/> whose it is.
-    /// <paramref name="tossedFrom"/> is where a tossed pile left the hand: peers fly it from there when it first shows.
+    /// Puts items on the ground below <paramref name="at"/>, or exactly at it when <paramref name="placed"/>
+    /// (Force Build: it then never expires): one pile per kind of item, so each shows as its own pickup, spread
+    /// <see cref="StackSpacing"/> apart round <paramref name="at"/> (Scrap Mechanic's loose items). A knocked-out player's
+    /// items (<paramref name="knockedOut"/>, <see cref="ItemDrop.KnockedOut"/>) stay together in one bag, and
+    /// <paramref name="owner"/> is whose it is. Returns the first pile, or null when there was nothing to drop. Past
+    /// <see cref="SurvivalSettings.MaxDrops"/> piles the oldest goes. <paramref name="tossedFrom"/> is where a tossed pile
+    /// left the hand: peers fly it from there when it first shows.
     /// </summary>
     public ItemDrop? AddDrop(Vector3 at, IReadOnlyList<ItemStack> items, bool placed = false, bool knockedOut = false, int? owner = null, Vector3? tossedFrom = null)
     {
         var kept = items.Where(s => s.Count > 0).ToList();
         if (kept.Count == 0)
             return null;
+        if (knockedOut)
+            return AddPile(at, kept, placed, knockedOut, owner, tossedFrom);
+        var kinds = kept.GroupBy(s => s.Item).Select(g => new ItemStack(g.Key, g.Sum(s => s.Count))).ToList();
+        if (kinds.Count == 1)
+            return AddPile(at, kinds, placed, knockedOut, owner, tossedFrom);
+        // Round a circle whose neighbouring points are StackSpacing apart.
+        var radius = StackSpacing / (2 * MathF.Sin(MathF.PI / kinds.Count));
+        ItemDrop? first = null;
+        for (var i = 0; i < kinds.Count; i++)
+        {
+            var angle = MathF.Tau * i / kinds.Count;
+            var pile = AddPile(at + new Vector3(MathF.Cos(angle), 0, MathF.Sin(angle)) * radius, [kinds[i]], placed, knockedOut, owner, tossedFrom);
+            first ??= pile;
+        }
+        return first;
+    }
+
+    private ItemDrop AddPile(Vector3 at, List<ItemStack> kept, bool placed, bool knockedOut, int? owner, Vector3? tossedFrom)
+    {
         while (_drops.Count >= settings.MaxDrops)
             RemoveDrop(_drops.Keys.First());
         var drop = new ItemDrop(_nextDrop++, (placed ? at : world.GroundBelow(at)).ToVec3(), kept, world.Now + settings.DropLifetime, placed, knockedOut, owner);

@@ -96,8 +96,12 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
 - **Piles** of items on the ground last `drop_lifetime` seconds (15 minutes). Drag a stack out of any item window
   (the inventory, a container, the hotbar) and let go over the world to toss it: it flies from your hand and lands
   `toss_distance` ahead as a pile anyone can pick up with E.
-  A pile of one item with a model of its own shows that model, scaled up to 0.3 m across when it is smaller (a
-  seed packet); any other pile is a small crate in the first item's colour.
+  Items lie as in Scrap Mechanic: one pile per kind of item (a bot's or a chest's loot spreads into a little ring of
+  piles, 0.5 m apart), each the item's own model (a block as the block, a tool as its hand prop) sized 0.3 m across,
+  floating and slowly turning inside a glowing green sphere with a beam of light rising from it. Aim at a pile (or
+  stand by it) and the Use prompt names it, with the count when there is more than one. A knocked-out player's items
+  stay together in their knockout bag. Every item has a model to lie as; a mod item without a `mesh` shows as a box
+  of its size in its colour.
 - **Fire:** see [Fire](#fire).
 - **Raids:** the host checks the planted crops every minute. Once they are worth the first level of the
   raid table (`raids/raids.json`; vanilla's is 10, a carrot or potato counts 1 and a tomato 1.5), the raid

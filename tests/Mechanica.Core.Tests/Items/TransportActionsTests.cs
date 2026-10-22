@@ -70,7 +70,7 @@ public sealed class TransportActionsTests
     public void APumpSucksAPileIntoTheChestPipedToIt()
     {
         var (c, chest, pump) = PumpLine();
-        var drop = _f.Survival.AddDrop(new Vector3(0.1f, 0.5f, 1.8f), [new ItemStack(SurvivalFixture.Scrap, 30), new ItemStack(SurvivalFixture.Crop, 2)])!;
+        var drop = _f.Survival.AddDrop(new Vector3(0.1f, 0.5f, 1.8f), [new ItemStack(SurvivalFixture.Scrap, 30)])!;
         var far = _f.Survival.AddDrop(new Vector3(0.1f, 0.5f, 6f), [new ItemStack(SurvivalFixture.Scrap, 1)])!;
 
         var pickups = _transport.Pickups(c, pump);
@@ -82,7 +82,6 @@ public sealed class TransportActionsTests
         var result = Collect(Script, c.Id, pump, PickupKind.Drop, drop.Id);
         Assert.True(result.Ok, result.ToString());
         Assert.Equal(30, c.InventoryOf(chest)!.Count(SurvivalFixture.Scrap));
-        Assert.Equal(2, c.InventoryOf(chest)!.Count(SurvivalFixture.Crop));
         Assert.False(_f.Survival.Drops.ContainsKey(drop.Id));
     }
 
