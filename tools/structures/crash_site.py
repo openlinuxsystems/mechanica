@@ -18,7 +18,7 @@ from mathutils import Euler, Matrix, Vector
 import kit as K
 import frame as FR
 import cargo_ship as S
-from families import M, glow, fire, GUNMETAL, CYAN, COPPER, MUSTARD, BONE, STEEL, GRAPHITE, WOOD
+from families import M, glow, GUNMETAL, CYAN, COPPER, MUSTARD, BONE, STEEL, GRAPHITE, WOOD
 
 SPINE_BREAK = 1.0
 KEEP = {"SV4-112", "SV4-131", "SV4-215", "SV4-309"}      # the containers left crushed in their racks
@@ -117,44 +117,59 @@ def soot(P, loc, r, rnd, n=4):
         K.sphere("soot", r * rnd.uniform(0.6, 1.0), m, loc=(x + rnd.uniform(-r, r) * 0.6, y + rnd.uniform(-r, r) * 0.6, z + rnd.uniform(-r, r) * 0.4), scale=(1, 1, 0.25), parent=P)
 
 
+def _vol(name, colour, density, emit=None, strength=0.0):
+    m = bpy.data.materials.get(name)
+    if m is None:
+        m = bpy.data.materials.new(name)
+        m.use_nodes = True
+        nt = m.node_tree
+        nt.nodes.clear()
+        vol = nt.nodes.new("ShaderNodeVolumePrincipled")
+        vol.inputs["Color"].default_value = (*K.lin(colour)[:3], 1)
+        vol.inputs["Density"].default_value = density
+        if emit:
+            vol.inputs["Emission Color"].default_value = (*K.lin(emit)[:3], 1)
+            vol.inputs["Emission Strength"].default_value = strength
+        out = nt.nodes.new("ShaderNodeOutputMaterial")
+        nt.links.new(vol.outputs[0], out.inputs["Volume"])
+    return m
+
+
 def blaze(P, loc, scale=1.0, rnd=None, light=True):
-    """A review-render fire: layered flame tongues (deep orange outside, yellow core), embers, a glow on the ground.
+    """A review-render fire: glowing volume tongues (deep orange outside, yellow core), embers, a glow on the ground.
     The game draws its own fire at the site's fire markers."""
     rnd = rnd or random.Random(3)
     x, y, z = loc
-    outer = K.mat("flame_o", "#ff7a1a", rough=0.5, emit="#ff6a10", emit_strength=14)
-    mid = K.mat("flame_m", "#ffb347", rough=0.5, emit="#ffa13a", emit_strength=20)
-    core = K.mat("flame_c", "#ffe7a0", rough=0.5, emit="#ffe08a", emit_strength=30)
-    for k in range(9):
+    outer = _vol("flame_o", "#000000", 0.0, "#ff5200", 3.0)
+    core = _vol("flame_c", "#000000", 0.0, "#ffa018", 7.0)
+    ember = K.mat("ember", "#ffc860", rough=0.5, emit="#ffb83a", emit_strength=9)
+    for k in range(7):
         a = rnd.uniform(0, 2 * math.pi)
-        d = rnd.uniform(0.0, 0.55) * scale
-        h = rnd.uniform(0.9, 2.0) * scale
-        K.cyl("flame", rnd.uniform(0.22, 0.38) * scale, h, outer, loc=(x + d * math.cos(a), y + d * math.sin(a), z + h / 2), rot=(rnd.uniform(-8, 8), rnd.uniform(-8, 8), 0), segs=7, bev=0, parent=P, r2=0.02)
-    for k in range(5):
+        d = rnd.uniform(0.0, 0.5) * scale
+        h = rnd.uniform(0.9, 1.9) * scale
+        r = rnd.uniform(0.3, 0.45) * scale
+        K.sphere("flame", 1.0, outer, loc=(x + d * math.cos(a), y + d * math.sin(a), z + h * 0.45), scale=(r, r, h / 2), parent=P)
+    for k in range(3):
         a = rnd.uniform(0, 2 * math.pi)
-        d = rnd.uniform(0.0, 0.3) * scale
-        h = rnd.uniform(0.6, 1.3) * scale
-        K.cyl("flame", rnd.uniform(0.15, 0.25) * scale, h, mid, loc=(x + d * math.cos(a), y + d * math.sin(a), z + h / 2 + 0.02), segs=7, bev=0, parent=P, r2=0.02)
-    K.cyl("flame_core", 0.22 * scale, 0.7 * scale, core, loc=(x, y, z + 0.35 * scale), segs=8, bev=0, parent=P, r2=0.03)
+        d = rnd.uniform(0.0, 0.25) * scale
+        h = rnd.uniform(0.6, 1.0) * scale
+        K.sphere("flame", 1.0, core, loc=(x + d * math.cos(a), y + d * math.sin(a), z + h * 0.4), scale=(0.22 * scale, 0.22 * scale, h / 2), parent=P)
     for k in range(10):
-        K.sphere("ember", 0.03, core, loc=(x + rnd.uniform(-0.8, 0.8) * scale, y + rnd.uniform(-0.8, 0.8) * scale, z + rnd.uniform(1.5, 3.5) * scale), parent=P)
-    K.disc("fire_glow", 1.3 * scale, K.mat("embers_bed", "#3a1a0a", rough=0.9, emit="#ff5a10", emit_strength=1.5), (x, y), z=z + 0.03, wobble=0.3, seed=rnd.randint(0, 99)).parent = P
+        K.sphere("ember", 0.03, ember, loc=(x + rnd.uniform(-0.8, 0.8) * scale, y + rnd.uniform(-0.8, 0.8) * scale, z + rnd.uniform(1.5, 3.5) * scale), parent=P)
+    K.disc("fire_glow", 1.3 * scale, K.mat("embers_bed", "#16110e", rough=0.95, emit="#ff3a00", emit_strength=0.12), (x, y), z=z + 0.03, wobble=0.3, seed=rnd.randint(0, 99)).parent = P
     if light:
-        K.point("firelight", (x, y, z + 1.4 * scale), "#ff8a3a", 1400 * scale, 0.6).parent = P
+        K.point("firelight", (x, y, z + 1.4 * scale), "#ff8a3a", 700 * scale, 0.6).parent = P
 
 
 def smoke(P, loc, h=14.0, rnd=None):
-    """A leaning column of grey puffs (review renders; the game draws its own smoke)."""
+    """A leaning column of soft grey smoke: overlapping volume puffs (review renders; the game draws its own smoke)."""
     rnd = rnd or random.Random(1)
-    m = K.mat("smoke", "#8a8682", rough=1.0)
-    if m.node_tree and not m.get("thin"):
-        m.node_tree.nodes["Principled BSDF"].inputs["Alpha"].default_value = 0.12
-        m["thin"] = True
+    m = _vol("smoke", "#6e6a66", 0.22)
     x, y, z = loc
-    for k in range(14):
-        t = k / 13
-        r = 0.6 + 1.8 * t
-        K.sphere("smoke", r, m, loc=(x + 5.0 * t * t + rnd.uniform(-0.4, 0.4), y + 2.5 * t * t + rnd.uniform(-0.4, 0.4), z + 2.0 + h * t), parent=P)
+    for k in range(22):
+        t = k / 21
+        r = 0.7 + 2.2 * t
+        K.sphere("smoke", r, m, loc=(x + 5.0 * t * t + rnd.uniform(-0.6, 0.6), y + 2.5 * t * t + rnd.uniform(-0.6, 0.6), z + 1.8 + h * t), parent=P)
 
 
 def burst_container(code, colour, o, yaw, roll, rnd, name=None):
