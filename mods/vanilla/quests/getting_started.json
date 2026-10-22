@@ -4,7 +4,7 @@
   "steps": [
     {
       "id": "extinguish_fires",
-      "text": "Put out the three fires at the crash site with water.",
+      "text": "Put out three of the fires blocking the way into the crashed ship.",
       "objective": {
         "type": "extinguish",
         "poi": "crash_site",
@@ -13,7 +13,7 @@
       "dialogue": [
         {
           "speaker": "Logbook",
-          "text": "Hull breach. Fires spreading. Suppress them before the core cells go."
+          "text": "Hull breach. Fires at every hatch. Suppress them before the core cells go."
         }
       ]
     },
@@ -30,7 +30,7 @@
       "dialogue": [
         {
           "speaker": "Logbook",
-          "text": "Fires out. Master cell missing from its bay: ejected on impact. Its locator still pings, close by. Recover it."
+          "text": "Fires out. Master cell missing from its bay: blown out with the port engine housing. Its locator still pings, close by. Recover it."
         }
       ]
     },
@@ -47,7 +47,7 @@
       "dialogue": [
         {
           "speaker": "Logbook",
-          "text": "Cell recovered. Seat it in the Power Core: engineering, aft of the crew quarters."
+          "text": "Cell recovered. Seat it in the Power Core: engineering, port side of the aft block."
         }
       ]
     }

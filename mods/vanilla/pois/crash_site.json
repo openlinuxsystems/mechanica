@@ -3,9 +3,12 @@
   "name": "Crash Site",
   "radius": 120.0,
   // The start (World Map spec §1): site poi_36 in worldgen.json places it in the southeast, its road heading north.
-  // Laid out in docs/art-direction.md: the walk-in SV-04 wreck in its scar, cargo trailing north to an Old Stone court,
-  // the farm and pond to the west, a dead relay beacon and burnt woods to the east, inside a ring of forest.
-  "size": [90.0, 12.0, 110.0],
+  // Laid out in docs/art-direction.md: the SV-04 Salvager came in from the southeast, blew open over the forest and
+  // lost its containers, then ploughed in and broke in four. The wreck lies in its scar with the bow to the north-west,
+  // the burst containers trail back along the flight path to the south-east, the farm and pond lie to the west, the Old
+  // Stone court to the north, a dead relay beacon and burnt woods to the east, inside a ring of forest.
+  // The wreck's numbers come from tools/structures/sv04_layout.py (print_crash_layout.py prints them).
+  "size": [150.0, 12.0, 170.0],
   // A new player starts in peace: no wild bots, guards or raiders appear within 250 m of the wreck.
   "bot_free_radius": 250.0,
   "road": "road",
@@ -13,6 +16,19 @@
   "terrain": [
     { "op": "flatten", "radius": 60.0, "blend": 45.0 },
     { "op": "flatten", "at": [-56.0, 2.0], "radius": 34.0, "blend": 12.0 },
+    // A level patch under each burst container (models stand at the pad's height).
+    { "op": "flatten", "at": [-18.0, 48.0], "radius": 9.0, "blend": 10.0 },
+    { "op": "flatten", "at": [4.0, 56.0], "radius": 9.0, "blend": 10.0 },
+    { "op": "flatten", "at": [50.0, 54.0], "radius": 9.0, "blend": 10.0 },
+    { "op": "flatten", "at": [-36.0, 60.0], "radius": 9.0, "blend": 10.0 },
+    { "op": "flatten", "at": [-10.0, 74.0], "radius": 9.0, "blend": 10.0 },
+    { "op": "flatten", "at": [60.0, 36.0], "radius": 9.0, "blend": 10.0 },
+    { "op": "flatten", "at": [62.0, 8.0], "radius": 9.0, "blend": 10.0 },
+    { "op": "flatten", "at": [18.0, 78.0], "radius": 9.0, "blend": 10.0 },
+    { "op": "flatten", "at": [48.0, -10.1], "radius": 9.0, "blend": 10.0 },
+    { "op": "flatten", "at": [-26.0, 74.0], "radius": 9.0, "blend": 10.0 },
+    { "op": "flatten", "at": [-54.0, 42.0], "radius": 9.0, "blend": 10.0 },
+    { "op": "flatten", "at": [46.0, 72.0], "radius": 9.0, "blend": 10.0 },
     // The lake to the west: overlapping basins with wandering edges make one irregular shore with bays and a
     // narrow arm reaching towards the wreck. The water is the sea level, 4 m under the pad.
     { "op": "basin", "at": [-72.0, 18.0], "radius": 2.5, "blend": 15.0, "depth": 5.5, "wobble": 0.15 },
@@ -24,25 +40,59 @@
   ],
   "ground": [
     { "ground": "grass", "radius": 70.0, "blend": 40.0, "noise": 9.0 },
-    { "ground": "burnt", "at": [0.0, 4.0], "radius": 20.0, "blend": 12.0, "noise": 6.0 },
-    { "ground": "burnt", "at": [33.0, 3.0], "radius": 11.0, "blend": 8.0, "noise": 5.0 },
-    // Where the port nacelle came down.
-    { "ground": "burnt", "at": [44.0, 50.0], "radius": 6.0, "blend": 5.0, "noise": 3.0 }
+    // The scar round the wreck and the furrow it ploughed back along the flight path.
+    { "ground": "burnt", "at": [10.8, 24.2], "radius": 12.0, "blend": 8.0, "noise": 5.0 },
+    { "ground": "burnt", "at": [3.8, 7.1], "radius": 9.0, "blend": 8.0, "noise": 5.0 },
+    { "ground": "burnt", "at": [-0.2, -7.2], "radius": 9.0, "blend": 8.0, "noise": 5.0 },
+    { "ground": "burnt", "at": [-7.7, -21.5], "radius": 11.0, "blend": 8.0, "noise": 5.0 },
+    { "ground": "dirt", "at": [18.7, 40.6], "radius": 6.0, "blend": 5.0, "noise": 3.0 },
+    { "ground": "dirt", "at": [25.9, 52.7], "radius": 5.0, "blend": 5.0, "noise": 3.0 },
+    { "ground": "dirt", "at": [32.5, 63.9], "radius": 4.0, "blend": 5.0, "noise": 3.0 },
+    // Where the engine housing came down, and the craters the burst containers dug.
+    { "ground": "burnt", "at": [-1.5, 32.8], "radius": 5.0, "blend": 4.0, "noise": 2.5 },
+    { "ground": "dirt", "at": [-18.0, 48.0], "radius": 4.0, "blend": 3.0, "noise": 2.0 },
+    { "ground": "dirt", "at": [4.0, 56.0], "radius": 4.0, "blend": 3.0, "noise": 2.0 },
+    { "ground": "dirt", "at": [50.0, 54.0], "radius": 4.0, "blend": 3.0, "noise": 2.0 },
+    { "ground": "dirt", "at": [-36.0, 60.0], "radius": 4.0, "blend": 3.0, "noise": 2.0 },
+    { "ground": "dirt", "at": [-10.0, 74.0], "radius": 4.0, "blend": 3.0, "noise": 2.0 },
+    { "ground": "dirt", "at": [60.0, 36.0], "radius": 4.0, "blend": 3.0, "noise": 2.0 },
+    { "ground": "dirt", "at": [62.0, 8.0], "radius": 4.0, "blend": 3.0, "noise": 2.0 },
+    { "ground": "dirt", "at": [18.0, 78.0], "radius": 4.0, "blend": 3.0, "noise": 2.0 },
+    { "ground": "dirt", "at": [48.0, -10.1], "radius": 4.0, "blend": 3.0, "noise": 2.0 },
+    { "ground": "dirt", "at": [-26.0, 74.0], "radius": 4.0, "blend": 3.0, "noise": 2.0 },
+    { "ground": "dirt", "at": [-54.0, 42.0], "radius": 4.0, "blend": 3.0, "noise": 2.0 },
+    { "ground": "dirt", "at": [46.0, 72.0], "radius": 4.0, "blend": 3.0, "noise": 2.0 },
+    { "ground": "burnt", "at": [33.0, 3.0], "radius": 11.0, "blend": 8.0, "noise": 5.0 }
   ],
   "flora": "meadow",
   "models": [
-    // The SV-04 Salvager broken in two; both halves share the ship's origin.
-    { "file": "meshes/structures/sv04_fore.glb", "at": [0.0, 0.0, 0.0], "yaw": 20.0 },
-    { "file": "meshes/structures/sv04_aft.glb", "at": [0.0, 0.0, 0.0], "yaw": 20.0 },
+    // The SV-04 Salvager in four pieces (aft block, the cargo spine in two, the bow) and its torn-off port engine
+    // housing: all share the wreck's origin (tools/structures/crash_site.py).
+    { "file": "meshes/structures/sv04_aft.glb", "at": [0.0, 0.0, 0.0], "yaw": 35.0 },
+    { "file": "meshes/structures/sv04_spine_a.glb", "at": [0.0, 0.0, 0.0], "yaw": 35.0 },
+    { "file": "meshes/structures/sv04_spine_b.glb", "at": [0.0, 0.0, 0.0], "yaw": 35.0 },
+    { "file": "meshes/structures/sv04_bow.glb", "at": [0.0, 0.0, 0.0], "yaw": 35.0 },
+    { "file": "meshes/structures/sv04_housing.glb", "at": [0.0, 0.0, 0.0], "yaw": 35.0 },
     // The Power Core in engineering, with the Master Battery's bay: empty until Getting Started is done, which plays the
     // install (tools/master_battery/build_master_battery.py).
     {
-      "file": "meshes/structures/sv04_battery_bay.glb", "at": [0.0, 0.0, 0.0], "yaw": 20.0,
+      "file": "meshes/structures/sv04_battery_bay.glb", "at": [0.0, 0.0, 0.0], "yaw": 35.0,
       "story": { "quest": "getting_started", "waiting": "empty", "finish": "install", "done": "powered" }
     },
-    // Its port nacelle, torn off in flight (the opening cinematic), lying where it fell.
-    { "file": "meshes/structures/sv04_nacelle.glb", "at": [44.0, 0.0, 50.0], "yaw": 35.0 },
-    // Old Stone court to the north, at the end of the cargo spill.
+    // The containers lost in the sky, burst open where they landed; the colour says the cargo (cargo_spill_* below).
+    { "file": "meshes/structures/sv04_container_tan.glb", "at": [-18.02, 0.0, 48.02], "yaw": 65.0 },
+    { "file": "meshes/structures/sv04_container_blue.glb", "at": [4.05, 0.0, 56.0], "yaw": -15.0 },
+    { "file": "meshes/structures/sv04_container_green.glb", "at": [50.01, 0.0, 53.98], "yaw": 110.0 },
+    { "file": "meshes/structures/sv04_container_yellow.glb", "at": [-36.0, 0.0, 60.0], "yaw": 45.0 },
+    { "file": "meshes/structures/sv04_container_tan.glb", "at": [-9.96, 0.0, 73.99], "yaw": 15.0 },
+    { "file": "meshes/structures/sv04_container_blue.glb", "at": [60.0, 0.0, 36.0], "yaw": 155.0 },
+    { "file": "meshes/structures/sv04_container_red.glb", "at": [61.99, 0.0, 7.99], "yaw": 235.0 },
+    { "file": "meshes/structures/sv04_container_green.glb", "at": [17.98, 0.0, 77.99], "yaw": 95.0 },
+    { "file": "meshes/structures/sv04_container_tan.glb", "at": [48.01, 0.0, -10.06], "yaw": -35.0 },
+    { "file": "meshes/structures/sv04_container_blue.glb", "at": [-25.97, 0.0, 73.97], "yaw": 195.0 },
+    { "file": "meshes/structures/sv04_container_green.glb", "at": [-54.0, 0.0, 41.96], "yaw": 50.0 },
+    { "file": "meshes/structures/sv04_container_yellow.glb", "at": [46.03, 0.0, 72.02], "yaw": -75.0 },
+    // Old Stone court to the north.
     { "file": "meshes/structures/stone_court.glb", "at": [-6.0, 0.0, -58.0] },
     { "file": "meshes/structures/stone_arch.glb", "at": [-6.0, 0.0, -48.0] },
     { "file": "meshes/structures/stone_pillar_tall.glb", "at": [2.66, 0.0, -63.0] },
@@ -60,49 +110,73 @@
     // The farmer's shack, trade counter and garden to the northwest.
     { "file": "meshes/structures/settler_shack.glb", "at": [-40.0, 0.0, -44.0], "yaw": -15.0 },
     // A dead Colony relay beacon to the northeast.
-    { "file": "meshes/structures/relay_beacon_dead.glb", "at": [18.0, 0.0, -26.0], "yaw": 30.0 },
-    // Cargo thrown out of the hold: Colony crates (decoration) among loot crates.
-    { "file": "meshes/structures/cargo_crate_colony.glb", "at": [2.0, 0.0, -26.0], "yaw": 30.0 },
-    { "file": "meshes/structures/cargo_crate_colony.glb", "at": [-6.0, 0.0, -28.5], "yaw": 38.0 },
-    { "file": "meshes/structures/cargo_crate_colony.glb", "at": [-1.0, 0.0, -33.5], "yaw": 13.0 },
-    { "file": "meshes/structures/cargo_crate_colony.glb", "at": [3.0, 0.0, -38.5], "yaw": 50.0 },
-    { "file": "meshes/structures/cargo_crate_colony.glb", "at": [-4.0, 0.0, -41.0], "yaw": 61.0 },
-    { "file": "meshes/structures/cargo_crate_colony.glb", "at": [-2.0, 0.0, -46.0], "yaw": 19.0 }
+    { "file": "meshes/structures/relay_beacon_dead.glb", "at": [18.0, 0.0, -26.0], "yaw": 30.0 }
   ],
   "markers": [
-    // South of the wreck, facing it.
-    { "type": "spawn", "at": [16.0, 0.0, 36.0], "yaw": 24.0 },
+    // East of the wreck, between the bow's burning airlock and the burnt woods.
+    { "type": "spawn", "at": [22.0, 0.0, -12.0], "yaw": 120.0 },
     // The farmer, in his stall behind the trade counter by the shack.
     { "type": "npc", "ref": "farmer", "at": [-44.77, 0.0, -40.1], "yaw": -15.0 },
-    // Engineering, by the Master Battery.
-    { "type": "fire", "at": [0.78, 0.5, 5.03] },
-    // By the airlock.
-    { "type": "fire", "at": [6.36, 0.0, -4.44] },
-    // At the break.
-    { "type": "fire", "at": [-1.66, 0.0, 14.44] },
-    // In engineering, in front of the Power Core's battery bay.
-    { "type": "item", "ref": "master_battery", "at": [0.5, 0.94, 1.28] },
-    // The Master Battery, thrown out of the break in the crash, lying in the furrow it ploughed west of the wreck.
-    { "type": "object", "ref": "master_battery_fallen", "at": [-17.0, 0.0, 27.0], "yaw": 35.0 },
-    // On the bridge.
-    { "type": "item", "ref": "logbook", "at": [-3.75, 0.61, -10.36] },
-    // The cargo hold: loot crates and scrap.
-    { "type": "object", "ref": "loot_crate", "at": [1.06, 0.29, 16.48] },
-    { "type": "object", "ref": "loot_crate", "at": [4.3, 0.53, 12.75] },
-    { "type": "object", "ref": "loot_crate", "at": [5.26, 0.44, 19.2] },
-    { "type": "object", "ref": "scrap_pile_metal", "at": [3.55, 0.42, 16.31] },
-    { "type": "object", "ref": "scrap_pile_wood", "at": [2.2, 0.3, 18.41] },
-    // Starting scrap round the hull: plates torn off on impact, planks from burst crates.
-    { "type": "object", "ref": "scrap_pile_metal", "at": [9.0, 0.0, -4.0] },
-    { "type": "object", "ref": "scrap_pile_metal", "at": [11.0, 0.0, 2.0] },
-    { "type": "object", "ref": "scrap_pile_wood", "at": [-9.0, 0.0, 14.0] },
-    { "type": "object", "ref": "scrap_pile_metal", "at": [7.0, 0.0, 20.0] },
-    { "type": "object", "ref": "scrap_pile_wood", "at": [-4.0, 0.0, -16.0] },
-    // The cargo spill's loot crates.
-    { "type": "object", "ref": "loot_crate", "at": [-3.0, 0.0, -23.0] },
-    { "type": "object", "ref": "loot_crate", "at": [4.0, 0.0, -31.0] },
-    { "type": "object", "ref": "loot_crate", "at": [-7.0, 0.0, -36.0] },
-    { "type": "object", "ref": "loot_crate", "at": [1.0, 0.0, -43.0] },
+    // Outside the bow's starboard airlock, the way in to the bridge (one of the three that block the ways in).
+    { "type": "fire", "at": [2.22, 0.0, -18.63] },
+    // Outside the aft block's starboard door, the way in to the mess and engineering.
+    { "type": "fire", "at": [10.37, 0.0, 15.83] },
+    // In the aft block's torn front, where the spine broke away.
+    { "type": "fire", "at": [2.14, 0.73, 19.96] },
+    // Inside: the engine room.
+    { "type": "fire", "at": [16.37, 0.37, 28.28] },
+    // Inside: the bridge, by the starboard stations.
+    { "type": "fire", "at": [-4.99, 0.42, -22.91] },
+    // Inside the first piece of the spine.
+    { "type": "fire", "at": [4.27, 1.35, 9.11] },
+    // By burst container SV4-118.
+    { "type": "fire", "at": [-21.9, 0.0, 48.3] },
+    // By burst container SV4-233.
+    { "type": "fire", "at": [-39.74, 0.0, 58.94] },
+    // By burst container SV4-316.
+    { "type": "fire", "at": [65.87, 0.0, 8.38] },
+    // By burst container SV4-411.
+    { "type": "fire", "at": [-23.25, 0.0, 76.76] },
+    // In engineering, at the Power Core's battery slot.
+    { "type": "item", "ref": "master_battery", "at": [7.46, 1.46, 30.14] },
+    // The Master Battery, thrown out with the port engine housing when the ship blew open, lying in the grass past it.
+    { "type": "object", "ref": "master_battery_fallen", "at": [-4.38, 0.0, 39.08], "yaw": 70.0 },
+    // On the bridge, on its lectern.
+    { "type": "item", "ref": "logbook", "at": [-10.89, 2.02, -17.15] },
+    // Cargo control: a loot crate by the door to the spine.
+    { "type": "object", "ref": "loot_crate", "at": [-5.38, 0.88, -13.26], "yaw": 26.1 },
+    // Starting scrap round the hull: plates torn off on impact, planks from a burst crate.
+    { "type": "object", "ref": "scrap_pile_metal", "at": [-0.25, 0.0, -29.12] },
+    { "type": "object", "ref": "scrap_pile_metal", "at": [7.62, 0.0, -12.66] },
+    { "type": "object", "ref": "scrap_pile_metal", "at": [26.22, 0.0, 30.47] },
+    { "type": "object", "ref": "scrap_pile_metal", "at": [-5.4, 0.0, 18.43] },
+    { "type": "object", "ref": "scrap_pile_wood", "at": [14.09, 0.0, -2.54] },
+    { "type": "object", "ref": "scrap_pile_wood", "at": [-16.71, 0.0, -2.95] },
+    // The cargo each burst container spilled in front of its doors (two heaps each, of its colour's kind).
+    { "type": "object", "ref": "cargo_spill_building", "at": [-23.28, 0.0, 47.0], "yaw": 65.0 },
+    { "type": "object", "ref": "cargo_spill_building", "at": [-23.59, 0.0, 43.88], "yaw": 102.0 },
+    { "type": "object", "ref": "cargo_spill_electronics", "at": [4.14, 0.0, 50.64], "yaw": -15.0 },
+    { "type": "object", "ref": "cargo_spill_electronics", "at": [7.17, 0.0, 49.8], "yaw": 22.0 },
+    { "type": "object", "ref": "cargo_spill_farming", "at": [45.56, 0.0, 56.98], "yaw": 110.0 },
+    { "type": "object", "ref": "cargo_spill_farming", "at": [43.14, 0.0, 54.99], "yaw": 147.0 },
+    { "type": "object", "ref": "cargo_spill_fuel", "at": [-40.59, 0.0, 57.24], "yaw": 45.0 },
+    { "type": "object", "ref": "cargo_spill_fuel", "at": [-39.82, 0.0, 54.2], "yaw": 82.0 },
+    { "type": "object", "ref": "cargo_spill_building", "at": [-12.56, 0.0, 69.31], "yaw": 15.0 },
+    { "type": "object", "ref": "cargo_spill_building", "at": [-10.37, 0.0, 67.06], "yaw": 52.0 },
+    { "type": "object", "ref": "cargo_spill_electronics", "at": [58.98, 0.0, 41.26], "yaw": 155.0 },
+    { "type": "object", "ref": "cargo_spill_electronics", "at": [55.85, 0.0, 41.57], "yaw": 192.0 },
+    { "type": "object", "ref": "cargo_spill_metal", "at": [67.0, 0.0, 9.9], "yaw": 235.0 },
+    { "type": "object", "ref": "cargo_spill_metal", "at": [66.76, 0.0, 13.03], "yaw": 272.0 },
+    { "type": "object", "ref": "cargo_spill_farming", "at": [12.92, 0.0, 79.74], "yaw": 95.0 },
+    { "type": "object", "ref": "cargo_spill_farming", "at": [11.09, 0.0, 77.19], "yaw": 132.0 },
+    { "type": "object", "ref": "cargo_spill_building", "at": [49.93, 0.0, -15.06], "yaw": -35.0 },
+    { "type": "object", "ref": "cargo_spill_building", "at": [53.06, 0.0, -14.83], "yaw": 2.0 },
+    { "type": "object", "ref": "cargo_spill_electronics", "at": [-23.37, 0.0, 78.66], "yaw": 195.0 },
+    { "type": "object", "ref": "cargo_spill_electronics", "at": [-25.56, 0.0, 80.9], "yaw": 232.0 },
+    { "type": "object", "ref": "cargo_spill_farming", "at": [-58.82, 0.0, 39.61], "yaw": 50.0 },
+    { "type": "object", "ref": "cargo_spill_farming", "at": [-58.31, 0.0, 36.52], "yaw": 87.0 },
+    { "type": "object", "ref": "cargo_spill_fuel", "at": [50.72, 0.0, 69.42], "yaw": -75.0 },
+    { "type": "object", "ref": "cargo_spill_fuel", "at": [52.97, 0.0, 71.61], "yaw": -38.0 },
     // On the court's dais.
     { "type": "object", "ref": "bloom_pod_green", "at": [-6.0, 1.05, -60.2] },
     // Burnt woods to the east where the ship came down.
@@ -158,14 +232,14 @@
     { "type": "object", "ref": "large_rock", "at": [75.34, 0.0, -20.19] },
     { "type": "object", "ref": "large_rock", "at": [-59.75, 0.0, -50.14] },
     { "type": "object", "ref": "large_rock", "at": [-73.3, 0.0, 26.68] },
-    { "type": "object", "ref": "large_rock", "at": [-26.68, 0.0, 73.3] },
+    { "type": "object", "ref": "large_rock", "at": [-12.5, 0.0, 84.0] },
     { "type": "object", "ref": "large_rock", "at": [59.75, 0.0, 50.14] },
-    // The crew's things, as in Scrap Mechanic's crashed ship: a Locker in each bunk room (by the built-in one, facing
-    // the room's door), a Broken Microwave on the port room's floor and a File Cabinet on the bridge. Each stands on the
-    // tilted deck (heights from the model's collider) and comes filled once from its loot table.
-    { "type": "part", "ref": "locker", "at": [1.25, 0.075, -5.35], "yaw": 110.0, "loot": "locker", "loot_rolls": [1, 4] },
-    { "type": "part", "ref": "locker", "at": [-4.39, 0.285, -3.3], "yaw": -70.0, "loot": "locker", "loot_rolls": [1, 4] },
-    { "type": "part", "ref": "broken_microwave", "at": [-4.56, 0.186, -6.11], "yaw": -70.0, "loot": "microwave", "loot_rolls": [1, 1] },
-    { "type": "part", "ref": "file_cabinet", "at": [-6.76, 0.135, -8.93], "yaw": -70.0, "loot": "file_cabinet", "loot_rolls": [1, 3] }
+    // The crew's things, as in Scrap Mechanic's crashed ship: a Locker in the crew quarters and one in cargo control
+    // beside the EVA suits, a Broken Microwave on the mess's galley counter and a File Cabinet on the bridge. Each stands
+    // on its deck (heights from sv04_layout.py) and comes filled once from its loot table.
+    { "type": "part", "ref": "locker", "at": [14.15, 0.22, 20.7], "yaw": 141.0, "loot": "locker", "loot_rolls": [1, 4] },
+    { "type": "part", "ref": "broken_microwave", "at": [4.71, 1.61, 19.27], "yaw": -39.0, "loot": "microwave", "loot_rolls": [1, 1] },
+    { "type": "part", "ref": "file_cabinet", "at": [-2.83, 0.3, -23.73], "yaw": 116.0, "loot": "file_cabinet", "loot_rolls": [1, 3] },
+    { "type": "part", "ref": "locker", "at": [-10.1, 1.07, -12.79], "yaw": -64.0, "loot": "locker", "loot_rolls": [1, 4] }
   ]
 }

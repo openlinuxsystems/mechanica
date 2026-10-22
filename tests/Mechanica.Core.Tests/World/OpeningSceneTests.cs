@@ -1,4 +1,5 @@
 using System.Numerics;
+using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
 using Mechanica.Core.Tests.Data;
 using Mechanica.Core.World;
@@ -29,28 +30,36 @@ public class OpeningSceneTests
     }
 
     [Fact]
-    public void TheIntactShipIsTheWrecksSectionsPutBackTogether()
+    public void TheIntactShipIsTheWrecksPiecesPutBackTogether()
     {
         var (_, scene) = Vanilla(1234);
         var settings = scene.Settings;
-        var aftWreck = OpeningScene.Blender(settings.AftWreck);
-        var foreWreck = OpeningScene.Blender(settings.ForeWreck);
-        foreach (var t in new[] { 0f, 6f, 11.9f })
+        Assert.Equal(4, settings.Pieces.Count);
+        foreach (var t in new[] { 0f, 6f, settings.Explode - 0.1f })
         {
             var pieces = scene.Pieces(t);
-            // The aft section's torn end (its y 6 in ship.py) meets the fore section's (its y -8), and the fore section flies level.
-            foreach (var x in new[] { -3f, 0f, 3f })
-                foreach (var z in new[] { 1f, 5f })
-                {
-                    var aftEnd = pieces.Aft.Apply(aftWreck.Apply(OpeningScene.FromBlender([x, 6f, z])));
-                    var foreEnd = pieces.Fore.Apply(foreWreck.Apply(OpeningScene.FromBlender([x, -8f, z])));
-                    Assert.True(Vector3.Distance(aftEnd, foreEnd) < 0.01f, $"at {t} s the ends at ({x}, {z}) are {Vector3.Distance(aftEnd, foreEnd):0.###} m apart");
-                    Assert.True(Vector3.Distance(foreEnd, pieces.Ship.Apply(OpeningScene.FromBlender([x, -8f, z]))) < 0.01f);
-                }
-            // The nacelle hangs on the aft section where ship.py builds it.
-            var centre = pieces.Nacelle.Apply(OpeningScene.Blender(settings.NacelleLying).Position);
-            var onAft = pieces.Aft.Apply(aftWreck.Apply(OpeningScene.FromBlender(settings.NacelleOnAft)));
-            Assert.True(Vector3.Distance(centre, onAft) < 0.01f, $"at {t} s the nacelle is {Vector3.Distance(centre, onAft):0.###} m off its pylon");
+            // Every piece puts each of its points back where the intact ship has it (tools/structures/sv04_layout.py).
+            foreach (var (piece, i) in settings.Pieces.Select((p, i) => (p, i)))
+            {
+                var baked = OpeningScene.Blender(piece.Wreck).Compose(new Pose(-OpeningScene.FromBlender(piece.Pivot), Quaternion.Identity));
+                foreach (var dx in new[] { -3f, 0f, 3f })
+                    foreach (var dy in new[] { -4f, 0f, 4f })
+                    {
+                        float[] point = [piece.Pivot[0] + dx, piece.Pivot[1] + dy, piece.Pivot[2] + 2f];
+                        var flown = pieces.Pieces[i].Apply(baked.Apply(OpeningScene.FromBlender(point)));
+                        var intact = pieces.Ship.Apply(OpeningScene.FromBlender(point));
+                        Assert.True(Vector3.Distance(flown, intact) < 0.01f, $"at {t} s {piece.Model} is {Vector3.Distance(flown, intact):0.###} m off at ({point[0]}, {point[1]})");
+                    }
+            }
+            // The housing sits where it was built, and every container rides in its rack slot.
+            var centre = pieces.Housing.Apply(OpeningScene.Blender(settings.HousingLying).Position);
+            var onShip = pieces.Ship.Apply(OpeningScene.FromBlender(settings.HousingOnShip));
+            Assert.True(Vector3.Distance(centre, onShip) < 0.01f, $"at {t} s the housing is {Vector3.Distance(centre, onShip):0.###} m off the ship");
+            foreach (var (slot, i) in settings.Containers.Slots.Select((s, i) => (s, i)))
+            {
+                var middle = pieces.Containers[i].Apply(new Vector3(0, settings.Containers.Middle, 0));
+                Assert.True(Vector3.Distance(middle, pieces.Ship.Apply(OpeningScene.FromBlender(slot))) < 0.01f, $"at {t} s container {i} is out of its slot");
+            }
         }
     }
 
@@ -63,17 +72,28 @@ public class OpeningSceneTests
         foreach (var t in new[] { settings.Settle, settings.Settle + 0.5f, settings.Duration })
         {
             var pieces = scene.Pieces(t);
-            Assert.Equal(scene.Wreck, pieces.Fore);
-            Assert.Equal(scene.AftWreck, pieces.Aft);
-            Assert.Equal(scene.NacelleWreck, pieces.Nacelle);
+            Assert.Equal(scene.PieceWrecks, pieces.Pieces);
+            Assert.Equal(scene.HousingWreck, pieces.Housing);
+            Assert.Equal(scene.ContainerWrecks, pieces.Containers);
         }
+        Assert.Equal(scene.Wreck, scene.PieceWrecks[0]);
         // Smoothly: no jump into place.
         var before = scene.Pieces(settings.Settle - 0.01f);
-        Assert.True(Vector3.Distance(before.Fore.Position, scene.Wreck.Position) < 0.05f);
-        Assert.True(Vector3.Distance(before.Aft.Position, scene.AftWreck.Position) < 0.05f);
-        Assert.True(Vector3.Distance(scene.Nacelle(settings.NacelleDown - 0.01f).Position, scene.NacelleWreck.Position) < 0.2f);
-        // The nacelle leaves the ship without a jump.
-        Assert.True(Vector3.Distance(scene.Nacelle(settings.NacelleOff + 0.01f).Position, scene.Nacelle(settings.NacelleOff - 0.01f).Position) < 0.6f);
+        for (var i = 0; i < before.Pieces.Count; i++)
+            Assert.True(Vector3.Distance(before.Pieces[i].Position, scene.PieceWrecks[i].Position) < 0.05f);
+        Assert.True(Vector3.Distance(scene.Housing(settings.HousingDown - 0.01f).Position, scene.HousingWreck.Position) < 0.2f);
+        // The housing leaves the ship without a jump.
+        Assert.True(Vector3.Distance(scene.Housing(settings.Explode + 0.01f).Position, scene.Housing(settings.Explode - 0.01f).Position) < 0.6f);
+        // The containers break away after the explosion, one by one as the ship passes over, and are all down before it lands.
+        Assert.Equal(12, scene.Releases.Count);
+        Assert.All(scene.Releases, r => Assert.InRange(r, settings.Explode, settings.Touchdown - settings.Containers.Fall + 1e-3f));
+        Assert.True(scene.Releases.Distinct().Count() > 3, "the containers do not all fall at once");
+        for (var i = 0; i < scene.Releases.Count; i++)
+        {
+            var land = scene.Releases[i] + settings.Containers.Fall;
+            Assert.True(Vector3.Distance(scene.Container(i, land - 0.01f).Position, scene.ContainerWrecks[i].Position) < 0.3f);
+            Assert.True(Vector3.Distance(scene.Container(i, scene.Releases[i] + 0.01f).Position, scene.Container(i, scene.Releases[i] - 0.01f).Position) < 0.6f);
+        }
     }
 
     [Theory]
@@ -89,10 +109,10 @@ public class OpeningSceneTests
         {
             if (t < settings.Touchdown - 0.5f)
             {
-                // Well clear of the trees until the nacelle is down, then lower over the clearing.
+                // Well clear of the trees until the housing is down, then lower over the clearing.
                 var ship = scene.Ship(t);
                 var ground = gen.HeightAt(ship.Position.X, ship.Position.Z);
-                var clearance = t <= settings.NacelleDown ? OpeningScene.Clearance - 0.5f : 0.3f;
+                var clearance = t <= settings.HousingDown ? OpeningScene.Clearance - 0.5f : 0.3f;
                 Assert.True(ship.Position.Y - ground > clearance, $"at {t:0.0} s the ship is {ship.Position.Y - ground:0.#} m above the ground");
             }
             var camera = scene.Camera(t);
@@ -107,20 +127,22 @@ public class OpeningSceneTests
     }
 
     [Fact]
-    public void TheCrashSpillsTheCargoAndTheSectionsAreHiddenUntilItLands()
+    public void TheCrashSpillsTheCargoAndThePiecesAreHiddenUntilItLands()
     {
         var (gen, scene) = Vanilla(1234);
         var models = scene.Poi.Poi.Prefab.Models!;
 
-        Assert.Equal(3 + models.Count(m => m.File == "meshes/structures/cargo_crate_colony.glb"), scene.HiddenModels.Count);
-        Assert.Contains(scene.ForeIndex, scene.HiddenModels);
-        Assert.Contains(scene.NacelleIndex, scene.HiddenModels);
+        Assert.Equal(4 + 1 + 12, scene.HiddenModels.Count);
+        Assert.All(scene.PieceIndices, i => Assert.Contains(i, scene.HiddenModels));
+        Assert.Contains(scene.HousingIndex, scene.HiddenModels);
+        Assert.All(scene.ContainerIndices, i => Assert.StartsWith("meshes/structures/sv04_container_", models[i].File, StringComparison.Ordinal));
         var centre = scene.Poi.Centre;
         var near = Enumerable.Range(-2, 5).SelectMany(x => Enumerable.Range(-2, 5).Select(z => new ChunkCoord((int)MathF.Floor(centre.X / 64f) + x, (int)MathF.Floor(centre.Y / 64f) + z)))
             .SelectMany(c => gen.GenerateChunk(c, 64).Objects).ToList();
         var hidden = near.Where(scene.Hides).ToList();
         Assert.Contains(hidden, o => o.Definition.Id == "loot_crate");
         Assert.Contains(hidden, o => o.Definition.Id == "scrap_pile_wood");
+        Assert.Contains(hidden, o => o.Definition.Id == "cargo_spill_electronics");
         Assert.DoesNotContain(near, o => o.Definition.Id == "bloom_pod_green" && scene.Hides(o));
         Assert.DoesNotContain(near, o => o.Definition.Id == "burnt_tree" && scene.Hides(o));
     }

@@ -11,8 +11,9 @@ namespace Mechanica.Game.World;
 /// <summary>
 /// The opening cinematic (<see cref="OpeningSettings"/>, <c>game/data/opening.json</c>; docs/art-direction.md). The host
 /// sees it the first time a world it started from the menu loads; players who join later spawn straight in. The intact
-/// SV-04 (copies of the wreck's own models) flies in over the forest, its port nacelle catches fire and blows off, and the
-/// ship comes down in the crash site's clearing and breaks in two, every piece ending exactly where the wreck's models lie.
+/// SV-04 (copies of the wreck's own models) flies in over the forest, its port engine housing catches fire, the cargo
+/// spine blows open, the housing and the containers fall away, and the ship comes down in the crash site's clearing and
+/// breaks in four, every piece ending exactly where the wreck's models lie.
 /// The picture goes black and comes back on the player getting up at the spawn. Meanwhile the real wreck, the cargo it
 /// spills and the site's fires are out of sight until the ship settles, the HUD is hidden, quest dialogue waits
 /// (<see cref="Playing"/>) and the player stands still. Jump or Pause skips to the player. Nothing of it is sent to other
@@ -43,11 +44,13 @@ public partial class OpeningCinematic : Node3D
 
     private OpeningScene _scene = null!;
     private Camera3D _camera = null!;
-    private Node3D? _fore;
-    private Node3D? _aft;
-    private Node3D? _nacelle;
-    private Node3D _nacelleFire = null!;
-    private CpuParticles3D _nacelleFlames = null!;
+    private Node3D?[] _pieces = [];
+    private Node3D? _housing;
+    private Node3D?[] _containers = [];
+    private CpuParticles3D[] _impacts = [];
+    private bool[] _landed = [];
+    private Node3D _housingFire = null!;
+    private CpuParticles3D _housingFlames = null!;
     private Node3D _stub = null!;
     private CpuParticles3D _burst = null!;
     private OmniLight3D _flash = null!;
@@ -56,8 +59,7 @@ public partial class OpeningCinematic : Node3D
     private ColorRect _bottom = null!;
     private ColorRect _black = null!;
     private Label _hint = null!;
-    private System.Numerics.Vector3 _nacelleCentre;
-    private System.Numerics.Vector3 _stubAt;
+    private System.Numerics.Vector3 _housingCentre;
     private OpeningCamera _lastCamera;
     private float _t;
     private float? _skipFrom;
@@ -107,8 +109,8 @@ public partial class OpeningCinematic : Node3D
     /// <summary>The cinematic's camera, current until the hand-off.</summary>
     public Camera3D Camera => _camera;
 
-    /// <summary>The flying copies of the fore section, the aft section and the nacelle (null after the hand-off), for tests.</summary>
-    public (Node3D? Fore, Node3D? Aft, Node3D? Nacelle) Copies => (_fore, _aft, _nacelle);
+    /// <summary>The flying copies of the pieces, the housing and the containers (empty and null after the hand-off), for tests.</summary>
+    public (IReadOnlyList<Node3D?> Pieces, Node3D? Housing, IReadOnlyList<Node3D?> Containers) Copies => (_pieces, _housing, _containers);
 
     /// <summary>The skip hint on screen.</summary>
     public string HintText => _hint.Visible ? _hint.Text : "";
@@ -157,11 +159,11 @@ public partial class OpeningCinematic : Node3D
         Player.Visible = false;
         var settings = _scene.Settings;
         var models = _scene.Poi.Poi.Prefab.Models!;
-        _fore = Copy(models[_scene.ForeIndex], "Fore");
-        _aft = Copy(models[_scene.AftIndex], "Aft");
-        _nacelle = Copy(models[_scene.NacelleIndex], "Nacelle");
-        _nacelleCentre = OpeningScene.Blender(settings.NacelleLying).Position;
-        _stubAt = OpeningScene.Blender(settings.AftWreck).Apply(OpeningScene.FromBlender(settings.NacelleOnAft));
+        _pieces = [.. _scene.PieceIndices.Select((index, i) => Copy(models[index], $"Piece{i}"))];
+        _housing = Copy(models[_scene.HousingIndex], "Housing");
+        _containers = [.. _scene.ContainerIndices.Select((index, i) => Copy(models[index], $"Container{i}"))];
+        _landed = new bool[_containers.Length];
+        _housingCentre = OpeningScene.Blender(settings.HousingLying).Position;
         _camera = new Camera3D { Name = "Camera", Near = 0.1f, Far = Player.Camera.Far };
         AddChild(_camera);
         _camera.MakeCurrent();
@@ -235,28 +237,42 @@ public partial class OpeningCinematic : Node3D
         var settings = _scene.Settings;
         var pieces = _scene.Pieces(_t);
         var settled = _t >= settings.Settle;
-        Place(_fore, pieces.Fore, !settled);
-        Place(_aft, pieces.Aft, !settled);
-        Place(_nacelle, pieces.Nacelle, !settled);
+        for (var i = 0; i < _pieces.Length; i++)
+            Place(_pieces[i], pieces.Pieces[i], !settled);
+        Place(_housing, pieces.Housing, !settled);
+        for (var i = 0; i < _containers.Length; i++)
+            Place(_containers[i], pieces.Containers[i], !settled);
         Hide(!settled);
 
-        // The nacelle burns from when it catches fire to the end, harder once it has blown.
-        _nacelleFire.GlobalPosition = pieces.Nacelle.Apply(_nacelleCentre).ToGodot();
-        foreach (var particles in _nacelleFire.GetChildren().OfType<CpuParticles3D>())
-            particles.Emitting = _t >= settings.NacelleBurn;
-        _nacelleFlames.ScaleAmountMax = _t >= settings.NacelleOff ? 1.8f : 1.1f;
-        // The torn pylon trails smoke until the ship is down.
-        _stub.GlobalPosition = pieces.Aft.Apply(_stubAt).ToGodot();
+        // The housing burns from when it catches fire to the end, harder once it has blown.
+        _housingFire.GlobalPosition = pieces.Housing.Apply(_housingCentre).ToGodot();
+        foreach (var particles in _housingFire.GetChildren().OfType<CpuParticles3D>())
+            particles.Emitting = _t >= settings.HousingBurn;
+        _housingFlames.ScaleAmountMax = _t >= settings.Explode ? 1.8f : 1.1f;
+        // The torn spine trails smoke until the ship is down.
+        var blast = _scene.Blast(_t).ToGodot();
+        _stub.GlobalPosition = blast;
         foreach (var particles in _stub.GetChildren().OfType<CpuParticles3D>())
-            particles.Emitting = _t >= settings.NacelleOff && _t < settings.Settle + 1.5f;
-        if (!_blown && _t >= settings.NacelleOff)
+            particles.Emitting = _t >= settings.Explode && _t < settings.Settle + 1.5f;
+        if (!_blown && _t >= settings.Explode)
         {
             _blown = true;
-            _burst.GlobalPosition = _nacelleFire.GlobalPosition;
+            _burst.GlobalPosition = blast;
             _burst.Restart();
-            _flash.GlobalPosition = _nacelleFire.GlobalPosition;
         }
-        _flash.LightEnergy = _blown ? 12f * Mathf.Max(0f, 1f - (_t - settings.NacelleOff) / 0.8f) : 0f;
+        _flash.GlobalPosition = blast;
+        _flash.LightEnergy = _blown ? 12f * Mathf.Max(0f, 1f - (_t - settings.Explode) / 0.8f) : 0f;
+        // Each container throws up dirt where it lands.
+        for (var i = 0; i < _landed.Length; i++)
+        {
+            if (_landed[i] || _t < _scene.Releases[i] + settings.Containers.Fall)
+                continue;
+            _landed[i] = true;
+            _impacts[i].GlobalPosition = _scene.ContainerWrecks[i].Position.ToGodot();
+            _impacts[i].Restart();
+            if (settings.Containers.Land is { } land && Sounds?.Registry.Find(land) is { } e)
+                Sounds.Player.Play(e, _impacts[i].GlobalPosition);
+        }
         // Dust from under the hull while it hits and slides.
         _dust.GlobalPosition = pieces.Ship.Position.ToGodot();
         _dust.Emitting = _t >= settings.Touchdown && _t < settings.Settle;
@@ -292,7 +308,8 @@ public partial class OpeningCinematic : Node3D
         var settings = _scene.Settings;
         Func<Vector3?> track = sound.On switch
         {
-            "nacelle" => () => HandedOff ? null : _scene.Nacelle(_t).Apply(_nacelleCentre).ToGodot(),
+            "housing" => () => HandedOff ? null : _scene.Housing(_t).Apply(_housingCentre).ToGodot(),
+            "explosion" => () => HandedOff ? null : _scene.Blast(_t).ToGodot(),
             "camera" => () => HandedOff ? null : _camera.GlobalPosition,
             _ => () => HandedOff ? null : _scene.Ship(_t).Position.ToGodot(),
         };
@@ -353,9 +370,9 @@ public partial class OpeningCinematic : Node3D
         HandedOff = true;
         StopSounds();
         Hide(false);
-        foreach (var node in new Node?[] { _fore, _aft, _nacelle, _nacelleFire, _stub, _burst, _flash, _dust, _camera })
+        foreach (var node in new Node?[] { _housing, _housingFire, _stub, _burst, _flash, _dust, _camera }.Concat(_pieces).Concat(_containers).Concat(_impacts))
             node?.QueueFree();
-        (_fore, _aft, _nacelle) = (null, null, null);
+        (_pieces, _housing, _containers, _impacts) = ([], null, [], []);
         Player.Visible = true;
         Player.MakeCameraCurrent();
         // Up off the ground, facing the wreck.
@@ -409,12 +426,12 @@ public partial class OpeningCinematic : Node3D
 
     private void BuildEffects()
     {
-        _nacelleFire = new Node3D { Name = "NacelleFire" };
-        AddChild(_nacelleFire);
-        _nacelleFlames = Particles("Flames", 90, 0.7, 1.0f, FireNode.Additive(), FlameColors, 1.1f, 2f, 4f);
-        _nacelleFlames.ScaleAmountCurve = FireNode.Shrinking();
-        _nacelleFire.AddChild(_nacelleFlames);
-        _nacelleFire.AddChild(Particles("Smoke", 120, 4.5, 4f, FireNode.Blended(), SmokeColors, 1f, 1.5f, 3f));
+        _housingFire = new Node3D { Name = "HousingFire" };
+        AddChild(_housingFire);
+        _housingFlames = Particles("Flames", 90, 0.7, 1.0f, FireNode.Additive(), FlameColors, 1.1f, 2f, 4f);
+        _housingFlames.ScaleAmountCurve = FireNode.Shrinking();
+        _housingFire.AddChild(_housingFlames);
+        _housingFire.AddChild(Particles("Smoke", 120, 4.5, 4f, FireNode.Blended(), SmokeColors, 1f, 1.5f, 3f));
         _stub = new Node3D { Name = "Stub" };
         AddChild(_stub);
         _stub.AddChild(Particles("Smoke", 260, 6.0, 4f, FireNode.Blended(), SmokeColors, 0.6f, 1f, 2f));
@@ -435,6 +452,16 @@ public partial class OpeningCinematic : Node3D
         _dust.Spread = 70f;
         _dust.Gravity = new Vector3(0, -0.6f, 0);
         AddChild(_dust);
+        _impacts = [.. _containers.Select((_, i) =>
+        {
+            var impact = Particles($"Impact{i}", 40, 2.0, 3f, FireNode.Blended(), DustColors, 1.5f, 2f, 5f);
+            impact.OneShot = true;
+            impact.Explosiveness = 0.9f;
+            impact.Spread = 70f;
+            impact.Gravity = new Vector3(0, -1.5f, 0);
+            AddChild(impact);
+            return impact;
+        })];
     }
 
     // World-space particles (they trail behind what carries them), off until switched on.

@@ -14,11 +14,11 @@ using Instance = Mechanica.Game.Tests.NetTestHarness.Instance;
 namespace Mechanica.Game.Tests;
 
 /// <summary>
-/// Fire with a host plus a client (D13, D10), on the vanilla world. The crash site's three fires burn on both
+/// Fire with a host plus a client (D13, D10), on the vanilla world. The crash site's fires burn on both
 /// machines, with flames and the burning sound; a wooden block the client places in one catches, and its fire
 /// shows on the client too; a bucket of water the client throws lands on that fire and puts it (and the block) out on both,
 /// which counts for the first quest. A save keeps the put-out fire out: a host loading it and a client joining
-/// that host see two fires.
+/// that host see the rest still burning.
 /// </summary>
 public partial class FireTest : StagedTest
 {
@@ -26,6 +26,9 @@ public partial class FireTest : StagedTest
     private const string EmptyBucket = "vanilla:water_bucket";
     private const string Wood = "vanilla:wood_block";
     private const string GettingStarted = "vanilla:getting_started";
+
+    // The crash site's fire markers: six at the wreck's hatches and four at burst containers (mods/vanilla/pois/crash_site.json).
+    private const int Fires = 10;
 
     private readonly List<ActionResult> _results = [];
     private NetTestHarness _harness = null!;
@@ -40,7 +43,8 @@ public partial class FireTest : StagedTest
 
     private FireSync ClientFire => _client.Main.Fire;
 
-    private Vector3 FirstFire => _fires[0].Position.ToGodot();
+    // The burst containers' fires come last and stand in the open; the wreck's sit in its hatches.
+    private Vector3 FirstFire => _fires[^1].Position.ToGodot();
 
     public override void _Ready()
     {
@@ -51,10 +55,10 @@ public partial class FireTest : StagedTest
 
         Add("the crash site burns on both machines", _ =>
         {
-            if (_host.Main.PlayerSync.Players.Count < 2 || ClientFire.Nodes.Count < 3)
+            if (_host.Main.PlayerSync.Players.Count < 2 || ClientFire.Nodes.Count < Fires)
                 return false;
             _fires = [.. _host.Main.Quests.SitesOf("vanilla:crash_site")[0].Markers.Where(m => m.Type == "fire")];
-            Check(_fires.Count == 3, $"three fire markers ({_fires.Count})");
+            Check(_fires.Count == Fires, $"{Fires} fire markers ({_fires.Count})");
             Check(ClientFire.Fires.Values.All(f => f.Strength == 1 && f.Poi == "vanilla:crash_site"), "the client's fires burn at full strength");
             foreach (var marker in _fires)
             {
@@ -62,8 +66,8 @@ public partial class FireTest : StagedTest
                 Check(node.GlobalPosition.DistanceTo(marker.Position.ToGodot()) < 0.01f, $"a fire stands on its marker ({node.GlobalPosition})");
                 Check(node.Flames.Emitting && node.Smoke.Emitting, "it shows flames and smoke");
             }
-            Check(HostFire.Loops.Count == 3, $"each fire plays its burning loop ({HostFire.Loops.Count})");
-            Check(_client.Main.Sounds.Loops.Values.Count(l => l.Event.QualifiedId == "vanilla:burn_wood") == 3, "the client hears them");
+            Check(HostFire.Loops.Count == Fires, $"each fire plays its burning loop ({HostFire.Loops.Count})");
+            Check(_client.Main.Sounds.Loops.Values.Count(l => l.Event.QualifiedId == "vanilla:burn_wood") == Fires, "the client hears them");
             return true;
         });
         Add("a wooden block placed in a fire catches, and the client sees it burn", frame =>
@@ -71,7 +75,7 @@ public partial class FireTest : StagedTest
             if (frame == 0)
                 _host.Main.PlayerSync.HostTeleport(_client.Peer, FirstFire + new Vector3(2.5f, 0, 0));
             if (frame == 20)
-                Request(BuildActions.PlacePart, new PlacePartArgs(Wood, GridCell.Zero, Position: (FirstFire + new Vector3(0, 0.125f, 0.75f)).ToNumerics().ToVec3()));
+                Request(BuildActions.PlacePart, new PlacePartArgs(Wood, GridCell.Zero, Position: (FirstFire + new Vector3(0.75f, 0.125f, 0)).ToNumerics().ToVec3()));
             if (_results.Count == 0)
                 return false;
             if (!_results[0].Ok)
@@ -100,10 +104,10 @@ public partial class FireTest : StagedTest
                 return false;
             if (!_results[0].Ok)
                 Check(false, $"the bucket is used ({_results[0]})");
-            if (ClientFire.Nodes.Count != 2 || HostFire.Actions!.SitesOut("vanilla:crash_site", "fire") != 1)
+            if (ClientFire.Nodes.Count != Fires - 1 || HostFire.Actions!.SitesOut("vanilla:crash_site", "fire") != 1)
                 return false;
             Check(ClientFire.Fires.Values.All(f => f.Part is null), "the block went out with it");
-            Check(HostFire.Loops.Count == 2, $"its sound stopped ({HostFire.Loops.Count})");
+            Check(HostFire.Loops.Count == Fires - 1, $"its sound stopped ({HostFire.Loops.Count})");
             Check(_client.Main.Inventory.Own!.Count(Bucket) == 0 && _client.Main.Inventory.Own.Count(EmptyBucket) == 1, "the bucket comes back empty");
             return _client.Main.Quests.State.Of(GettingStarted) is { Step: 0, Count: 1 };
         });
@@ -113,15 +117,15 @@ public partial class FireTest : StagedTest
             {
                 var diagnostics = new List<DataDiagnostic>();
                 _save = SaveGame.Read(_host.Main.Saves.Capture("Fire World").Write(), "fire-world.json", diagnostics);
-                Check(_save?.Fires is { Count: 3 } fires && fires.Count(f => f.Strength == 0) == 1,
-                    $"the save holds the three fires, one out ({string.Join("; ", diagnostics)})");
+                Check(_save?.Fires is { Count: Fires } fires && fires.Count(f => f.Strength == 0) == 1,
+                    $"the save holds all the fires, one out ({string.Join("; ", diagnostics)})");
                 _harness.Stop(_client);
                 _harness.Stop(_host);
                 _harness.Save = _save;
                 _host = _harness.StartHost();
                 _client = _harness.StartClient("Client");
             }
-            if (frame < 2 || HostFire.Actions!.Fires().Count < 3 || ClientFire.Nodes.Count < 2 || _client.Main.Quests.State.Of(GettingStarted) is not { } progress)
+            if (frame < 2 || HostFire.Actions!.Fires().Count < Fires || ClientFire.Nodes.Count < Fires - 1 || _client.Main.Quests.State.Of(GettingStarted) is not { } progress)
                 return false;
             Check(HostFire.Actions.SitesOut("vanilla:crash_site", "fire") == 1, "the loaded host keeps it out");
             Check(progress is { Step: 0, Count: 1 }, $"the quest still counts it ({progress.Count})");
@@ -131,7 +135,7 @@ public partial class FireTest : StagedTest
         {
             if (frame < 30)
                 return false;
-            Check(ClientFire.Nodes.Count == 2, $"two fires ({ClientFire.Nodes.Count})");
+            Check(ClientFire.Nodes.Count == Fires - 1, $"the rest burn ({ClientFire.Nodes.Count})");
             return true;
         });
     }

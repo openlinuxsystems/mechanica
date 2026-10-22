@@ -296,7 +296,7 @@ public class WorldGenTests
         Assert.Equal(new Vector2(0.19f * gen.WorldSize, 0.38f * gen.WorldDepth), crash.Centre);
         Assert.Equal(6f, crash.PadHeight);
         Assert.Equal(0, crash.QuarterTurns);
-        Assert.Equal(crash.ToWorld(new Vector3(16, 0, 36)), gen.Spawn);
+        Assert.Equal(crash.ToWorld(new Vector3(22, 0, -12)), gen.Spawn);
         // Level for 55 m round the wreck, except the lake to the west.
         var lake = new Vector2(-54, 0);
         for (var x = -55f; x <= 55f; x += 2f)
@@ -336,10 +336,19 @@ public class WorldGenTests
             var world = crash.ToWorld(new Vector2(at.X, at.Z));
             Assert.True(gen.HeightAt(world.X, world.Y) >= gen.SeaLevel, $"({at.X}, {at.Z}) is in the lake");
         }
-        Assert.Equal(3, crash.Poi.Prefab.Markers!.Count(m => m.Type == "fire"));
+        // Fires at the wreck's three ways in, three inside and by four of the burst containers.
+        Assert.Equal(10, crash.Poi.Prefab.Markers!.Count(m => m.Type == "fire"));
         Assert.Single(crash.Poi.Prefab.Markers!, m => m.Ref == "master_battery");
-        // The walk-in wreck (docs/art-direction.md), with starting scrap to pick up round it.
-        Assert.Contains(crash.Poi.Prefab.Models!, m => m.File == "meshes/structures/sv04_fore.glb");
+        // The walk-in wreck in four pieces (docs/art-direction.md), the containers it lost with their cargo spilled in front
+        // of them, and starting scrap to pick up round it.
+        Assert.Equal(4, crash.Poi.Prefab.Models!.Count(m => m.File is "meshes/structures/sv04_aft.glb" or "meshes/structures/sv04_spine_a.glb"
+            or "meshes/structures/sv04_spine_b.glb" or "meshes/structures/sv04_bow.glb"));
+        Assert.Equal(12, crash.Poi.Prefab.Models!.Count(m => m.File!.StartsWith("meshes/structures/sv04_container_", StringComparison.Ordinal)));
+        var spills = crash.Poi.Prefab.Markers!.Select((m, k) => (m, k)).Where(e => e.m.Ref?.StartsWith("cargo_spill_", StringComparison.Ordinal) == true)
+            .Select(e => gen.Find(WorldObjectId.ForPoi(crash.Index, e.k))!).ToList();
+        Assert.Equal(24, spills.Count);
+        Assert.All(spills, o => Assert.True(o.Definition.Harvest && o.Definition.Drops!.Count > 0));
+        Assert.Equal(5, spills.Select(o => o.Definition.Id).Distinct().Count());
         var scrap = crash.Poi.Prefab.Markers!.Select((m, k) => (m, k)).Where(e => e.m.Ref?.StartsWith("scrap_pile_", StringComparison.Ordinal) == true)
             .Select(e => gen.Find(WorldObjectId.ForPoi(crash.Index, e.k))!).ToList();
         Assert.True(scrap.Count >= 6, $"scrap piles ({scrap.Count})");

@@ -12,7 +12,7 @@ namespace Mechanica.Game.Tests;
 
 /// <summary>
 /// Quests with a host plus a client (chunk 24, D10), on the vanilla story. The client gets the story's state
-/// on join, puts out the crash site's three fires with buckets of water, recovers the master battery and seats it
+/// on join, puts out three of the crash site's fires with buckets of water, recovers the master battery and seats it
 /// through <c>QuestInteract</c>; the host counts each one, both players get the rewards and the
 /// client hears the outro. With the story moved on to the faction envoy, the client talks to the envoy and
 /// picks a side in the quest log, which sets the flag on every peer. A save keeps the story's state.
@@ -52,16 +52,17 @@ public partial class QuestTest : StagedTest
             var site = HostQuests.SitesOf("vanilla:crash_site");
             Check(site.Count == 1, $"one crash site ({site.Count})");
             _targets = [.. site[0].Markers.Where(m => m.Type == "fire")];
-            Check(_targets.Count == 3, $"three fires ({_targets.Count})");
+            Check(_targets.Count == 10, $"ten fires ({_targets.Count})");
             Check(ClientQuests.SitesOf("vanilla:crash_site").Count == 1, "the client's world has the same site");
             return true;
+        // The burst containers' fires come last and stand in the open; the wreck's sit in its hatches.
         });
         for (var i = 0; i < 3; i++)
         {
             var fire = i;
             Add($"the client puts out fire {fire + 1} with a bucket of water", frame =>
             {
-                var at = _targets[fire].Position.ToGodot() + new Vector3(0, 0.3f, 0);
+                var at = _targets[^(fire + 1)].Position.ToGodot() + new Vector3(0, 0.3f, 0);
                 if (frame == 0)
                 {
                     _asked = false;

@@ -11,8 +11,9 @@ import sv04_layout as L
 
 DECK = 0.04   # the deck's top in the ship's frame
 
-# Fires lit on a burst container (its frame: doors towards +y), on every third one in SCATTER's order.
-CONTAINER_FIRE = (-1.6, 4.2)
+# Fires lit on a burst container (its frame: doors towards +y), on every third one in SCATTER's order: just outside
+# the doors, clear of the first heap (a spill's collider is 1.8 m square) so the fire can be reached and put out.
+CONTAINER_FIRE = (-1.9, 3.4)
 # Where each container's cargo lies, in its frame: two heaps in front of the doors.
 SPILLS = ((-1.3, 5.2), (1.4, 6.8))
 KIND = {"red": "metal", "blue": "electronics", "yellow": "fuel", "green": "farming", "tan": "building"}
@@ -24,9 +25,13 @@ SPOTS = [
     ("logbook", "bow", (-4.9, 20.98, 1.16), None),                                              # on the bridge lectern
     ("locker", "aft", (7.0, -21.0, DECK), 90.0),             # crew quarters, between the bunks, facing the table
     ("broken_microwave", "aft", (2.1, -12.75, 1.06), -90.0),  # mess: on the galley counter
-    ("file_cabinet", "bow", (5.9, 23.2, DECK), 90.0),         # bridge: by the starboard cabinet
-    ("locker", "bow", (-5.8, 16.4, DECK), -90.0),             # cargo control, by the EVA lockers
+    ("file_cabinet", "bow", (5.3, 23.4, DECK), 90.0),         # bridge: past the starboard cabinet
+    ("locker", "bow", (-6.05, 16.75, DECK), -90.0),           # cargo control, beside the EVA suit lockers
+    ("loot_crate", "bow", (-1.6, 15.1, DECK), 0.0),           # cargo control, by the door to the spine
 ]
+# Starting scrap on the ground round the hull (wreck frame): plates torn off on impact, planks from a burst crate.
+SCRAP = [("scrap_pile_metal", 16.5, 24.0), ("scrap_pile_metal", 13.5, 6.0), ("scrap_pile_metal", 4.0, -40.0),
+         ("scrap_pile_metal", -15.0, -12.0), ("scrap_pile_wood", 13.0, -6.0), ("scrap_pile_wood", -12.0, 12.0)]
 
 
 def r2(p):
@@ -77,6 +82,8 @@ def main():
         if facing is not None:
             m["yaw"] = heading(piece, facing)
         out["markers"].append(m)
+    for ref, x, y in SCRAP:
+        out["markers"].append({"type": "object", "ref": ref, "at": poi((x, y, 0.0))})
     hx, hy, _ = L.HOUSING_LYING[0]
     out["markers"].append({"type": "object", "ref": "master_battery_fallen", "at": poi((hx - 6.0, hy - 3.5, 0.0)),
                            "yaw": round(L.WRECK_YAW + 35.0, 1)})

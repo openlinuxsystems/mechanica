@@ -9,61 +9,64 @@ namespace Mechanica.Core.World;
 /// <param name="Fov">Vertical field of view in degrees.</param>
 public readonly record struct OpeningCamera(Vector3 Position, Vector3 Target, float Fov);
 
-/// <summary>Where the three ship pieces are at one moment.</summary>
+/// <summary>Where the ship and its pieces are at one moment.</summary>
 /// <param name="Ship">The flying ship's origin (the intact ship's frame: nose towards -z).</param>
-/// <param name="Fore">The fore section model's origin.</param>
-/// <param name="Aft">The aft section model's origin.</param>
-/// <param name="Nacelle">The nacelle model's origin.</param>
-public readonly record struct OpeningPieces(Pose Ship, Pose Fore, Pose Aft, Pose Nacelle);
+/// <param name="Pieces">Each wreck piece's model origin, in <see cref="OpeningSettings.Pieces"/>' order.</param>
+/// <param name="Housing">The engine housing model's origin.</param>
+/// <param name="Containers">Each falling container model's origin, in <see cref="OpeningScene.ContainerIndices"/>' order.</param>
+public readonly record struct OpeningPieces(Pose Ship, IReadOnlyList<Pose> Pieces, Pose Housing, IReadOnlyList<Pose> Containers);
 
 /// <summary>
-/// Samples the opening cinematic (<see cref="OpeningSettings"/>) for one placed crash site: the ship's flight, the
-/// sections and the nacelle (copies of the wreck's own models, which end exactly where the wreck's models lie) and the
-/// camera. World space, metres, as the POI and its models are placed.
+/// Samples the opening cinematic (<see cref="OpeningSettings"/>) for one placed crash site: the ship's flight, its pieces,
+/// the engine housing and the containers (copies of the wreck's own models, which end exactly where the wreck's models
+/// lie) and the camera. World space, metres, as the POI and its models are placed.
 /// </summary>
 public sealed class OpeningScene
 {
     private readonly OpeningSettings _settings;
     private readonly PoiInstance _poi;
     private readonly List<(float T, Pose Pose)> _ship;
-    private readonly Pose _foreIntact;
-    private readonly Pose _aftIntact;
-    private readonly Pose _nacelleOnShip;
+    private readonly Pose[] _piecesIntact;
+    private readonly Pose _housingOnShip;
+    private readonly Pose[] _containersOnShip;
+    private readonly float[] _release;
     private readonly Func<float, float, float>? _ground;
     private readonly float[] _lift = [];
 
     /// <summary>
-    /// The scene for <paramref name="poi"/>, whose prefab must place the three models
-    /// <paramref name="settings"/> names; their placements are where the pieces end. <paramref name="ground"/> gives the
-    /// ground's height at a world x and z: the ship rises over hills in its way and cameras stay above the ground.
+    /// The scene for <paramref name="poi"/>, whose prefab must place the models <paramref name="settings"/> names (and a
+    /// slot for each container model it places); their placements are where the pieces end. <paramref name="ground"/>
+    /// gives the ground's height at a world x and z: the ship rises over hills in its way and cameras stay above the ground.
     /// </summary>
     public OpeningScene(OpeningSettings settings, PoiInstance poi, Func<float, float, float>? ground = null)
     {
         _ground = ground;
         _settings = settings;
         _poi = poi;
-        var models = poi.Poi.Prefab.Models ?? [];
-        PoiModel Find(string file) => models.FirstOrDefault(m => m.File == file)
-            ?? throw new InvalidOperationException($"POI '{poi.Poi.QualifiedId}' places no model '{file}'.");
-        var fore = Find(settings.ForeModel);
-        var aft = Find(settings.AftModel);
-        ForeIndex = models.ToList().IndexOf(fore);
-        AftIndex = models.ToList().IndexOf(aft);
-        NacelleIndex = models.ToList().IndexOf(Find(settings.NacelleModel));
-        Wreck = Placed(fore);
-        AftWreck = Placed(aft);
-        NacelleWreck = Placed(models[NacelleIndex]);
-        HiddenModels = [ForeIndex, AftIndex, NacelleIndex, .. models.Select((m, i) => (m, i)).Where(p => settings.HiddenModels.Contains(p.m.File ?? "")).Select(p => p.i)];
-        // The sections' models are baked in the ship's frame as the wreck lies; the intact ship undoes that.
-        _foreIntact = Blender(settings.ForeWreck).Inverse();
-        _aftIntact = new Pose(FromBlender(settings.AftIntact), Quaternion.Identity).Compose(Blender(settings.AftWreck).Inverse());
-        _nacelleOnShip = new Pose(FromBlender(settings.AftIntact) + FromBlender(settings.NacelleOnAft), Quaternion.Identity)
-            .Compose(Blender(settings.NacelleLying).Inverse());
+        var models = (poi.Poi.Prefab.Models ?? []).ToList();
+        int Find(string file) => models.FindIndex(m => m.File == file) is var i and >= 0 ? i
+            : throw new InvalidOperationException($"POI '{poi.Poi.QualifiedId}' places no model '{file}'.");
+        PieceIndices = [.. settings.Pieces.Select(p => Find(p.Model))];
+        HousingIndex = Find(settings.HousingModel);
+        ContainerIndices = [.. models.Select((m, i) => (m, i)).Where(p => settings.Containers.Models.Contains(p.m.File ?? "")).Select(p => p.i)];
+        if (ContainerIndices.Count != settings.Containers.Slots.Count)
+            throw new InvalidOperationException($"POI '{poi.Poi.QualifiedId}' places {ContainerIndices.Count} containers for {settings.Containers.Slots.Count} slots.");
+        PieceWrecks = [.. PieceIndices.Select(i => Placed(models[i]))];
+        Wreck = PieceWrecks[0];
+        HousingWreck = Placed(models[HousingIndex]);
+        ContainerWrecks = [.. ContainerIndices.Select(i => Placed(models[i]))];
+        HiddenModels = [.. PieceIndices, HousingIndex, .. ContainerIndices,
+            .. models.Select((m, i) => (m, i)).Where(p => settings.HiddenModels.Contains(p.m.File ?? "")).Select(p => p.i)];
+        // The pieces' models are baked as the wreck lies: each turned about its pivot and set down. The intact ship undoes it.
+        _piecesIntact = [.. settings.Pieces.Select(p => new Pose(FromBlender(p.Pivot), Quaternion.Identity).Compose(Blender(p.Wreck).Inverse()))];
+        _housingOnShip = new Pose(FromBlender(settings.HousingOnShip), Quaternion.Identity).Compose(Blender(settings.HousingLying).Inverse());
+        _containersOnShip = [.. settings.Containers.Slots.Select(s => new Pose(FromBlender(s) - new Vector3(0, settings.Containers.Middle, 0), Quaternion.Identity))];
         _ship = [.. settings.Ship.Select(k => (k.T, KeyPose(k))), (settings.Settle, Wreck)];
         _lift = Lift();
+        _release = [.. ContainerWrecks.Select(Release)];
     }
 
-    /// <summary>Metres the ship flies above the ground at least, until the nacelle comes down; then less, to nothing at touchdown.</summary>
+    /// <summary>Metres the ship flies above the ground at least, until the housing comes down; then less, to nothing at touchdown.</summary>
     public const float Clearance = 12f;
 
     // Seconds between lift samples, and how many seconds a lift ramps in and out over.
@@ -81,8 +84,8 @@ public sealed class OpeningScene
         for (var k = 0; k < count; k++)
         {
             var t = k * LiftStep;
-            var clearance = t <= _settings.NacelleDown ? Clearance
-                : Clearance * Math.Clamp((_settings.Touchdown - t) / (_settings.Touchdown - _settings.NacelleDown), 0f, 1f);
+            var clearance = t <= _settings.HousingDown ? Clearance
+                : Clearance * Math.Clamp((_settings.Touchdown - t) / (_settings.Touchdown - _settings.HousingDown), 0f, 1f);
             var ship = Keyed(t).Position;
             var ground = new[] { (0f, 0f), (10f, 0f), (-10f, 0f), (0f, 10f), (0f, -10f) }.Max(o => _ground(ship.X + o.Item1, ship.Z + o.Item2));
             need[k] = Math.Max(0f, ground + clearance - ship.Y);
@@ -95,18 +98,34 @@ public sealed class OpeningScene
         return lift;
     }
 
-    /// <summary>The fore section's index in the POI's models.</summary>
-    public int ForeIndex { get; }
+    // When a container breaks away: as the ship passes closest over where it lands (allowing for the way it carries on
+    // forward as it falls), between the explosion and the last moment it can still land before touchdown.
+    private float Release(Pose landing)
+    {
+        var fall = _settings.Containers.Fall;
+        var best = (T: _settings.Explode, Miss: float.MaxValue);
+        for (var t = _settings.Explode; t <= _settings.Touchdown - fall + 1e-3f; t += 0.05f)
+        {
+            var drop = Ship(t).Position + ShipVelocity(t) * fall * 0.4f;
+            var miss = Vector2.Distance(new Vector2(drop.X, drop.Z), new Vector2(landing.Position.X, landing.Position.Z));
+            if (miss < best.Miss)
+                best = (t, miss);
+        }
+        return best.T;
+    }
 
-    /// <summary>The aft section's index in the POI's models.</summary>
-    public int AftIndex { get; }
+    /// <summary>The pieces' indices in the POI's models, in <see cref="OpeningSettings.Pieces"/>' order.</summary>
+    public IReadOnlyList<int> PieceIndices { get; }
 
-    /// <summary>The nacelle's index in the POI's models.</summary>
-    public int NacelleIndex { get; }
+    /// <summary>The engine housing's index in the POI's models.</summary>
+    public int HousingIndex { get; }
+
+    /// <summary>The falling containers' indices in the POI's models, in the prefab's order.</summary>
+    public IReadOnlyList<int> ContainerIndices { get; }
 
     /// <summary>
-    /// The POI's models kept out of sight until <see cref="OpeningSettings.Settle"/>: the three sections (their copies fly
-    /// instead) and <see cref="OpeningSettings.HiddenModels"/>.
+    /// The POI's models kept out of sight until <see cref="OpeningSettings.Settle"/>: the pieces, the housing and the
+    /// containers (their copies fly instead) and <see cref="OpeningSettings.HiddenModels"/>.
     /// </summary>
     public IReadOnlyList<int> HiddenModels { get; }
 
@@ -119,14 +138,20 @@ public sealed class OpeningScene
     /// <summary>The POI it plays at.</summary>
     public PoiInstance Poi => _poi;
 
-    /// <summary>Where the wreck (the fore section's model) lies: the flying ship's last pose.</summary>
+    /// <summary>Where the wreck (its first piece's model) lies: the flying ship's last pose.</summary>
     public Pose Wreck { get; }
 
-    /// <summary>Where the aft section's model lies.</summary>
-    public Pose AftWreck { get; }
+    /// <summary>Where each piece's model lies.</summary>
+    public IReadOnlyList<Pose> PieceWrecks { get; }
 
-    /// <summary>Where the nacelle's model lies.</summary>
-    public Pose NacelleWreck { get; }
+    /// <summary>Where the housing's model lies.</summary>
+    public Pose HousingWreck { get; }
+
+    /// <summary>Where each container's model lies.</summary>
+    public IReadOnlyList<Pose> ContainerWrecks { get; }
+
+    /// <summary>When each container breaks away from the ship; it lands <see cref="OpeningContainers.Fall"/> seconds later.</summary>
+    public IReadOnlyList<float> Releases => _release;
 
     /// <summary>The settings it plays.</summary>
     public OpeningSettings Settings => _settings;
@@ -178,38 +203,47 @@ public sealed class OpeningScene
         return (Ship(t + dt).Position - Ship(t - dt).Position) / (2 * dt);
     }
 
-    /// <summary>Where the three pieces are at <paramref name="t"/>.</summary>
+    /// <summary>Where everything is at <paramref name="t"/>.</summary>
     public OpeningPieces Pieces(float t)
     {
         var ship = Ship(t);
-        // The sections fly as one until the break, then each comes to rest where its model lies.
+        // The pieces fly as one until the break, then each comes to rest where its model lies.
         var apart = Smooth(Math.Clamp((t - _settings.Break) / (_settings.Settle - _settings.Break), 0f, 1f));
-        var fore = ship.Compose(Lerp(_foreIntact, Pose.Identity, apart));
-        var aft = ship.Compose(Lerp(_aftIntact, Pose.Identity, apart));
-        if (t >= _settings.Settle)
-            (fore, aft) = (Wreck, AftWreck);
-        return new OpeningPieces(ship, fore, aft, Nacelle(t));
+        var pieces = t >= _settings.Settle ? PieceWrecks.ToArray()
+            : _piecesIntact.Select(intact => ship.Compose(Lerp(intact, Pose.Identity, apart))).ToArray();
+        return new OpeningPieces(ship, pieces, Housing(t), [.. Enumerable.Range(0, _release.Length).Select(i => Container(i, t))]);
     }
 
-    /// <summary>The nacelle model's origin at <paramref name="t"/>: on the ship, then tumbling down to where it lies.</summary>
-    public Pose Nacelle(float t)
+    /// <summary>Where the explosion is at <paramref name="t"/>: on the flying ship.</summary>
+    public Vector3 Blast(float t) => Ship(t).Apply(FromBlender(_settings.ExplodeAt));
+
+    /// <summary>The housing model's origin at <paramref name="t"/>: on the ship, then tumbling down to where it lies.</summary>
+    public Pose Housing(float t) =>
+        Falling(t, _settings.Explode, _settings.HousingDown, _housingOnShip, HousingWreck, _settings.HousingTurns);
+
+    /// <summary>Container <paramref name="i"/>'s model origin at <paramref name="t"/>: in its rack, then falling to where it lies.</summary>
+    public Pose Container(int i, float t) =>
+        Falling(t, _release[i], _release[i] + _settings.Containers.Fall, _containersOnShip[i], ContainerWrecks[i], _settings.Containers.Turns);
+
+    // Something riding on the ship (at onShip) until off, then falling to where it lies by down, tumbling whole turns.
+    private Pose Falling(float t, float off, float down, Pose onShip, Pose lying, int turns)
     {
-        if (t <= _settings.NacelleOff)
-            return Ship(t).Compose(_nacelleOnShip);
-        if (t >= _settings.NacelleDown)
-            return NacelleWreck;
-        var start = Ship(_settings.NacelleOff).Compose(_nacelleOnShip);
-        var span = _settings.NacelleDown - _settings.NacelleOff;
-        var s = (t - _settings.NacelleOff) / span;
+        if (t <= off)
+            return Ship(t).Compose(onShip);
+        if (t >= down)
+            return lying;
+        var start = Ship(off).Compose(onShip);
+        var span = down - off;
+        var s = (t - off) / span;
         // It leaves with the ship's speed and falls; Hermite keeps both ends exact.
-        var leave = ShipVelocity(_settings.NacelleOff) * span;
+        var leave = ShipVelocity(off) * span;
         var land = new Vector3(leave.X * 0.3f, -Math.Abs(leave.Length()) * 0.6f, leave.Z * 0.3f);
-        var position = Hermite(start.Position, leave, NacelleWreck.Position, land, s);
+        var position = Hermite(start.Position, leave, lying.Position, land, s);
         var horizontal = new Vector3(leave.X, 0, leave.Z);
         var axis = horizontal.LengthSquared() > 1e-6f ? Vector3.Normalize(Vector3.Cross(Vector3.UnitY, horizontal)) : Vector3.UnitX;
         // Whole turns, so the tumble ends exactly on the lying pose.
-        var spin = Quaternion.CreateFromAxisAngle(axis, -MathF.Tau * _settings.NacelleTurns * Smooth(s));
-        var turn = Quaternion.Normalize(spin * Quaternion.Slerp(start.Rotation, NacelleWreck.Rotation, s));
+        var spin = Quaternion.CreateFromAxisAngle(axis, -MathF.Tau * turns * Smooth(s));
+        var turn = Quaternion.Normalize(spin * Quaternion.Slerp(start.Rotation, lying.Rotation, s));
         return new Pose(position, turn);
     }
 
