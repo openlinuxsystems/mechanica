@@ -61,6 +61,13 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
   The Portable Fabricator (every player starts with one) makes the scrap tier from scrap blocks: the Scrap Seat, Scrap
   Driver's Seat, Scrap Gas Engine and Scrap Wheel (made only there), and cheap scrap recipes for the Bearing, Switch and
   Beacon, which the Fabricator makes from Metal Blocks.
+- **Item transport:** Vacuum Pipes (and the Vacuum Pipe Corner, to turn) placed end to end join the IO ports of chests,
+  containers, stations, Vacuum Pumps and Resource Collectors on a Creation ([IO Ports](io-ports.md#item-transport)). A
+  Vacuum Pump with a logic signal (a switch, a sensor) sucks piles, loose resources (logs, rods, chunks), ripe crops and
+  water from in front of its mouth into the containers it is piped to; press E on it to set it to Eject, and it throws
+  their items out of its mouth instead. The Resource Collector pulls loose resources and piles within 12 blocks of its top
+  into itself, and a Refiner piped from it refines what it gathers. Stations take what they need from the containers
+  piped to their input port and send what they make down their output port.
 - **Breaking things:** a part breaks off at 0 health. A container that breaks spills what it held.
   Trees, rocks and bushes with `health` break into resources (`drops` in `world/worldgen.json`).
   Crashes and falls never damage a Creation: only the Sledgehammer, weapons, bots, explosions and fire do.
@@ -173,6 +180,9 @@ their item's properties.
 | `PickUp` | `drop` | A pile within `pickup_reach`. |
 | `Respawn` | none | A dead player after the delay; a living one goes back to their spawn. |
 | `GetFires` | none | Every fire: `[{id, position, strength, creation?, part?, poi?, site?, marker?}]`. Fires at POI markers are listed out ones too (strength 0). |
+| `CollectItems` | `creation`, `part`, `kind`, `drop?`, `target_creation?`, `target_part?` | Part scripts only (a Vacuum Pump's or Resource Collector's `part.collect`): takes a pile (`drop`), a loose piece (`target_creation`), a ripe crop (`target_creation`, `target_part`) or water (`kind` `water`) within the part's `intake` into its own inventory or the containers its ports send to. Returns `{items}`. |
+| `EjectItems` | `creation`, `part`, `item?`, `count` | Part scripts only (`part.eject`): throws items from the part's inventory or the containers its ports take from out of its intake as a pile. Returns `{item, count, drop}`. |
+| `GetNetwork`, `GetPickups` | `creation`, `part` | Queries: what a part's IO ports reach through pipes, and what its intake reaches. |
 | `GetVitals`, `GetSoil` | none; `creation`, `part` | Queries. `GetSoil` shows what the soil's script last stored; a parked farm's growth is worked out when it next runs (or is harvested). |
 
 A dead player's other actions are refused. Item scripts hurt and heal through the same host-side

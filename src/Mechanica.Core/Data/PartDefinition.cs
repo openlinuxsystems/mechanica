@@ -158,6 +158,24 @@ public sealed record PartDefinition
     public CraftingDefinition? Crafting { get; init; }
 
     /// <summary>
+    /// IO ports where Vacuum Pipes connect (Parts map E1, docs/io-ports.md): containers, stations, pumps and collectors
+    /// pass items through them to the other parts piped to them on the same Creation. Placeable parts only.
+    /// </summary>
+    public List<ItemPortDefinition>? IoPorts { get; init; }
+
+    /// <summary>
+    /// True makes the part a conduit (a Vacuum Pipe): items pass from each of its <see cref="IoPorts"/> to the others,
+    /// so it joins what is piped to its ends. A conduit holds nothing itself. Placeable parts only.
+    /// </summary>
+    public bool? Conduit { get; init; }
+
+    /// <summary>
+    /// Where the part takes things in from the world and puts them out (a Vacuum Pump's mouth, a Resource Collector's
+    /// hopper), for its script's <c>part.pickups</c>, <c>part.collect</c> and <c>part.eject</c>. Placeable parts only.
+    /// </summary>
+    public IntakeDefinition? Intake { get; init; }
+
+    /// <summary>
     /// Makes an item a seed that grows into a crop on soil (chunk 20). Items only. Planting it is the item's
     /// Lua script (<c>farm.plant</c>); growing and harvesting read this.
     /// </summary>

@@ -35,6 +35,13 @@
     ],
     "gauge": "electric"
   },
+  "io_ports": [
+    {
+      "id": "port",
+      "position": [0.5, 0, 0],
+      "normal": [1, 0, 0]
+    }
+  ],
   "logic": {
     "outputs": 16,
     "kind": "power"

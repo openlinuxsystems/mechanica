@@ -408,6 +408,76 @@
       }
     },
     {
+      "name": "CollectItems",
+      "kind": "action",
+      "group": "items",
+      "scope": "play",
+      "description": "Taking one thing in through a part's intake (CollectItemsArgs); part scripts only. Arguments of CollectItems: the part whose intake collects, and what (one of GetPickups' entries).",
+      "params": {
+        "description": "Arguments of CollectItems: the part whose intake collects, and what (one of GetPickups' entries).",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "The collecting part's Creation.",
+            "type": "integer"
+          },
+          "part": {
+            "description": "The collecting part (it has an intake).",
+            "type": "integer"
+          },
+          "kind": {
+            "description": "What it collects: drop, loose, crop or water.",
+            "type": "string",
+            "enum": [
+              "drop",
+              "loose",
+              "crop",
+              "water"
+            ]
+          },
+          "drop": {
+            "description": "The pile, for drop.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "target_creation": {
+            "description": "The loose part's or the soil's Creation, for loose and crop.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "target_part": {
+            "description": "The soil part, for crop.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "creation",
+          "part",
+          "kind"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "CollectWater",
       "kind": "action",
       "group": "survival",
@@ -734,6 +804,48 @@
         },
         "required": [
           "slot"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "EjectItems",
+      "kind": "action",
+      "group": "items",
+      "scope": "play",
+      "description": "Putting items out of a part's intake (EjectItemsArgs); part scripts only. Arguments of EjectItems: the part whose intake puts items out, and what.",
+      "params": {
+        "description": "Arguments of EjectItems: the part whose intake puts items out, and what.",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "The ejecting part's Creation.",
+            "type": "integer"
+          },
+          "part": {
+            "description": "The ejecting part (it has an intake).",
+            "type": "integer"
+          },
+          "item": {
+            "description": "The item to put out; omitted takes the first item the containers piped to it hold.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "count": {
+            "description": "How many, 1 to the item's stack size.",
+            "type": "integer",
+            "default": 1
+          }
+        },
+        "required": [
+          "creation",
+          "part"
         ],
         "additionalProperties": false
       }
@@ -1073,6 +1185,32 @@
       }
     },
     {
+      "name": "GetNetwork",
+      "kind": "query",
+      "group": "items",
+      "scope": "observe",
+      "description": "Reading what a part's IO ports reach through Vacuum Pipes. Arguments of GetNetwork and GetPickups: one part of a Creation.",
+      "params": {
+        "description": "Arguments of GetNetwork and GetPickups: one part of a Creation.",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "The Creation.",
+            "type": "integer"
+          },
+          "part": {
+            "description": "The part.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "creation",
+          "part"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "GetObjects",
       "kind": "query",
       "group": "perception",
@@ -1140,6 +1278,32 @@
           }
         },
         "required": [
+          "part"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "GetPickups",
+      "kind": "query",
+      "group": "items",
+      "scope": "observe",
+      "description": "Reading what a part's intake reaches: piles, loose parts, ripe crops and water. Arguments of GetNetwork and GetPickups: one part of a Creation.",
+      "params": {
+        "description": "Arguments of GetNetwork and GetPickups: one part of a Creation.",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "The Creation.",
+            "type": "integer"
+          },
+          "part": {
+            "description": "The part.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "creation",
           "part"
         ],
         "additionalProperties": false

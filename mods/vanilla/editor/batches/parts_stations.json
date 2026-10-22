@@ -66,6 +66,7 @@
           "complete": "freezer_complete",
           "place": "place_metal"
         },
+        "io_ports": [{ "id": "port", "position": [0.375, -0.125, 0], "normal": [1, 0, 0] }],
         "inventory": { "slots": 4 },
         "crafting": {
           "speed": 1,
