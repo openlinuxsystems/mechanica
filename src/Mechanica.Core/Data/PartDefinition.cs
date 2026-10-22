@@ -38,7 +38,10 @@ public enum PartCategory
     Weapon,
 }
 
-/// <summary>What a socket joins to. Real joints exist only at rotational, linear and spring sockets (D7).</summary>
+/// <summary>
+/// What a socket joins to. Real joints exist only at rotational, linear, spring and aimed sockets (D7; an aimed socket
+/// is a bearing-style hinge pair inside one part, parts map E8).
+/// </summary>
 public enum SocketType
 {
     /// <summary>Rigid attachment; parts joined here merge into one Body.</summary>
@@ -52,6 +55,12 @@ public enum SocketType
 
     /// <summary>Spring joint side of a suspension.</summary>
     Spring,
+
+    /// <summary>
+    /// Two-axis aimed joint side of a turret seat (parts map E8): what is built on it turns about the joint's axis (yaw)
+    /// and tilts about its <see cref="JointDefinition.PitchAxis"/> (pitch), both about its <see cref="JointDefinition.Pivot"/>.
+    /// </summary>
+    Aimed,
 }
 
 /// <summary>Collision primitive for a part.</summary>
@@ -1398,8 +1407,10 @@ public sealed record SocketDefinition
 }
 
 /// <summary>
-/// The joint a rotational, linear or spring socket makes (D7). All values are in the part's own frame
-/// and in SI units. The joint's zero is the pose the two sides were built in on the grid.
+/// The joint a rotational, linear, spring or aimed socket makes (D7). All values are in the part's own frame
+/// and in SI units. The joint's zero is the pose the two sides were built in on the grid. An aimed joint uses
+/// <see cref="Axis"/>, <see cref="Min"/> and <see cref="Max"/> for its yaw (no limits turns all the way round) and the pitch
+/// keys for its tilt.
 /// </summary>
 public sealed record JointDefinition
 {
@@ -1434,6 +1445,24 @@ public sealed record JointDefinition
     /// anchor to where the far side is now, so an extended piston shows its shaft. Omitted draws none.
     /// </summary>
     public float? ShaftRadius { get; init; }
+
+    /// <summary>
+    /// Aimed joints only: the point both axes turn about, relative to the part centre in m (the turret seat's hips).
+    /// Omitted means the socket's own position.
+    /// </summary>
+    public Vec3? Pivot { get; init; }
+
+    /// <summary>
+    /// Aimed joints only (required): unit grid direction, square to <see cref="Axis"/>, the joint tilts about (pitch) after it
+    /// has turned about its axis (yaw). A positive pitch turns the part's front toward the axis.
+    /// </summary>
+    public Vec3? PitchAxis { get; init; }
+
+    /// <summary>Aimed joints only (required): lowest pitch in rad, from -π/2 to 0.</summary>
+    public float? PitchMin { get; init; }
+
+    /// <summary>Aimed joints only (required): highest pitch in rad, from 0 to π/2.</summary>
+    public float? PitchMax { get; init; }
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]

@@ -2613,6 +2613,64 @@
       }
     },
     {
+      "name": "SetAimTarget",
+      "kind": "action",
+      "group": "motion",
+      "scope": "play",
+      "description": "Aiming a turret. Arguments of SetAimTarget.",
+      "params": {
+        "description": "Arguments of SetAimTarget.",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "Creation holding the turret.",
+            "type": "integer"
+          },
+          "part": {
+            "description": "The turret's part id (the part that owns the aimed joint, a Turret Seat).",
+            "type": "integer"
+          },
+          "yaw": {
+            "description": "Turn in rad about the joint's axis to move to and hold, from the pose it was built in; within ±π and its limits.",
+            "type": "number"
+          },
+          "pitch": {
+            "description": "Tilt in rad about the joint's pitch axis to move to and hold; within its pitch limits.",
+            "type": "number"
+          },
+          "speed": {
+            "description": "Most speed in rad/s about either axis; null uses the default bearing speed from data.",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "max_torque": {
+            "description": "Motor torque limit of either axis in N·m; null uses the default bearing torque from data.",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "creation",
+          "part",
+          "yaw",
+          "pitch"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "SetBearingTarget",
       "kind": "action",
       "group": "motion",

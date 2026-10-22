@@ -37,6 +37,32 @@ public sealed record ApplyForceArgs(int Creation, Vec3 Force, int Body = 0, Vec3
 /// </param>
 public sealed record SetBearingTargetArgs(int Creation, int Part, float? Velocity = null, float? MaxTorque = null, float? Angle = null);
 
+/// <summary>Arguments of <c>SetAimTarget</c>.</summary>
+/// <param name="Creation">Creation holding the turret.</param>
+/// <param name="Part">The turret's part id (the part that owns the aimed joint, a Turret Seat).</param>
+/// <param name="Yaw">Turn in rad about the joint's axis to move to and hold, from the pose it was built in; within ±π and its limits.</param>
+/// <param name="Pitch">Tilt in rad about the joint's pitch axis to move to and hold; within its pitch limits.</param>
+/// <param name="Speed">Most speed in rad/s about either axis; null uses the default bearing speed from data.</param>
+/// <param name="MaxTorque">Motor torque limit of either axis in N·m; null uses the default bearing torque from data.</param>
+public sealed record SetAimTargetArgs(int Creation, int Part, float Yaw, float Pitch, float? Speed = null, float? MaxTorque = null);
+
+/// <summary>
+/// What an aimed joint's motors do (<see cref="IMotionWorld.SetAimMotor"/>): turn to <see cref="Yaw"/> and tilt to
+/// <see cref="Pitch"/> at up to <see cref="Speed"/> each, with at most <see cref="MaxTorque"/>, and hold there.
+/// </summary>
+/// <param name="Yaw">Yaw to hold, rad.</param>
+/// <param name="Pitch">Pitch to hold, rad.</param>
+/// <param name="Speed">Most speed about either axis, rad/s.</param>
+/// <param name="MaxTorque">Torque limit of either axis, N·m.</param>
+public sealed record AimMotor(float Yaw, float Pitch, float Speed, float MaxTorque)
+{
+    /// <summary>The yaw motor as a hold (it turns the short way on a turret with no yaw limits).</summary>
+    public JointMotor YawMotor => new(Speed, MaxTorque, Yaw);
+
+    /// <summary>The pitch motor as a hold.</summary>
+    public JointMotor PitchMotor => new(Speed, MaxTorque, Pitch);
+}
+
 /// <summary>Arguments of <c>SetPistonTarget</c>.</summary>
 /// <param name="Creation">Creation holding the piston.</param>
 /// <param name="Part">The piston's part id (the part that owns the linear joint).</param>
@@ -109,8 +135,11 @@ public sealed record BodyState(
 /// </param>
 /// <param name="Min">Lowest position the joint allows (rad or m); null on a free-spinning bearing.</param>
 /// <param name="Max">Highest position the joint allows; null on a free-spinning bearing.</param>
+/// <param name="Pitch">An aimed joint's tilt now in rad (its <paramref name="Position"/> is its yaw); null on other joints.</param>
+/// <param name="PitchMin">An aimed joint's lowest pitch in rad; null on other joints.</param>
+/// <param name="PitchMax">An aimed joint's highest pitch in rad; null on other joints.</param>
 public sealed record JointState(int Part, int Other, ConnectionType Type, int BodyA, int BodyB, bool Locked,
-    float? Position = null, float? Min = null, float? Max = null);
+    float? Position = null, float? Min = null, float? Max = null, float? Pitch = null, float? PitchMin = null, float? PitchMax = null);
 
 /// <summary>One placed part in the value of <c>GetCreation</c>: enough to see it in the world and to rebuild it.</summary>
 /// <param name="Id">Part id within the Creation.</param>
@@ -192,6 +221,14 @@ public interface IMotionWorld
 
     /// <summary>Where a joint is now (rad or m from its built pose), or null when it is not simulated here.</summary>
     float? JointPosition(Creation creation, JointLink joint);
+
+    /// <summary>Sets the motors of an aimed joint (a Turret Seat's turret). Default: ignored.</summary>
+    void SetAimMotor(Creation creation, JointLink joint, AimMotor motor)
+    {
+    }
+
+    /// <summary>An aimed joint's yaw and pitch now (rad), or null when it is not simulated here. Default: null.</summary>
+    (float Yaw, float Pitch)? AimPosition(Creation creation, JointLink joint) => null;
 }
 
 /// <summary>
@@ -201,6 +238,7 @@ public interface IMotionWorld
 /// <item><c>ApplyForce</c>: pushes a Body with a force and torque for a while.</item>
 /// <item><c>SetBearingTarget</c>: drives a bearing's motor at a target speed or to an angle, or frees it.</item>
 /// <item><c>SetPistonTarget</c>: moves a piston to a length and holds it, or frees it.</item>
+/// <item><c>SetAimTarget</c>: turns and tilts an aimed joint (a Turret Seat's turret) to a yaw and pitch and holds it.</item>
 /// <item><c>GetCreation</c>, <c>ListCreations</c> and <c>GetForces</c>: read-only queries of Creation state and of the pushes on it.</item>
 /// </list>
 /// Players don't call the motion actions directly: they drive through seats and controllers (chunk 10),
@@ -221,6 +259,9 @@ public sealed class MotionActions(MotionSettings settings, IMotionWorld world)
     /// <summary>Action name for driving a piston.</summary>
     public const string SetPistonTarget = "SetPistonTarget";
 
+    /// <summary>Action name for aiming a turret.</summary>
+    public const string SetAimTarget = "SetAimTarget";
+
     /// <summary>Action name for reading one Creation.</summary>
     public const string GetCreation = "GetCreation";
 
@@ -230,12 +271,13 @@ public sealed class MotionActions(MotionSettings settings, IMotionWorld world)
     /// <summary>Action name for reading the pushes on a Creation (the aero force overlay's query).</summary>
     public const string GetForces = "GetForces";
 
-    /// <summary>Registers all six actions.</summary>
+    /// <summary>Registers all seven actions.</summary>
     public void Register(ActionDispatcher dispatcher)
     {
         dispatcher.Register<ApplyForceArgs>(ApplyForce, ValidateForce, ApplyForceNow);
         dispatcher.Register<SetBearingTargetArgs>(SetBearingTarget, ValidateBearing, ApplyBearing);
         dispatcher.Register<SetPistonTargetArgs>(SetPistonTarget, ValidatePiston, ApplyPiston);
+        dispatcher.Register<SetAimTargetArgs>(SetAimTarget, ValidateAim, ApplyAim);
         dispatcher.Register<GetCreationArgs>(GetCreation,
             (_, args) => world.FindCreation(args.Creation) is null ? $"There is no creation {args.Creation}." : null,
             (_, args) => Value(Describe(world.FindCreation(args.Creation)!)),
@@ -264,6 +306,12 @@ public sealed class MotionActions(MotionSettings settings, IMotionWorld world)
         var joints = creation.Joints.Select(j =>
         {
             creation.TryGetJointFrame(j.Connection, out var frame);
+            if (frame?.Aim is { } aim)
+            {
+                var at = j.IsLocked ? (0f, 0f) : world.AimPosition(creation, j);
+                return new JointState(j.Connection.A, j.Connection.B, j.Connection.Type, j.BodyA, j.BodyB, j.IsLocked,
+                    at?.Yaw, frame.Min, frame.Max, at?.Pitch, aim.PitchMin, aim.PitchMax);
+            }
             return new JointState(j.Connection.A, j.Connection.B, j.Connection.Type, j.BodyA, j.BodyB, j.IsLocked,
                 j.IsLocked ? 0f : world.JointPosition(creation, j), frame?.Min, frame?.Max);
         }).ToList();
@@ -362,6 +410,40 @@ public sealed class MotionActions(MotionSettings settings, IMotionWorld world)
             ? new JointMotor(MathF.Abs(args.Velocity ?? settings.DefaultBearingSpeed), torque, angle)
             : new JointMotor(args.Velocity, torque);
         world.SetJointMotor(creation, FindJoint(creation, args.Part, ConnectionType.Rotational)!, motor);
+        return null;
+    }
+
+    private string? ValidateAim(ActionCaller caller, SetAimTargetArgs args)
+    {
+        if (CheckMover(caller, args.Creation, out var creation) is { } refusal)
+            return refusal;
+        if (creation!.FindPart(args.Part) is null)
+            return $"Creation {args.Creation} has no part {args.Part}.";
+        if (FindJoint(creation, args.Part, ConnectionType.Aimed) is not { } joint)
+            return $"Part {args.Part} is not a turret with something built on it.";
+        if (joint.IsLocked)
+            return $"Turret {args.Part} is locked: both its sides are in one body.";
+        if (!float.IsFinite(args.Yaw) || MathF.Abs(args.Yaw) > MathF.PI + 1e-4f)
+            return "yaw must be within ±π rad (±180°).";
+        if (!float.IsFinite(args.Pitch))
+            return "pitch must be finite.";
+        creation.TryGetJointFrame(joint.Connection, out var frame);
+        if (frame is { SpinsFreely: false, Min: { } lo, Max: { } hi } && (args.Yaw < lo - 1e-4f || args.Yaw > hi + 1e-4f))
+            return $"yaw {args.Yaw:0.###} rad is outside turret {args.Part}'s limits ({lo:0.###} to {hi:0.###} rad).";
+        if (frame?.Aim is { } aim && (args.Pitch < aim.PitchMin - 1e-4f || args.Pitch > aim.PitchMax + 1e-4f))
+            return $"pitch {args.Pitch:0.###} rad is outside turret {args.Part}'s limits ({aim.PitchMin:0.###} to {aim.PitchMax:0.###} rad).";
+        if (args.Speed is { } v && (!float.IsFinite(v) || v <= 0f || v > settings.MaxBearingSpeed))
+            return $"speed must be more than 0 and at most {settings.MaxBearingSpeed:0.###} rad/s.";
+        if (args.MaxTorque is { } t && (!float.IsFinite(t) || t <= 0f || t > settings.MaxBearingTorque))
+            return $"max_torque must be more than 0 and at most {settings.MaxBearingTorque:0.###} N·m.";
+        return null;
+    }
+
+    private JsonElement? ApplyAim(ActionCaller caller, SetAimTargetArgs args)
+    {
+        var creation = world.FindCreation(args.Creation)!;
+        var motor = new AimMotor(args.Yaw, args.Pitch, args.Speed ?? settings.DefaultBearingSpeed, args.MaxTorque ?? settings.DefaultBearingTorque);
+        world.SetAimMotor(creation, FindJoint(creation, args.Part, ConnectionType.Aimed)!, motor);
         return null;
     }
 

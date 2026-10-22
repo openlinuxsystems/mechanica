@@ -2,7 +2,7 @@
 
 <!-- Generated from mechanica.describe by tools/ai/gen-docs.sh. Do not edit by hand. -->
 
-Protocol version 2. 178 methods: 68 actions (change the world), 31 queries (only read it) and 79 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
+Protocol version 2. 179 methods: 69 actions (change the world), 31 queries (only read it) and 79 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
 
 ## Contents
 
@@ -18,7 +18,7 @@ Protocol version 2. 178 methods: 68 actions (change the world), 31 queries (only
 - [Items, inventories and crafting](#items-inventories-and-crafting) (14)
 - [Logic, seats and part menus](#logic-seats-and-part-menus) (9)
 - [Map markers](#map-markers) (3)
-- [Motion and physics primitives](#motion-and-physics-primitives) (6)
+- [Motion and physics primitives](#motion-and-physics-primitives) (7)
 - [Quests](#quests) (3)
 - [Survival](#survival) (12)
 - [Using held items](#using-held-items) (4)
@@ -1040,6 +1040,21 @@ Reading the pushes on a Creation (the aero force overlay's query). Arguments of 
 Listing Creations.
 
 No params.
+
+### `SetAimTarget`
+
+*action, play scope*
+
+Aiming a turret. Arguments of SetAimTarget.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `creation` | integer | yes |  | Creation holding the turret. |
+| `part` | integer | yes |  | The turret's part id (the part that owns the aimed joint, a Turret Seat). |
+| `yaw` | number | yes |  | Turn in rad about the joint's axis to move to and hold, from the pose it was built in; within ±π and its limits. |
+| `pitch` | number | yes |  | Tilt in rad about the joint's pitch axis to move to and hold; within its pitch limits. |
+| `speed` | number or null |  |  | Most speed in rad/s about either axis; null uses the default bearing speed from data. |
+| `max_torque` | number or null |  |  | Motor torque limit of either axis in N·m; null uses the default bearing torque from data. |
 
 ### `SetBearingTarget`
 

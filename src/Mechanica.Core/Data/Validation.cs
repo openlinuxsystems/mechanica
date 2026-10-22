@@ -257,32 +257,46 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             else if (MathF.Abs(n.Length - 1) > 1e-3f)
                 sink.Error(Code, $"{path}.normal", $"socket normal {n} must have length 1.");
             if (s.Joint is { } joint)
-                ValidateJoint(joint, s.Type, $"{path}.joint", sink);
+                ValidateJoint(joint, s.Type, $"{path}.joint", sink, s.Normal);
             else if (s.Type == SocketType.Spring)
                 sink.Error(Code, $"{path}.joint", "a spring socket needs a joint with min, max and stiffness.");
             else if (s.Type == SocketType.Linear)
                 sink.Error(Code, $"{path}.joint", "a linear socket needs a joint with max (its travel in m).");
+            else if (s.Type == SocketType.Aimed)
+                sink.Error(Code, $"{path}.joint", "an aimed socket needs a joint with pitch_axis, pitch_min and pitch_max.");
+            if (s.Joint?.Pivot is { } pivot && half is { } box
+                && (!float.IsFinite(pivot.X) || !float.IsFinite(pivot.Y) || !float.IsFinite(pivot.Z)
+                    || MathF.Abs(pivot.X) > box.X / 2 + Epsilon || MathF.Abs(pivot.Y) > box.Y / 2 + Epsilon || MathF.Abs(pivot.Z) > box.Z / 2 + Epsilon))
+                sink.Error(Code, $"{path}.joint.pivot", $"pivot {pivot} must lie within the part's {part.Size} footprint.");
             KnownKeys.WarnUnknown(s.Extra, path, sink, typeof(SocketDefinition));
         }
     }
 
-    private static void ValidateJoint(JointDefinition j, SocketType? type, string path, DiagnosticSink sink)
+    private static void ValidateJoint(JointDefinition j, SocketType? type, string path, DiagnosticSink sink, Vec3? normal = null)
     {
         KnownKeys.WarnUnknown(j.Extra, path, sink, typeof(JointDefinition));
         if (type is null)
             return;
         if (type == SocketType.Structural)
         {
-            sink.Error(Code, path, "only rotational, linear and spring sockets have a joint.");
+            sink.Error(Code, path, "only rotational, linear, spring and aimed sockets have a joint.");
             return;
         }
         if (j.Axis is { } axis && !IsGridDirection(axis))
             sink.Error(Code, $"{path}.axis", $"axis {axis} must be a grid direction like [0, 1, 0].");
+        if (type != SocketType.Aimed)
+        {
+            foreach (var (set, key) in new[] { (j.Pivot is not null, "pivot"), (j.PitchAxis is not null, "pitch_axis"), (j.PitchMin is not null, "pitch_min"), (j.PitchMax is not null, "pitch_max") })
+            {
+                if (set)
+                    sink.Error(Code, $"{path}.{key}", $"only aimed joints have {key}.");
+            }
+        }
         if (j.ShaftRadius is { } shaft && (!float.IsFinite(shaft) || shaft <= 0 || shaft > 1))
             sink.Error(Code, $"{path}.shaft_radius", "shaft_radius must be more than 0 and at most 1 m.");
-        else if (j.ShaftRadius is not null && type == SocketType.Rotational)
+        else if (j.ShaftRadius is not null && type is SocketType.Rotational or SocketType.Aimed)
             sink.Error(Code, $"{path}.shaft_radius", "only linear and spring joints draw a shaft.");
-        foreach (var (value, key) in new[] { (j.Min, "min"), (j.Max, "max"), (j.Stiffness, "stiffness"), (j.Damping, "damping") })
+        foreach (var (value, key) in new[] { (j.Min, "min"), (j.Max, "max"), (j.Stiffness, "stiffness"), (j.Damping, "damping"), (j.PitchMin, "pitch_min"), (j.PitchMax, "pitch_max") })
         {
             if (value is { } v && !float.IsFinite(v))
                 sink.Error(Code, $"{path}.{key}", $"{key} must be a finite number.");
@@ -297,6 +311,7 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
         switch (type)
         {
             case SocketType.Rotational:
+            case SocketType.Aimed:
                 if ((j.Min is null) != (j.Max is null))
                     sink.Error(Code, j.Min is null ? $"{path}.min" : $"{path}.max", "a rotational joint has both min and max (a limited hinge) or neither (it spins freely).");
                 else if (j.Min is { } lo && j.Max is { } hi)
@@ -308,6 +323,8 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
                     else if (lo > Epsilon || hi < -Epsilon)
                         sink.Error(Code, $"{path}.min", "a hinge's range must include 0, the angle it is built at.");
                 }
+                if (type == SocketType.Aimed)
+                    ValidateAim(j, path, sink, j.Axis ?? normal);
                 break;
             case SocketType.Linear:
                 if (j.Max is not { } max)
@@ -329,6 +346,30 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
                 if (j.Damping is < 0)
                     sink.Error(Code, $"{path}.damping", "damping must be 0 or more.");
                 break;
+        }
+    }
+
+    // An aimed joint's pitch: an axis square to the yaw axis, and a range within ±π/2 that includes 0.
+    private static void ValidateAim(JointDefinition j, string path, DiagnosticSink sink, Vec3? axis)
+    {
+        if (j.PitchAxis is not { } pitch)
+            sink.Error(Code, $"{path}.pitch_axis", "pitch_axis (the grid direction the joint tilts about, like [1, 0, 0]) is required for an aimed joint.");
+        else if (!IsGridDirection(pitch))
+            sink.Error(Code, $"{path}.pitch_axis", $"pitch_axis {pitch} must be a grid direction like [1, 0, 0].");
+        else if (axis is { } yaw && IsGridDirection(yaw) && MathF.Abs(yaw.X * pitch.X + yaw.Y * pitch.Y + yaw.Z * pitch.Z) > Epsilon)
+            sink.Error(Code, $"{path}.pitch_axis", $"pitch_axis {pitch} must be square to the axis {yaw}.");
+        if (j.PitchMin is not { } lo)
+            sink.Error(Code, $"{path}.pitch_min", "pitch_min (rad, 0 or less) is required for an aimed joint.");
+        if (j.PitchMax is not { } hi)
+            sink.Error(Code, $"{path}.pitch_max", "pitch_max (rad, 0 or more) is required for an aimed joint.");
+        if (j.PitchMin is { } a && j.PitchMax is { } b && float.IsFinite(a) && float.IsFinite(b))
+        {
+            if (a < -MathF.PI / 2 - Epsilon || b > MathF.PI / 2 + Epsilon)
+                sink.Error(Code, $"{path}.pitch_min", $"pitch limits must be within ±π/2 rad (±90°); got {JsonNumbers.Format(a)} to {JsonNumbers.Format(b)}.");
+            else if (a >= b)
+                sink.Error(Code, $"{path}.pitch_max", "pitch_max must be more than pitch_min.");
+            else if (a > Epsilon || b < -Epsilon)
+                sink.Error(Code, $"{path}.pitch_min", "the pitch range must include 0, the tilt it is built at.");
         }
     }
 
