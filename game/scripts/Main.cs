@@ -634,9 +634,10 @@ public partial class Main : Node3D
         };
         MapMarkers.RegisterActions(Actions.Dispatcher);
         AddChild(MapMarkers);
+        var toolModels = new Ui.ToolIconModels(Characters.Assets, Assets, Build.Settings!.Lift);
+        Survival.ToolModel = toolModels.For;
         if (ReadDeviceInput)
         {
-            var toolModels = new Ui.ToolIconModels(Characters.Assets, Assets, Build.Settings!.Lift);
             Icons = new Ui.ItemIcons { Name = "ItemIcons", Catalog = mods, Assets = Assets, ToolModel = toolModels.For };
             AddChild(Icons);
         }
