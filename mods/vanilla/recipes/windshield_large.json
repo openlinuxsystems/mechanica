@@ -1,0 +1,24 @@
+{
+  "id": "windshield_large",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "glass_block",
+      "count": 20
+    },
+    {
+      "item": "metal_block",
+      "count": 10
+    }
+  ],
+  "outputs": [
+    {
+      "item": "windshield_large",
+      "count": 1
+    }
+  ],
+  "time": 10,
+  "order": 1585
+}
