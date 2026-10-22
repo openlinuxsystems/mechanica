@@ -10,7 +10,7 @@ namespace Mechanica.Game.Motion;
 
 /// <summary>
 /// The host's <see cref="IMotionWorld"/> behind <c>ApplyForce</c>, <c>SetBearingTarget</c>,
-/// <c>SetPistonTarget</c>, <c>GetCreation</c> and <c>ListCreations</c>. Pushes and joint motors are kept here and applied to
+/// <c>SetPistonTarget</c>, <c>SetAimTarget</c>, <c>GetCreation</c> and <c>ListCreations</c>. Pushes and joint motors are kept here and applied to
 /// the live Jolt bodies and joints every physics step, so they survive a Creation being rebuilt
 /// (a bearing or piston keeps its motor, and a target angle or length is steered toward each step; a push ends when the graph changes, since Body indices may shift).
 /// Clients see the motion through <see cref="CreationSync"/> snapshots.
@@ -30,6 +30,7 @@ public partial class MotionSync : Node, IMotionWorld
     private readonly Dictionary<(int Creation, int Body, int Part), Push> _pushes = [];
     private readonly Dictionary<int, (ulong Frame, int Revision)> _synced = [];
     private readonly Dictionary<(int Creation, int Part), Motor> _motors = [];
+    private readonly Dictionary<(int Creation, int Part), Aim> _aims = [];
 
     private readonly List<(int Creation, PushState Push)> _applied = [];
 
@@ -45,6 +46,13 @@ public partial class MotionSync : Node, IMotionWorld
     {
         public Joint3D? Applied { get; set; }
         public float AppliedVelocity { get; set; } = float.NaN;
+    }
+
+    // A turret's hold: its two hinges each steer toward their angle like a bearing's hold.
+    private sealed record Aim(Connection Joint, AimMotor Drive)
+    {
+        public HingeJoint3D? Applied { get; set; }
+        public (float Yaw, float Pitch) AppliedVelocity { get; set; } = (float.NaN, float.NaN);
     }
 
     /// <summary>Session, to act only on the host. Set before adding to the tree.</summary>
@@ -143,12 +151,27 @@ public partial class MotionSync : Node, IMotionWorld
     /// <inheritdoc/>
     public float? JointPosition(Creation creation, JointLink joint) => Creations.NodeOf(creation.Id)?.JointPosition(joint);
 
+    /// <inheritdoc/>
+    public void SetAimMotor(Creation creation, JointLink joint, AimMotor motor)
+    {
+        var key = (creation.Id, joint.Connection.A);
+        if (_aims.TryGetValue(key, out var same) && same.Drive == motor && same.Joint == joint.Connection)
+            return;
+        _aims[key] = new Aim(joint.Connection, motor);
+        if (Creations.NodeOf(creation.Id) is { } node)
+            Wake(node, joint.BodyA, joint.BodyB);
+    }
+
+    /// <inheritdoc/>
+    public (float Yaw, float Pitch)? AimPosition(Creation creation, JointLink joint) => Creations.NodeOf(creation.Id)?.AimPosition(joint);
+
     public override void _PhysicsProcess(double delta)
     {
         if (!Session.IsHost)
         {
             _pushes.Clear();
             _motors.Clear();
+            _aims.Clear();
             _applied.Clear();
             return;
         }
@@ -213,6 +236,53 @@ public partial class MotionSync : Node, IMotionWorld
             if (velocity != 0f)
                 Wake(node, link.BodyA, link.BodyB);
         }
+        DriveAims(delta);
+    }
+
+    // Each turret's yaw and pitch hinges steer toward its aim, each at up to its speed (parts map E8).
+    private void DriveAims(double delta)
+    {
+        foreach (var (key, aim) in _aims.ToList())
+        {
+            if (Creations.Find(key.Creation) is not { } creation || creation.FindPart(key.Part) is null)
+            {
+                _aims.Remove(key);
+                continue;
+            }
+            if (Creations.NodeOf(key.Creation) is not { } node
+                || creation.JointOf(key.Part) is not { Connection.Type: ConnectionType.Aimed } link
+                || node.AimJointsOf(link.Connection) is not { } hinges
+                || node.AimPosition(link) is not { } at
+                || !creation.TryGetJointFrame(link.Connection, out var frame))
+                continue;
+            var yaw = aim.Drive.YawMotor.DriveVelocity(at.Yaw, Settings!.ServoGain, frame.SpinsFreely ? MathF.Tau : null);
+            var pitch = aim.Drive.PitchMotor.DriveVelocity(at.Pitch, Settings!.ServoGain);
+            if (MathF.Abs(yaw) <= HoldRestSpeed)
+                yaw = 0f;
+            if (MathF.Abs(pitch) <= HoldRestSpeed)
+                pitch = 0f;
+            if (aim.Applied != hinges.Yaw)
+            {
+                foreach (var hinge in new[] { hinges.Yaw, hinges.Pitch })
+                {
+                    hinge.SetFlag(HingeJoint3D.Flag.EnableMotor, true);
+                    hinge.SetParam(HingeJoint3D.Param.MotorMaxImpulse, aim.Drive.MaxTorque * (float)delta);
+                }
+                aim.Applied = hinges.Yaw;
+                aim.AppliedVelocity = (float.NaN, float.NaN);
+            }
+            if ((yaw, pitch) != aim.AppliedVelocity)
+            {
+                hinges.Yaw.SetParam(HingeJoint3D.Param.MotorTargetVelocity, yaw * HingeMotorSign);
+                hinges.Pitch.SetParam(HingeJoint3D.Param.MotorTargetVelocity, pitch * HingeMotorSign);
+                aim.AppliedVelocity = (yaw, pitch);
+            }
+            if (yaw != 0f || pitch != 0f)
+            {
+                Wake(node, link.BodyA, link.BodyB);
+                hinges.Yoke.Sleeping = false;
+            }
+        }
     }
 
     private static Core.Data.Vec3 Vec(System.Numerics.Vector3 v) => new(v.X, v.Y, v.Z);
@@ -241,5 +311,7 @@ public partial class MotionSync : Node, IMotionWorld
             _pushes.Remove(key);
         foreach (var key in _motors.Keys.Where(k => k.Creation == creation).ToList())
             _motors.Remove(key);
+        foreach (var key in _aims.Keys.Where(k => k.Creation == creation).ToList())
+            _aims.Remove(key);
     }
 }

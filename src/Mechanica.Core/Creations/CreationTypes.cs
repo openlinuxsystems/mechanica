@@ -49,6 +49,12 @@ public enum ConnectionType
 
     /// <summary>Spring joint (suspension).</summary>
     Spring,
+
+    /// <summary>
+    /// Two-axis aimed joint (turret seat, parts map E8): a yaw hinge and a pitch hinge stacked about one pivot, built
+    /// in the game as two Jolt hinges through a small yoke body that belongs to no part.
+    /// </summary>
+    Aimed,
 }
 
 /// <summary>
@@ -129,11 +135,18 @@ public sealed record JointLink(Connection Connection, int BodyA, int BodyB)
 /// <param name="Stiffness">Spring rate in N/m, for spring joints.</param>
 /// <param name="Damping">Spring damping in N·s/m, for spring joints.</param>
 /// <param name="ShaftRadius">Radius of the rod drawn along a linear or spring joint, or null for none.</param>
+/// <remarks>
+/// An aimed joint's <see cref="Axis"/>, <see cref="Min"/> and <see cref="Max"/> are its yaw; <see cref="Aim"/> holds its
+/// pivot and pitch, and is null on every other joint.
+/// </remarks>
 public sealed record JointFrame(ConnectionType Type, Vec3 Anchor, Vec3 Axis, Vec3 Normal, float? Min, float? Max,
     float? Stiffness, float? Damping, float? ShaftRadius = null)
 {
-    /// <summary>True for a hinge with no limits.</summary>
-    public bool SpinsFreely => Type == ConnectionType.Rotational && (Min is null || Max is null);
+    /// <summary>An aimed joint's pivot and pitch, in the grid frame; null on other joints.</summary>
+    public AimFrame? Aim { get; init; }
+
+    /// <summary>True for a hinge (or an aimed joint's yaw) with no limits.</summary>
+    public bool SpinsFreely => Type is ConnectionType.Rotational or ConnectionType.Aimed && (Min is null || Max is null);
 
     /// <summary>Clamps a position into the joint's range (unchanged on a free hinge).</summary>
     public float Clamp(float position) => SpinsFreely ? position : Math.Clamp(position, Min ?? position, Max ?? position);
@@ -143,3 +156,14 @@ public sealed record JointFrame(ConnectionType Type, Vec3 Anchor, Vec3 Axis, Vec
 /// <param name="Removed">The part that was taken out.</param>
 /// <param name="SplitOff">New Creations made from pieces that lost their link to the rest, in order of their lowest part id.</param>
 public sealed record RemovalResult(PartInstance Removed, IReadOnlyList<Creation> SplitOff);
+
+/// <summary>The pitch half of an aimed joint (<see cref="JointFrame.Aim"/>), in the Creation's grid frame.</summary>
+/// <param name="Pivot">The point both axes turn about, in m.</param>
+/// <param name="PitchAxis">Unit grid direction the joint tilts about at yaw 0 (it turns with the yaw).</param>
+/// <param name="PitchMin">Lowest pitch in rad.</param>
+/// <param name="PitchMax">Highest pitch in rad.</param>
+public sealed record AimFrame(Vec3 Pivot, Vec3 PitchAxis, float PitchMin, float PitchMax)
+{
+    /// <summary>Clamps a pitch into the joint's range.</summary>
+    public float ClampPitch(float pitch) => Math.Clamp(pitch, PitchMin, PitchMax);
+}

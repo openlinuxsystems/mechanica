@@ -377,6 +377,7 @@ public class VanillaCatalogTests
     [InlineData("bathtub", 7.5, 4, 0.2, 0.8, false, 10)]
     [InlineData("controller", 4.5, 3, 0.5, 0.2, false, 1)]
     [InlineData("sensor", 4.5, 3, 0.7, 0.5, false, 20)]
+    [InlineData("turret_seat", 3, 5, 0.3, 0.2, false, 10)]
     public void SeatsAndLogicPartsTakeTheWikiStats(string id, double mass, int durability, double friction, double buoyancy,
         bool flammable, int stack) => VehiclePartsTakeTheWikiStats(id, mass, durability, friction, buoyancy, flammable, stack);
 
@@ -390,6 +391,7 @@ public class VanillaCatalogTests
     [InlineData("bathtub", 10, "metal_block:10", "paint_ammo:2")]
     [InlineData("controller", 10, "metal_block:5", "component_kit:1", "circuit_board:5", "glue:1")]
     [InlineData("sensor", 30, "metal_block:1", "glass_block:1", "circuit_board:2", "glue:2")]
+    [InlineData("turret_seat", 30, "metal_block_2:50", "component_kit:5", "bearing:2")]
     public void SeatsAndLogicPartsTakeTheWikiRecipes(string id, float time, params string[] inputs) =>
         VehiclePartsTakeTheWikiRecipes(id, time, inputs);
 
@@ -402,6 +404,7 @@ public class VanillaCatalogTests
     [InlineData("saddle", "Saddle", new[] { 1, 1, 1, 1 }, new[] { 3, 4, 6, 8, 10 })]
     [InlineData("controller", "Controller", new[] { 1, 2, 3, 4 }, new[] { 1, 2, 4, 8, 10 })]
     [InlineData("sensor", "Sensor", new[] { 1, 1, 1, 3 }, new[] { 10, 10, 10, 10, 10 })]
+    [InlineData("turret_seat", "Turret Seat", new[] { 2, 4, 6, 10 }, new[] { 6, 8, 12, 16, 20 })]
     public void EachLeveledSeatAndLogicPartIsCraftedAtLevel1AndUpgradedInPlace(string id, string name, int[] kits, int[] outputs)
     {
         var book = RecipeBook.Load(Vanilla.Value);
@@ -439,6 +442,7 @@ public class VanillaCatalogTests
     [InlineData("saddle", SeatHands.Free, SeatPose.Saddle)]
     [InlineData("toilet", SeatHands.Free, SeatPose.Chair)]
     [InlineData("bathtub", SeatHands.Free, SeatPose.Chair)]
+    [InlineData("turret_seat", SeatHands.Wheel, SeatPose.Chair)]
     public void EachSeatSitsItsRiderTheWayItIsBuilt(string id, SeatHands hands, SeatPose pose)
     {
         var part = Part(id);
@@ -446,6 +450,28 @@ public class VanillaCatalogTests
         Assert.Equal(pose, part.Seat.Pose ?? SeatPose.Chair);
         Assert.True(part.Logic!.Outputs > 0, $"{id}'s links go on the rider's hotbar");
         Assert.Equal(pose == SeatPose.Saddle, SeatStyle.For(part).Saddle);
+    }
+
+    [Fact]
+    public void TheTurretSeatTurnsFurtherFasterAndHarderEachLevel()
+    {
+        // Parts map batch 17d (E8): its aimed socket's limits and the script's aim speed and torque rise with each
+        // level; from level 4 it turns all the way round.
+        var written = Part("turret_seat");
+        var last = (Yaw: 0f, Up: 0f, Down: 0f, Speed: 0.0, Torque: 0.0);
+        for (var level = 0; level <= 4; level++)
+        {
+            var part = PartUpgrades.At(written, level);
+            var joint = part.Sockets!.Single(s => s.Type == SocketType.Aimed).Joint!;
+            var yaw = joint.Max ?? MathF.PI;
+            Assert.Equal(level >= 3, joint.Max is null);
+            Assert.Equal(joint.Min is null ? 0 : -joint.Min!.Value, joint.Max ?? 0);
+            var speed = part.Properties!["aim_speed"]!.GetValue<double>();
+            var torque = part.Properties!["aim_torque"]!.GetValue<double>();
+            Assert.True(yaw >= last.Yaw && joint.PitchMax > last.Up && -joint.PitchMin!.Value > last.Down, $"level {level + 1} aims further");
+            Assert.True(speed > last.Speed && torque > last.Torque, $"level {level + 1} aims faster");
+            last = (yaw, joint.PitchMax!.Value, -joint.PitchMin!.Value, speed, torque);
+        }
     }
 
     [Theory]
@@ -784,7 +810,7 @@ public class VanillaCatalogTests
     [InlineData("fabricator", "vanilla:wheel", "vanilla:big_wheel", "vanilla:sticky_wheel")]
     [InlineData("fabricator", "vanilla:gas_engine", "vanilla:electric_engine")]
     [InlineData("fabricator", "vanilla:switch", "vanilla:button")]
-    [InlineData("fabricator", "vanilla:passenger_seat", "vanilla:saddle", "vanilla:drivers_seat", "vanilla:drivers_saddle", "vanilla:controller")]
+    [InlineData("fabricator", "vanilla:passenger_seat", "vanilla:saddle", "vanilla:drivers_seat", "vanilla:drivers_saddle", "vanilla:turret_seat", "vanilla:controller")]
     [InlineData("fabricator", "vanilla:toilet", "vanilla:bathtub")]
     [InlineData("fabricator", "vanilla:timer", "vanilla:sensor", "vanilla:alarm_clock")]
     [InlineData("fabricator", "vanilla:drill", "vanilla:plasma_drill", "vanilla:saw_blade", "vanilla:water_cannon",

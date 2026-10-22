@@ -2273,7 +2273,7 @@ public partial class CaptureScene : Node
     }
 
     private static readonly string[] SeatParts =
-        ["drivers_seat", "passenger_seat", "scrap_drivers_seat", "scrap_seat", "drivers_saddle", "saddle", "toilet", "bathtub"];
+        ["drivers_seat", "passenger_seat", "scrap_drivers_seat", "scrap_seat", "drivers_saddle", "saddle", "toilet", "bathtub", "turret_seat"];
 
     // Every vanilla seat side by side on one slab; the player sits in each in turn (tools/capture-seats.sh OUT [parts]).
     private void SeatsShots()
@@ -2283,6 +2283,10 @@ public partial class CaptureScene : Node
         // The capture main reads no devices, so it has no seat camera of its own.
         if (_main.SeatCamera is null)
             AddChild(new Mechanica.Game.Logic.SeatCamera { Logic = _main.Logic, Players = _main.PlayerSync, ReadDeviceInput = false });
+        // An optional third argument (comma-separated part ids) shoots only those seats; the software renderer is slow.
+        // Only they are put down, so the first is in reach.
+        var args = OS.GetCmdlineUserArgs();
+        var only = args.Length > 2 ? args[2].Split(',') : SeatParts;
         Shot("seats_00_wait", 60, () => { });
         Shot("seats_00_placed", 90, () =>
         {
@@ -2293,22 +2297,25 @@ public partial class CaptureScene : Node
             int Put(string part, int x, int y, int z) =>
                 creation.TryPlacePart(part, new Core.Creations.GridCell(x, y, z), Core.Creations.GridRotation.Identity, out var placed, out var error)
                     ? placed.Id : throw new InvalidOperationException(error);
-            for (var x = -8; x <= 36; x++)
+            for (var x = -8; x <= 44; x++)
                 for (var z = -2; z <= 4; z++)
                     Put("vanilla:metal_block", x, 0, z);
             var cell = -8;
-            foreach (var part in SeatParts)
+            foreach (var part in SeatParts.Where(only.Contains))
             {
                 var size = _main.Mods!.FindDefinition("vanilla:" + part)!.Size!.Value;
                 seats[part] = Put("vanilla:" + part, cell, 1, size.Z > 2 ? -2 : 0);
+                // A turret seat carries a short barrel of blocks on its hardpoint plate, which aims with it.
+                if (part == "turret_seat")
+                {
+                    for (var z = -1; z >= -4; z--)
+                        Put("vanilla:metal_block", cell + 1, size.Y + 1, z);
+                }
                 cell += size.X + 2;
             }
             creation.SetAllBodyPoses(new Core.Creations.Pose(new System.Numerics.Vector3(at.X, at.Y + 0.2f, at.Z), System.Numerics.Quaternion.Identity));
             _main.Creations.Add(creation, _main.Assets);
         });
-        // An optional third argument (comma-separated part ids) shoots only those seats; the software renderer is slow.
-        var args = OS.GetCmdlineUserArgs();
-        var only = args.Length > 2 ? args[2].Split(',') : SeatParts;
         foreach (var part in SeatParts.Where(only.Contains))
         {
             // Sitting down hands the view to the seat's interior camera: what the player sees from the seat.
@@ -2327,6 +2334,19 @@ public partial class CaptureScene : Node
             });
             Shot($"seats_{part}_2_side", 2, () => LookAtSeat(new Vector3(2.2f, 0.7f, 0f), 0.6f));
             Shot($"seats_{part}_3_front", 2, () => LookAtSeat(new Vector3(0.3f, 0.9f, -2.2f), 0.6f));
+            if (part == "turret_seat")
+            {
+                // The gunner looks up and to the left: the shell and the barrel turn there; seen from outside the turret.
+                Shot($"seats_{part}_5_aim_view", 150, () => Player.CurrentInput = new PlayerInput(0, 0, 0.6f, 0.3f, false, false, false));
+                Shot($"seats_{part}_6_aim_outside", 2, () => LookAtSeat(new Vector3(-2.6f, 1.6f, -3.2f), 0.9f, aimed: false));
+                Shot($"seats_{part}_7_aim_side", 2, () => LookAtSeat(new Vector3(3.4f, 1.2f, 0.4f), 0.9f, aimed: false));
+                Shot($"seats_{part}_8_aim_right", 150, () =>
+                {
+                    Player.CurrentInput = new PlayerInput(0, 0, -0.9f, -0.1f, false, false, false);
+                    LookAtSeat(new Vector3(-2.6f, 1.6f, -3.2f), 0.9f, aimed: false);
+                });
+                Shot($"seats_{part}_9_aim_back", 2, () => Player.CurrentInput = new PlayerInput(0, 0, 0f, 0f, false, false, false));
+            }
             Shot($"seats_{part}_4_leave", 40, () =>
                 _main.Actions.Request(Core.Logic.LogicActions.LeaveSeat, new Core.Actions.NoArgs(), r => GD.Print($"[capture] stand: {r}")));
         }
@@ -2467,9 +2487,9 @@ public partial class CaptureScene : Node
         Shot("fabricator_18_level1_done", 20, () => Report(one));
     }
 
-    private void LookAtSeat(Vector3 offset, float height)
+    private void LookAtSeat(Vector3 offset, float height, bool aimed = true)
     {
-        if (_main.Logic.SeatTransform(SeatCreation, _seat) is not { } seat)
+        if (_main.Logic.SeatTransform(SeatCreation, _seat, aimed) is not { } seat)
             return;
         Player.ThirdPerson = true;
         _camera.MakeCurrent();

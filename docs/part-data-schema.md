@@ -183,10 +183,10 @@ A socket is an attachment point on the surface of the footprint.
 | Key | Type | Meaning |
 |-----|------|---------|
 | `id` | string | Snake_case, unique in the part. Lua and the Connect Tool refer to sockets by id. |
-| `type` | enum | `structural` (rigid), `rotational` (bearing hinge side), `linear` (piston slider side) or `spring` (suspension side). |
+| `type` | enum | `structural` (rigid), `rotational` (bearing hinge side), `linear` (piston slider side), `spring` (suspension side) or `aimed` (a turret: turns and tilts, the Turret Seat's top). |
 | `position` | `[x, y, z]` m | From the part centre. Must lie within the footprint, normally on a face. |
 | `normal` | `[x, y, z]` | Outward unit direction, normally an axis such as `[0, 1, 0]`. |
-| `joint` | object | `rotational`, `linear` and `spring` sockets only: the joint's axis, travel and spring. Required for `linear` and `spring`. See [joint](#joint). |
+| `joint` | object | `rotational`, `linear`, `spring` and `aimed` sockets only: the joint's axis, travel and spring. Required for `linear`, `spring` and `aimed`. See [joint](#joint). |
 
 How parts attach when they are placed touching each other:
 
@@ -196,7 +196,7 @@ How parts attach when they are placed touching each other:
   normal points out of that face and its position is on that face square (edges count, so one socket
   centred on a 2-cell side covers both cells).
 - Structural meets structural: a rigid link, both parts join the same Body.
-- A `rotational`, `linear` or `spring` socket meeting a structural face makes a joint of that kind
+- A `rotational`, `linear`, `spring` or `aimed` socket meeting a structural face makes a joint of that kind
   between two Bodies. Two joint sockets never connect to each other.
 
 A mesh node in the part's model named after one of its joint sockets (the bearing's `rotor`) is drawn on the
@@ -207,28 +207,44 @@ A mesh node named after a `linear` socket plus `Rod` (the piston's `headRod`: on
 retracted inside the part with its outer end just under the head) is repeated along the joint's axis as it slides out:
 copies stacked end to end hang from the moving head back into the part, so the rod reveals segment by segment rather than
 stretching. Like a shaft, the rod has no collision.
+A part with an `aimed` socket draws mesh nodes named after the socket plus `Yaw` and `Pitch` (the Turret Seat's
+`turretYaw`, and its `turretPitch` inside it, both with their origin at the joint's `pivot` and unturned) turned to the
+turret's aim: the yaw node about the joint's axis, the pitch node about its `pitch_axis` inside it. With something built on
+the turret they follow the joint; with nothing on it, the script's `aim_yaw` and `aim_pitch` readouts (rad).
 
 The Part Editor's connection preview shows the result on every face: green for rigid, blue for a
 joint, red where nothing attaches.
 
 ### joint
 
-How the joint at a `rotational`, `linear` or `spring` socket moves. Positions are measured from where
+How the joint at a `rotational`, `linear`, `spring` or `aimed` socket moves. Positions are measured from where
 the two sides were built on the grid: an angle in rad, right-handed about `axis`, or a distance in m
 along it. The [Socket and Joint Guide](socket-joint-guide.md) walks through each kind.
 
 | Key | Type | Meaning |
 |-----|------|---------|
 | `axis` | `[x, y, z]` | Grid direction the joint turns about or slides along, in the part's frame. Omitted means the socket's `normal`. |
-| `min` | number | Lowest position, rad or m. A `rotational` joint with neither `min` nor `max` spins freely; with both, it is a limited hinge within ±π whose range includes 0. A `linear` joint defaults to 0. A `spring` needs it (0 or less). |
+| `min` | number | Lowest position, rad or m. A `rotational` or `aimed` joint (its yaw) with neither `min` nor `max` spins freely; with both, it is a limited hinge within ±π whose range includes 0. A `linear` joint defaults to 0. A `spring` needs it (0 or less). |
 | `max` | number | Highest position, rad or m. Required for `linear` and `spring` (0 or more). Travel (`max` − `min`) is at most 16 m. |
 | `stiffness` | number > 0 | `spring` only, required: spring rate in N/m. A load of `m` kg sags it by about `m × 9.81 / stiffness` m. |
 | `damping` | number ≥ 0 | `spring` only: damping in N·s/m. Omitted means 0. |
 | `shaft_radius` | number, m | `linear` and `spring` only: draws a rod of this radius, in the part's colour, from the socket to where the far side is now, so an extended piston shows its shaft. |
+| `pitch_axis` | `[x, y, z]` | `aimed` only, required: the grid direction, square to `axis`, that the turret tilts about once it has turned. Positive pitch turns the part's front (−Z) toward `axis`. |
+| `pitch_min`, `pitch_max` | number, rad | `aimed` only, required: how far it tilts down and up, within ±π/2, with 0 between them. |
+| `pivot` | `[x, y, z]` m | `aimed` only: the point it turns and tilts about, from the part centre, within the footprint. Omitted means the socket's position. |
 
 ```json
 { "id": "mount", "type": "spring", "position": [0.125, 0, 0], "normal": [1, 0, 0],
   "joint": { "axis": [0, 1, 0], "min": -0.08, "max": 0.08, "stiffness": 25000, "damping": 1500 } }
+```
+
+An `aimed` joint (the Turret Seat, engine item E8) is two axes in one part: whatever is built on the socket turns about
+`axis` (yaw, limited by `min` and `max` or free) and tilts about `pitch_axis` (pitch, always limited), both about
+`pivot`. A script drives it with `part.set_aim`; an upgrade may change its limits.
+
+```json
+{ "id": "turret", "type": "aimed", "position": [0, 0.75, 0], "normal": [0, 1, 0],
+  "joint": { "min": -1.5708, "max": 1.5708, "pivot": [0, -0.28, 0], "pitch_axis": [1, 0, 0], "pitch_min": -0.1396, "pitch_max": 0.5236 } }
 ```
 
 ## inventory and crafting
@@ -495,6 +511,7 @@ The vanilla scripts read these properties:
 |--------|----------|---------|
 | `scripts/seat.lua` | `steer_angle` (°) | How far A and D turn the upright bearings the seat feeds. |
 | | `steer_speed` (rad/s), `steer_torque` (N·m) | How fast and how hard they turn. |
+| | `aim_speed` (rad/s), `aim_torque` (N·m) | A turret seat (one with an `aimed` socket): how fast its shell, and what is built on it, turns and tilts toward where the seated player looks (each axis), and how hard. Without `aim_speed` the seat does not aim. |
 | `scripts/engine.lua` | `speed` (rad/s) | Wheel bearing speed at full throttle at full power. `gears` (default 5) is how many steps the `gear` setting (shown as Power) has, each giving that share. With no control linked in (a seat, switch, button or gate) it does not run; the `on` setting stops it whatever its controls do. |
 | | `torque`, `brake` (N·m) | Most torque while driving, and while holding the wheels with no throttle or while it is not running (nobody seated, switched off, out of fuel), so a parked car stays put. |
 | | `fuel`, `fuel_time` (s) | Item burned from the creation's containers, and seconds of full throttle per item. Creative needs none. |
@@ -715,7 +732,7 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 | 200 | Ramps, stairs and railings | `ramp_block`, `stairs_block`, `stair_step`, `stair_landing`, `ladder`, `metal_railing`, `metal_railing_long`, `railing_join`, `stair_banister`, `stair_baluster` |
 | 300 | Beams and frames | `ibeam_stub`, `ibeam_short`, `ibeam_long`, `ibeam_corner`, `ibeam_end`, `ibeam_holder`, `u_beam`, `metal_column_short`, `metal_column`, `metal_support`, `support_bracket`, `stand_support`, `support_pillar`, `lattice_pillar`, `support_pillar_stand`, `support_truss_small`, `support_truss`, `support_truss_large`, `tower_pole`, `tower_pole_top`, `door_frame`, `window_frame` |
 | 400 | Pipes | `small_pipe_short`, `small_pipe_long`, `small_pipe_bend`, `small_pipe_corner`, `small_pipe_tee`, `small_pipe_cross`, `small_pipe_four_way_tee`, `small_pipe_five_way`, `small_pipe_six_way`, `valve`, `large_pipe_short`, `large_pipe_long`, `large_pipe_corner`, `large_pipe_tee`, `main_pipe_short`, `main_pipe_long`, `main_pipe_corner`, `main_pipe_tee`, `main_pipe_extension`, `main_pipe_mount`, `main_pipe_cap`, `main_pipe_compressor` |
-| 500 | Seats and controls | `scrap_seat`, `scrap_drivers_seat`, `passenger_seat`, `saddle`, `drivers_seat`, `drivers_saddle`, `controller` |
+| 500 | Seats and controls | `scrap_seat`, `scrap_drivers_seat`, `passenger_seat`, `saddle`, `drivers_seat`, `drivers_saddle`, `turret_seat` (547), `controller` |
 | 600 | Wheels | `scrap_wheel`, `wheel`, `big_wheel`, `sticky_wheel` |
 | 700 | Suspension | `sport_suspension`, `offroad_suspension` |
 | 800 | Engines | `scrap_gas_engine`, `gas_engine`, `electric_engine` |

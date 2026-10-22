@@ -1,7 +1,7 @@
 # Socket and Joint Guide
 
-How to define sockets so parts connect the way you mean, and how the three joint kinds (hinge,
-slider, spring) become real physics joints. The exact keys are in the
+How to define sockets so parts connect the way you mean, and how the joint kinds (hinge,
+slider, spring, and the turret's aimed joint) become real physics joints. The exact keys are in the
 [Part Data Schema Reference](part-data-schema.md#sockets); this guide explains how they fit together.
 
 ## Bodies and joints
@@ -11,7 +11,7 @@ Mechanic does:
 
 - Everything rigidly attached merges into one Body: one rigid body with a compound collision shape, the
   parts' summed mass and their mass-weighted centre of mass. A car chassis of 200 blocks is one Body.
-- A real physics joint exists only where a **joint socket** (`rotational`, `linear` or `spring`) meets
+- A real physics joint exists only where a **joint socket** (`rotational`, `linear`, `spring` or `aimed`) meets
   a structural face. The part that owns the socket stays in its own Body (side A); whatever touches the
   socket starts a new Body (side B).
 - The Weld Tool merges Bodies. Welding across a joint puts both sides in one Body, which locks the
@@ -125,6 +125,29 @@ face, and move it along their own Y:
 
 To build a car: chassis blocks, a suspension on each side by its base (turned so its mount faces out),
 a bearing on each suspension by its base (rotor out), a wheel on each rotor.
+
+## Turrets (aimed joints)
+
+`type: "aimed"`. A turret turns what is built on it two ways about one point: yaw about `axis` (the socket's
+normal, so an upright turret turns left and right) and pitch about `pitch_axis` (tilting its front up and down). The
+Turret Seat is the vanilla one: its shell, and anything on the hardpoint plate on its top, aims where the seated player
+looks.
+
+```json
+"joint": { "min": -1.5708, "max": 1.5708, "pivot": [0, -0.28, 0], "pitch_axis": [1, 0, 0],
+           "pitch_min": -0.1396, "pitch_max": 0.5236 }
+```
+
+- **`min`/`max`** limit the yaw as on a hinge; leave both out and it turns all the way round.
+- **`pitch_min`/`pitch_max`** are required and lie within ±π/2. Positive pitch lifts the front (−Z).
+- **`pivot`** is the point both turn about, from the part centre (for a seat, the rider's hips). Omitted, the socket.
+
+Positions are measured from the built pose, as for every joint: yaw first, then pitch in the turned frame. In the game it
+is a pair of hinges through a light yoke that only the physics sees; it is saved, parked and rebuilt like any other
+joint, from the two Bodies' poses. A script aims it with `part.set_aim(yaw, pitch, speed?, max_torque?)` (the host does it
+for every player) and reads it from `part.joint()` (`position` is the yaw, `pitch` the pitch) and `part.aim_limits()`.
+The `SetAimTarget` action does the same for an agent. With nothing built on it there is no joint: the seat script
+shows its aim as the readouts `aim_yaw` and `aim_pitch`, and every peer draws the shell turned to them.
 
 ## Centre of mass
 

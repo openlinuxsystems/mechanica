@@ -42,6 +42,19 @@ public static class PartGeometry
     public static Vec3 JointAxis(SocketDefinition socket, GridRotation rotation) =>
         rotation.Apply(socket.Joint?.Axis ?? socket.Normal ?? Vec3.Zero);
 
+    /// <summary>
+    /// An aimed socket's pivot and pitch in the Creation's grid frame (<see cref="JointDefinition.Pivot"/>, or the socket's
+    /// point when it has none; the pitch axis defaults to the part's +X).
+    /// </summary>
+    public static AimFrame AimOf(PartDefinition definition, SocketDefinition socket, GridCell origin, GridRotation rotation)
+    {
+        var joint = socket.Joint;
+        var pivot = joint?.Pivot is { } p
+            ? CentreMetres(definition, origin, rotation) + rotation.Apply(p)
+            : SocketFrame(definition, socket, origin, rotation).Position;
+        return new AimFrame(pivot, rotation.Apply(joint?.PitchAxis ?? new Vec3(1, 0, 0)), joint?.PitchMin ?? 0f, joint?.PitchMax ?? 0f);
+    }
+
     /// <summary>A socket's position (metres) and outward normal in the Creation's grid frame.</summary>
     public static (Vec3 Position, Vec3 Normal) SocketFrame(PartDefinition definition, SocketDefinition socket,
         GridCell origin, GridRotation rotation)

@@ -206,7 +206,7 @@ public partial class PartPreview : Node3D
     /// <summary>The gizmo colour of each socket type.</summary>
     public static Color SocketColor(SocketType? type) => type switch
     {
-        SocketType.Rotational => UiTokens.JointHinge,
+        SocketType.Rotational or SocketType.Aimed => UiTokens.JointHinge,
         SocketType.Linear => UiTokens.JointSlider,
         SocketType.Spring => UiTokens.JointSpring,
         _ => UiTokens.JointRigid,
@@ -218,7 +218,7 @@ public partial class PartPreview : Node3D
         {
             ConnectionType.Structural => UiTokens.JointRigid with { A = 0.35f },
             null => UiTokens.NoConnection with { A = 0.25f },
-            ConnectionType.Rotational => SocketColor(SocketType.Rotational) with { A = 0.45f },
+            ConnectionType.Rotational or ConnectionType.Aimed => SocketColor(SocketType.Rotational) with { A = 0.45f },
             ConnectionType.Linear => SocketColor(SocketType.Linear) with { A = 0.45f },
             _ => SocketColor(SocketType.Spring) with { A = 0.45f },
         };
