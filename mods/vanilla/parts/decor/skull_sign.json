@@ -1,0 +1,19 @@
+{
+  "id": "skull_sign",
+  "name": "Skull Sign",
+  "description": "A skull and crossed wrenches: keep away. On a post with a bolted foot.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 3,
+  "friction": 0.4,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [3, 6, 1],
+  "mesh": "meshes/parts/skull_sign.glb",
+  "icon": "textures/items/skull_sign_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

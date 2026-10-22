@@ -1,0 +1,20 @@
+{
+  "id": "skull_sign",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal_block",
+      "count": 4
+    }
+  ],
+  "outputs": [
+    {
+      "item": "skull_sign",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 2133
+}

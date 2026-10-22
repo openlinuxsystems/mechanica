@@ -1,0 +1,19 @@
+{
+  "id": "falling_objects_sign",
+  "name": "Falling Objects Sign",
+  "description": "A warning of things falling from above. On a post with a bolted foot.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 3,
+  "friction": 0.4,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [3, 6, 1],
+  "mesh": "meshes/parts/falling_objects_sign.glb",
+  "icon": "textures/items/falling_objects_sign_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

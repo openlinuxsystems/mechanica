@@ -1,0 +1,19 @@
+{
+  "id": "beware_bots_sign",
+  "name": "Beware of Bots Sign",
+  "description": "A warning that bots roam here. On a post with a bolted foot.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 3,
+  "friction": 0.4,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [3, 6, 1],
+  "mesh": "meshes/parts/beware_bots_sign.glb",
+  "icon": "textures/items/beware_bots_sign_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}
