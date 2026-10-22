@@ -1,6 +1,7 @@
 using Mechanica.Core.Characters;
 using Mechanica.Core.Data;
 using Mechanica.Core.Items;
+using Mechanica.Core.World;
 
 namespace Mechanica.Core.Tests.Data;
 
@@ -33,7 +34,7 @@ public class VanillaCatalogTests
         // Resources, consumables, handheld weapons (produce_crate is left out for now)
         "component_kit", "circuit_board", "glue", "gasoline", "crude_oil", "battery_pack",
         "master_battery", "warehouse_key", "explosive_remnant", "scuttler_head", "carrot_seed", "potato_seed", "tomato_seed",
-        "cotton_seed", "carrot", "potato", "tomato", "cotton", "beeswax", "ember", "water_bucket", "glowstick", "popper", "potato_blaster", "potato_scattergun",
+        "cotton_seed", "carrot", "potato", "tomato", "cotton", "beeswax", "ember", "water_bucket", "chemical_bucket", "glowstick", "popper", "potato_blaster", "potato_scattergun",
         "potato_launcher",
         // World / farming parts
         "soil_bag",
@@ -243,6 +244,8 @@ public class VanillaCatalogTests
     [InlineData("paint_ammo")]
     [InlineData("explosive_remnant")]
     [InlineData("chemical")]
+    [InlineData("chemical_bucket")]
+    [InlineData("ladder")]
     public void EachCraftingMaterialHasItsOwnModelAndIcon(string id)
     {
         var part = Part(id);
@@ -820,8 +823,43 @@ public class VanillaCatalogTests
         Assert.Equal(CollisionShape.Cylinder, part.Collision?.Shape);
     }
 
+    [Theory]
+    // Parts map batch 17a: the wiki's bars for the Ladder (E2) and the Chemical Bucket (E11).
+    [InlineData("ladder", 4.5, 5, 0.4, 0.2, true, 10)]
+    [InlineData("chemical_bucket", 7.5, 3, 0.7, 0.5, false, 1)]
+    public void Batch17aPartsTakeTheWikiStats(string id, double mass, int durability, double friction, double buoyancy,
+        bool flammable, int stack) =>
+        BedsAndStationsTakeTheWikiStats(id, mass, durability, friction, buoyancy, flammable, stack);
+
+    [Fact]
+    public void TheLadderIsClimbableAndMadeFromMetalAndGlue()
+    {
+        // Parts map batch 17a (E2): the wiki's 20 Metal Block 2 + 2 Glue in 10 s at the Craftbot, at the Fabricator.
+        BedsAndStationsTakeTheWikiRecipes("ladder", 10, "metal_block_2:20", "glue:2");
+        var ladder = Part("ladder");
+        Assert.True(ladder.Climbable);
+        Assert.Equal(new GridSize(2, 8, 1), ladder.Size);
+        Assert.Equal("meshes/parts/ladder.glb", ladder.Mesh);
+    }
+
+    [Fact]
+    public void AChemicalPoolFillsABucketThatPoursIntoTheChemicalContainer()
+    {
+        // Parts map batch 17a (E11): no recipe; the vanilla chemical pool turns an empty bucket into a Chemical Bucket, which
+        // pours Chemical into a container that takes it and goes back to the empty bucket.
+        var book = RecipeBook.Load(Vanilla.Value);
+        Assert.DoesNotContain(book.All, r => r.Outputs.Any(o => o.Item == "vanilla:chemical_bucket"));
+        var world = WorldGenData.Load(Vanilla.Value);
+        Assert.Equal("chemical_bucket", world.Definition.Liquids!.Single(l => l.Id == "chemical").Bucket);
+        var bucket = Part("chemical_bucket");
+        Assert.Equal("scripts/chemical_bucket.lua", bucket.Script);
+        Assert.Equal("chemical", bucket.Properties!["item"]!.GetValue<string>());
+        Assert.Equal("water_bucket", bucket.Properties["empty"]!.GetValue<string>());
+        Assert.Contains("chemical", Part("chemical_container").Inventory!.Accepts!);
+    }
+
     // Items that bots, world objects, harvests and POIs hand out, the Survival starting kit, and the item
-    // water fills, read from the data files.
+    // water (or a pool of another liquid) fills, read from the data files.
     private static HashSet<string> DroppedItems()
     {
         var found = new HashSet<string>();
@@ -832,7 +870,7 @@ public class VanillaCatalogTests
         foreach (var file in files)
         {
             foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(file),
-                "\"(?:item|ref|crop|water_item)\"\\s*:\\s*\"(?:vanilla:)?([a-z0-9_]+)\""))
+                "\"(?:item|ref|crop|water_item|bucket)\"\\s*:\\s*\"(?:vanilla:)?([a-z0-9_]+)\""))
                 found.Add(m.Groups[1].Value);
         }
         return found;

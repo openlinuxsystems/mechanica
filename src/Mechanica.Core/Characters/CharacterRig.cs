@@ -53,6 +53,9 @@ public enum CharacterProp : byte
 
     /// <summary>The Potato Launcher, aimed with both hands like the <see cref="PotatoBlaster"/>.</summary>
     PotatoLauncher,
+
+    /// <summary>The water bucket full of chemical (a Chemical Bucket, Parts map E11): the water bucket's model, its liquid green.</summary>
+    ChemicalBucketFull,
 }
 
 /// <summary>
@@ -224,6 +227,7 @@ public static class CharacterRig
     [
         "idle", "walk", "jog", "run", "crouch_idle", "crouch_walk", "jump", "fall", "land", "swim_idle", "swim", "sit",
         "sit_low", "sit_ride", "sit_ride_low", "sit_saddle", "sit_saddle_ride", "idle_look", "idle_stretch", "turn_l", "turn_r", "jump_run", "land_hard",
+        "climb",
     ];
 
     /// <summary>
@@ -331,7 +335,7 @@ public static class CharacterRig
         CharacterProp.PaintTool => guard ? "hold_paint_aim" : "hold_paint",
         CharacterProp.PotatoBlaster or CharacterProp.PotatoScattergun or CharacterProp.PotatoLauncher => "hold_gun",
         CharacterProp.WaterBucket => "hold_bucket",
-        CharacterProp.WaterBucketFull => "hold_bucket_full",
+        CharacterProp.WaterBucketFull or CharacterProp.ChemicalBucketFull => "hold_bucket_full",
         CharacterProp.Item => "hold_item",
         CharacterProp.Food => "hold_food",
         CharacterProp.RefineTool => "hold_refine",
@@ -443,7 +447,7 @@ public static class CharacterRig
         CharacterProp.Sledgehammer => "sledgehammer",
         CharacterProp.ConnectTool => "connect_tool",
         CharacterProp.PotatoBlaster => "potato_blaster",
-        CharacterProp.WaterBucket or CharacterProp.WaterBucketFull => "water_bucket",
+        CharacterProp.WaterBucket or CharacterProp.WaterBucketFull or CharacterProp.ChemicalBucketFull => "water_bucket",
         CharacterProp.RefineTool => "refine_tool",
         CharacterProp.SoilBag => "soil_bag",
         CharacterProp.PotatoScattergun => "potato_scattergun",
@@ -462,7 +466,7 @@ public static class CharacterRig
     public const byte TintErase = 0x80;
 
     /// <summary><paramref name="prop"/> when it is a known value, otherwise <see cref="CharacterProp.None"/>.</summary>
-    public static CharacterProp Sanitize(CharacterProp prop) => prop <= CharacterProp.PotatoLauncher ? prop : CharacterProp.None;
+    public static CharacterProp Sanitize(CharacterProp prop) => prop <= CharacterProp.ChemicalBucketFull ? prop : CharacterProp.None;
 
     /// <summary><paramref name="gesture"/> when it is a known value, otherwise <see cref="CharacterGesture.None"/>.</summary>
     public static CharacterGesture Sanitize(CharacterGesture gesture) => gesture <= CharacterGesture.PaintReload ? gesture : CharacterGesture.None;

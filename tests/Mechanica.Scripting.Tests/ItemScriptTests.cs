@@ -483,6 +483,61 @@ public sealed class ItemScriptTests : IDisposable
         Assert.DoesNotContain(_rig.Messages, m => m.Kind == ScriptMessageKind.Error);
     }
 
+    // ---- The Chemical Bucket (mods/vanilla/scripts/chemical_bucket.lua, Parts map E11) ----
+
+    // A tank that takes only Scrap (as the Chemical Container takes only Chemical), and a bucket of Scrap that pours 5. It pours
+    // into any container that takes its item (a chest takes anything); the tank's limit is what refuses it.
+    private (string Bucket, int Tank) ChemicalRig(Vector3 tankAt)
+    {
+        const string tank = "test:tank";
+        F.Catalog.Add(tank, F.Catalog.FindDefinition(Chest)! with
+        {
+            Id = "tank", Name = "Tank", Inventory = new Mechanica.Core.Data.InventoryDefinition { Slots = 1, Accepts = [Scrap] },
+        });
+        var bucket = _rig.AddItem("goo_bucket", "scripts/chemical_bucket.lua", new JsonObject
+        {
+            ["item"] = "scrap", ["count"] = 5, ["empty"] = "empty_bucket", ["range"] = 8, ["throw_speed"] = 7, ["throw_up"] = 0.35, ["splash"] = 1.2,
+        });
+        F.Pockets(Me).Add(bucket, 1);
+        return (bucket, F.Add(tank, tankAt));
+    }
+
+    [Fact]
+    public void AChemicalBucketPoursIntoAContainerThatTakesItAndComesBackEmpty()
+    {
+        var (bucket, tank) = ChemicalRig(new Vector3(0, 0, 1));
+        var slot = F.SlotOf(Me, bucket);
+        var contents = F.Inventories.Find(Mechanica.Core.Items.InventoryRef.OfPart(tank, 1))!;
+
+        Assert.Equal(5, _rig.Used(Me, slot, Ahead, on: (tank, 1))["poured"]!.GetValue<int>());
+        Assert.Equal(5, contents.Count(Scrap));
+        Assert.Equal(EmptyBucket, F.Pockets(Me)[slot]!.Item);
+        Assert.Empty(F.Survival.Projectiles);
+
+        // A tank with less room than a bucketful is refused before anything is poured.
+        contents.Add(Scrap, 43);
+        F.Pockets(Me).SetSlot(slot, new Mechanica.Core.Items.ItemStack(bucket, 1));
+        Assert.Equal("There is no room for it there.", _rig.Refused(Me, slot, Ahead, on: (tank, 1)));
+        Assert.Equal(48, contents.Count(Scrap));
+        Assert.Equal(bucket, F.Pockets(Me)[slot]!.Item);
+        Assert.DoesNotContain(_rig.Messages, m => m.Kind == ScriptMessageKind.Error);
+    }
+
+    [Fact]
+    public void AChemicalBucketAimedAtNothingThatTakesItThrowsTheChemical()
+    {
+        var (bucket, tank) = ChemicalRig(new Vector3(0, 0, 1));
+        var slot = F.SlotOf(Me, bucket);
+
+        // Aimed past the tank, it is thrown, green.
+        var thrown = _rig.Used(Me, slot, Ahead);
+        Assert.True(thrown["thrown"]?.GetValue<int>() > 0, thrown.ToJsonString());
+        Assert.Equal(ProjectileView.Chemical, Assert.Single(F.Survival.Projectiles).Look);
+        Assert.Equal(EmptyBucket, F.Pockets(Me)[slot]!.Item);
+        Assert.Equal(0, F.Inventories.Find(Mechanica.Core.Items.InventoryRef.OfPart(tank, 1))!.Count(Scrap));
+        Assert.DoesNotContain(_rig.Messages, m => m.Kind == ScriptMessageKind.Error);
+    }
+
     [Fact]
     public void AThrownBucketLandsOnWhatItIsAimedAt()
     {

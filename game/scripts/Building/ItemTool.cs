@@ -26,7 +26,7 @@ namespace Mechanica.Game.Building;
 /// what that does on the host. While this tool is out, <c>EquipItem</c> tells the host which scripted
 /// item is in hand (its <c>on_equip</c> and <c>on_unequip</c>).</item>
 /// <item>Aimed at the sea with water in hand or nothing usable: <c>CollectWater</c> fills every empty bucket carried. Aimed at a POI's pool
-/// of liquid that can be collected (a chemical pool), it collects that instead.</item>
+/// of another liquid, it fills them with that pool's bucket (a chemical pool's Chemical Bucket) or collects its items.</item>
 /// </list>
 /// The host decides every one; nothing changes here until it answers.
 /// </summary>
@@ -326,7 +326,8 @@ public partial class ItemTool : HandTool
     {
         if (InHand is not { } hand || Characters is null)
             return CharacterGesture.None;
-        if (hand.Item == FullBucket)
+        // A full bucket of anything (water, or chemical from a pool) throws, or is set down full.
+        if (hand.Item == FullBucket || PoseInHand?.Prop is CharacterProp.ChemicalBucketFull)
             return place ? CharacterGesture.BucketPlaceFull : CharacterGesture.BucketThrow;
         if (hand.Item != EmptyBucket)
             return CharacterGesture.None;

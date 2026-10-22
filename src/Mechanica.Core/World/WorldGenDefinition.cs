@@ -1031,7 +1031,7 @@ public sealed record ObjectDrop
 
 /// <summary>
 /// A liquid POI pools hold (<c>liquids[]</c>): its look, what it does to a player standing in it, and what an empty bucket
-/// dipped in it collects.
+/// dipped in it fills with (<see cref="Bucket"/>) or collects (<see cref="Collect"/>).
 /// </summary>
 public sealed record LiquidDefinition
 {
@@ -1068,8 +1068,14 @@ public sealed record LiquidDefinition
     /// <summary>Health a player standing in it loses per second.</summary>
     public float Damage { get; init; }
 
-    /// <summary>What an empty bucket dipped in it collects; the bucket stays empty. Omitted: nothing.</summary>
+    /// <summary>What an empty bucket dipped in it collects; the bucket stays empty. Omitted: nothing. <see cref="Bucket"/> wins.</summary>
     public ObjectDrop? Collect { get; init; }
+
+    /// <summary>
+    /// The full bucket an empty bucket dipped in it turns into (a Chemical Bucket from a chemical pool), as the sea turns
+    /// it into a full water bucket: every empty bucket the player carries fills in one dip. Omitted: <see cref="Collect"/>.
+    /// </summary>
+    public string? Bucket { get; init; }
 
     /// <summary>
     /// Plain water, like the sea: drawn with the sea's surface (the look keys are ignored), players and bots swim in it and

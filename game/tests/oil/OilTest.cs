@@ -10,14 +10,15 @@ namespace Mechanica.Game.Tests;
 /// <summary>
 /// Oil and chemicals (World POI plan), host plus client, on the vanilla world: the client harvests an oil geyser for 1 to
 /// 4 Crude Oil and it is gone on both machines until its regrow time comes on the host's world clock; the client wades
-/// into a chemical pool, drawn on both machines, and is hurt there; and an empty bucket dipped in the pool collects a
-/// Chemical while the bucket stays empty.
+/// into a chemical pool, drawn on both machines, and is hurt there; and an empty bucket dipped in the pool comes up a
+/// Chemical Bucket (Parts map E11; game/tests/ladder pours one into a Chemical Container).
 /// </summary>
 public partial class OilTest : StagedTest
 {
     private const string Oil = "vanilla:crude_oil";
     private const string Chemical = "vanilla:chemical";
     private const string Bucket = "vanilla:water_bucket";
+    private const string ChemicalBucket = "vanilla:chemical_bucket";
 
     private readonly List<ActionResult> _results = [];
     private NetTestHarness _harness = null!;
@@ -113,7 +114,7 @@ public partial class OilTest : StagedTest
             Check(health > 0, $"it hurts over time, not all at once ({health})");
             return true;
         });
-        Add("an empty bucket dipped in the pool collects a Chemical and stays empty", frame =>
+        Add("an empty bucket dipped in the pool comes up a Chemical Bucket", frame =>
         {
             if (frame == 0)
             {
@@ -121,10 +122,10 @@ public partial class OilTest : StagedTest
                 var point = _pool.Centre - new System.Numerics.Vector3(0, 0.1f, 0);
                 _client.Main.Actions.Request(SurvivalActions.CollectWater, new CollectWaterArgs(new Vec3(point.X, point.Y, point.Z)), _results.Add);
             }
-            if (_results.Count == 0 || _client.Main.Inventory.Own!.Count(Chemical) == 0)
+            if (_results.Count == 0 || _client.Main.Inventory.Own!.Count(ChemicalBucket) == 0)
                 return _results.Count > 0 && !_results[0].Ok && Check(false, $"the bucket fills ({_results[0].Message})");
-            Check(_client.Main.Inventory.Own!.Count(Chemical) == 1, "one Chemical");
-            Check(_client.Main.Inventory.Own!.Count(Bucket) >= 1, "the bucket is still empty");
+            Check(_client.Main.Inventory.Own!.Count(ChemicalBucket) == 1, "one Chemical Bucket");
+            Check(_client.Main.Inventory.Own!.Count(Bucket) == 0 && _client.Main.Inventory.Own!.Count(Chemical) == 0, "the bucket itself was filled");
             return true;
         });
     }

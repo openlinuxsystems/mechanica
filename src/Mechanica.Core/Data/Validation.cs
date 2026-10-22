@@ -488,6 +488,7 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
         PartOnly(part.Soil, "soil");
         PartOnly(part.RespawnPoint == true ? true : null, "respawn_point");
         PartOnly(part.GroundOnly == true ? true : null, "ground_only");
+        PartOnly(part.Climbable == true ? true : null, "climbable");
         PartOnly(part.BreaksInto, "breaks_into");
         PartOnly(part.SledgeDamage, "sledge_damage");
         if (part.BreaksInto is { } breaks)

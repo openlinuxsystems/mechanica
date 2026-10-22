@@ -710,6 +710,7 @@ PALETTE = {
     "bucket_wire": ("#a3a6a8", 0.32, 1.0),
     "bucket_pin": ("#5a5d61", 0.4, 1.0),
     "bucket_water": ("#6aa6b8", 0.04, 0.0),
+    "bucket_chemical": ("#5cc42a", 0.08, 0.0),     # the Chemical Bucket's liquid: the chemical pools' green
     # refine tool
     "pipe_steel": ("#525457", 0.5, 1.0),
     "plate_steel": ("#4a4c50", 0.5, 1.0),
@@ -3412,6 +3413,56 @@ def clip_swim(t):
     return s
 
 
+# Climbing a ladder (Parts map E2). The game moves the body up the ladder and plays this cycle by the height climbed
+# (CharacterAnimator.ClimbCycleMetres, 0.5 m: two rungs 0.25 m apart), so a hand or foot on a rung stays on it. Each limb
+# holds its rung for CLIMB_DUTY of the cycle, sinking past the body by CLIMB_DUTY x 0.5 m as the body rises, then reaches
+# two rungs up; the left hand moves with the right foot, then the right hand with the left foot.
+CLIMB_T = 1.0
+CLIMB_DUTY = 0.7
+CLIMB_RANGE = CLIMB_DUTY * 0.5
+CLIMB_RUNG_Y = -0.40          # the rungs, in front of the chest (the climber hangs 3 cm off the ladder's face)
+CLIMB_HAND_TOP = 1.76
+CLIMB_FOOT_TOP = 0.56
+
+
+def _climb_limb(ph):
+    """(height below the top of its travel, 0..CLIMB_RANGE; how far off the rung, 0..1) for a limb at cycle phase ph."""
+    ph %= 1.0
+    if ph < CLIMB_DUTY:
+        return CLIMB_RANGE * ph / CLIMB_DUTY, 0.0
+    u = (ph - CLIMB_DUTY) / (1.0 - CLIMB_DUTY)
+    eased = u * u * (3.0 - 2.0 * u)
+    return CLIMB_RANGE * (1.0 - eased), math.sin(math.pi * u)
+
+
+def clip_climb(t):
+    ph = t / CLIMB_T
+    s = relaxed_upper(70)
+    s["hips_z"] = -0.03
+    # the weight shifts toward the hand that pulls
+    sway = math.sin(2 * math.pi * ph)
+    s["hips_x"] = 0.012 * sway
+    s["hips"] = (-4.0, 2.0 * sway, 1.5 * sway)
+    s["spine"] = (4.0, -1.5 * sway, -1.0 * sway)
+    s["chest"] = (3.0, -1.0 * sway, -1.0 * sway)
+    s["neck"] = (-10.0, 0, 2.0 * sway)
+    s["head"] = (-8.0, 0, 2.0 * sway)
+    for side, off in (("l", 0.0), ("r", 0.5)):
+        sg = side_sign(side)
+        down, off_rung = _climb_limb(ph + off)
+        # the hand comes off the rung and back a little as it reaches up
+        grip = np.array([sg * 0.2, CLIMB_RUNG_Y + 0.08 * off_rung, CLIMB_HAND_TOP - down])
+        s[f"arm_{side}"] = arm_ik_from_grip(side, grip, (0.0, -0.45, 0.9), (-sg, 0.0, 0.0), pole=(sg * 0.8, 0.3, -0.7))
+        s[f"fingers_{side}"] = 75.0 - 55.0 * off_rung
+        s[f"thumb_{side}"] = 40.0 - 25.0 * off_rung
+        # the opposite foot moves with each hand
+        down, off_rung = _climb_limb(ph + off + 0.5)
+        ankle = np.array([sg * 0.12, CLIMB_RUNG_Y + 0.12 + 0.07 * off_rung, CLIMB_FOOT_TOP - down + 0.04 * off_rung])
+        s[f"leg_{side}"] = {"ankle": tuple(ankle), "pitch": 6.0 - 10.0 * off_rung, "yaw": 0.0, "pole": (sg * 0.2, -1, 0.1),
+                            "toe": 0.0}
+    return s
+
+
 def clip_sit(t):
     T = 2.0
     ph = 2 * math.pi * t / T
@@ -5644,6 +5695,7 @@ CLIPS = {
     "land_hard": (clip_land_hard, LAND_HARD_SECONDS, False, False),
     "swim_idle": (clip_swim_idle, 2.0, True, False),
     "swim": (clip_swim, 1.2, True, False),
+    "climb": (clip_climb, CLIMB_T, True, False),
     "sit": (clip_sit, 2.0, True, False),
     "sit_low": (clip_sit_low, 2.0, True, False),
     "sit_ride": (clip_sit_ride, 2.0, True, False),
@@ -6954,12 +7006,16 @@ def build_bucket_objects(name, handle_deg, water, parent_matrix=None):
     return objs, parts, body, wat
 
 
-def water_material():
-    m = bpy.data.materials.new("M_bucket_water")
+def water_material(liquid="bucket_water"):
+    """The bucket's liquid: water, or `liquid` (a PALETTE key; "bucket_chemical" glows a little)."""
+    m = bpy.data.materials.new("M_" + liquid)
     m.use_nodes = True
     bsdf = m.node_tree.nodes.get("Principled BSDF")
-    col, rough, _ = PALETTE["bucket_water"]
+    col, rough, _ = PALETTE[liquid]
     bsdf.inputs["Base Color"].default_value = srgb(col)
+    if liquid != "bucket_water":
+        bsdf.inputs["Emission Color"].default_value = srgb(col)
+        bsdf.inputs["Emission Strength"].default_value = 0.35
     bsdf.inputs["Roughness"].default_value = rough
     bsdf.inputs["Alpha"].default_value = 0.78
     m.blend_method = "BLEND" if hasattr(m, "blend_method") else m.blend_method
@@ -6968,11 +7024,11 @@ def water_material():
     return m
 
 
-def texture_bucket(objs, parts, wat, group):
+def texture_bucket(objs, parts, wat, group, liquid="bucket_water"):
     stats = ct.texture_props(objs, parts, [mesh_material_names(p) for p in parts], PALETTE, BUCKET_ATLAS, seed=9,
                              group=group, material="M_water_bucket")
     wat.data.materials.clear()
-    wat.data.materials.append(water_material())
+    wat.data.materials.append(water_material(liquid))
     return stats
 
 
@@ -7274,11 +7330,12 @@ def export_props():
 
 def export_bucket_items():
     """The empty and full water buckets as items (their pictures, and the bucket put down): handle down and dry, or
-    handle up with the water in."""
-    for name, full in (("water_bucket", False), ("water_bucket_full", True)):
+    handle up with the water in; and the Chemical Bucket (Parts map E11), the full bucket with the chemical's green."""
+    for name, full, liquid in (("water_bucket", False, "bucket_water"), ("water_bucket_full", True, "bucket_water"),
+                               ("chemical_bucket", True, "bucket_chemical")):
         reset_scene()
         objs, parts, body, wat = build_bucket_objects(name, handle_angle(1.0 if full else 0.0, 0.0), 1.0 if full else 0.0)
-        texture_bucket(objs, parts, wat, name)
+        texture_bucket(objs, parts, wat, name, liquid)
         path = ITEM_DIR / f"{name}.glb"
         export_glb(path, objs + ([wat] if full else []), animations=False)
         print(f"{path.name}: {sum(tri_count(p) for p in parts)} triangles")

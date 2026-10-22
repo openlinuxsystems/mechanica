@@ -1,0 +1,41 @@
+{
+  // Parts map batch 17a (engine features): the Chemical Bucket (E11). An empty Water Bucket dipped in a chemical pool
+  // turns into one (the pool's liquid names it as its bucket, mods/vanilla/world/worldgen.json); it pours `count`
+  // Chemical into a Chemical Container, or throws it. No recipe. Its model is the water bucket's with the chemical's
+  // green in it (tools/characters/build_characters.py items). Re-run with tools/author-vanilla.sh.
+  "format_version": 1,
+  "parts": [
+    {
+      "file": "parts/chemical_bucket.json",
+      "template": "item",
+      "set": {
+        "name": "Chemical Bucket",
+        "description": "A Water Bucket full of chemical from a chemical pool. Pour it into a Chemical Container, or throw it.",
+        "category": "consumable",
+        "mass": 7.5,
+        "durability": 3,
+        "friction": 0.7,
+        "buoyancy": 0.5,
+        "flammable": false,
+        "stack_size": 1,
+        "icon": "textures/items/chemical_bucket_icon.png",
+        "sounds": {
+          "throw": "bucket_throw",
+          "splash": "water_splash",
+          "pour": "fuel_pour"
+        },
+        "script": "scripts/chemical_bucket.lua",
+        "properties": {
+          "item": "chemical",
+          "count": 5,
+          "empty": "water_bucket",
+          "range": 14,
+          "throw_speed": 11,
+          "throw_up": 0.35,
+          "splash": 2.5
+        }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/chemical_bucket.glb" }]
+    }
+  ]
+}

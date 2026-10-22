@@ -123,7 +123,7 @@ ground throws the driver about. The springs are `seat` in `game/data/character.j
 
 The animation set is shared by every character: `idle`, `idle_look` and `idle_stretch` (fidgets), `turn_l` and `turn_r`
 (stepping round on the spot), `walk`, `jog`, `run`, `crouch_idle`, `crouch_walk`,
-`jump`, `jump_run` (a running leap), `fall`, `land`, `land_hard` (a long fall, a hand to the ground), `swim_idle`, `swim`, `sit` (a chair, hands on a wheel), `sit_low` (a low seat, legs out in
+`jump`, `jump_run` (a running leap), `fall`, `land`, `land_hard` (a long fall, a hand to the ground), `swim_idle`, `swim`, `climb` (a ladder: hands and feet on rungs 0.25 m apart, played forward or back as the climber moves up or down), `sit` (a chair, hands on a wheel), `sit_low` (a low seat, legs out in
 front), `sit_ride` and `sit_ride_low` (the same with the hands resting on the thighs, for passengers), `sit_saddle` (astride a
 saddle, leaning forward with the hands on handlebars) and `sit_saddle_ride` (astride, sitting up with the hands on the thighs)
 move the whole body; `hold_tool`, `hold_heavy`,

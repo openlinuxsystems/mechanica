@@ -170,6 +170,14 @@ public sealed record PartDefinition
     public bool? RespawnPoint { get; init; }
 
     /// <summary>
+    /// Makes a placeable part a ladder players climb (Parts map E2): walking into one of its broad faces grabs it, the move
+    /// keys climb it up and down its long axis, and at the top the player steps off onto the floor behind it. Its long
+    /// axis must stand within <see cref="Player.LadderClimb.MaxTiltDegrees"/> of upright to be climbed. The climbing
+    /// speeds are the engine's (<c>player.json</c>), not the part's. Placeable parts only.
+    /// </summary>
+    public bool? Climbable { get; init; }
+
+    /// <summary>
     /// Makes a placeable part go only flat on the ground, as Scrap Mechanic's soil does: upright (its local +Y
     /// straight up), resting on the world itself, never tipped onto a side or set on a Creation.
     /// </summary>

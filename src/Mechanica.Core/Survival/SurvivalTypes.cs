@@ -14,7 +14,10 @@ namespace Mechanica.Core.Survival;
 /// <param name="Slot">Unused; kept so older callers that send it still parse.</param>
 public sealed record PartUseArgs(int Creation, int Part, int Slot = 0);
 
-/// <summary>Arguments of <c>CollectWater</c>: fill every empty bucket the caller carries where they aim at water.</summary>
+/// <summary>
+/// Arguments of <c>CollectWater</c>: fill every empty bucket the caller carries where they aim at water, or at a pool of a
+/// liquid that fills buckets too (a chemical pool gives Chemical Buckets).
+/// </summary>
 /// <param name="Point">The water point aimed at, in world metres.</param>
 /// <param name="Slot">The inventory slot holding the empty bucket in hand, filled first; null starts at the first one.</param>
 public sealed record CollectWaterArgs(Vec3 Point, int? Slot = null);
@@ -146,15 +149,19 @@ public sealed record PlayerHitView(int Peer, HitReaction Reaction, Vec3? From);
 /// <param name="Gravity">Its constant acceleration, in m/s².</param>
 /// <param name="Lifetime">Seconds it flies before it ends where it is.</param>
 /// <param name="Age">Seconds it had flown when this view was made. Its position is From + Velocity·t + ½·Gravity·t².</param>
-/// <param name="Look">How it is drawn: <see cref="ProjectileView.Water"/> for a splash of water, null for a plain ball.</param>
+/// <param name="Look">How it is drawn: <see cref="ProjectileView.Water"/> for a splash of water, <see cref="ProjectileView.Chemical"/>
+/// for one of chemical, null for a plain ball.</param>
 /// <param name="Size">How big its look is drawn, in metres: for water, the radius its splash spreads over. Null: the look's own size.</param>
 public sealed record ProjectileView(int Id, int Owner, Vec3 From, Vec3 Velocity, Vec3 Gravity, float Lifetime, float Age, string? Look = null, float? Size = null)
 {
     /// <summary>The <see cref="Look"/> of thrown water: a blob that bursts into a splash where it lands.</summary>
     public const string Water = "water";
 
+    /// <summary>The <see cref="Look"/> of thrown chemical (a Chemical Bucket): thrown water's slosh and splash, in green.</summary>
+    public const string Chemical = "chemical";
+
     /// <summary>Every <see cref="Look"/> clients know how to draw.</summary>
-    public static IReadOnlySet<string> Looks { get; } = new HashSet<string>(StringComparer.Ordinal) { Water };
+    public static IReadOnlySet<string> Looks { get; } = new HashSet<string>(StringComparer.Ordinal) { Water, Chemical };
 }
 
 /// <summary>Where a projectile's flight ended.</summary>

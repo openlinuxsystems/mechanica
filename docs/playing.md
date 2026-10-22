@@ -44,6 +44,11 @@ These are the default keys. Every one can be changed in Options, Controls.
 In water deeper than about chest height you swim: there is no ground to stand on, you float with your
 head out, Space rises and Ctrl dives. Shallower water slows you down.
 
+Walk into a Ladder to grab it, as long as it stands within 30 degrees of upright: forward climbs, back climbs down,
+the side keys move along the rungs, and Space jumps off. Climbing to the top of a ladder that leans on a floor steps
+you off onto it; walking toward a ladder from the floor at its top gets you on to climb down, and climbing down onto
+the ground lets go. Ladders on a moving Creation carry you with it while you climb.
+
 While a menu or the inventory is open, your character stands still, and a Creation you are driving
 stops getting your input.
 

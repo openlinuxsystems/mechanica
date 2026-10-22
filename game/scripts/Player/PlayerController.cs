@@ -392,9 +392,10 @@ public partial class PlayerController : CharacterBody3D
 
     /// <summary>Everything the character's animation needs this frame.</summary>
     public CharacterPose Pose => new(
-        Velocity.ToNumerics(), SeatYaw ?? Rotation.Y, _head.Rotation.X,
+        Velocity.ToNumerics(), SeatYaw ?? ClimbYaw ?? Rotation.Y, _head.Rotation.X,
         Body.HasFlag(BodyFlags.OnFloor), Body.HasFlag(BodyFlags.Swimming), Body.HasFlag(BodyFlags.Crawl), Seated || Body.HasFlag(BodyFlags.Seated),
-        ShownProp, ShownGesture.Gesture, ShownGesture.Count, Body.HasFlag(BodyFlags.Guard), Seated ? SeatStyle : null, _dead);
+        ShownProp, ShownGesture.Gesture, ShownGesture.Count, Body.HasFlag(BodyFlags.Guard), Seated ? SeatStyle : null, _dead,
+        Climbing);
 
     /// <summary>How the seat the player sits in holds it (its legs, hands and bounce); set with <see cref="Seat"/>.</summary>
     public SeatStyle SeatStyle { get; set; } = SeatStyle.Default;
@@ -572,6 +573,8 @@ public partial class PlayerController : CharacterBody3D
         else
             Carry();
         Ground = null;
+        if (_dead || _seat is not null)
+            _ladder = null;
         if (_dead)
             return input;
         if (_seat is not null)
@@ -586,6 +589,8 @@ public partial class PlayerController : CharacterBody3D
         var wasOnFloor = IsOnFloor();
         var depth = WaterDepth;
         var swimming = PlayerMotor.IsSwimming(depth, Settings);
+        if (StepLadder(input, delta, wasOnFloor, swimming))
+            return input;
         SetCrouched(PlayerMotor.Crouched(input.Crawl, _crouched, !_crouched || RoomToStand(), swimming));
         // Kept down under a low ceiling, the player moves at crouching speed whatever it holds.
         var move = swimming ? input : input with { Crawl = _crouched };
@@ -730,6 +735,8 @@ public partial class PlayerController : CharacterBody3D
     {
         ShownTint = tint;
         ShownHeld = held;
+        if (body.HasFlag(BodyFlags.Climbing) != Body.HasFlag(BodyFlags.Climbing) || (body.HasFlag(BodyFlags.Climbing) && _shownClimbYaw is null))
+            ShowClimbing(body.HasFlag(BodyFlags.Climbing));
         Body = body;
         SetCrouched(body.HasFlag(BodyFlags.Crawl));
         StepEyeHeight((float)GetPhysicsProcessDeltaTime());

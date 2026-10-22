@@ -69,7 +69,8 @@ public static class BucketRig
     }
 
     /// <summary>The bucket held as <paramref name="prop"/> shows it when no bucket clip is moving it.</summary>
-    public static BucketState Resting(CharacterProp prop) => prop == CharacterProp.WaterBucketFull ? BucketState.Full : BucketState.Empty;
+    public static BucketState Resting(CharacterProp prop) =>
+        prop is CharacterProp.WaterBucketFull or CharacterProp.ChemicalBucketFull ? BucketState.Full : BucketState.Empty;
 
     /// <summary>The handle's angle from upright about the bucket's X axis, in degrees (positive falls to the front).</summary>
     public static float HandleDegrees(BucketSettings settings, BucketState state)

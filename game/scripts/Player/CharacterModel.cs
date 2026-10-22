@@ -190,6 +190,12 @@ public partial class CharacterModel : Node3D
                 Basis = basis;
                 Position = basis * new Vector3(0, Animator.Lift, 0) + offset;
             }
+            else if (Player?.ClimbYaw is { } climbYaw)
+            {
+                // On a ladder the body faces its face, wherever its player looks.
+                Rotation = new Vector3(0, climbYaw - Player.Rotation.Y, 0);
+                Position = new Vector3(0, Animator.Lift, 0) + offset;
+            }
             else
             {
                 Rotation = new Vector3(0, Animator.BodyTurn, 0);
@@ -356,7 +362,10 @@ public partial class CharacterModel : Node3D
         var same = _prop is not null && CharacterRig.PropNode(prop) is { } node && node == CharacterRig.PropNode(_propShown);
         _propShown = prop;
         if (same)
+        {
+            _bucket?.Tint(prop == CharacterProp.ChemicalBucketFull ? HeldBucket.ChemicalColour : null);
             return;
+        }
         _bucket = null;
         _prop?.QueueFree();
         _prop = null;
@@ -369,6 +378,7 @@ public partial class CharacterModel : Node3D
         _prop = made.Node;
         _hand.AddChild(_prop);
         _bucket = HeldBucket.Find(_prop, Assets.Settings.Bucket);
+        _bucket?.Tint(prop == CharacterProp.ChemicalBucketFull ? HeldBucket.ChemicalColour : null);
     }
 
     // A held item's own model (its part data's held section) in the right hand, while the plain item pose is shown.

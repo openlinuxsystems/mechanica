@@ -15,8 +15,8 @@ What it builds (procedurally, from scratch: no .blend inputs, no downloads), eac
   between gunmetal caps by four rails, a copper valve on top and a hazard plate on the base.
 * ``meshes/items/paint_ammo.glb`` - a paint tin (Scrap Mechanic's Paint Bucket): a zinc tin with rolled rims and a
   blue wrap label (a paint splat and PT-1), a lid, blue paint run over the rim, and a wire bail handle laid to one side.
-* ``textures/items/<id>_icon.png`` for each, plus ``water_bucket_icon.png`` and ``water_bucket_full_icon.png``
-  drawn from the bucket models that already exist.
+* ``textures/items/<id>_icon.png`` for each, plus ``water_bucket_icon.png``, ``water_bucket_full_icon.png`` and
+  ``chemical_bucket_icon.png`` drawn from the bucket models that already exist (tools/characters/build_characters.py).
 
     pip install bpy==5.2.2 numpy pillow
     python tools/materials/build_materials.py                    # the game files
@@ -639,7 +639,7 @@ def import_glb(path):
 
 
 def bucket_icons():
-    for name in ("water_bucket", "water_bucket_full"):
+    for name in ("water_bucket", "water_bucket_full", "chemical_bucket"):
         bbe.reset_scene()
         root = import_glb(MESHES / f"{name}.glb")
         icon(bbe.mesh_tree(root), ICONS / f"{name}_icon.png", fill=1.18)

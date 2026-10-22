@@ -1,20 +1,20 @@
 {
   "id": "ladder",
   "name": "Ladder",
-  "description": "A steel ladder, 2 m tall. Decor only: climb it like stairs.",
+  "description": "A Colony Works steel ladder, 2 m tall. Walk into it to grab it, climb with the move keys, jump to let go.",
   "category": "decor",
-  "mass": 8,
-  "durability": 4,
-  "friction": 0.5,
-  "buoyancy": 0.3,
-  "flammable": false,
-  "stack_size": 20,
+  "mass": 4.5,
+  "durability": 5,
+  "friction": 0.4,
+  "buoyancy": 0.2,
+  "flammable": true,
+  "stack_size": 10,
   "sound_material": "metal",
   "size": [2, 8, 1],
-  "mesh": "meshes/decor/ladder.glb",
+  "mesh": "meshes/parts/ladder.glb",
+  "icon": "textures/items/ladder_icon.png",
   "visual": {
-    "color": "#a0a8b0",
-    "roughness": 0.4,
-    "metallic": 0.8
-  }
+    "color": "#ffffff"
+  },
+  "climbable": true
 }
