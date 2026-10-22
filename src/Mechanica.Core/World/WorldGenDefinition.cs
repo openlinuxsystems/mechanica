@@ -1132,7 +1132,7 @@ public enum PrimitiveShape
 /// </summary>
 public sealed record PoiModel
 {
-    /// <summary>Mod path of the model (<c>meshes/structures/sv04_fore.glb</c>, or <c>other_mod:path</c>).</summary>
+    /// <summary>Mod path of the model (<c>meshes/structures/sv04_bow.glb</c>, or <c>other_mod:path</c>).</summary>
     public string? File { get; init; }
 
     /// <summary>Where the model's origin goes, relative to the POI centre on its pad.</summary>
