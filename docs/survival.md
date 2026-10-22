@@ -37,8 +37,8 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
 
 - **Health** goes down from weapons, the Sledgehammer, splash, and falls faster than
   `fall.min_speed`. It comes back by eating. At 0 you die: everything you carry falls where
-  you stood in the knockout bag, a yellow canvas drawstring bag that your compass and maps point to until you pick it
-  up or it expires (tools you crafted, like the Connect Tool and the Weld Tool, stay with you), and you respawn at your bed, or at the world spawn if you have none (or it was broken).
+  you stood in the knockout bag, a yellow canvas drawstring bag that your compass (with a bag icon, not a waypoint diamond)
+  and maps point to until you pick it up or it expires (tools you crafted, like the Connect Tool and the Weld Tool, stay with you), and you respawn at your bed, or at the world spawn if you have none (or it was broken).
   Any part with `respawn_point` is a bed: vanilla has the wooden Respawn Bed (it burns) and the steel Fancy Bed (it
   does not, and is tougher).
 - **Ice:** the Freezer is a crafting station with one recipe: a full Water Bucket becomes 20 Ice Blocks in a minute,

@@ -21,5 +21,7 @@ public class KnockoutBagsTests
         Assert.All(mine, w => Assert.Equal("Knockout bag", w.Name));
         Assert.Equal(new Vector3(4, 0, 2), mine[0].Position);
         Assert.Empty(KnockoutBags.WaypointsFor(drops, 5, "Knockout bag"));
+        Assert.All(mine, w => Assert.True(KnockoutBags.IsBag(w)));
+        Assert.False(KnockoutBags.IsBag(new Mechanica.Core.Ui.Waypoint("quest:farmer", "The Farmer", Vector3.Zero)));
     }
 }

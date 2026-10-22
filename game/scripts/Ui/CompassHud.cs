@@ -1,4 +1,5 @@
 using Godot;
+using Mechanica.Core.Survival;
 using Mechanica.Core.Ui;
 using Mechanica.Game.Net;
 using Mechanica.Game.Settings;
@@ -10,8 +11,9 @@ namespace Mechanica.Game.Ui;
 /// player's heading in the middle, the points and a tick every 15°. Waypoints (quest goals and places
 /// found) are blue diamonds with their distance under them within 500 m; the primary one is larger and
 /// pulses cyan, and clicking a diamond (while the mouse is free, as with the logbook open) makes it primary.
-/// A waypoint behind the player sits at the edge it is nearer turning to, with an arrow. Within 100 m a
-/// diamond also floats over the place itself, hidden behind whatever is in the way. Every other player in the
+/// The player's own knockout bags are a bag (<see cref="BagIcon"/>) instead of a diamond, taller so the sack reads.
+/// A waypoint behind the player sits at the edge it is nearer turning to, with an arrow. Within 100 m its
+/// diamond (or bag) also floats over the place itself, hidden behind whatever is in the way. Every other player in the
 /// world, AI agents included, is a white dot with their name and distance under it at any range, pinned to an
 /// edge with an arrow like a waypoint when behind. The bar hides while a
 /// full-screen window is open and with Show compass off (Options, Interface), and is 20% fainter in first person.
@@ -23,7 +25,12 @@ public partial class CompassHud : CanvasLayer
 
     private const float TickEvery = 15f;
 
-    private readonly Dictionary<string, Label3D> _worldMarkers = [];
+    // Bag heights on the bar, normal and primary: a little taller than the 10 and 14 px diamonds, so the sack's shape
+    // reads at a glance, and still inside the 24 px strip.
+    private const float BagHeight = 15f;
+    private const float PrimaryBagHeight = 19f;
+
+    private readonly Dictionary<string, GeometryInstance3D> _worldMarkers = [];
     private Control _bar = null!;
     private Node3D _worldRoot = null!;
     private Font _font = null!;
@@ -59,8 +66,8 @@ public partial class CompassHud : CanvasLayer
     /// <summary>The primary waypoint's id: the player's pick while it exists, else the first waypoint's.</summary>
     public string? Primary => _marks.Any(m => m.Waypoint.Id == _primary) ? _primary : _marks.FirstOrDefault().Waypoint?.Id;
 
-    /// <summary>The world-space diamond over a waypoint, or null when none shows.</summary>
-    public Label3D? WorldMarkerOf(string id) => _worldMarkers.GetValueOrDefault(id) is { } m && IsInstanceValid(m) && m.Visible ? m : null;
+    /// <summary>The world-space diamond (a bag for a knockout bag) over a waypoint, or null when none shows.</summary>
+    public GeometryInstance3D? WorldMarkerOf(string id) => _worldMarkers.GetValueOrDefault(id) is { } m && IsInstanceValid(m) && m.Visible ? m : null;
 
     public override void _Ready()
     {
@@ -150,9 +157,19 @@ public partial class CompassHud : CanvasLayer
         {
             var isPrimary = waypoint.Id == primary;
             var x = XOf(mark.X);
-            var r = isPrimary ? 7f : 5f;
             var colour = isPrimary ? UiTokens.Cyan with { A = pulse } : UiTokens.Blue;
-            _bar.DrawColoredPolygon([new(x, 12 - r), new(x + r, 12), new(x, 12 + r), new(x - r, 12)], colour);
+            float r;
+            if (KnockoutBags.IsBag(waypoint))
+            {
+                var height = isPrimary ? PrimaryBagHeight : BagHeight;
+                r = height * 0.46f;
+                BagIcon.Draw(_bar, new Vector2(x, 12), height, colour);
+            }
+            else
+            {
+                r = isPrimary ? 7f : 5f;
+                _bar.DrawColoredPolygon([new(x, 12 - r), new(x + r, 12), new(x, 12 + r), new(x - r, 12)], colour);
+            }
             if (mark.Behind)
             {
                 // An arrow pointing the way to turn.
@@ -209,22 +226,36 @@ public partial class CompassHud : CanvasLayer
             seen.Add(waypoint.Id);
             if (!_worldMarkers.TryGetValue(waypoint.Id, out var marker) || !IsInstanceValid(marker))
             {
-                marker = new Label3D
-                {
-                    Name = "Waypoint",
-                    Text = "◆",
-                    Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
-                    FixedSize = true,
-                    PixelSize = 0.002f,
-                    FontSize = 40,
-                    OutlineSize = 6,
-                    OutlineModulate = UiTokens.DeepNavy,
-                };
+                marker = KnockoutBags.IsBag(waypoint)
+                    ? new Sprite3D
+                    {
+                        Name = "Bag",
+                        Texture = BagIcon.Texture(),
+                        Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
+                        FixedSize = true,
+                        PixelSize = 0.0011f,
+                        TextureFilter = BaseMaterial3D.TextureFilterEnum.LinearWithMipmaps,
+                    }
+                    : new Label3D
+                    {
+                        Name = "Waypoint",
+                        Text = "◆",
+                        Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
+                        FixedSize = true,
+                        PixelSize = 0.002f,
+                        FontSize = 40,
+                        OutlineSize = 6,
+                        OutlineModulate = UiTokens.DeepNavy,
+                    };
                 AddWorldMarker(marker);
                 _worldMarkers[waypoint.Id] = marker;
             }
             marker.GlobalPosition = waypoint.Position.ToGodot() + Vector3.Up * 2f;
-            marker.Modulate = waypoint.Id == primary ? UiTokens.Cyan : UiTokens.Blue;
+            var colour = waypoint.Id == primary ? UiTokens.Cyan : UiTokens.Blue;
+            if (marker is Label3D label)
+                label.Modulate = colour;
+            else if (marker is Sprite3D sprite)
+                sprite.Modulate = colour;
             marker.Visible = show && mark.Distance <= WorldMarkerRange && camera is not null;
         }
         foreach (var id in _worldMarkers.Keys.Where(k => !seen.Contains(k)).ToList())
@@ -236,7 +267,7 @@ public partial class CompassHud : CanvasLayer
     }
 
     // Drawn in the world with depth testing, so the ground and buildings in the way hide it (line of sight).
-    private void AddWorldMarker(Label3D marker) => _worldRoot.AddChild(marker);
+    private void AddWorldMarker(GeometryInstance3D marker) => _worldRoot.AddChild(marker);
 
     private void HideWorldMarkers()
     {
