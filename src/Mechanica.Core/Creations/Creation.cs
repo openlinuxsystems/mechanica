@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using System.Text.Json;
 using Mechanica.Core.Data;
 using Mechanica.Core.Items;
@@ -258,6 +259,93 @@ public sealed class Creation
     {
         foreach (var id in _parts.Keys)
             _poses[id] = pose;
+        SettleInsets();
+    }
+
+    /// <summary>
+    /// Puts each Body built on an inset hinge (<see cref="JointFrame.Inset"/>: a bearing's rotor) flush on its joint part,
+    /// the inset back from the grid along the joint's normal, together with everything built on it. A Body already
+    /// within half an inset of that is left alone, so this only moves a side that sits on the grid: one just placed or
+    /// spawned, or a save from before insets. Starts from the Body with the most parts, which never moves.
+    /// </summary>
+    public void SettleInsets()
+    {
+        if (_poses.Count == 0)
+            return;
+        var joints = Joints.Where(j => !j.IsLocked).Select(j => (Link: j, Frame: TryGetJointFrame(j.Connection, out var f) ? f : null)).ToList();
+        if (!joints.Any(j => j.Frame is { Inset: > 0 }))
+            return;
+        var bodies = Bodies;
+        // A tree over the joints, breadth first: each Body after the first of its piece hangs off the joint that reached it.
+        var order = new List<(int Body, int Parent, JointLink? Link, JointFrame? Frame)>();
+        var seen = new HashSet<int>();
+        foreach (var root in bodies.OrderByDescending(b => b.PartIds.Count).ThenBy(b => b.Index).Select(b => b.Index))
+        {
+            if (!seen.Add(root))
+                continue;
+            var start = order.Count;
+            order.Add((root, -1, null, null));
+            for (var i = start; i < order.Count; i++)
+            {
+                var at = order[i].Body;
+                foreach (var (link, frame) in joints.Where(j => j.Link.BodyA == at || j.Link.BodyB == at))
+                {
+                    var other = link.BodyA == at ? link.BodyB : link.BodyA;
+                    if (seen.Add(other))
+                        order.Add((other, at, link, frame));
+                }
+            }
+        }
+        var children = order.Where(o => o.Parent >= 0).ToLookup(o => o.Parent, o => o.Body);
+        foreach (var (body, _, link, frame) in order)
+        {
+            if (link is null || frame is not { Inset: > 0 })
+                continue;
+            var a = BodyPose(link.BodyA);
+            var relative = a.Inverse().Compose(BodyPose(link.BodyB));
+            var anchor = frame.Anchor.ToNumerics();
+            var normal = frame.Normal.ToNumerics();
+            var along = Vector3.Dot(relative.Apply(anchor) - anchor, normal);
+            if (MathF.Abs(along + frame.Inset) <= frame.Inset / 2)
+                continue;
+            // Move B (or, when the tree reached A from B, A) and everything hanging off it so B sits the inset back.
+            var shift = Vector3.Transform(normal * (-frame.Inset - along), a.Rotation);
+            if (body == link.BodyA)
+                shift = -shift;
+            var stack = new Stack<int>([body]);
+            while (stack.TryPop(out var next))
+            {
+                var pose = BodyPose(next);
+                SetBodyPose(next, pose with { Position = pose.Position + shift });
+                foreach (var child in children[next])
+                    stack.Push(child);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Where a part placed at <paramref name="cell"/> would sit, in the grid frame of the Body holding
+    /// <paramref name="framePart"/>, relative to its grid cell: zero, or an inset's offset when it would go only on an inset
+    /// hinge of that Body (a wheel on a bearing), so the build ghost sits where the part will.
+    /// </summary>
+    public Vector3 PlacementInset(PartDefinition definition, GridCell cell, GridRotation rotation, int framePart)
+    {
+        if (!_parts.ContainsKey(framePart) || PartGeometry.Cells(definition, cell, rotation).Any(_occupancy.ContainsKey))
+            return Vector3.Zero;
+        var frameBody = BodyIndexOf(framePart);
+        var id = _nextPartId;
+        Insert(new PartInstance(id, definition.Id ?? "", cell, rotation), definition);
+        var insets = new List<(int Other, Vector3 Offset)>();
+        var rigid = false;
+        foreach (var c in FindAttachments(id))
+        {
+            if (c.Type == ConnectionType.Structural)
+                rigid = true;
+            else if (TryGetJointFrame(c, out var frame) && frame.Inset > 0)
+                insets.Add(c.A == id ? (c.B, -frame.InsetOffset.ToNumerics()) : (c.A, frame.InsetOffset.ToNumerics()));
+        }
+        Uninsert(id);
+        return rigid ? Vector3.Zero : insets.Where(s => BodyIndexOf(s.Other) == frameBody).Select(s => s.Offset).FirstOrDefault();
     }
 
     /// <summary>Health a part has lost; 0 when it is undamaged.</summary>
@@ -552,6 +640,7 @@ public sealed class Creation
         }
         _nextPartId++;
         Changed();
+        SettleInsets();
         placed = instance;
         return true;
     }
@@ -889,6 +978,7 @@ public sealed class Creation
             joint?.Stiffness, joint?.Damping, joint?.ShaftRadius)
         {
             Aim = connection.Type == ConnectionType.Aimed ? PartGeometry.AimOf(definition, socket, part.Cell, part.Rotation) : null,
+            Inset = connection.Type == ConnectionType.Rotational ? joint?.Inset ?? 0f : 0f,
         };
         return true;
     }

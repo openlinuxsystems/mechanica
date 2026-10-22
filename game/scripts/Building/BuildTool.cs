@@ -713,8 +713,11 @@ public partial class BuildTool : HandTool
             var (cell, face) = BuildAim.FromHit((toGrid * point).ToNumerics(), (toGrid.Basis * normal).ToNumerics());
             var rotation = BuildAim.Orient(face, (toGrid.Basis * (from - point)).ToNumerics(), adjust);
             var origin = BuildAim.Anchor(definition, rotation, cell + face, face);
-            return new Target(node.Creation, origin, rotation, null, node.Creation.PartAt(cell)?.Id,
-                frame * PartFrame(definition, origin, rotation), face, frame);
+            var on = node.Creation.PartAt(cell)?.Id;
+            // On a bearing's rotor the part sits on the disc, not on the grid (JointDefinition.Inset).
+            var inset = on is { } hitPart ? node.Creation.PlacementInset(definition, origin, rotation, hitPart).ToGodot() : Vector3.Zero;
+            return new Target(node.Creation, origin, rotation, null, on,
+                frame * new Transform3D(Basis.Identity, inset) * PartFrame(definition, origin, rotation), face, frame);
         }
 
         // A new Creation: its grid follows the world axes, the first cell sits on the surface.

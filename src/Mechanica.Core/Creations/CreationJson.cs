@@ -227,7 +227,11 @@ public static class CreationJson
                 sink.Error(DiagnosticCodes.CreationConnection, path, error);
         }
         ReadBodies(data.Bodies, creation, sink);
-        return sink.ErrorCount > 0 ? null : creation;
+        if (sink.ErrorCount > 0)
+            return null;
+        // A save from before insets has wheels on the grid, a gap off their bearing's disc.
+        creation.SettleInsets();
+        return creation;
     }
 
     private static List<BodyPoseData>? BodyPoses(Creation creation)

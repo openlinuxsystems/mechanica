@@ -1,7 +1,7 @@
 """Review renders of the Bearing and the Scrap Gas Engine (build_bearing_engine.py --render OUT_DIR).
 
 Writes, into OUT_DIR: the bearing from the front, the side and three-quarter (as the reference sheet shows it), the
-bearing on a block with its axle and flange, the engine from the front three-quarter and the back three-quarter, and
+bearing on a block, the engine from the front three-quarter and the back three-quarter, and
 the engine in a few frames of its start, run and stop clips. Cycles on the CPU; LIFT_SAMPLES sets the samples.
 """
 

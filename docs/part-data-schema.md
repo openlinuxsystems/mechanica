@@ -229,6 +229,7 @@ along it. The [Socket and Joint Guide](socket-joint-guide.md) walks through each
 | `stiffness` | number > 0 | `spring` only, required: spring rate in N/m. A load of `m` kg sags it by about `m × 9.81 / stiffness` m. |
 | `damping` | number ≥ 0 | `spring` only: damping in N·s/m. Omitted means 0. |
 | `shaft_radius` | number, m | `linear` and `spring` only: draws a rod of this radius, in the part's colour, from the socket to where the far side is now, so an extended piston shows its shaft. |
+| `inset` | number, m | `rotational` only: how far whatever is built on the socket sits back from the socket's face, toward the part, at the joint's zero. Less than one block (0.25 m). The vanilla Bearing's disc is 8 cm thick on a 25 cm block, so its rotor has `"inset": 0.17` and a wheel sits flush on the disc instead of on the next grid cell (off the grid, as in Scrap Mechanic). Omitted means 0. |
 | `pitch_axis` | `[x, y, z]` | `aimed` only, required: the grid direction, square to `axis`, that the turret tilts about once it has turned. Positive pitch turns the part's front (−Z) toward `axis`. |
 | `pitch_min`, `pitch_max` | number, rad | `aimed` only, required: how far it tilts down and up, within ±π/2, with 0 between them. |
 | `pivot` | `[x, y, z]` m | `aimed` only: the point it turns and tilts about, from the part centre, within the footprint. Omitted means the socket's position. |

@@ -18,8 +18,9 @@
   },
   "collision": {
     "shape": "cylinder",
-    "radius": 0.115,
-    "height": 0.25
+    "radius": 0.12,
+    "height": 0.08,
+    "offset": [0, -0.085, 0]
   },
   "sockets": [
     {
@@ -32,7 +33,10 @@
       "id": "rotor",
       "type": "rotational",
       "position": [0, 0.125, 0],
-      "normal": [0, 1, 0]
+      "normal": [0, 1, 0],
+      "joint": {
+        "inset": 0.17
+      }
     }
   ],
   "sounds": {

@@ -123,7 +123,8 @@ public sealed record JointLink(Connection Connection, int BodyA, int BodyB)
 
 /// <summary>
 /// A joint edge's geometry and data in the Creation's grid frame (<see cref="Creation.TryGetJointFrame"/>).
-/// Positions along the joint are measured from the pose both sides were built in on the grid: an
+/// Positions along the joint are measured from the pose both sides were built in on the grid (an inset hinge's B side
+/// <see cref="Inset"/> back along the normal): an
 /// angle in rad about <see cref="Axis"/> (right-handed), or a distance in m along it.
 /// </summary>
 /// <param name="Type">Rotational, linear or spring.</param>
@@ -144,6 +145,17 @@ public sealed record JointFrame(ConnectionType Type, Vec3 Anchor, Vec3 Axis, Vec
 {
     /// <summary>An aimed joint's pivot and pitch, in the grid frame; null on other joints.</summary>
     public AimFrame? Aim { get; init; }
+
+    /// <summary>
+    /// How far (m) the part built on a rotational joint sits back from the socket's face toward the joint part at the
+    /// joint's zero (<see cref="JointDefinition.Inset"/>): 0 means on the grid.
+    /// </summary>
+    public float Inset { get; init; }
+
+    /// <summary>
+    /// Where B's grid frame sits in A's at the joint's zero: on the grid, or <see cref="Inset"/> back along the normal.
+    /// </summary>
+    public Vec3 InsetOffset => Normal * -Inset;
 
     /// <summary>True for a hinge (or an aimed joint's yaw) with no limits.</summary>
     public bool SpinsFreely => Type is ConnectionType.Rotational or ConnectionType.Aimed && (Min is null || Max is null);

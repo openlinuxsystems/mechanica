@@ -71,6 +71,10 @@ a limited hinge (a door, a steering knuckle), within ±π:
 "joint": { "min": -0.6, "max": 0.6 }
 ```
 
+A hinge whose part is thinner than its block can inset what goes on it: `"inset": 0.17` puts the part built on the
+rotor 0.17 m back from the socket's face, flush on the Bearing's 8 cm disc, so there is no gap and no axle between
+them. Whatever is built on it is off the grid by that much (as in Scrap Mechanic), and the build ghost shows it there.
+
 Hinges are driven from Lua or the Action API, never by the part data:
 
 - `part.set_bearing(velocity, max_torque?)` spins at a speed (rad/s). Engines and seats do this.

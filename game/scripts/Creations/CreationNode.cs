@@ -384,6 +384,7 @@ public partial class CreationNode : Node3D
         }
         foreach (var (id, state) in states)
             Creation.SetPartPose(id, state.Pose);
+        Creation.SettleInsets();
         Clear();
         Build();
         foreach (var body in _bodies)
@@ -742,8 +743,8 @@ public partial class CreationNode : Node3D
     // Builds the Jolt joint of one link: a hinge for a bearing, a 6DOF joint free along one axis for a
     // piston (with a motor) or a suspension (with a spring). Godot takes each body's joint frame from
     // where the bodies are when the joint enters the tree, so body B is put back in A's grid frame (the
-    // joint's zero, where both sides were built) for that moment. A joint rebuilt while extended or
-    // turned keeps its zero, its limits and its spring's rest length.
+    // joint's zero, where both sides were built; an inset hinge's B the inset back) for that moment. A joint
+    // rebuilt while extended or turned keeps its zero, its limits and its spring's rest length.
     private Joint3D? BuildJoint(JointLink link)
     {
         var c = link.Connection;
@@ -759,7 +760,7 @@ public partial class CreationNode : Node3D
         joint.NodeA = $"../{a.Name}";
         joint.NodeB = $"../{b.Name}";
         var actual = b.Transform;
-        b.Transform = a.Transform;
+        b.Transform = a.Transform.TranslatedLocal(frame.InsetOffset.ToGodot());
         AddChild(joint);
         b.Transform = actual;
         _frames[joint] = frame;

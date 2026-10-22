@@ -41,7 +41,8 @@ namespace Mechanica.Game.Tools;
 /// Given <c>piston</c> it puts down Pistons at levels 1, 3 and 5 under blocks, linked to a switch, and captures them put
 /// down, pushing out, fully out and pulling back (<c>tools/capture-piston.sh</c>).
 /// Given <c>wheels</c> it sets three little cars down in a meadow, one on each wheel (Scrap Wheel, Wheel, Off Road
-/// Wheel), captures them wide and close, and shows the three wheels on the hotbar (<c>tools/capture-wheels.sh</c>).
+/// Wheel), captures them wide and close and a wheel on its bearing's disc, and shows the three wheels on the hotbar
+/// (<c>tools/capture-wheels.sh</c>).
 /// Given <c>switch</c> it puts down switches off, on and on a wall, shows each state close up and toggles one
 /// (<c>tools/capture-switch.sh</c>).
 /// Given <c>fabricator</c> it puts down a level 1 and a level 5 Fabricator, shows them from every side (the input port on
@@ -1839,6 +1840,9 @@ public partial class CaptureScene : Node
         Shot("wheels_04_wheel", 20, () => View(new Vector3(spots[1] - 1.2f, 0.7f, 1.1f), new Vector3(spots[1] - 0.4f, 0.3f, 0f)));
         Shot("wheels_05_off_road", 20, () => View(new Vector3(spots[2] - 1.9f, 1.0f, 1.8f), new Vector3(spots[2] - 0.6f, 0.55f, 0f)));
         Shot("wheels_06_tread", 20, () => View(new Vector3(spots[2] + 2.0f, 0.5f, -4.2f), new Vector3(spots[2] + 0.4f, 0.45f, -0.6f)));
+        // The Wheel car's front right wheel flush on its bearing's disc, from the front and from under the chassis.
+        Shot("wheels_08_bearing_front", 20, () => View(new Vector3(spots[1] + 0.2f, 0.5f, -1.7f), new Vector3(spots[1] + 0.35f, 0.38f, -0.5f)));
+        Shot("wheels_09_bearing_inside", 20, () => View(new Vector3(spots[1] - 0.15f, 0.3f, -1.2f), new Vector3(spots[1] + 0.3f, 0.38f, -0.5f)));
         Shot("wheels_07_hotbar", 60, () =>
         {
             // The mouse would set the look every tick; stop it, so the player looks at the cars with the Off Road Wheel picked.
@@ -1916,6 +1920,8 @@ public partial class CaptureScene : Node
         Shot("debug_car_03_rear", 60, () => Car(new Vector3(-2.8f, 2.4f, 6.0f)));
         Shot("debug_car_04_top", 60, () => Car(new Vector3(0.625f, 6.5f, 2.6f), new Vector3(0.625f, 0f, 1.4f)));
         Shot("debug_car_05_axle", 60, () => Car(new Vector3(2.6f, 0.15f, -2.4f), new Vector3(0.6f, -0.4f, 0.4f)));
+        // A rear wheel flush on its bearing's disc, from in front of it.
+        Shot("debug_car_05_bearing", 60, () => Car(new Vector3(2.1f, -0.25f, 1.2f), new Vector3(1.55f, -0.5f, 2.45f)));
         Shot("debug_car_06_spawn", 60, () => Car(new Vector3(-5f, 3.2f, 16f), new Vector3(-1f, 0.4f, 3.5f)));
         if (OS.GetEnvironment("CAPTURE_CAR_LIFT") == "1")
         {
