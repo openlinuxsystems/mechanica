@@ -145,7 +145,8 @@ reverse), `jog`, `run`, `strafe_l` and `strafe_r` with `strafe_jog_l`, `strafe_j
 each has the length of the clip it stands in for. Moving sideways they take up to all of it and the legs turn the
 rest, so the feet always follow the way the body goes; without all six the legs turn up to `max_body_turn_degrees`
 instead), `crouch_idle`, `crouch_walk`,
-`jump`, `jump_run` (a running leap), `fall`, `land`, `land_hard` (a long fall, a hand to the ground), `swim_idle`, `swim`, `climb` (a ladder: hands and feet on rungs 0.25 m apart, played forward or back as the climber moves up or down), `sit` (a chair, hands on a wheel), `sit_low` (a low seat, legs out in
+`stop_walk` and `stop_run` (pulling up: the feet plant, the weight settles and the clip ends on idle; played when a body
+comes to a stand from `motion.stop_speeds`), `jump`, `jump_run` (a running leap), `fall`, `land`, `land_hard` (a long fall, a hand to the ground), `swim_idle`, `swim`, `climb` (a ladder: hands and feet on rungs 0.25 m apart, played forward or back as the climber moves up or down), `sit` (a chair, hands on a wheel), `sit_low` (a low seat, legs out in
 front), `sit_ride` and `sit_ride_low` (the same with the hands resting on the thighs, for passengers), `sit_saddle` (astride a
 saddle, leaning forward with the hands on handlebars), `sit_saddle_ride` (astride, sitting up with the hands on the thighs)
 and the pedal versions `sit_gas`, `sit_brake`, `sit_low_gas` and `sit_low_brake` move the whole body; `hold_tool`, `hold_heavy`,
@@ -193,7 +194,7 @@ Timing lives in `game/data/character.json` (engine settings, not moddable): the 
 is authored at, where in a cycle the feet land, crossfade times, how far the body turns before the feet
 follow, and which items are held how. `motion` there sets how the body moves under the clips: how far the look turns before
 the feet step round, how the upper body twists toward the look, the lean into speeding up, slowing and turning, the forward lean of a run, how much a held tool settles the arms and torso
-into a carry while moving, the speed a jump becomes a leap, the idle fidgets, and how hit reactions fade. The build-up
+into a carry while moving, how far the body dips as it sets off (`start_lean_degrees`), the speed a jump becomes a leap, the idle fidgets, and how hit reactions fade. The build-up
 from a walk to a sprint and the ease back down are `sprint_acceleration` and `sprint_deceleration` in `game/data/player.json`.
 
 On uneven ground the feet are planted after the clips pose the body (`CharacterModel.Feet.cs`, `LegReach` in Core): each
