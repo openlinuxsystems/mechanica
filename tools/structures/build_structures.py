@@ -18,6 +18,10 @@ structure's centre (glTF +Y up, front towards +Z):
 * ``meshes/structures/workshop.glb`` - the Workshop (Colony Works): a vehicle repair shop with two always-open bays,
   an office and a worn forecourt. Every Workshop POI uses it; its Fabricator is a part the POI places (a ``part``
   marker), not part of the model.
+* ``meshes/structures/warehouse_small.glb``, ``warehouse.glb`` and ``warehouse_large.glb`` - the three Colony Works
+  warehouses (2, 3 and 4 floors; warehouses.py, from the kit in colony_kit.py): exteriors with their floors, the stair
+  inside, a fire escape to the roof, and each one's silhouette piece (a water tower, a flue stack, a tower crane). Their
+  colliders are the kit's plain boxes and ramps (walls round the openings, slabs, stairs walked as ramps, railings).
 * ``meshes/structures/cargo_crate_colony.glb`` - a framed Colony cargo crate (decoration in the cargo spill).
 * ``meshes/structures/landmark_*.glb`` - the eight landmarks (landmarks.py): set pieces that stand alone in open
   country, placed by the ``pois/landmark_*.json`` prefabs. Their colliders keep what a player climbs walkable: each
@@ -49,9 +53,10 @@ How to run (Blender as a Python module, no Blender UI needed):
     python tools/structures/build_structures.py landmarks [landmark_ziggurat ...]   # only the landmarks
     python tools/structures/build_structures.py formations            # only the rock formations (or the ones named)
     python tools/structures/build_structures.py sv04                  # only the SV-04 wreck, its containers and spills
+    python tools/structures/build_structures.py warehouses [warehouse_small ...]   # only the warehouses
 
 The outputs are committed; re-run this script after changing it (or kit.py, frame.py, families.py, ship.py, cargo_ship.py, crash_site.py, sv04_layout.py,
-workshop.py, landmarks.py, props*.py, rock_formations.py, textures.py) and commit the result. The build is deterministic (seeded noise only).
+workshop.py, colony_kit.py, warehouses.py, landmarks.py, props*.py, rock_formations.py, textures.py) and commit the result. The build is deterministic (seeded noise only).
 """
 
 from __future__ import annotations
@@ -96,6 +101,7 @@ import ship as S  # noqa: E402
 import crash_site as CS  # noqa: E402
 import workshop as W  # noqa: E402
 import landmarks as LM  # noqa: E402
+import warehouses as WH  # noqa: E402
 
 STRUCTURES = K.MESH / "structures"
 WORLD = K.MESH / "world"
@@ -177,7 +183,16 @@ def formations(only=()):
             single(name, build, WORLD / "formations", collider=name in rock_formations.COLLIDE)
 
 
+def warehouses(only=()):
+    for name in WH.WAREHOUSES:
+        if not only or name in only:
+            single(name, lambda name=name: WH.warehouse(name))
+
+
 def main():
+    if sys.argv[1:2] == ["warehouses"]:
+        warehouses(sys.argv[2:])
+        return
     if sys.argv[1:2] == ["props"]:
         props(sys.argv[2:])
         return
@@ -199,6 +214,7 @@ def main():
         single(name, lambda h=h, seed=seed: F.stone_pillar((0, 0, 0), h, seed))
     single("stone_court", court)
     single("workshop", lambda: W.workshop())
+    warehouses()
     single("cargo_crate_colony", crate)
     landmarks()
     single("scrap_pile_metal", pile("metal"), WORLD, collider=False)
