@@ -94,6 +94,63 @@ public sealed class BotActionsTests
     }
 
     [Fact]
+    public void A_wound_up_attack_lands_after_its_windup_with_its_reaction()
+    {
+        // You stand at (0, 0, 6).
+        var bot = _f.Spawn(BotFixture.Smasher, new Vector3(0, 0, 7.5f));
+        var events = new List<BotAttackEvent>();
+        _f.Bots.Attacked += events.Add;
+        var hits = new List<PlayerHitView>();
+        S.Survival.PlayerHit += hits.Add;
+        Assert.Empty(S.Ok<BotAttackResult>(BotFixture.Brain, BotActions.BotAttack, new BotAttackArgs(bot, "slam", Player: You.Peer)).Hits);
+        Assert.Equal((false, 0.5f), (events.Single().Landed, events.Single().Windup));
+        Assert.True(_f.Bots.Find(bot)!.Winding);
+        Assert.Equal(100, S.Survival.View(You.Peer)!.Health);
+        Assert.Contains("already attacking", S.Refused(BotFixture.Brain, BotActions.BotAttack, new BotAttackArgs(bot, "poke", Player: You.Peer)));
+        // It is committed: it stands still and keeps its aim until the blow lands.
+        var yaw = _f.Bots.Find(bot)!.View.Yaw;
+        S.Ok(BotFixture.Brain, BotActions.MoveBot, new MoveBotArgs(bot, new Vec3(1, 0, 0)));
+        Assert.Equal((Vector3.Zero, yaw), (_f.Bots.Find(bot)!.Desired, _f.Bots.Find(bot)!.View.Yaw));
+
+        _f.Advance(0.3);
+        Assert.Equal(100, S.Survival.View(You.Peer)!.Health);
+        _f.Advance(0.3);
+        Assert.Equal(80, S.Survival.View(You.Peer)!.Health);
+        Assert.True(events[^1].Landed);
+        Assert.Equal(("player", 20f), (events[^1].Hits.Single().Kind, events[^1].Hits.Single().Damage));
+        Assert.Equal(Core.Characters.HitReaction.Knockdown, hits.Single().Reaction);
+        Assert.False(_f.Bots.Find(bot)!.Winding);
+    }
+
+    [Fact]
+    public void Stepping_out_of_reach_during_the_windup_dodges_the_blow()
+    {
+        // You stand at (0, 0, 6).
+        var bot = _f.Spawn(BotFixture.Smasher, new Vector3(0, 0, 7.5f));
+        var events = new List<BotAttackEvent>();
+        _f.Bots.Attacked += events.Add;
+        S.Ok(BotFixture.Brain, BotActions.BotAttack, new BotAttackArgs(bot, "slam", Player: You.Peer));
+        _f.Bots.Moved(bot, new Vector3(0, 0, 14), false);
+        _f.Advance(0.6);
+        Assert.Equal(100, S.Survival.View(You.Peer)!.Health);
+        Assert.True(events[^1].Landed);
+        Assert.Empty(events[^1].Hits);
+        // The swing still spent its interval.
+        _f.Bots.Moved(bot, new Vector3(0, 0, 7.5f), false);
+        Assert.Contains("not ready", S.Refused(BotFixture.Brain, BotActions.BotAttack, new BotAttackArgs(bot, "slam", Player: You.Peer)));
+    }
+
+    [Fact]
+    public void A_bot_killed_during_its_windup_never_lands_the_blow()
+    {
+        var bot = _f.Spawn(BotFixture.Smasher, new Vector3(0, 0, 7.5f));
+        S.Ok(BotFixture.Brain, BotActions.BotAttack, new BotAttackArgs(bot, "slam", Player: You.Peer));
+        _f.Bots.DamageBot(bot, 1000, "test", melee: false);
+        _f.Advance(1);
+        Assert.Equal(100, S.Survival.View(You.Peer)!.Health);
+    }
+
+    [Fact]
     public void Attacking_or_being_hurt_engages_a_bot_until_it_calms_down()
     {
         // You stand at (0, 0, 6).

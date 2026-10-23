@@ -32,6 +32,7 @@ public partial class BotModelsTest : StagedTest
     private int _red;
     private int _spooler;
     private int _duster;
+    private int _shooter;
     private Vector3 _hit;
 
     protected override string Tag => "botmodels";
@@ -123,9 +124,16 @@ public partial class BotModelsTest : StagedTest
                 _spooler = Spawn("vanilla:spooler_blue", new Vector3(12, 0, -4));
             if (frame == 30)
             {
+                // The tape is wound up first: the shot leaves, and hits, when the attack lands. Keep the first point
+                // the shooter's landed attack hits.
+                _host.Main.Bots.Bots!.Attacked += e =>
+                {
+                    if (e.Bot == _shooter && e.Landed && _hit == Vector3.Zero)
+                        _hit = e.Hits.Select(h => h.Point.ToGodot()).FirstOrDefault();
+                };
+                (_shooter, _hit) = (_spooler, Vector3.Zero);
                 var result = Act(BotActions.BotAttack, new BotAttackArgs(_spooler, "tape", Target: _green));
                 Check(result.Ok, $"the host has it shoot the Green Scuttler ({result})");
-                _hit = result.Ok ? Value<BotAttackResult>(result).Hits.Select(h => h.Point.ToGodot()).FirstOrDefault() : Vector3.Zero;
             }
             if (Body(_client, _spooler)?.Model is not { Effects.Count: > 0 } model || Shots(_client).Count == 0)
                 return false;
@@ -145,13 +153,13 @@ public partial class BotModelsTest : StagedTest
                 _duster = Spawn("vanilla:thresher_duster", new Vector3(-4, 0, 16));
             if (frame == 1)
             {
+                (_shooter, _hit) = (_duster, Vector3.Zero);
                 var result = Act(BotActions.BotAttack, new BotAttackArgs(_duster, "canister", Target: _green));
                 Check(result.Ok, $"the host has it shell the Green Scuttler ({result})");
-                _hit = result.Ok ? Value<BotAttackResult>(result).Hits.Select(h => h.Point.ToGodot()).FirstOrDefault() : Vector3.Zero;
             }
             // It fires at once: it is awake and shells the player too once its canister is ready again. Wait for the
             // canister that hit the Scuttler.
-            if (frame < 2 || Body(_client, _duster)?.Model is not { Effects.Count: > 0 } model
+            if (frame < 2 || _hit == Vector3.Zero || Body(_client, _duster)?.Model is not { Effects.Count: > 0 } model
                 || !Shots(_client).Any(s => s.Target.DistanceTo(_hit) < 0.01f))
                 return false;
             Check(model.Effects.All(e => e == BotEffects.Shot), $"the client shows its shots ({string.Join(", ", model.Effects)})");

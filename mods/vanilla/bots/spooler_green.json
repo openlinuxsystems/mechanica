@@ -40,7 +40,8 @@
         "factor": 0.5,
         "seconds": 3
       },
-      "sound": "spooler_fire"
+      "sound": "spooler_fire",
+      "windup": 0.35
     }
   ],
   "drops": [

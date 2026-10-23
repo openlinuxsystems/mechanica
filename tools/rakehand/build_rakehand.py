@@ -24,8 +24,8 @@ nodes are the rig (the game plays the clips on them and plants the feet):
 Clips (seconds; the loops loop): ``idle`` 2.4, ``patrol`` and ``chase`` (gaits; their ground speeds at speed
 scale 1 are printed and go in the bot's ``model.clip_speeds``), ``alert`` 0.8, ``lose_interest`` 0.7, ``hit`` 0.35,
 ``death`` 1.6, ``jump`` 0.35, ``fall`` 0.6, ``land`` 0.35, and the attacks: Field Hand ``fork_jab`` and
-``fork_sweep``, Baler ``pitch`` and ``haymaker``, Scarecrow ``lunge_jab`` and ``spin_sweep``. Strikes land about
-0.2 s in: the host deals the damage as an attack starts.
+``fork_sweep``, Baler ``pitch`` and ``haymaker``, Scarecrow ``lunge_jab`` and ``spin_sweep``. Each strike lands at its
+attack's ``windup`` (bots/*.json): the host deals the damage then, to whatever is still in reach.
 
 How to run (Blender as a Python module, no Blender UI needed):
 
@@ -56,7 +56,7 @@ sys.path.insert(0, str(REPO / "tools" / "lift"))
 sys.path.insert(0, str(REPO / "tools" / "scuttler"))
 import lift_textures as lt  # noqa: E402
 import build_scuttler as sc  # noqa: E402
-from build_scuttler import at, box, disc, env, pulse, rod, smooth, sphere, strike_early  # noqa: E402
+from build_scuttler import at, box, disc, env, pulse, retimed, rod, smooth, sphere  # noqa: E402
 
 MESHES = REPO / "mods" / "vanilla" / "meshes" / "bots"
 FPS = sc.FPS
@@ -88,7 +88,10 @@ VARIANTS = {
         neck=V((0, 0, 1.47)), tines={"R": 3, "L": 3}, fork=(0.44, 0.22),
         attacks={"poke": ["lunge_jab"], "swing": ["spin_sweep"]}),
 }
-ATTACK_CLIPS = {"fork_jab": 0.7, "fork_sweep": 1.0, "pitch": 0.9, "haymaker": 1.2, "lunge_jab": 0.55, "spin_sweep": 1.0}
+ATTACK_CLIPS = {"fork_jab": 0.88, "fork_sweep": 1.0, "pitch": 1.08, "haymaker": 1.2, "lunge_jab": 0.71, "spin_sweep": 1.0}
+# The jabs draw back longer so their strike comes at the attack's windup (bots/*.json); the sweeps strike as written
+# (fork_sweep and haymaker at 0.55 s, spin_sweep at 0.38 s). {clip: (strike as written, strike, length as written)}.
+TELEGRAPH = {"fork_jab": (0.18, 0.36, 0.7), "pitch": (0.24, 0.42, 0.9), "lunge_jab": (0.16, 0.32, 0.55)}
 VARIANT = ["field"]
 SIDES = (("L", -1), ("R", 1))
 
@@ -602,8 +605,7 @@ def gait(p, clip, u):
 
 def pose(p, clip, t, length):
     v = VARIANT[0]
-    if clip in ("fork_sweep", "haymaker", "spin_sweep"):
-        t = strike_early(t, 0.45, 0.2) if length >= 0.9 else t
+    t, length = retimed(TELEGRAPH, clip, t, length)
     u = t / length
     w = 2 * math.pi * u
     if clip == "idle":

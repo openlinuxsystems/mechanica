@@ -62,7 +62,7 @@ sys.path.insert(0, str(REPO / "tools" / "lift"))
 sys.path.insert(0, str(REPO / "tools" / "scuttler"))
 import lift_textures as lt  # noqa: E402
 import build_scuttler as sc  # noqa: E402
-from build_scuttler import at, box, disc, env, pulse, rod, sphere  # noqa: E402
+from build_scuttler import at, box, disc, env, pulse, retimed, rod, sphere  # noqa: E402
 
 MESHES = REPO / "mods" / "vanilla" / "meshes" / "bots"
 FPS = sc.FPS
@@ -84,7 +84,11 @@ VARIANTS = {
     "red": dict(id="spooler_red", name="Red Spooler", paint="#d0402e", accent="#9aa0a8",
                 tape=("diagonal", "#f0c020", "#141416"), attacks={"tape": ["heavy_shot"]}),
 }
-ATTACK_CLIPS = {"tape_shot": 0.7, "bubble_shot": 0.7, "rapid_shot": 0.5, "heavy_shot": 1.0}
+ATTACK_CLIPS = {"tape_shot": 0.9, "bubble_shot": 0.9, "rapid_shot": 0.62, "heavy_shot": 1.32}
+# The aim is held longer so the shot (it hits as it fires) leaves at the attack's windup (bots/*.json):
+# {clip: (shot as written, shot, length as written)}.
+TELEGRAPH = {"tape_shot": (0.15, 0.35, 0.7), "bubble_shot": (0.15, 0.35, 0.7), "rapid_shot": (0.12, 0.24, 0.5),
+             "heavy_shot": (0.18, 0.5, 1.0)}
 VARIANT = ["blue"]
 SIDES = (("L", -1), ("R", 1))
 
@@ -900,7 +904,7 @@ def pose(p, clip, t, length):
 
 def set_pose(nodes, clip, t, length):
     p = Pose(nodes)
-    pose(p, clip, t, length)
+    pose(p, clip, *retimed(TELEGRAPH, clip, t, length))
     # A hair of motion (a quarter degree) on every node, so no channel holds still through a clip.
     for i, n in enumerate(nodes):
         p.turn(n, X, 0.25 * math.sin(2 * math.pi * t / length) * (1 if i % 2 else -1))

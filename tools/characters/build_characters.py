@@ -4029,13 +4029,15 @@ def swing_time(t):
 
 
 # Overhead: the right fist slides down to the left one as the head comes over.
+# The wind-up takes the hammer up over the right shoulder (not straight up the middle), so from the front the head never
+# hides the face; it comes across to the middle on the way down.
 SLEDGE_SWING_KEYS = [
     (0.0, None),
-    (0.17, ((-0.11, -0.14, 1.6), (-0.12, 0.5, 0.86), 0.22,
+    (0.17, ((-0.21, -0.12, 1.6), (-0.22, 0.5, 0.84), 0.22,
             dict(spine=(-3.0, 0, -5.0), chest=(-5.0, 0, -9.0), neck=(0.0, 0, 5.0), head=(-3.0, 0, 3.0)))),
-    (0.35, ((-0.08, 0.0, 1.86), (-0.04, 0.9, -0.43), 0.2,
+    (0.35, ((-0.17, 0.02, 1.84), (-0.1, 0.9, -0.42), 0.2,
             dict(spine=(-7.0, 2.0, -6.0), chest=(-10.0, 1.0, -10.0), neck=(-2.0, 0, 6.0), head=(-6.0, 0, 4.0)))),
-    (0.46, ((-0.07, -0.2, 1.86), (-0.02, 0.05, 1.0), 0.18,
+    (0.46, ((-0.14, -0.2, 1.84), (-0.06, 0.05, 1.0), 0.18,
             dict(spine=(-2.0, 1.0, -2.0), chest=(-4.0, 0, -3.0), neck=(-2.0, 0, 2.0), head=(-4.0, 0, 1.0)))),
     (0.53, ((-0.05, -0.44, 1.56), (0.0, -0.74, 0.67), 0.15,
             dict(spine=(8.0, 0, 2.0), chest=(6.0, 0, 3.0), neck=(-6.0, 0, -1.0), head=(-3.0, 0, 0)))),
@@ -5875,24 +5877,27 @@ def clip_hit(direction):
 
 
 def clip_hit_heavy(t):
-    """A big blow from the front: knocked back two stumbling steps, the arms windmilling, almost to a knee, then up."""
+    """A big blow from the front: the head snaps back and the forearms come up to guard, two stumbling steps back on bent
+    knees (the arms out for balance, not flung overhead), a dip almost to a knee, then the body rights itself."""
+    guard = {"swing": 62.0, "elbow": 112.0, "down": 16.0, "yaw": 18.0, "wrist": 10.0}
     return react_keys([
         (0.0, {}),
-        (0.07, {"hips_y": 0.06, "hips": (-12.0, 0, 4.0), "spine": (-16.0, 2.0, 6.0), "chest": (-14.0, 2.0, 6.0),
-                "neck": (-14.0, 0, 0), "head": (-20.0, 6.0, 8.0), "shoulder_l": (0, -10.0, 10.0), "shoulder_r": (0, -10.0, 10.0),
-                "arm_l": {"swing": 70.0, "elbow": 50.0, "down": -10.0}, "arm_r": {"swing": 90.0, "elbow": 40.0, "down": -20.0},
-                "fingers_l": 10.0, "fingers_r": 10.0}),
-        (0.22, {"hips_y": 0.16, "hips_z": -0.08, "hips": (-6.0, 0, 6.0), "spine": (-8.0, 0, 4.0), "chest": (-6.0, 0, 4.0),
-                "head": (-8.0, 0, 4.0), "leg_r": fk((30, 0, 4), 40, -10.0), "leg_l": fk((-6, 0, 2), 22, 6.0),
-                "arm_l": {"swing": 20.0, "elbow": 40.0, "down": 0.0}, "arm_r": {"swing": 110.0, "elbow": 30.0, "down": -30.0}}),
+        (0.06, {"hips_y": 0.07, "hips": (-10.0, 0, 3.0), "spine": (-14.0, 2.0, 5.0), "chest": (-12.0, 2.0, 5.0),
+                "neck": (-12.0, 0, 0), "head": (-18.0, 5.0, 7.0), "shoulder_l": (0, -8.0, 8.0), "shoulder_r": (0, -8.0, 8.0),
+                "arm_l": guard, "arm_r": guard, "fingers_l": 75.0, "fingers_r": 75.0, "thumb_l": 40.0, "thumb_r": 40.0}),
+        (0.2, {"hips_y": 0.16, "hips_z": -0.08, "hips": (-5.0, 0, 5.0), "spine": (-7.0, 0, 3.0), "chest": (-5.0, 0, 3.0),
+               "head": (-7.0, 0, 3.0), "leg_r": fk((30, 0, 4), 40, -10.0), "leg_l": fk((-6, 0, 2), 22, 6.0),
+               "arm_l": {"swing": 46.0, "elbow": 84.0, "down": 22.0, "yaw": 10.0}, "arm_r": {"swing": 52.0, "elbow": 70.0, "down": 26.0, "yaw": -6.0},
+               "fingers_l": 50.0, "fingers_r": 50.0}),
         (0.38, {"hips_y": 0.24, "hips_z": -0.16, "hips": (10.0, 0, -4.0), "spine": (6.0, 0, -2.0),
                 "leg_l": fk((20, 0, -2), 50, -8.0), "leg_r": fk((-24, 0, 4), 60, 10.0),
-                "arm_l": {"swing": 60.0, "elbow": 30.0, "down": 10.0}, "arm_r": {"swing": 40.0, "elbow": 60.0, "down": 10.0}}),
+                "arm_l": {"swing": 34.0, "elbow": 40.0, "down": 34.0, "yaw": -14.0}, "arm_r": {"swing": 40.0, "elbow": 52.0, "down": 30.0, "yaw": 10.0},
+                "fingers_l": 30.0, "fingers_r": 30.0}),
         (0.55, {"hips_y": 0.26, "hips_z": -0.3, "hips": (24.0, 0, 0), "spine": (14.0, 0, 0), "chest": (6.0, 0, 0),
                 "neck": (-16.0, 0, 0), "head": (-12.0, 0, 0), "leg_l": fk((-50, 0, 2), 100, 20.0), "leg_r": fk((10, 0, 2), 70, -10.0),
-                "arm_l": {"swing": 40.0, "elbow": 30.0, "down": 20.0}, "arm_r": {"swing": 50.0, "elbow": 10.0, "down": 16.0}}),
+                "arm_l": {"swing": 36.0, "elbow": 36.0, "down": 24.0}, "arm_r": {"swing": 44.0, "elbow": 24.0, "down": 20.0}}),
         (0.78, {"hips_y": 0.18, "hips_z": -0.08, "hips": (8.0, 0, 0), "spine": (4.0, 0, 0), "leg_l": fk((-20, 0, 2), 30, 6.0),
-                "leg_r": fk((6, 0, 2), 20, -2.0)}),
+                "leg_r": fk((6, 0, 2), 20, -2.0), "arm_l": {"swing": 14.0, "elbow": 26.0}, "arm_r": {"swing": 16.0, "elbow": 28.0}}),
         (HIT_HEAVY_SECONDS, {}),
     ], t)
 

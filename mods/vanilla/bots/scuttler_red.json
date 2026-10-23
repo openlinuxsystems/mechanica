@@ -37,7 +37,9 @@
       "radius": 4,
       "interval": 1,
       "kills_self": true,
-      "sound": "scuttler_explode"
+      "sound": "scuttler_explode",
+      "windup": 0.38,
+      "reaction": "knockdown"
     }
   ],
   "drops": [

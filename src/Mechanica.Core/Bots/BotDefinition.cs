@@ -423,6 +423,19 @@ public sealed record BotAttackDefinition
     /// <summary>Sound event it plays. Omitted means <c>&lt;family&gt;_attack</c>.</summary>
     public string? Sound { get; init; }
 
+    /// <summary>
+    /// Seconds from the start of the attack (its clip starts, the telegraph) to the moment it lands (the clip's strike).
+    /// It lands only on what is still in reach then, so a player can see it coming and step away. Omitted or 0 lands at once.
+    /// </summary>
+    public float? Windup { get; init; }
+
+    /// <summary>
+    /// How a player it hits reacts: <c>none</c>, <c>light</c> (a flinch away from the blow), <c>heavy</c> (knocked back a
+    /// couple of steps) or <c>knockdown</c> (off their feet). Omitted means the one its damage earns
+    /// (<c>survival.json</c> <c>hits</c>).
+    /// </summary>
+    public Characters.HitReaction? Reaction { get; init; }
+
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }

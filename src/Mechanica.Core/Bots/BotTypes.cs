@@ -117,7 +117,10 @@ public sealed record BotAttackResult(IReadOnlyList<ShotHitView> Hits);
 /// <param name="Attack">The attack id.</param>
 /// <param name="Sound">The sound event it plays.</param>
 /// <param name="Hits">What it hit.</param>
-public sealed record BotAttackEvent(int Bot, string Attack, string Sound, IReadOnlyList<ShotHitView> Hits);
+/// <param name="Landed">False as an attack with a wind-up starts (its clip plays; <see cref="Hits"/> is empty), true when
+/// it lands (on what it hit, or nothing when the target got away).</param>
+/// <param name="Windup">Seconds from the start to the landing (on the start).</param>
+public sealed record BotAttackEvent(int Bot, string Attack, string Sound, IReadOnlyList<ShotHitView> Hits, bool Landed = true, float Windup = 0f);
 
 /// <summary>A planted crop a bot can go for.</summary>
 /// <param name="Creation">Creation holding the soil.</param>

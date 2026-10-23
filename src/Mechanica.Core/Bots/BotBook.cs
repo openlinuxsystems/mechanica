@@ -18,11 +18,16 @@ namespace Mechanica.Core.Bots;
 /// <param name="KillsSelf">Using it kills the bot.</param>
 /// <param name="HitsParts">It can hurt crops and parts.</param>
 /// <param name="Sound">Sound event it plays.</param>
+/// <param name="Windup">Seconds from its start to when it lands (0: at once).</param>
+/// <param name="Reaction">How a player it hits reacts, or null for the one its damage earns.</param>
 public sealed record BotAttack(
     string Id, BotAttackKind Kind, float Damage, float PartDamage, float Range, float Radius, float Interval,
     float DamagePerSecond, float DamageSeconds, bool KillsSelf, bool HitsParts, string Sound,
-    float SlowFactor = 1f, float SlowSeconds = 0f, float ObjectDamage = 0f)
+    float SlowFactor = 1f, float SlowSeconds = 0f, float ObjectDamage = 0f, float Windup = 0f, Characters.HitReaction? Reaction = null)
 {
+    /// <summary>The longest wind-up an attack may have, in s.</summary>
+    public const float MaxWindup = 3f;
+
     /// <summary>True when it slows players it hits.</summary>
     public bool Slows => SlowFactor < 1f && SlowSeconds > 0f;
 }
@@ -645,6 +650,11 @@ public sealed class BotBook : IBotCatalog
             Positive(slow.Seconds, $"{path}.slow.seconds", "seconds", required: true, sink);
         }
         NonNegative(a.ObjectDamage, $"{path}.object_damage", "object_damage", required: false, sink);
+        NonNegative(a.Windup, $"{path}.windup", "windup (s)", required: false, sink);
+        if (a.Windup is { } windup && (windup > BotAttack.MaxWindup || (a.Interval is { } every && windup >= every)))
+            sink.Error(code, $"{path}.windup", $"windup must be at most {BotAttack.MaxWindup} s and shorter than the interval.");
+        if (a.Reaction is { } reaction && !Enum.IsDefined(reaction))
+            sink.Error(code, $"{path}.reaction", "reaction must be none, light, heavy or knockdown.");
         if (a.Sound is not null && !PartValidator.IsItemRef(a.Sound))
             sink.Error(code, $"{path}.sound", $"sound '{a.Sound}' must be a sound event id.");
         if (sink.ErrorCount > errors)
@@ -652,7 +662,7 @@ public sealed class BotBook : IBotCatalog
         var radius = a.Radius ?? 0f;
         return new BotAttack(a.Id!, a.Kind!.Value, a.Damage!.Value, a.PartDamage ?? a.Damage!.Value, a.Range ?? radius, radius, a.Interval!.Value,
             a.DamageOverTime?.PerSecond ?? 0f, a.DamageOverTime?.Seconds ?? 0f, a.KillsSelf ?? false, a.HitsParts ?? true,
-            a.Sound ?? $"{family}_attack", a.Slow?.Factor ?? 1f, a.Slow?.Seconds ?? 0f, a.ObjectDamage ?? 0f);
+            a.Sound ?? $"{family}_attack", a.Slow?.Factor ?? 1f, a.Slow?.Seconds ?? 0f, a.ObjectDamage ?? 0f, a.Windup ?? 0f, a.Reaction);
     }
 
     private static void CheckBehavior(JsonObject node, string path, int depth, int[] count, bool hasScript, DiagnosticSink sink)

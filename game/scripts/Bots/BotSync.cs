@@ -314,7 +314,8 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
     private void OnAttacked(BotAttackEvent attack)
     {
         Broadcast(MethodName.BotAttacked, Json(attack));
-        if (Bots!.Find(attack.Bot) is { } bot)
+        // The attack's sound goes off as it lands.
+        if (attack.Landed && Bots!.Find(attack.Bot) is { } bot)
             Emit(attack.Sound, bot.Type.ModId, bot.Centre.ToGodot());
     }
 
@@ -414,6 +415,8 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
             AddChild(body);
             body.GlobalPosition = view.Position.ToGodot();
             body.Rotation = new Vector3(0, Mathf.DegToRad(view.Yaw), 0);
+            if (body.Model is { } model)
+                model.HitFrom = () => NearestPlayer(body.GlobalPosition);
         }
         body.Show(view, follow: !Session.IsHost);
     }
@@ -444,7 +447,7 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
     private void BotAttacked(string json)
     {
         if (Read<BotAttackEvent>(json) is { } attack && _bodies.TryGetValue(attack.Bot, out var body))
-            body.Attacked(attack.Attack, [.. attack.Hits.Select(h => h.Point.ToGodot())]);
+            body.Attacked(attack.Attack, [.. attack.Hits.Select(h => h.Point.ToGodot())], attack.Landed);
     }
 
     /// <summary>Host → client: the raid in progress.</summary>
@@ -458,6 +461,10 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
     }
 
     private static string Json<T>(T value) => JsonSerializer.Serialize(value, ActionJson.Options);
+
+    // Where a blow to a bot came from as every peer can tell: the nearest player (the one most likely to have struck it).
+    private Vector3? NearestPlayer(Vector3 at) =>
+        Players.Players.Values.Select(p => p.GlobalPosition).OrderBy(p => p.DistanceSquaredTo(at)).Cast<Vector3?>().FirstOrDefault();
 
     private static T? Read<T>(string json) where T : class
     {

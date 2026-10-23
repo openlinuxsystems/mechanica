@@ -37,6 +37,15 @@ public partial class BotModelView : Node3D
     // An effect this soon after another is not shown again (a blast that kills its bot is one effect), in s.
     private const double EffectGap = 1.0;
 
+    // A blow that connects, either way: the clip freezes for HitStop s; a bot that is hit flashes white for Flash s and is
+    // knocked away from the blow (Knock m and KnockTilt degrees at most, by how much of its health it took) on a spring.
+    private const float HitStop = 0.07f;
+    private const float Flash = 0.14f;
+    private const float Knock = 0.22f;
+    private const float KnockTilt = 14f;
+    private const float KnockStiffness = 260f;
+    private const float KnockDamping = 18f;
+
     // Foot placement: how far up and down to look for ground (m), the steepest tilt, the most the body moves up or
     // down (m), how fast it follows (per second), and how far from the camera it runs (m).
     private const float RayUp = 0.6f;
@@ -75,6 +84,20 @@ public partial class BotModelView : Node3D
     private readonly List<string> _effects = [];
     private Node3D? _shot;
     private double _idleWait = -1;
+    private readonly List<GeometryInstance3D> _meshes = [];
+    private StandardMaterial3D? _flash;
+    private float _flashLeft;
+    private float _stopLeft;
+    private Vector3 _knock;
+    private Vector3 _knockSpeed;
+    private Vector3 _knockAxis = Vector3.Right;
+    private Transform3D _sceneRest = Transform3D.Identity;
+
+    /// <summary>Where the blow that hurt it last came from (the nearest player), or null; set by its body before <see cref="Show"/>.</summary>
+    public Func<Vector3?>? HitFrom { get; set; }
+
+    /// <summary>How far it is knocked from where it stands now (m), for tests.</summary>
+    public float Knocked => _knock.Length();
 
     /// <summary>Plays a sound event from the bot's mod where the bot is, on this peer only (an idle's moo).</summary>
     public Action<string>? PlaySound { get; set; }
@@ -131,12 +154,14 @@ public partial class BotModelView : Node3D
         AddChild(_tilt);
         _scene = Scene;
         _tilt.AddChild(_scene);
+        _sceneRest = _scene.Transform;
         HexColor.TryParse(Model.EyeCalm, out var calm);
         HexColor.TryParse(Model.EyeEngaged, out var engaged);
         _calm = new Color(calm.R, calm.G, calm.B);
         _engagedColor = new Color(engaged.R, engaged.G, engaged.B);
         CollectGlows(_scene);
         CollectLegs(_scene);
+        CollectMeshes(_scene);
         // The shot only shows while it flies (BotShot), as a copy.
         _shot = _scene.FindChild(BotEffects.ShotNode, true, false) as Node3D;
         if (_shot is not null)
@@ -188,7 +213,10 @@ public partial class BotModelView : Node3D
         else if (view.Fed > before.Fed || view.Meals > before.Meals)
             PlayOneShot("eat");
         else if (view.Health < before.Health)
+        {
             PlayOneShot("hit");
+            Struck((before.Health - view.Health) / Math.Max(1f, view.MaxHealth));
+        }
         else if (view.Engaged && !before.Engaged)
             PlayOneShot("alert");
         else if (!view.Engaged && before.Engaged)
@@ -196,18 +224,25 @@ public partial class BotModelView : Node3D
     }
 
     /// <summary>
-    /// The bot used <paramref name="attack"/>, hitting <paramref name="hits"/> (world points): plays its clips in turn
-    /// and shows its effect.
+    /// The bot used <paramref name="attack"/>: as it starts it plays its clips in turn (an attack with a wind-up starts
+    /// before it lands), and as it lands on <paramref name="hits"/> (world points) it shows its effect, and the clip
+    /// catches for a moment on a blow that connects.
     /// </summary>
-    public void Attack(string attack, IReadOnlyList<Vector3> hits)
+    public void Attack(string attack, IReadOnlyList<Vector3> hits, bool landed = true)
     {
-        if (Type.Attack(attack) is { } used)
+        var used = Type.Attack(attack);
+        if (landed && used is not null)
         {
             if (Model.Effects.GetValueOrDefault(attack) == BotEffects.Shot)
                 ShowShots(hits, used.Range + Type.Radius);
             else
                 ShowEffect(attack, used.Radius > 0 ? used.Radius : used.Range + Type.Radius);
+            if (hits.Count > 0 && used.Kind == BotAttackKind.Melee)
+                _stopLeft = HitStop;
         }
+        // An attack with a wind-up started its clip already.
+        if (landed && used is { Windup: > 0f })
+            return;
         if (_view is { Dead: true } || !Model.Attacks.TryGetValue(attack, out var clips))
             return;
         var turn = _attackTurn.GetValueOrDefault(attack);
@@ -231,9 +266,62 @@ public partial class BotModelView : Node3D
                 PlayLoop();
             if (!dead)
                 MaybeIdle(delta);
-            _player.Advance(delta);
+            // A hit-stop holds the clip where it is for a beat.
+            _stopLeft -= dt;
+            _player.Advance(_stopLeft > 0f ? delta * 0.05 : delta);
         }
         Plant(dt, dead);
+        Recoil(dt);
+    }
+
+    // ---- Being hit ----
+
+    // A blow took `share` of its health: it flashes, catches, and is knocked away from the blow.
+    private void Struck(float share)
+    {
+        _flashLeft = Flash;
+        _stopLeft = HitStop;
+        var from = HitFrom?.Invoke();
+        var away = from is { } at ? GlobalPosition - at : GlobalBasis.Z;
+        away.Y = 0;
+        away = away.LengthSquared() > 1e-4f ? away.Normalized() : GlobalBasis.Z.Normalized();
+        var strength = Mathf.Clamp(0.45f + share * 3f, 0.45f, 1f);
+        _knockSpeed += away * Knock * strength * 9f;
+        _knockAxis = Vector3.Up.Cross(away).Normalized();
+    }
+
+    private void Recoil(float dt)
+    {
+        _knockSpeed += (-KnockStiffness * _knock - KnockDamping * _knockSpeed) * dt;
+        _knock += _knockSpeed * dt;
+        if (_knock.LengthSquared() < 1e-8f && _knockSpeed.LengthSquared() < 1e-6f)
+            _knock = _knockSpeed = Vector3.Zero;
+        // The model leans back from the blow as far as it is pushed, in the bot's own frame.
+        var local = GlobalBasis.Inverse() * _knock;
+        var tilt = Mathf.DegToRad(KnockTilt) * Mathf.Clamp(_knock.Length() / Knock, 0f, 1f);
+        var turn = tilt > 1e-4f ? new Basis((GlobalBasis.Inverse() * _knockAxis).Normalized(), tilt) : Basis.Identity;
+        _scene.Transform = new Transform3D(turn, local) * _sceneRest;
+        if (_flash is null)
+            return;
+        _flashLeft -= dt;
+        var on = _flashLeft > 0f && _view is not { Dead: true };
+        _flash.AlbedoColor = new Color(1f, 1f, 1f, on ? 0.75f * _flashLeft / Flash : 0f);
+        foreach (var mesh in _meshes)
+            mesh.MaterialOverlay = on ? _flash : null;
+    }
+
+    private void CollectMeshes(Node node)
+    {
+        if (node is GeometryInstance3D geometry)
+            _meshes.Add(geometry);
+        foreach (var child in node.GetChildren())
+            CollectMeshes(child);
+        _flash ??= new StandardMaterial3D
+        {
+            ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+            Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+            AlbedoColor = new Color(1f, 1f, 1f, 0f),
+        };
     }
 
     public override void _PhysicsProcess(double delta)

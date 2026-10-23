@@ -119,6 +119,8 @@ public partial class SledgeTool : HandTool
     /// <summary>The whoosh of a swing, heard by the swinging player.</summary>
     public const string SwingSound = "sledgehammer_swing";
 
+    private const float HitStop = 0.08f;
+
     // The head comes down: hit what is under the crosshair, within reach.
     private void Strike()
     {
@@ -149,6 +151,12 @@ public partial class SledgeTool : HandTool
         {
             if (result.Ok)
                 _shakeLeft = Build.Settings!.Sledge.ShakeSeconds;
+            // A blow on a bot or a player holds the swing for a few frames as the head lands.
+            if (result.Ok && (args.Bot is not null || args.Player is not null))
+            {
+                (Player.Character as CharacterModel)?.HitStop(HitStop);
+                (Player.Arms as CharacterModel)?.HitStop(HitStop);
+            }
             done?.Invoke(result);
         });
     }

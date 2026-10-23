@@ -45,7 +45,8 @@
       "part_damage": 15,
       "range": 1.5,
       "interval": 1.2,
-      "sound": "scuttler_attack"
+      "sound": "scuttler_attack",
+      "windup": 0.4
     }
   ],
   "drops": [
