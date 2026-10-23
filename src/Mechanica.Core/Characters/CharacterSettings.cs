@@ -30,7 +30,7 @@ public sealed record CharacterSettings
     /// </summary>
     public Dictionary<string, float> ClipSpeeds { get; init; } = new()
     {
-        ["walk"] = 1.5f, ["jog"] = 4f, ["run"] = 7f, ["crouch_walk"] = 1.5f, ["swim"] = 2.5f,
+        ["walk"] = 1.5f, ["jog"] = 4f, ["run"] = 7f, ["crouch_walk"] = 1.5f, ["swim"] = 2.5f, ["swim_fast"] = 4f,
     };
 
     /// <summary>Where in a walking cycle (0 to 1) the left and then the right foot strikes the ground.</summary>
@@ -307,6 +307,9 @@ public sealed record MotionSettings
     /// <summary>How far the body dips forward (degrees) as it sets off at a jog or faster; a walk start dips less.</summary>
     public float StartLeanDegrees { get; init; } = 10f;
 
+    /// <summary>The most a swimmer's body tips head-down to dive (or back to rise) as it swims along, in degrees.</summary>
+    public float MaxDiveDegrees { get; init; } = 50f;
+
     /// <summary>Fade into a hit reaction.</summary>
     public float ReactionFadeIn { get; init; } = 0.04f;
 
@@ -349,6 +352,7 @@ public sealed record MotionSettings
             throw new FormatException("motion.fidget_after must be one or more times of at least 1 second.");
         CharacterSettings.Positive(FidgetFade, "motion.fidget_fade");
         Degrees(StartLeanDegrees, 0f, 30f, "motion.start_lean_degrees");
+        Degrees(MaxDiveDegrees, 0f, 80f, "motion.max_dive_degrees");
         if (StopSpeeds is not { Length: 2 } || !(StopSpeeds[0] > 0f) || !(StopSpeeds[1] > StopSpeeds[0]) || !float.IsFinite(StopSpeeds[1]))
             throw new FormatException("motion.stop_speeds must be two rising speeds above 0.");
         CharacterSettings.Positive(ReactionFadeIn, "motion.reaction_fade_in");

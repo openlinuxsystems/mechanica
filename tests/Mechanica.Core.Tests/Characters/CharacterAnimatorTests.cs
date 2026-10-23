@@ -442,6 +442,33 @@ public class CharacterAnimatorTests
     }
 
     [Fact]
+    public void SwimmersSprintBackUpAndTipIntoADive()
+    {
+        var lengths = new Dictionary<string, float>(Lengths) { ["swim_fast"] = 0.9f, ["swim_back"] = 1.2f };
+        float Share(CharacterAnimator a, string clip) => a.Body.Where(c => c.Clip == clip).Sum(c => c.Weight);
+        CharacterPose Swimming(float vz, float vy = 0f) => new(new Vector3(0, vy, vz), 0, 0, OnFloor: false, Swimming: true);
+        var animator = new CharacterAnimator(new CharacterSettings(), lengths);
+        Run(animator, Swimming(-2.5f), 1f);
+        Assert.Equal(1f, Share(animator, "swim"), 2);
+        Assert.Equal(0f, animator.SwimPitch, 2);
+        // Sprinting, the harder stroke.
+        Run(animator, Swimming(-4f), 1f);
+        Assert.Equal(1f, Share(animator, "swim_fast"), 2);
+        // Going down as it swims along, it tips head-first by the path's angle; going up, back toward the surface.
+        Run(animator, Swimming(-2.5f, -2.5f), 2f);
+        Assert.Equal(45f, animator.SwimPitch * 180f / MathF.PI, 0);
+        Run(animator, Swimming(-2.5f, 2f), 2f);
+        Assert.True(animator.SwimPitch < -0.5f);
+        // Straight down on the spot it sinks upright.
+        Run(animator, Swimming(0f, -2f), 2f);
+        Assert.Equal(0f, animator.SwimPitch, 2);
+        // Backward, the back stroke.
+        Run(animator, Swimming(2.5f), 1f);
+        Assert.Equal(1f, Share(animator, "swim_back"), 2);
+        Assert.DoesNotContain(animator.Body, c => c.Clip == "swim");
+    }
+
+    [Fact]
     public void TheLegsKeepWalkingThroughASwing()
     {
         var animator = Make();
