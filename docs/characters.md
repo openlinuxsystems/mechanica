@@ -140,7 +140,11 @@ with the rim and the head looks into the turn; the feet press the pedals with `s
 The animation set is shared by every character: `idle`, `idle_look` and `idle_stretch` (fidgets), `turn_l` and `turn_r`
 (stepping round on the spot), `walk`, `walk_back` (stepping backward: onto the ball of the foot, weight back, arms
 out for balance; played in reverse on the walk's beat, so it has the walk's length; without it the walk plays in
-reverse), `jog`, `run`, `crouch_idle`, `crouch_walk`,
+reverse), `jog`, `run`, `strafe_l` and `strafe_r` with `strafe_jog_l`, `strafe_jog_r`, `strafe_run_l` and `strafe_run_r`
+(the walk, jog and run stepping on a diagonal 45 degrees to the left or right of ahead, the feet still pointing ahead;
+each has the length of the clip it stands in for. Moving sideways they take up to all of it and the legs turn the
+rest, so the feet always follow the way the body goes; without all six the legs turn up to `max_body_turn_degrees`
+instead), `crouch_idle`, `crouch_walk`,
 `jump`, `jump_run` (a running leap), `fall`, `land`, `land_hard` (a long fall, a hand to the ground), `swim_idle`, `swim`, `climb` (a ladder: hands and feet on rungs 0.25 m apart, played forward or back as the climber moves up or down), `sit` (a chair, hands on a wheel), `sit_low` (a low seat, legs out in
 front), `sit_ride` and `sit_ride_low` (the same with the hands resting on the thighs, for passengers), `sit_saddle` (astride a
 saddle, leaning forward with the hands on handlebars), `sit_saddle_ride` (astride, sitting up with the hands on the thighs)

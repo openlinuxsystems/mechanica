@@ -2991,27 +2991,32 @@ def _rx(deg):
 
 
 def foot_cycle(phase, T, v, duty, lift, strike_pitch, off_pitch, center_y, side, swing_shape=0.75,
-               heel_frac=0.15, toe_frac=0.4):
+               heel_frac=0.15, toe_frac=0.4, heading=0.0, width=0.0):
     """Ankle target and foot pitch for one leg. phase in [0,1): 0 = heel strike.
 
     During stance the contact point (heel, then the whole foot, then the ball) moves backward (+Y) at
-    exactly the ground speed v, so feet don't skate when the body moves at v."""
+    exactly the ground speed v, so feet don't skate when the body moves at v. heading (degrees, + to the right) turns
+    the way the body travels away from the way the hips face: the contact then slides back along that line instead (the
+    feet still point ahead), each foot on its own track, set out by width (m) so the swinging foot clears the planted one."""
     D = v * T * duty
-    x = bone_head(f"foot_{side}")[0]
-    y_h0 = center_y - D / 2 + HEEL_OFF[1]
+    x = bone_head(f"foot_{side}")[0] + side_sign(side) * width
+    # the body travels along (-sin h, -cos h) (+x is its left, -y ahead), so a planted foot slides the other way
+    hx, hy = math.sin(math.radians(heading)), math.cos(math.radians(heading))
 
     def stance(s):
-        heel_y = y_h0 + D * s
+        along = D * (s - 0.5)
+        heel_x = x + hx * along
+        heel_y = center_y + HEEL_OFF[1] + hy * along
         s1, s2 = heel_frac, 1.0 - toe_frac
         if s < s1:
             th = strike_pitch * (1 - sstep(0, s1, s))
-            heel = np.array([x, heel_y, 0.0])
+            heel = np.array([heel_x, heel_y, 0.0])
             return heel - _rx(th) @ HEEL_OFF, th
         if s < s2:
-            return np.array([x, heel_y, 0.0]) - HEEL_OFF, 0.0
+            return np.array([heel_x, heel_y, 0.0]) - HEEL_OFF, 0.0
         u = (s - s2) / (1 - s2)
         th = off_pitch * u ** 1.4
-        ball = np.array([x, heel_y + (BALL_OFF[1] - HEEL_OFF[1]), 0.0])
+        ball = np.array([heel_x, heel_y + (BALL_OFF[1] - HEEL_OFF[1]), 0.0])
         return ball - _rx(th) @ BALL_OFF, th
 
     if phase < duty:
@@ -3021,10 +3026,11 @@ def foot_cycle(phase, T, v, duty, lift, strike_pitch, off_pitch, center_y, side,
     a_end, th_end = stance(1.0)
     a_start, th_start = stance(0.0)
     e = 0.5 - 0.5 * math.cos(math.pi * u)
+    sx = a_end[0] + (a_start[0] - a_end[0]) * e
     y = a_end[1] + (a_start[1] - a_end[1]) * e
     z = a_end[2] + (a_start[2] - a_end[2]) * e + lift * math.sin(math.pi * u ** swing_shape)
     th = th_end + (th_start - th_end) * sstep(0.1, 0.95, u) + 12.0 * math.sin(math.pi * u)
-    return np.array([x, y, z]), th, False
+    return np.array([sx, y, z]), th, False
 
 
 def _wave(ph, lag=0.0):
@@ -3036,7 +3042,7 @@ def locomotion(t, T, v, duty, *, hips_base, bob, lift, strike_pitch=15.0, off_pi
                arm_swing=20.0, elbow=18.0, elbow_extra=10.0, fingers=20.0, hips_yaw=5.0, chest_yaw=7.0,
                center_y=0.02, running=False, arm_down=None, head_comp=0.8, swing_shape=0.75,
                heel_frac=0.15, toe_frac=0.4, knee_pole=(0, -1, 0), sway=0.0, roll=0.0, bend=0.0, shoulder=0.0,
-               arm_cross=0.0, arm_lag=0.04, wrist_flop=6.0, pump=0.0, nod=0.0, bounce=0.0):
+               arm_cross=0.0, arm_lag=0.04, wrist_flop=6.0, pump=0.0, nod=0.0, bounce=0.0, heading=0.0, width=0.0):
     """Full-body locomotion spec at time t (seconds) for a cycle of period T at speed v.
 
     Beyond the feet (foot_cycle) and the pelvis height (_hips_curve), the body moves like a body rather than a set of
@@ -3044,7 +3050,8 @@ def locomotion(t, T, v, duty, *, hips_base, bob, lift, strike_pitch=15.0, off_pi
     bends back against it (bend) so the shoulders stay level; the shoulders roll forward with their arm (shoulder); the
     arms trail the legs by arm_lag of a cycle, the elbows bend on the way forward and the hands flop after them
     (wrist_flop); in a run the arms cross in front (arm_cross) and pump (pump); the torso dips at each foot strike
-    (bounce) and the head, kept level and facing ahead, nods a beat behind it (nod)."""
+    (bounce) and the head, kept level and facing ahead, nods a beat behind it (nod). heading and width make it a
+    diagonal step (foot_cycle): the hips turn a little toward the way they go and the chest turns back to face ahead."""
     ph = (t / T) % 1.0
     c = math.cos(2 * math.pi * ph)
     mid = duty / 2
@@ -3052,24 +3059,26 @@ def locomotion(t, T, v, duty, *, hips_base, bob, lift, strike_pitch=15.0, off_pi
     feet = {}
     for side, off in (("l", 0.0), ("r", 0.5)):
         a, th, st = foot_cycle((ph - off) % 1.0, T, v, duty, lift, strike_pitch, off_pitch, center_y, side,
-                               swing_shape, heel_frac, toe_frac)
+                               swing_shape, heel_frac, toe_frac, heading, width)
         feet[side] = (a, th, st)
     # over the left foot at the middle of its stance (+x is the body's left), over the right half a cycle later
     over = _wave(ph, mid)
     hips_x = sway * over
     hips_roll = -roll * over          # the swinging side's hip drops
     hz = _hips_curve(T, v, duty, hips_base, bob, running, strike_pitch, off_pitch, center_y, lift, swing_shape,
-                     heel_frac, toe_frac, sway, roll)(ph)
+                     heel_frac, toe_frac, sway, roll, heading, width)(ph)
     # twice a cycle: the dip after each foot strike
     dip = math.cos(4 * math.pi * (ph - mid - 0.04))
     spec["hips_z"] = hz
     spec["hips_x"] = hips_x
-    spec["hips"] = (lean * 0.35 + bounce * 0.4 * dip, hips_roll, -hips_yaw * c)
-    twist = (hips_yaw + chest_yaw) * _wave(ph, 0.03) * 0.5
+    # stepping on a diagonal the hips turn a sixth of the way toward it; the spine and chest take it back out
+    face = -heading / 6.0
+    spec["hips"] = (lean * 0.35 + bounce * 0.4 * dip, hips_roll, -hips_yaw * c + face)
+    twist = (hips_yaw + chest_yaw) * _wave(ph, 0.03) * 0.5 - face * 0.5
     spec["spine"] = (lean * 0.35 + bounce * 0.3 * dip, -hips_roll * bend * 0.6, twist)
     spec["chest"] = (lean * 0.3 + bounce * 0.3 * _wave(2 * ph, 2 * mid + 0.12), -hips_roll * bend * 0.4, twist)
     # the head keeps facing ahead (it undoes the chest's turn) and nods a little after the dip
-    head_yaw = -(twist * 2 - hips_yaw * c) * 0.5
+    head_yaw = -((twist + face * 0.5) * 2 - hips_yaw * c) * 0.5
     nodding = nod * math.cos(4 * math.pi * (ph - mid - 0.12))
     spec["neck"] = (-lean * head_comp * 0.5 - bounce * 0.3 * dip + nodding * 0.4, hips_roll * (1 - bend) * 0.5, head_yaw)
     spec["head"] = (-lean * head_comp * 0.5 - bounce * 0.2 * dip + nodding * 0.6, hips_roll * (1 - bend) * 0.5, head_yaw)
@@ -3092,11 +3101,12 @@ def locomotion(t, T, v, duty, *, hips_base, bob, lift, strike_pitch=15.0, off_pi
 _HIPS_CACHE = {}
 
 
-def _hips_curve(T, v, duty, base, bob, running, sp, op, cy, lift, shape, hf, tf, sway=0.0, roll=0.0):
+def _hips_curve(T, v, duty, base, bob, running, sp, op, cy, lift, shape, hf, tf, sway=0.0, roll=0.0, heading=0.0,
+                width=0.0):
     """Pelvis height over the cycle: a bob (walk: peak at mid-stance, run: dip at mid-stance), limited so
     every planted leg can reach its foot (with the hips swayed and rolled as locomotion moves them), then smoothed
     (periodic) so there are no kinks."""
-    key = (T, v, duty, base, bob, running, sp, op, cy, lift, shape, hf, tf, sway, roll)
+    key = (T, v, duty, base, bob, running, sp, op, cy, lift, shape, hf, tf, sway, roll, heading, width)
     if key in _HIPS_CACHE:
         return _HIPS_CACHE[key]
     n = 240
@@ -3106,7 +3116,7 @@ def _hips_curve(T, v, duty, base, bob, running, sp, op, cy, lift, shape, hf, tf,
     for i, ph in enumerate(phs):
         over = _wave(ph, mid)
         for side, off in (("l", 0.0), ("r", 0.5)):
-            a, th, st = foot_cycle((ph - off) % 1.0, T, v, duty, lift, sp, op, cy, side, shape, hf, tf)
+            a, th, st = foot_cycle((ph - off) % 1.0, T, v, duty, lift, sp, op, cy, side, shape, hf, tf, heading, width)
             hj = REST_HIP_JOINT[side]
             # the hip joint moves with the sway, and up or down with the roll
             hx = hj[0] + sway * over
@@ -3134,12 +3144,12 @@ def _hips_curve(T, v, duty, base, bob, running, sp, op, cy, lift, shape, hf, tf,
 WALK_T = 0.9       # walk cycle (s): 1.35 m per cycle at 1.5 m/s; steps short enough that the hips dip < 4 cm
 
 
-def clip_walk(t):
+def clip_walk(t, heading=0.0, width=0.0):
     # strike_pitch < 0: toes up at heel strike, which keeps the front leg's reach (and the hips) high
     return locomotion(t, WALK_T, 1.5, 0.52, hips_base=-0.03, bob=0.012, lift=0.1, strike_pitch=-14, off_pitch=62,
                       lean=3, arm_swing=22, elbow=14, elbow_extra=16, fingers=18, hips_yaw=7, chest_yaw=9,
                       center_y=0.09, heel_frac=0.12, toe_frac=0.6, sway=0.03, roll=5.0, bend=0.8, shoulder=5.0,
-                      arm_lag=0.05, wrist_flop=10.0, nod=2.0)
+                      arm_lag=0.05, wrist_flop=10.0, nod=2.0, heading=heading, width=width)
 
 
 def clip_walk_back(t):
@@ -3153,20 +3163,37 @@ def clip_walk_back(t):
                       arm_lag=0.06, wrist_flop=6.0, nod=1.0, arm_down=30)
 
 
-def clip_jog(t):
+STRAFE_HEADING = 45.0   # the strafe clips step this far off the way the hips face; the animator turns the legs the rest
+
+
+def _strafe(clip, side, width):
+    """A clip stepping on the diagonal STRAFE_HEADING degrees to one side of ahead ("l" or "r"), on the beat and at the
+    speed of the clip it stands in for: the feet keep pointing ahead and step along tracks set a little wider apart, and
+    the leading arm swings out a little for balance."""
+    h = STRAFE_HEADING if side == "r" else -STRAFE_HEADING
+
+    def f(t):
+        s = clip(t, heading=h, width=width)
+        lead = "r" if side == "r" else "l"
+        s[f"arm_{lead}"]["down"] += 6.0
+        return s
+    return f
+
+
+def clip_jog(t, heading=0.0, width=0.0):
     return locomotion(t, 0.72, 4.0, 0.33, hips_base=-0.055, bob=0.03, lift=0.28, strike_pitch=8, off_pitch=64,
                       lean=10, arm_swing=36, elbow=72, elbow_extra=14, fingers=52, hips_yaw=10, chest_yaw=12,
                       center_y=0.08, running=True, arm_down=28, swing_shape=0.6, heel_frac=0.1, toe_frac=0.6,
                       sway=0.022, roll=5.0, bend=0.7, shoulder=7.0, arm_cross=14.0, arm_lag=0.04, wrist_flop=8.0,
-                      pump=10.0, nod=3.0, bounce=5.0)
+                      pump=10.0, nod=3.0, bounce=5.0, heading=heading, width=width)
 
 
-def clip_run(t):
+def clip_run(t, heading=0.0, width=0.0):
     return locomotion(t, 0.6, 7.0, 0.25, hips_base=-0.07, bob=0.035, lift=0.5, strike_pitch=2, off_pitch=68,
                       lean=17, arm_swing=55, elbow=88, elbow_extra=8, fingers=80, hips_yaw=13, chest_yaw=15,
                       center_y=0.1, running=True, arm_down=26, swing_shape=0.5, heel_frac=0.05, toe_frac=0.7,
                       sway=0.015, roll=4.0, bend=0.6, shoulder=10.0, arm_cross=18.0, arm_lag=0.03, wrist_flop=5.0,
-                      pump=14.0, nod=3.0, bounce=6.0)
+                      pump=14.0, nod=3.0, bounce=6.0, heading=heading, width=width)
 
 
 def clip_crouch_walk(t):
@@ -6100,8 +6127,14 @@ CLIPS = {
     "turn_r": (clip_turn_r, TURN_SECONDS, False, False),
     "walk": (clip_walk, WALK_T, True, False),
     "walk_back": (clip_walk_back, WALK_T, True, False),
+    "strafe_l": (_strafe(clip_walk, "l", 0.05), WALK_T, True, False),
+    "strafe_r": (_strafe(clip_walk, "r", 0.05), WALK_T, True, False),
     "jog": (clip_jog, 0.72, True, False),
+    "strafe_jog_l": (_strafe(clip_jog, "l", 0.06), 0.72, True, False),
+    "strafe_jog_r": (_strafe(clip_jog, "r", 0.06), 0.72, True, False),
     "run": (clip_run, 0.6, True, False),
+    "strafe_run_l": (_strafe(clip_run, "l", 0.07), 0.6, True, False),
+    "strafe_run_r": (_strafe(clip_run, "r", 0.07), 0.6, True, False),
     "crouch_idle": (clip_crouch_idle, 2.0, True, False),
     "crouch_walk": (clip_crouch_walk, 1.2, True, False),
     "jump": (clip_jump, JUMP_SECONDS, False, False),
