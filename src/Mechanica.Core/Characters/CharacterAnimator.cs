@@ -156,6 +156,14 @@ public sealed class CharacterAnimator
     private int _fidgetIndex;
     private string? _fidget;
     private float _fidgetTime;
+    // Coming to a stand: the stop clip playing, how far into it, and how fast the body was going just before.
+    private string? _stop;
+    private float _stopTime;
+    private float _stopLeaving;
+    private float _movingSpeed;
+    // Set on the frame a standing body sets off; the lean then gets its push.
+    private bool _wasStanding = true;
+    private bool _pushOff;
     private string _jumpClip = "jump";
     private string _landClip = "land";
     private string? _chain;
@@ -186,6 +194,12 @@ public sealed class CharacterAnimator
     /// run in proportion, so the feet always track the way the body goes.
     /// </summary>
     public const float StrafeHeadingDegrees = 45f;
+
+    // How fast the remembered speed of a body slowing to a stop falls away, in m/s per second.
+    private const float StopMemory = 8f;
+
+    // Moving off in the middle of a stop, it gives way to the stride over this long (seconds).
+    private const float StopLeave = 0.12f;
 
     /// <summary>Metres climbed in one cycle of the <c>climb</c> clip: each hand and foot moves up two rungs of a ladder (0.25 m apart).</summary>
     public const float ClimbCycleMetres = 0.5f;
@@ -526,6 +540,17 @@ public sealed class CharacterAnimator
             && horizontal <= _settings.MinStepSpeed && !(LegsWeight > 0.5f);
         if (standing)
         {
+            // Pulling up from a walk or a run plants the feet and settles the weight (not on landing from a jump).
+            if (_movingSpeed > 0f && Mode == CharacterMode.Ground && _turn is null && _stop is null && !(_landTime < 0.5f))
+            {
+                var speeds = motion.StopSpeeds;
+                var stop = _movingSpeed >= speeds[1] ? "stop_run" : _movingSpeed >= speeds[0] ? "stop_walk" : null;
+                // The stop covers the stride's ease down, so when it ends the body is already standing.
+                if (stop is not null && _lengths.ContainsKey(stop))
+                    (_stop, _stopTime, _blendSpeed) = (stop, 0f, 0f);
+            }
+            _movingSpeed = 0f;
+            _wasStanding = true;
             _backward = false;
             _strafe = 0f;
             _bodyTurn -= turned;
@@ -541,7 +566,7 @@ public sealed class CharacterAnimator
                 if (_turnTime >= length)
                     _turn = null;
             }
-            else if (MathF.Abs(_bodyTurn) > motion.TurnInPlaceDegrees * MathF.PI / 180f
+            else if (_stop is null && MathF.Abs(_bodyTurn) > motion.TurnInPlaceDegrees * MathF.PI / 180f
                 && (_bodyTurn < 0f ? "turn_l" : "turn_r") is var clip && _lengths.ContainsKey(clip))
             {
                 // The look went left of the feet (the body is turned right of it): step round to the left.
@@ -555,6 +580,10 @@ public sealed class CharacterAnimator
             return;
         }
         _turn = null;
+        _pushOff = _wasStanding && Mode == CharacterMode.Ground && pose.OnFloor && !pose.Seated && horizontal > _settings.MinStepSpeed;
+        _wasStanding = false;
+        // The fastest the body went lately: slowing down to a stop still counts as pulling up from a run.
+        _movingSpeed = Mode is CharacterMode.Ground && pose.OnFloor && !pose.Seated ? MathF.Max(_blendSpeed, _movingSpeed - StopMemory * delta) : 0f;
         var target = 0f;
         var strafe = 0f;
         if (Mode is CharacterMode.Ground or CharacterMode.Crouch or CharacterMode.Swim && horizontal > _settings.MinStepSpeed)
@@ -591,6 +620,17 @@ public sealed class CharacterAnimator
         Twist = pose.Seated || Mode is CharacterMode.Swim or CharacterMode.Climb ? 0f : -_bodyTurn * TwistShare();
     }
 
+    // How far a damped spring (x'' = -k x - c x') swings for each unit of speed it is pushed with.
+    private static float ImpulsePeak(float k, float c)
+    {
+        var w = MathF.Sqrt(k);
+        var z = c / (2f * w);
+        if (z >= 1f)
+            return 1f / (w * MathF.E);
+        var d = MathF.Sqrt(1f - z * z);
+        return MathF.Exp(-z / d * MathF.Atan2(d, z)) / w;
+    }
+
     // All of the turn standing, less of it as the body gets moving (a runner's shoulders follow the hips a little).
     private float TwistShare() =>
         1f - (1f - _settings.Motion.MovingTwistShare) * Math.Clamp(_blendSpeed / 2f, 0f, 1f);
@@ -620,6 +660,14 @@ public sealed class CharacterAnimator
             var (from, full) = (motion.RunLeanSpeeds[0], motion.RunLeanSpeeds[1]);
             target.X += motion.RunLeanDegrees * MathF.PI / 180f * Math.Clamp((planar.Length() - from) / (full - from), 0f, 1f);
         }
+        if (_pushOff && grounded)
+        {
+            // Setting off, the body dips forward into the first stride and comes back up: a push on the lean's spring,
+            // sized so it peaks at start_lean_degrees (more for a run start than a walk's).
+            var share = Math.Clamp(planar.Length() / MathF.Max(SpeedOf("jog"), 1f), 0.35f, 1f);
+            _tiltRate.X += motion.StartLeanDegrees * MathF.PI / 180f * share / ImpulsePeak(motion.LeanStiffness, motion.LeanDamping);
+        }
+        _pushOff = false;
         for (var left = delta; left > 0f; left -= 1f / 120f)
         {
             var h = MathF.Min(left, 1f / 120f);
@@ -635,6 +683,14 @@ public sealed class CharacterAnimator
     private void Fidgets(CharacterPose pose, float horizontal, float delta)
     {
         var motion = _settings.Motion;
+        // A stop plays to its end, giving way to the cycle again (in BuildBody) if the body moves off meanwhile.
+        if (_stop is { } stop)
+        {
+            _stopTime += delta;
+            _stopLeaving = horizontal > _settings.MinStepSpeed ? _stopLeaving + delta : 0f;
+            if (_stopTime >= _lengths[stop] || Mode != CharacterMode.Ground || _stopLeaving >= StopLeave)
+                (_stop, _stopLeaving) = (null, 0f);
+        }
         var still = Mode == CharacterMode.Ground && pose.OnFloor && !pose.Seated && horizontal <= _settings.MinStepSpeed
             && _gesture is null && _turn is null;
         if (_fidget is { } fidget)
@@ -702,6 +758,11 @@ public sealed class CharacterAnimator
             var standIn = 0f;
             string? standClip = null;
             var standTime = 0f;
+            // A stop takes over from whatever the feet were doing, in over a few frames; it ends on idle by itself.
+            var stopIn = _stop is null ? 0f : Math.Clamp(_stopTime / 0.06f, 0f, 1f) * (1f - land) * (1f - _stopLeaving / StopLeave);
+            if (_stop is { } stop)
+                Add(stop, _stopTime, ground * stopIn);
+            ground *= 1f - stopIn;
             if (_turn is { } turn)
             {
                 (standClip, standTime) = (turn, _turnTime);
@@ -1053,7 +1114,7 @@ public sealed class CharacterAnimator
 
     /// <summary>True for clips that play once (jump, land and gestures) rather than loop.</summary>
     public static bool IsOneShot(string clip) =>
-        clip is "jump" or "land" or "jump_run" or "land_hard" or "idle_look" or "idle_stretch" or "turn_l" or "turn_r"
+        clip is "jump" or "land" or "jump_run" or "land_hard" or "stop_walk" or "stop_run" or "idle_look" or "idle_stretch" or "turn_l" or "turn_r"
         || (CharacterRig.ReactionClips.Contains(clip) && !clip.StartsWith("downed", StringComparison.Ordinal))
         || (CharacterRig.UpperBodyClips.Contains(clip) && !clip.StartsWith("hold_", StringComparison.Ordinal));
 

@@ -364,6 +364,48 @@ public class CharacterAnimatorTests
     }
 
     [Fact]
+    public void PullingUpPlantsTheFeetAndSettingOffDipsTheBody()
+    {
+        var lengths = new Dictionary<string, float>(Lengths) { ["stop_walk"] = 0.5f, ["stop_run"] = 0.7f };
+        float Share(CharacterAnimator a, string clip) => a.Body.Where(c => c.Clip == clip).Sum(c => c.Weight);
+        var animator = new CharacterAnimator(new CharacterSettings(), lengths);
+        Run(animator, Standing(), 0.5f);
+
+        // Setting off at a run, the body dips forward more than the run's own lean, then comes back to it.
+        var peak = 0f;
+        for (var t = 0f; t < 0.3f; t += Dt)
+        {
+            animator.Update(Standing(vz: -7f), Dt);
+            peak = MathF.Max(peak, animator.Lean.X);
+        }
+        Run(animator, Standing(vz: -7f), 1.5f);
+        var running = animator.Lean.X;
+        Assert.True(peak > running + 3f * MathF.PI / 180f, $"peak {peak} running {running}");
+
+        // Pulling up from it plays the running stop, which then gives way to idle.
+        Run(animator, Standing(), 0.1f);
+        Assert.True(Share(animator, "stop_run") > 0.9f, string.Join(", ", animator.Body));
+        Run(animator, Standing(), 0.7f);
+        Assert.Equal(0f, Share(animator, "stop_run"), 2);
+        Assert.Equal(1f, Share(animator, "idle"), 2);
+
+        // From a walk, the walking stop; from a shuffle, none.
+        Run(animator, Standing(vz: -1.5f), 1f);
+        Run(animator, Standing(), 0.1f);
+        Assert.True(Share(animator, "stop_walk") > 0.9f);
+        Run(animator, Standing(), 1f);
+        Run(animator, Standing(vz: -0.5f), 1f);
+        Run(animator, Standing(), 0.1f);
+        Assert.DoesNotContain(animator.Body, c => c.Clip.StartsWith("stop", StringComparison.Ordinal));
+
+        // Landing from a jump is the landing's, not a stop.
+        Run(animator, Standing(vz: -7f), 1f);
+        Run(animator, new CharacterPose(new Vector3(0, 4f, -7f), 0, 0, OnFloor: false), 0.5f);
+        Run(animator, Standing(), 0.1f);
+        Assert.DoesNotContain(animator.Body, c => c.Clip.StartsWith("stop", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void TheLegsKeepWalkingThroughASwing()
     {
         var animator = Make();

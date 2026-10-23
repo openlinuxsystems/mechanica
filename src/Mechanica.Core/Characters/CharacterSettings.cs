@@ -298,6 +298,15 @@ public sealed record MotionSettings
     /// <summary>Fade into and out of a fidget.</summary>
     public float FidgetFade { get; init; } = 0.5f;
 
+    /// <summary>
+    /// Speeds (m/s) a body has to be moving at, a walk's and a run's, for coming to a stand to play <c>stop_walk</c> or
+    /// <c>stop_run</c> (feet planting and the weight settling) in place of idle.
+    /// </summary>
+    public float[] StopSpeeds { get; init; } = [1f, 3.5f];
+
+    /// <summary>How far the body dips forward (degrees) as it sets off at a jog or faster; a walk start dips less.</summary>
+    public float StartLeanDegrees { get; init; } = 10f;
+
     /// <summary>Fade into a hit reaction.</summary>
     public float ReactionFadeIn { get; init; } = 0.04f;
 
@@ -339,6 +348,9 @@ public sealed record MotionSettings
         if (FidgetAfter is not { Length: > 0 } || FidgetAfter.Any(v => !float.IsFinite(v) || v < 1f))
             throw new FormatException("motion.fidget_after must be one or more times of at least 1 second.");
         CharacterSettings.Positive(FidgetFade, "motion.fidget_fade");
+        Degrees(StartLeanDegrees, 0f, 30f, "motion.start_lean_degrees");
+        if (StopSpeeds is not { Length: 2 } || !(StopSpeeds[0] > 0f) || !(StopSpeeds[1] > StopSpeeds[0]) || !float.IsFinite(StopSpeeds[1]))
+            throw new FormatException("motion.stop_speeds must be two rising speeds above 0.");
         CharacterSettings.Positive(ReactionFadeIn, "motion.reaction_fade_in");
         CharacterSettings.Positive(ReactionFadeOut, "motion.reaction_fade_out");
         CharacterSettings.NonNegative(LieSeconds, "motion.lie_seconds");

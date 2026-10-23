@@ -3590,6 +3590,47 @@ def clip_land_hard(t):
     return interp_specs(keys, t)
 
 
+def _stop_pose(hips_z, front, hips, spine, chest, head, swing, elbow, fingers=24.0):
+    """A standing key of a stop: feet planted (the left a little ahead), the hips at hips_z, the body pitched (degrees)
+    and the arms swung forward by swing with the elbows bent by elbow."""
+    s = relaxed_upper(fingers)
+    standing_legs(s, hips_z, spread=0.02, front=front)
+    s["hips_x"] = 0.0
+    s["hips"] = (hips, 0, 0)
+    s["spine"] = (spine, 0, 0)
+    s["chest"] = (chest, 0, 0)
+    s["neck"] = (-(hips + spine + chest) * 0.35, 0, 0)
+    s["head"] = (-(hips + spine + chest) * 0.3 + head, 0, 0)
+    for side, lag in (("l", 1.0), ("r", 0.8)):
+        s[f"arm_{side}"] = {"down": 18.0, "swing": swing * lag, "yaw": 0.0, "elbow": elbow * lag, "wrist": 6.0, "twist": 0.0}
+    return s
+
+
+STOP_RUN_SECONDS = 0.7
+STOP_WALK_SECONDS = 0.5
+
+
+def clip_stop_run(t):
+    """Pulling up from a run: the feet plant ahead and the body sits back to brake, the knees take the weight, the upper
+    body and the arms carry on forward a beat after the feet have stopped, then it rocks back up and settles to idle."""
+    keys = [(0.0, to_fk_legs(_stop_pose(-0.09, -0.16, -10.0, -8.0, -4.0, 2.0, 34.0, 80.0, 60.0))),
+            (0.14, to_fk_legs(_stop_pose(-0.15, -0.12, 4.0, 10.0, 8.0, -2.0, 42.0, 55.0, 40.0))),
+            (0.3, to_fk_legs(_stop_pose(-0.06, -0.08, 2.0, 2.0, 1.0, 0.0, 12.0, 30.0))),
+            (0.46, to_fk_legs(_stop_pose(-0.01, -0.04, -1.0, -1.5, -1.0, 0.0, -2.0, 18.0))),
+            (STOP_RUN_SECONDS, to_fk_legs(idle_spec(STOP_RUN_SECONDS)))]
+    return oneshot(keys, t, keys[-1][1])
+
+
+def clip_stop_walk(t):
+    """Stopping from a walk: the back foot comes up beside the front one, the weight settles over both with a small
+    rock forward and back, and the arms come to rest."""
+    keys = [(0.0, to_fk_legs(_stop_pose(-0.035, -0.08, 0.0, -2.0, -1.0, 0.0, 14.0, 22.0))),
+            (0.16, to_fk_legs(_stop_pose(-0.05, -0.04, 2.0, 3.0, 2.0, -1.0, 10.0, 20.0))),
+            (0.32, to_fk_legs(_stop_pose(-0.01, -0.02, -0.5, -1.0, -0.5, 0.0, 0.0, 16.0))),
+            (STOP_WALK_SECONDS, to_fk_legs(idle_spec(STOP_WALK_SECONDS)))]
+    return oneshot(keys, t, keys[-1][1])
+
+
 def _complete(spec, template):
     """Give spec every key of template (missing ones copied from template) so key poses can blend."""
     out = {}
@@ -6141,6 +6182,8 @@ CLIPS = {
     "jump_run": (clip_jump_run, JUMP_RUN_SECONDS, False, False),
     "fall": (clip_fall, 1.0, True, False),
     "land": (clip_land, 0.5, False, False),
+    "stop_run": (clip_stop_run, STOP_RUN_SECONDS, False, False),
+    "stop_walk": (clip_stop_walk, STOP_WALK_SECONDS, False, False),
     "land_hard": (clip_land_hard, LAND_HARD_SECONDS, False, False),
     "swim_idle": (clip_swim_idle, 2.0, True, False),
     "swim": (clip_swim, 1.2, True, False),
