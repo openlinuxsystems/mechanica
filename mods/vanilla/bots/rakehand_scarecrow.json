@@ -61,7 +61,8 @@
       "damage": 15,
       "part_damage": 6,
       "range": 2.2,
-      "interval": 0.8
+      "interval": 0.8,
+      "windup": 0.32
     },
     {
       "id": "swing",
@@ -69,7 +70,8 @@
       "damage": 22,
       "part_damage": 10,
       "range": 2.6,
-      "interval": 2.5
+      "interval": 2.5,
+      "windup": 0.38
     }
   ],
   "drops": [

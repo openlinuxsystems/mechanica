@@ -87,6 +87,8 @@ internal sealed class BotFixture : IBotWorld, IRaidWorld
                     new BotAttackDefinition { Id = "kick", Kind = BotAttackKind.Melee, Damage = 10, Range = 2, Interval = 1, ObjectDamage = 20 },
                     new BotAttackDefinition { Id = "stomp", Kind = BotAttackKind.Area, Damage = 0, Radius = 4, Interval = 5, ObjectDamage = 40, HitsParts = false },
                     new BotAttackDefinition { Id = "poke", Kind = BotAttackKind.Melee, Damage = 10, Range = 2, Interval = 1 },
+                    new BotAttackDefinition { Id = "slam", Kind = BotAttackKind.Melee, Damage = 20, Range = 2, Interval = 2, Windup = 0.5f,
+                        Reaction = Core.Characters.HitReaction.Knockdown },
                 ],
             }));
         Raids = RaidTable.From(raids ?? new RaidTableDefinition

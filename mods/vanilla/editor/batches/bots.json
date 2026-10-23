@@ -46,6 +46,7 @@
         "attacks": [
           {
             "id": "whip",
+            "windup": 0.48,
             "kind": "melee",
             "damage": 15,
             "part_damage": 10,
@@ -182,6 +183,7 @@
         "attacks": [
           {
             "id": "drill",
+            "windup": 0.4,
             "kind": "melee",
             "damage": 20,
             "part_damage": 15,
@@ -336,6 +338,8 @@
         "attacks": [
           {
             "id": "stomp",
+            "windup": 0.45,
+            "reaction": "heavy",
             "kind": "area",
             "damage": 25,
             "part_damage": 3,
@@ -463,6 +467,8 @@
         "attacks": [
           {
             "id": "explode",
+            "windup": 0.38,
+            "reaction": "knockdown",
             "kind": "area",
             "damage": 40,
             "part_damage": 30,
@@ -587,6 +593,7 @@
         "attacks": [
           {
             "id": "nip",
+            "windup": 0.3,
             "kind": "melee",
             "damage": 8,
             "part_damage": 5,
@@ -733,6 +740,7 @@
         "attacks": [
           {
             "id": "poke",
+            "windup": 0.36,
             "kind": "melee",
             "damage": 20,
             "part_damage": 12,
@@ -741,6 +749,8 @@
           },
           {
             "id": "swing",
+            "windup": 0.55,
+            "reaction": "heavy",
             "kind": "melee",
             "damage": 30,
             "part_damage": 20,
@@ -909,6 +919,7 @@
         "attacks": [
           {
             "id": "poke",
+            "windup": 0.42,
             "kind": "melee",
             "damage": 25,
             "part_damage": 20,
@@ -917,6 +928,8 @@
           },
           {
             "id": "swing",
+            "windup": 0.55,
+            "reaction": "knockdown",
             "kind": "melee",
             "damage": 45,
             "part_damage": 40,
@@ -983,6 +996,7 @@
         "attacks": [
           {
             "id": "poke",
+            "windup": 0.32,
             "kind": "melee",
             "damage": 15,
             "part_damage": 6,
@@ -991,6 +1005,7 @@
           },
           {
             "id": "swing",
+            "windup": 0.38,
             "kind": "melee",
             "damage": 22,
             "part_damage": 10,
@@ -1212,6 +1227,7 @@
         "attacks": [
           {
             "id": "tape",
+            "windup": 0.35,
             "kind": "ranged",
             "damage": 25,
             "part_damage": 10,
@@ -1308,6 +1324,7 @@
         "attacks": [
           {
             "id": "bubble",
+            "windup": 0.35,
             "kind": "ranged",
             "damage": 15,
             "part_damage": 5,
@@ -1409,6 +1426,7 @@
         "attacks": [
           {
             "id": "tape",
+            "windup": 0.24,
             "kind": "ranged",
             "damage": 15,
             "part_damage": 8,
@@ -1442,6 +1460,8 @@
         "attacks": [
           {
             "id": "tape",
+            "windup": 0.5,
+            "reaction": "heavy",
             "kind": "ranged",
             "damage": 30,
             "part_damage": 25,
@@ -1486,6 +1506,7 @@
         "attacks": [
           {
             "id": "kick",
+            "windup": 0.55,
             "kind": "melee",
             "damage": 10,
             "part_damage": 40,
@@ -1495,6 +1516,8 @@
           },
           {
             "id": "swipe",
+            "windup": 0.6,
+            "reaction": "heavy",
             "kind": "melee",
             "damage": 35,
             "part_damage": 60,
@@ -1503,6 +1526,7 @@
           },
           {
             "id": "pesticide",
+            "windup": 0.3,
             "kind": "area",
             "damage": 0,
             "part_damage": 0,
@@ -1643,6 +1667,7 @@
         "attacks": [
           {
             "id": "till",
+            "windup": 0.45,
             "kind": "melee",
             "damage": 25,
             "part_damage": 90,
@@ -1652,6 +1677,8 @@
           },
           {
             "id": "stomp",
+            "windup": 0.6,
+            "reaction": "knockdown",
             "kind": "area",
             "damage": 30,
             "part_damage": 40,
@@ -1783,6 +1810,7 @@
         "attacks": [
           {
             "id": "canister",
+            "windup": 0.45,
             "kind": "ranged",
             "damage": 20,
             "part_damage": 35,
@@ -1795,6 +1823,7 @@
           },
           {
             "id": "pesticide",
+            "windup": 0.4,
             "kind": "area",
             "damage": 0,
             "part_damage": 0,

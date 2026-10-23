@@ -24,9 +24,9 @@ do. The nodes are the rig (the game plays the clips on them and plants the feet)
 Clips (seconds; the loops loop): ``idle`` 2.4, ``patrol`` 0.5 and ``chase`` 0.24 (gaits; their ground speeds at
 speed scale 1 are printed and go in the bot's ``model.clip_speeds``), ``alert`` 0.8, ``lose_interest`` 0.7,
 ``hit`` 0.35, ``death`` 1.6 (Red: it bursts), ``jump`` 0.35, ``fall`` 0.6, ``land`` 0.35, and each variant's attacks:
-Green ``tail_slam``, ``tail_sweep`` and ``claw_combo`` (1.0 each), Blue ``drill_ram`` 0.9, Yellow ``stomp`` 1.2,
-Red ``detonate`` 0.4, Seed ``claw_snap`` 0.5. Strikes land about 0.2 s in: the host deals the damage as an attack
-starts.
+Green ``tail_slam``, ``tail_sweep`` and ``claw_combo`` (1.0 each), Blue ``drill_ram`` 1.15, Yellow ``stomp`` 1.45,
+Red ``detonate`` 0.4, Seed ``claw_snap`` 0.68. Each strike lands at its attack's ``windup`` (bots/*.json; TELEGRAPH):
+the host deals the damage then, to whatever is still in reach.
 
 How to run (Blender as a Python module, no Blender UI needed):
 
@@ -70,7 +70,10 @@ VARIANTS = {
     "red": dict(name="Red Scuttler", paint="#d0402e", scale=1.0, leg=1.0, attacks={"explode": ["detonate"]}),
     "seed": dict(name="Seed Scuttler", paint="#2f5a2c", scale=0.85, leg=1.0, attacks={"nip": ["claw_snap"]}),
 }
-ATTACK_CLIPS = {"tail_slam": 1.0, "tail_sweep": 1.0, "claw_combo": 1.0, "drill_ram": 0.9, "stomp": 1.2, "detonate": 0.4, "claw_snap": 0.5}
+ATTACK_CLIPS = {"tail_slam": 1.0, "tail_sweep": 1.0, "claw_combo": 1.0, "drill_ram": 1.15, "stomp": 1.45, "detonate": 0.4, "claw_snap": 0.68}
+# Clips whose strike moves to their attack's windup (bots/*.json): {clip: (strike as written, strike, length as written)}.
+# Green's whip plays tail_slam, tail_sweep and claw_combo in turn, so all three strike at 0.48 s (the combo on its crunch).
+TELEGRAPH = {"claw_combo": (0.78, 0.48, 1.0), "drill_ram": (0.15, 0.4, 0.9), "stomp": (0.19, 0.45, 1.2), "claw_snap": (0.12, 0.3, 0.5)}
 VARIANT = ["green"]
 
 Z0 = 0.30                   # bottom of the belly pan
@@ -755,15 +758,26 @@ def use(variant):
             CLIPS[clip] = ATTACK_CLIPS[clip]
 
 
-def strike_early(t, strike=0.45, at=0.18):
-    """Re-times a 1 s attack so its strike (at `strike` s as written) lands at `at` s: the host deals the damage when the
-    attack starts, so the wind-up has to be short and the follow-through long."""
-    return t * strike / at if t < at else strike + (t - at) * (1 - strike) / (1 - at)
+def telegraph(t, written, at, length, new_length):
+    """Re-times an attack clip written `length` s long with its strike at `written` s so the strike comes at `at` s and
+    the clip lasts `new_length` s: the time as written for time `t` in the new clip. The host lands a blow when the bot's
+    attack ``windup`` (its data) has passed since the clip started, on whatever is still in reach, so every attack clip
+    strikes at its attack's windup and a player can read the wind-up and step away."""
+    if t < at:
+        return t * written / at
+    return written + (t - at) * (length - written) / max(new_length - at, 1e-6)
+
+
+def retimed(telegraphs, clip, t, length):
+    """(t, length) as `clip` was written, for a clip in `telegraphs` ({clip: (written strike, strike, written length)})."""
+    if clip not in telegraphs:
+        return t, length
+    written, at, old = telegraphs[clip]
+    return telegraph(t, written, at, old, length), old
 
 
 def pose(p, clip, t, length):
-    if clip in ("tail_slam", "tail_sweep"):
-        t = strike_early(t)
+    t, length = retimed(TELEGRAPH, clip, t, length)
     u = t / length
     w = 2 * math.pi * u
     if clip == "idle":

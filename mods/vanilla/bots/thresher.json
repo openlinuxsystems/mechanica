@@ -40,7 +40,8 @@
       "part_damage": 40,
       "range": 2,
       "interval": 1,
-      "object_damage": 60
+      "object_damage": 60,
+      "windup": 0.55
     },
     {
       "id": "swipe",
@@ -48,7 +49,9 @@
       "damage": 35,
       "part_damage": 60,
       "range": 3,
-      "interval": 3
+      "interval": 3,
+      "windup": 0.6,
+      "reaction": "heavy"
     },
     {
       "id": "pesticide",
@@ -62,7 +65,8 @@
         "per_second": 5,
         "seconds": 4
       },
-      "hits_parts": false
+      "hits_parts": false,
+      "windup": 0.3
     }
   ],
   "drops": [

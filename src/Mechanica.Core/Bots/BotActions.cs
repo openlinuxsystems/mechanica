@@ -135,6 +135,12 @@ public sealed class BotState
     /// <summary>When each attack was last used, by id.</summary>
     internal Dictionary<string, double> LastUse { get; } = new(StringComparer.Ordinal);
 
+    /// <summary>An attack winding up, which lands at host time <c>Due</c>, or null.</summary>
+    internal (BotAttack Attack, BotAttackArgs Args, double Due)? Striking { get; set; }
+
+    /// <summary>Whether it is winding up an attack that has not landed yet.</summary>
+    public bool Winding => Striking is not null;
+
     /// <summary>Middle of its body.</summary>
     public Vector3 Centre => Position + new Vector3(0, Type.Height / 2, 0);
 
@@ -702,7 +708,8 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
     {
         var bot = _bots[args.Bot];
         var flat = args.Direction is { } d ? new Vector3(d.X, 0, d.Z) : Vector3.Zero;
-        if (flat.LengthSquared() < 1e-8f)
+        // A bot winding up is committed to its blow: it stands and keeps facing where it aimed, so a player can step away.
+        if (flat.LengthSquared() < 1e-8f || bot.Winding)
         {
             bot.Desired = Vector3.Zero;
             return null;
@@ -749,6 +756,8 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
             return $"{bot.Type.Name} has no attack '{args.Attack}'.";
         if (bot.LastUse.TryGetValue(attack.Id, out var last) && survivalWorld.Now - last < attack.Interval * IntervalJitter)
             return $"{bot.Type.Name}'s {attack.Id} is not ready.";
+        if (bot.Striking is not null)
+            return $"{bot.Type.Name} is already attacking.";
         var targets = (args.Player is not null ? 1 : 0) + (args.Creation is not null || args.Part is not null ? 1 : 0) + (args.Target is not null ? 1 : 0)
             + (args.Object is not null ? 1 : 0);
         if (attack.Kind == BotAttackKind.Area)
@@ -818,13 +827,29 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
         var attack = bot.Type.Attack(args.Attack)!;
         bot.LastUse[attack.Id] = survivalWorld.Now;
         Engage(bot.Id);
+        if (attack.Kind != BotAttackKind.Area && TargetPoint(args, out _) is { } aim)
+            bot.Yaw = YawOf(aim - bot.Position) is var yaw && float.IsFinite(yaw) ? yaw : bot.Yaw;
+        // A wind-up: the clip starts now (the telegraph) and the blow lands on its strike, on whatever is in reach then.
+        if (attack.Windup > 0f)
+        {
+            bot.Striking = (attack, args, survivalWorld.Now + attack.Windup);
+            bot.Desired = Vector3.Zero;
+            Attacked?.Invoke(new BotAttackEvent(bot.Id, attack.Id, attack.Sound, [], Landed: false, Windup: attack.Windup));
+            return BotValues.Value(new BotAttackResult([]));
+        }
+        return BotValues.Value(new BotAttackResult(Land(bot, attack, args)));
+    }
+
+    // The blow lands: what it hits (nothing when a target got out of reach or out of sight during the wind-up).
+    private List<ShotHitView> Land(BotState bot, BotAttack attack, BotAttackArgs args)
+    {
         var hits = new List<ShotHitView>();
         if (attack.Kind == BotAttackKind.Area)
             Blast(bot, attack, hits);
-        else
+        else if (TargetPoint(args, out var radius) is { } point
+            && Vector3.Distance(bot.Centre, point) - bot.Type.Radius - radius <= attack.Range + settings.RangeTolerance
+            && (attack.Kind != BotAttackKind.Ranged || CanSee(bot, args, point)))
         {
-            var point = TargetPoint(args, out _)!.Value;
-            bot.Yaw = YawOf(point - bot.Position) is var yaw && float.IsFinite(yaw) ? yaw : bot.Yaw;
             if (args.Player is { } peer)
                 hits.Add(HurtPlayer(bot, peer, attack, attack.Damage, point));
             else if (args.Target is { } other)
@@ -837,13 +862,13 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
                 survival.StrikeObject(id, attack.ObjectDamage, DamageKinds.Bot);
                 hits.Add(new ShotHitView("object", point.ToVec3(), attack.ObjectDamage, Object: id));
             }
-            else if (attack.HitsParts)
-                hits.Add(HitPart(bot, attack, survivalWorld.FindCreation(args.Creation!.Value)!, args.Part!.Value, attack.PartDamage));
+            else if (attack.HitsParts && survivalWorld.FindCreation(args.Creation!.Value) is { } creation && creation.FindPart(args.Part!.Value) is not null)
+                hits.Add(HitPart(bot, attack, creation, args.Part!.Value, attack.PartDamage));
         }
         Attacked?.Invoke(new BotAttackEvent(bot.Id, attack.Id, attack.Sound, hits));
         if (attack.KillsSelf)
             Kill(bot, "self");
-        return BotValues.Value(new BotAttackResult(hits));
+        return hits;
     }
 
     // An area attack: everything within its radius of the bot, falling off to 0 at the edge.
@@ -890,7 +915,7 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
     private ShotHitView HurtPlayer(BotState bot, int peer, BotAttack attack, float damage, Vector3 point)
     {
         if (damage > 0)
-            survival.Damage(peer, damage, "bot", bot.Centre);
+            survival.Damage(peer, damage, "bot", bot.Centre, attack.Reaction);
         if (attack.DamagePerSecond > 0 && survival.Mode == GameMode.Survival)
             _lasting.Add((peer, attack.DamagePerSecond, survivalWorld.Now + attack.DamageSeconds));
         if (attack.Slows)
@@ -956,6 +981,7 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
         bot.Health = 0;
         bot.Dead = true;
         bot.Engaged = false;
+        bot.Striking = null;
         bot.DiedAt = survivalWorld.Now;
         bot.Desired = Vector3.Zero;
         var random = new Random(unchecked(Seed * 31 + bot.Id * 7919));
@@ -1100,6 +1126,13 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
                 survival.Damage(peer, perSecond * share, "bot");
             if (now >= until || survival.IsDead(peer))
                 _lasting.RemoveAt(i);
+        }
+        foreach (var bot in _bots.Values.Where(b => b.Striking is { } s && now >= s.Due).ToList())
+        {
+            var (attack, args, _) = bot.Striking!.Value;
+            bot.Striking = null;
+            if (!bot.Dead)
+                Land(bot, attack, args);
         }
         foreach (var gone in _bots.Values.Where(b => b.Dead && now - b.DiedAt >= settings.CorpseSeconds).Select(b => b.Id).ToList())
             Remove(gone);

@@ -36,7 +36,9 @@
       "part_damage": 25,
       "range": 24,
       "interval": 3.5,
-      "sound": "spooler_fire"
+      "sound": "spooler_fire",
+      "windup": 0.5,
+      "reaction": "heavy"
     }
   ],
   "drops": [

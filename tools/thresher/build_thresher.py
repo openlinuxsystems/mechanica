@@ -64,7 +64,7 @@ sys.path.insert(0, str(REPO / "tools" / "lift"))
 sys.path.insert(0, str(REPO / "tools" / "scuttler"))
 import lift_textures as lt  # noqa: E402
 import build_scuttler as sc  # noqa: E402
-from build_scuttler import at, disc, env, pulse, rod, sphere  # noqa: E402
+from build_scuttler import at, disc, env, pulse, retimed, rod, sphere  # noqa: E402
 
 MESHES = REPO / "mods" / "vanilla" / "meshes" / "bots"
 FPS = sc.FPS
@@ -83,8 +83,12 @@ VARIANTS = {
     "duster": dict(id="thresher_duster", name="Duster", paint="#6b7a2e", trim="#e8b820",
                    attacks={"pesticide": ["boom_spray"], "canister": ["mortar_shot"]}),
 }
-ATTACK_CLIPS = {"track_stomp": 1.1, "sickle_swipe": 1.5, "spray_sweep": 1.8, "rear_stomp": 1.7, "till_grind": 1.5,
-                "boom_spray": 2.0, "mortar_shot": 1.1}
+ATTACK_CLIPS = {"track_stomp": 1.35, "sickle_swipe": 1.8, "spray_sweep": 1.8, "rear_stomp": 1.95, "till_grind": 1.75,
+                "boom_spray": 2.0, "mortar_shot": 1.35}
+# Strikes moved to their attack's windup (bots/*.json), the wind-ups drawn out so they read from a distance:
+# {clip: (strike as written, strike, length as written)}. The sprays land as the mist pours out (0.3 s and 0.4 s).
+TELEGRAPH = {"track_stomp": (0.3, 0.55, 1.1), "sickle_swipe": (0.3, 0.6, 1.5), "rear_stomp": (0.36, 0.6, 1.7),
+             "till_grind": (0.22, 0.45, 1.5), "mortar_shot": (0.19, 0.45, 1.1)}
 VARIANT = ["harvester"]
 MIST_REST = 0.01
 SHOT_SCALE = 1.8          # how much bigger the flying canister is than the one drawn in the mortar          # the spray nodes' rest scale: shrunk into the nozzles until they spray
@@ -1001,7 +1005,7 @@ def harvester_pose(p, clip, t, length):
                l_out=30 * up + 20 * hit * (1 - back))
     elif clip == "sickle_swipe":
         # a big wind-up with the sickle cocked back over its shoulder, then one wide flat swing across its front
-        # (the blow lands as the clip starts on the host, so the swing comes quickly) and a heavy follow-through
+        # (re-timed by TELEGRAPH so the wind-up holds and the blow lands at the swipe's windup) and a heavy follow-through
         wind = env(t, 0.0, 0.16) * (1 - env(t, 0.16, 0.36))
         swing = env(t, 0.16, 0.36) * (1 - env(t, 0.75, 1.4))
         p.turn("Torso", UP, 28 * wind - 34 * swing)
@@ -1128,7 +1132,7 @@ def tiller_pose(p, clip, t, length):
         p.turn("StackCap", X, -50 * k)
     elif clip == "rear_stomp":
         # it rocks back onto its hind wheels, lifting its nose and front legs high, then slams them down: a
-        # shockwave (the effect shows it as the clip starts) and a heavy bounce
+        # shockwave (the effect shows it as the slam lands) and a heavy bounce
         rear = env(t, 0.0, 0.2) * (1 - env(t, 0.24, 0.36))
         slam = pulse(t, 0.3, 0.36, 0.9)
         recover = env(t, 0.9, 1.5)
@@ -1294,7 +1298,7 @@ POSES = {"harvester": harvester_pose, "tiller": tiller_pose, "duster": duster_po
 
 def set_pose(nodes, clip, t, length):
     p = Pose(nodes)
-    POSES[VARIANT[0]](p, clip, t, length)
+    POSES[VARIANT[0]](p, clip, *retimed(TELEGRAPH, clip, t, length))
     p.ground_feet()
     # A hair of motion (a quarter degree) on every node, so no channel holds still through a clip.
     for i, n in enumerate(nodes):

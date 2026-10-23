@@ -198,11 +198,11 @@ public partial class BotBody : CharacterBody3D
     /// The bot used <paramref name="attack"/>, hitting <paramref name="hits"/> (world points): its model plays the
     /// attack's clip, the placeholder flashes.
     /// </summary>
-    public void Attacked(string attack, IReadOnlyList<Vector3> hits)
+    public void Attacked(string attack, IReadOnlyList<Vector3> hits, bool landed = true)
     {
         if (Model is not null)
-            Model.Attack(attack, hits);
-        else
+            Model.Attack(attack, hits, landed);
+        else if (landed)
             _flash = 0.25f;
     }
 

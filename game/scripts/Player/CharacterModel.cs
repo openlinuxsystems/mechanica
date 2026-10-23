@@ -175,9 +175,23 @@ public partial class CharacterModel : Node3D
         }
     }
 
+    /// <summary>
+    /// Holds the animation almost still for <paramref name="seconds"/> (a hit-stop: a blow that connects freezes for a few
+    /// frames, so it reads as landing on something solid).
+    /// </summary>
+    public void HitStop(float seconds) => _stopLeft = Math.Max(_stopLeft, seconds);
+
+    private float _stopLeft;
+
     public override void _Process(double delta)
     {
-        Animator.Update(Player?.Pose ?? new CharacterPose(System.Numerics.Vector3.Zero, 0f, 0f, OnFloor: true), (float)delta);
+        var step = (float)delta;
+        if (_stopLeft > 0f)
+        {
+            _stopLeft -= step;
+            step *= 0.05f;
+        }
+        Animator.Update(Player?.Pose ?? new CharacterPose(System.Numerics.Vector3.Zero, 0f, 0f, OnFloor: true), step);
         foreach (var e in Animator.Events)
         {
             PlaySound(e);

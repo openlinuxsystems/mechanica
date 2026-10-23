@@ -75,6 +75,8 @@ An attack:
 | `kills_self` | bool | false | Using it kills the bot (a kamikaze charge). |
 | `hits_parts` | bool | true | Whether it can hurt crops and parts. |
 | `sound` | sound id | `<family>_attack` | Sound event it plays. |
+| `windup` | number, s | 0 | Seconds from the start (its clip starts: the telegraph) to when it lands (the clip's strike). It lands then on whatever is still in reach and in sight, so a player who reads the wind-up can step away; at 0 it lands at once. At most 3 s, and shorter than `interval`. The bot can't start another attack meanwhile. |
+| `reaction` | `none`, `light`, `heavy`, `knockdown` | by damage | How a player it hits reacts: a flinch away from the blow, knocked back a couple of steps, or off their feet. Omitted means the one its damage earns (`survival.json` `hits`). |
 
 Damage goes through the same host primitives as weapons (`SurvivalActions`), so Creative applies to bots
 too: in Creative nothing is hurt. Friendly fire doesn't stop bots; they hurt players either way.
@@ -148,7 +150,7 @@ sees the same one:
 | `death` | Once, when it dies; it holds the last frame until the body is gone. |
 | `jump`, `fall`, `land` | Going up, falling (loops), and touching down. |
 | `swim`, `swim_idle` | Swimming and treading water, for a swimmer (`swim_depth`) in water (loop). Without them it walks. |
-| one per attack | Once, when it uses the attack. The host deals the damage as the attack starts, so keep the wind-up short (about 0.2 s). |
+| one per attack | Once, when it uses the attack. Put the strike at the attack's `windup` (s from the clip's start): the host deals the damage then, and the sound and effect go off then too. Make the wind-up readable (0.3 to 0.6 s). |
 
 A missing clip is skipped (a missing walk clip plays `idle`). Clips play in place: they never move the bot.
 Glowing materials fade from `eye_calm` to `eye_engaged` and back, and go dark when it dies.

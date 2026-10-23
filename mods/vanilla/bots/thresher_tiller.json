@@ -40,7 +40,8 @@
       "part_damage": 90,
       "range": 2.2,
       "interval": 1.5,
-      "object_damage": 80
+      "object_damage": 80,
+      "windup": 0.45
     },
     {
       "id": "stomp",
@@ -49,7 +50,9 @@
       "part_damage": 40,
       "range": 3,
       "radius": 6,
-      "interval": 6
+      "interval": 6,
+      "windup": 0.6,
+      "reaction": "knockdown"
     }
   ],
   "drops": [

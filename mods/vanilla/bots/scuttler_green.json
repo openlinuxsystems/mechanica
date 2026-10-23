@@ -67,7 +67,8 @@
       "damage": 15,
       "part_damage": 10,
       "range": 1.4,
-      "interval": 1
+      "interval": 1,
+      "windup": 0.48
     }
   ],
   "drops": [

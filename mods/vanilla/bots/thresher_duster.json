@@ -43,7 +43,8 @@
       "damage_over_time": {
         "per_second": 4,
         "seconds": 4
-      }
+      },
+      "windup": 0.45
     },
     {
       "id": "pesticide",
@@ -57,7 +58,8 @@
         "per_second": 6,
         "seconds": 5
       },
-      "hits_parts": false
+      "hits_parts": false,
+      "windup": 0.4
     }
   ],
   "drops": [

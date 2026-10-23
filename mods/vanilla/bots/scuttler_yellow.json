@@ -68,7 +68,9 @@
       "range": 2,
       "radius": 3,
       "interval": 2,
-      "sound": "scuttler_stomp"
+      "sound": "scuttler_stomp",
+      "windup": 0.45,
+      "reaction": "heavy"
     }
   ],
   "drops": [
