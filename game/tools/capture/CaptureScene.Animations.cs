@@ -238,11 +238,12 @@ public partial class CaptureScene
 
     private StaticBody3D? _ramp;
 
-    // A slab tilted by degrees across the way the player faces, its top through their feet, so one foot stands higher.
+    // A slab tilted by degrees across the way the player faces, its top through their feet, so one foot stands higher; it
+    // is raised so its low edge clears the ground.
     private void Ramp(float degrees)
     {
         Unramp();
-        var at = Player.GlobalPosition;
+        var at = Player.GlobalPosition + Vector3.Up * 1.6f;
         var basis = new Basis(Vector3.Up, Player.Rotation.Y) * new Basis(Vector3.Back, Mathf.DegToRad(degrees));
         _ramp = new StaticBody3D { Name = "Ramp", CollisionLayer = World.PhysicsLayers.Solid };
         var size = new Vector3(8f, 1f, 12f);
