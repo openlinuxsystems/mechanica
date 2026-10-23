@@ -92,9 +92,30 @@ public partial class BotModelView : Node3D
     private Vector3 _knockSpeed;
     private Vector3 _knockAxis = Vector3.Right;
     private Transform3D _sceneRest = Transform3D.Identity;
+    private readonly List<(Node3D Node, float Share)> _gazeNodes = [];
+    private readonly List<Quaternion> _gazeUnder = [];
+    private Vector2 _gaze;
+    private readonly List<Swayer> _swayers = [];
+    private Vector3 _lastVelocity;
+
+    // A node that swings on its pivot: its tilt (x forward, y sideways, radians) on a spring.
+    private sealed class Swayer(Node3D node, float loose)
+    {
+        public Node3D Node { get; } = node;
+        public float Loose { get; } = loose;
+        public Quaternion Under { get; set; } = node.Quaternion;
+        public Vector2 Tilt { get; set; }
+        public Vector2 Spin { get; set; }
+    }
 
     /// <summary>Where the blow that hurt it last came from (the nearest player), or null; set by its body before <see cref="Show"/>.</summary>
     public Func<Vector3?>? HitFrom { get; set; }
+
+    /// <summary>Where the player it would look at has their eyes (the nearest player), or null; set by its body.</summary>
+    public Func<Vector3?>? GazeAt { get; set; }
+
+    /// <summary>How far its head is turned to look (yaw, pitch in degrees), for tests.</summary>
+    public Vector2 Gaze => new(Mathf.RadToDeg(_gaze.X), Mathf.RadToDeg(_gaze.Y));
 
     /// <summary>How far it is knocked from where it stands now (m), for tests.</summary>
     public float Knocked => _knock.Length();
@@ -169,6 +190,19 @@ public partial class BotModelView : Node3D
         // A tamed animal's collar and the like show only while it is kept.
         _keptNodes.AddRange(Model.KeptNodes.Select(n => _scene.FindChild(n, true, false)).OfType<Node3D>());
         LeadNode = Model.LeadNode is { } lead ? _scene.FindChild(lead, true, false) as Node3D : null;
+        foreach (var (name, loose) in Model.Sway)
+        {
+            if (_scene.FindChild(name, true, false) is Node3D node)
+                _swayers.Add(new Swayer(node, loose));
+        }
+        foreach (var (name, share) in Model.Track?.Nodes ?? [])
+        {
+            if (_scene.FindChild(name, true, false) is Node3D node)
+            {
+                _gazeNodes.Add((node, share));
+                _gazeUnder.Add(node.Quaternion);
+            }
+        }
         foreach (var node in _keptNodes)
             node.Visible = _view?.Kept == true;
         _player = LiftBody.FindPlayer(_scene);
@@ -266,12 +300,89 @@ public partial class BotModelView : Node3D
                 PlayLoop();
             if (!dead)
                 MaybeIdle(delta);
-            // A hit-stop holds the clip where it is for a beat.
+            // A hit-stop holds the clip where it is for a beat. The head is put back as the clip left it first, so a
+            // node the clip does not key never piles up turns.
             _stopLeft -= dt;
+            for (var i = 0; i < _gazeNodes.Count; i++)
+                _gazeNodes[i].Node.Quaternion = _gazeUnder[i];
+            foreach (var swayer in _swayers)
+                swayer.Node.Quaternion = swayer.Under;
             _player.Advance(_stopLeft > 0f ? delta * 0.05 : delta);
         }
         Plant(dt, dead);
+        Look(dt, dead);
+        Sway(dt);
         Recoil(dt);
+    }
+
+    // ---- Looking ----
+
+    // Turns the head (the model's track nodes) toward the nearest player: always while engaged, within the track's
+    // range while calm. It lets go during idles, eating and the like (their clips move the head), past its limits, and
+    // when dead; it eases in and out.
+    private void Look(float dt, bool dead)
+    {
+        if (Model.Track is not { } track || _gazeNodes.Count == 0)
+            return;
+        for (var i = 0; i < _gazeNodes.Count; i++)
+            _gazeUnder[i] = _gazeNodes[i].Node.Quaternion;
+        var frame = _scene.GlobalBasis.Orthonormalized();
+        var want = Vector2.Zero;
+        var free = !dead && (_oneShot is null || Model.Attacks.Values.Any(c => c.Contains(_oneShot)) || _oneShot == "alert");
+        if (free && GazeAt?.Invoke() is { } target)
+        {
+            var origin = _gazeNodes[^1].Node.GlobalPosition;
+            var local = frame.Inverse() * (target - origin);
+            var flat = new Vector2(local.X, local.Z).Length();
+            var yaw = Mathf.Atan2(-local.X, -local.Z);
+            var pitch = Mathf.Atan2(local.Y, flat);
+            var limit = Mathf.DegToRad(track.Yaw);
+            var near = _view is { Engaged: true } ? BotTrack.MaxRange : track.Range;
+            if (local.Length() <= near && Mathf.Abs(yaw) <= limit + Mathf.DegToRad(30f))
+                want = new Vector2(Mathf.Clamp(yaw, -limit, limit), Mathf.Clamp(pitch, -Mathf.DegToRad(track.Pitch), Mathf.DegToRad(track.Pitch)));
+        }
+        var ease = 1f - Mathf.Exp(-5f * dt);
+        _gaze = _gaze.Lerp(want, ease);
+        if (_gaze.LengthSquared() < 1e-6f)
+            return;
+        foreach (var (node, share) in _gazeNodes)
+        {
+            var turn = new Quaternion(frame.Y, _gaze.X * share) * new Quaternion(frame.X, _gaze.Y * share);
+            node.GlobalBasis = new Basis(turn) * node.GlobalBasis;
+        }
+    }
+
+    // ---- Swaying ----
+
+    // Loose parts lag behind the body: starting off tips them back, stopping throws them forward, turning swings them
+    // out, and a knock flings them away from the blow. Each is a damped spring toward that lean, applied over the clip.
+    private const float SwayStiffness = 90f;
+    private const float SwayDamping = 9f;
+    private const float SwayGain = 0.035f;     // radians of lean per m/s² of the body's acceleration
+    private const float SwayMax = 0.45f;
+
+    private void Sway(float dt)
+    {
+        if (_swayers.Count == 0 || dt <= 0)
+            return;
+        var frame = _scene.GlobalBasis.Orthonormalized();
+        var accel = (_velocity - _lastVelocity) / dt + _knockSpeed * 6f;
+        _lastVelocity = _velocity;
+        var local = frame.Inverse() * accel;
+        // forward is -Z: speeding up forward leans the part back (+x about the model's X); a sideways push (turning
+        // while moving pulls the body inward) leans it the other way
+        var push = new Vector2(-local.Z, local.X) * SwayGain;
+        foreach (var swayer in _swayers)
+        {
+            swayer.Under = swayer.Node.Quaternion;
+            var target = (push * swayer.Loose).LimitLength(SwayMax * Mathf.Min(1f, swayer.Loose));
+            swayer.Spin += (SwayStiffness * (target - swayer.Tilt) - SwayDamping * swayer.Spin) * dt;
+            swayer.Tilt += swayer.Spin * dt;
+            if (swayer.Tilt.LengthSquared() < 1e-7f)
+                continue;
+            var lean = new Quaternion(frame.X, swayer.Tilt.X) * new Quaternion(frame.Z, swayer.Tilt.Y);
+            swayer.Node.GlobalBasis = new Basis(lean) * swayer.Node.GlobalBasis;
+        }
     }
 
     // ---- Being hit ----

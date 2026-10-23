@@ -112,6 +112,23 @@ public sealed record BotBreed(string Treat, string Calf, float Seconds, float Co
 /// <param name="Seconds">Seconds from birth until it grows up.</param>
 public sealed record BotGrow(string Into, float Seconds);
 
+/// <summary>How a bot model's head follows a player nearby (<see cref="BotTrackDefinition"/>), defaults filled in.</summary>
+/// <param name="Nodes">Nodes that turn, with their shares of the turn, in data order (parents first).</param>
+/// <param name="Yaw">Most it turns left or right, degrees.</param>
+/// <param name="Pitch">Most it looks up or down, degrees.</param>
+/// <param name="Range">How near a player must be while it is calm, m.</param>
+public sealed record BotTrack(IReadOnlyList<KeyValuePair<string, float>> Nodes, float Yaw, float Pitch, float Range)
+{
+    /// <summary>The largest yaw a track may have, degrees.</summary>
+    public const float MaxYaw = 170f;
+
+    /// <summary>The largest pitch a track may have, degrees.</summary>
+    public const float MaxPitch = 80f;
+
+    /// <summary>The farthest a calm bot looks for a player, m.</summary>
+    public const float MaxRange = 30f;
+}
+
 /// <summary>A bot's model with its path qualified and every default filled in.</summary>
 /// <param name="Mesh">Qualified glTF path (<c>mod:meshes/bots/x.glb</c>).</param>
 /// <param name="Attacks">Clips each attack plays, by attack id (every attack has at least one).</param>
@@ -133,6 +150,15 @@ public sealed record BotModel(string Mesh, IReadOnlyDictionary<string, IReadOnly
 
     /// <summary>The node a Lead's rope clips on to, or null (<see cref="BotModelDefinition.LeadNode"/>).</summary>
     public string? LeadNode { get; init; }
+
+    /// <summary>How its head follows a player nearby, or null (<see cref="BotModelDefinition.Track"/>).</summary>
+    public BotTrack? Track { get; init; }
+
+    /// <summary>Nodes that swing as it moves, by how loose each is (<see cref="BotModelDefinition.Sway"/>).</summary>
+    public IReadOnlyDictionary<string, float> Sway { get; init; } = new Dictionary<string, float>();
+
+    /// <summary>The loosest a swaying node may be.</summary>
+    public const float MaxSway = 3f;
 
     /// <summary>The shortest wait between idles, in s.</summary>
     public float IdleMin { get; init; } = BotBook.DefaultIdleMin;
@@ -612,10 +638,42 @@ public sealed class BotBook : IBotCatalog
             else
                 (idleMin, idleMax) = (every[0], every[1]);
         }
+        var track = m.Track is { } t ? CheckTrack(t, sink) : null;
+        foreach (var (node, loose) in m.Sway ?? [])
+        {
+            if (string.IsNullOrWhiteSpace(node))
+                sink.Error(code, "$.model.sway", "a node name is required.");
+            else if (!(loose > 0 && loose <= BotModel.MaxSway))
+                sink.Error(code, $"$.model.sway.{node}", $"looseness {loose} must be above 0 and at most {BotModel.MaxSway}.");
+        }
         if (sink.ErrorCount > errors)
             return null;
         return new BotModel(mesh!, clips, speeds, m.EyeCalm?.ToLowerInvariant() ?? DefaultEyeCalm, m.EyeEngaged?.ToLowerInvariant() ?? DefaultEyeEngaged,
-            effects) { Variants = variants, Idles = idles, IdleMin = idleMin, IdleMax = idleMax, KeptNodes = m.KeptNodes ?? [], LeadNode = m.LeadNode };
+            effects) { Variants = variants, Idles = idles, IdleMin = idleMin, IdleMax = idleMax, KeptNodes = m.KeptNodes ?? [], LeadNode = m.LeadNode, Track = track,
+            Sway = m.Sway ?? [] };
+    }
+
+    private static BotTrack? CheckTrack(BotTrackDefinition t, DiagnosticSink sink)
+    {
+        const string code = DiagnosticCodes.BotInvalid;
+        var errors = sink.ErrorCount;
+        KnownKeys.WarnUnknown(t.Extra, "$.model.track", sink, typeof(BotTrackDefinition));
+        if (t.Nodes is not { Count: > 0 })
+            sink.Error(code, "$.model.track.nodes", "name one or more nodes that turn, each with its share (0 to 1).");
+        foreach (var (node, share) in t.Nodes ?? [])
+        {
+            if (string.IsNullOrWhiteSpace(node))
+                sink.Error(code, "$.model.track.nodes", "a node name is required.");
+            else if (!(share > 0 && share <= 1))
+                sink.Error(code, $"$.model.track.nodes.{node}", $"share {share} must be above 0 and at most 1.");
+        }
+        if (t.Yaw is { } yaw && !(yaw > 0 && yaw <= BotTrack.MaxYaw))
+            sink.Error(code, "$.model.track.yaw", $"yaw {yaw} must be above 0 and at most {BotTrack.MaxYaw} degrees.");
+        if (t.Pitch is { } pitch && !(pitch >= 0 && pitch <= BotTrack.MaxPitch))
+            sink.Error(code, "$.model.track.pitch", $"pitch {pitch} must be 0 to {BotTrack.MaxPitch} degrees.");
+        if (t.Range is { } range && !(range > 0 && range <= BotTrack.MaxRange))
+            sink.Error(code, "$.model.track.range", $"range {range} must be above 0 and at most {BotTrack.MaxRange} m.");
+        return sink.ErrorCount > errors ? null : new BotTrack([.. t.Nodes!], t.Yaw ?? 70f, t.Pitch ?? 30f, t.Range ?? 6f);
     }
 
     private static BotAttack? CheckAttack(BotAttackDefinition a, string path, string family, DiagnosticSink sink)

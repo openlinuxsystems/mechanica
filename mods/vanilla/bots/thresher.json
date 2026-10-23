@@ -28,6 +28,19 @@
     "clip_speeds": {
       "patrol": 0.93,
       "chase": 2.47
+    },
+    "track": {
+      "nodes": {
+        "Torso": 0.4,
+        "Head": 0.6
+      },
+      "yaw": 60,
+      "pitch": 25,
+      "range": 10
+    },
+    "sway": {
+      "StackCap": 0.8,
+      "Beacon": 1
     }
   },
   "melee_immune": true,

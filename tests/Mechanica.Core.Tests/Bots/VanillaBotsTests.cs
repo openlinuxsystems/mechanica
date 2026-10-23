@@ -308,6 +308,12 @@ public class VanillaBotsTests
     [InlineData("""{ "mesh": "meshes/x.glb", "kept_nodes": [" "] }""", "$.model.kept_nodes[0]", "a node name is required.")]
     [InlineData("""{ "mesh": "meshes/x.glb", "idle_every": [5] }""", "$.model.idle_every", "idle_every must be [min, max] seconds, 0 < min <= max.")]
     [InlineData("""{ "mesh": "meshes/x.glb", "idle_every": [9, 4] }""", "$.model.idle_every", "idle_every must be [min, max] seconds, 0 < min <= max.")]
+    [InlineData("""{ "mesh": "meshes/x.glb", "track": { "yaw": 40 } }""", "$.model.track.nodes", "name one or more nodes that turn, each with its share (0 to 1).")]
+    [InlineData("""{ "mesh": "meshes/x.glb", "track": { "nodes": { "Head": 1.5 } } }""", "$.model.track.nodes.Head", "share 1.5 must be above 0 and at most 1.")]
+    [InlineData("""{ "mesh": "meshes/x.glb", "track": { "nodes": { "Head": 1 }, "yaw": 200 } }""", "$.model.track.yaw", "yaw 200 must be above 0 and at most 170 degrees.")]
+    [InlineData("""{ "mesh": "meshes/x.glb", "track": { "nodes": { "Head": 1 }, "pitch": -5 } }""", "$.model.track.pitch", "pitch -5 must be 0 to 80 degrees.")]
+    [InlineData("""{ "mesh": "meshes/x.glb", "track": { "nodes": { "Head": 1 }, "range": 0 } }""", "$.model.track.range", "range 0 must be above 0 and at most 30 m.")]
+    [InlineData("""{ "mesh": "meshes/x.glb", "sway": { "Antenna": 4 } }""", "$.model.sway.Antenna", "looseness 4 must be above 0 and at most 3.")]
     public void BadModelsAreReported(string model, string path, string? message)
     {
         var bot = ModelBot(model);
@@ -372,6 +378,31 @@ public class VanillaBotsTests
         Assert.Equal((2f, 4f), (model.IdleMin, model.IdleMax));
         var plain = BotBook.From(Vanilla.Value, ("test", ModelBot("""{ "mesh": "meshes/a.glb" }"""))).FindBot("test:whipper")!.Model!;
         Assert.Equal(("test:meshes/a.glb", BotBook.DefaultIdleMin, BotBook.DefaultIdleMax), (plain.MeshFor(5), plain.IdleMin, plain.IdleMax));
+    }
+
+    [Fact]
+    public void AModelsHeadTrackAndSwayKeepTheirNodesInOrderWithDefaults()
+    {
+        var model = BotBook.From(Vanilla.Value, ("test", ModelBot("""{ "mesh": "meshes/a.glb", "track": { "nodes": { "Neck": 0.6, "Head": 0.4 } }, "sway": { "Antenna": 1.5 } }""")))
+            .FindBot("test:whipper")!.Model!;
+
+        var track = model.Track!;
+        Assert.Equal(["Neck", "Head"], track.Nodes.Select(n => n.Key));
+        Assert.Equal((70f, 30f, 6f), (track.Yaw, track.Pitch, track.Range));
+        Assert.Equal(1.5f, model.Sway["Antenna"]);
+        var plain = BotBook.From(Vanilla.Value, ("test", ModelBot("""{ "mesh": "meshes/a.glb" }"""))).FindBot("test:whipper")!.Model!;
+        Assert.Null(plain.Track);
+        Assert.Empty(plain.Sway);
+    }
+
+    [Fact]
+    public void EveryVanillaBotWatchesPlayersAndTheGrazerSwingsItsEarsAndTail()
+    {
+        foreach (var bot in Book.Value.All)
+            Assert.True(bot.Model?.Track is { Nodes.Count: > 0 }, bot.QualifiedId);
+        var grazer = Book.Value.FindBot("vanilla:grazer")!.Model!;
+        Assert.Equal(["EarL", "EarR", "Tail1"], grazer.Sway.Keys.Order());
+        Assert.Contains(Book.Value.FindBot("vanilla:grazer_calf")!.Model!.Idles, i => i.Clip == "frolic");
     }
 
     [Fact]

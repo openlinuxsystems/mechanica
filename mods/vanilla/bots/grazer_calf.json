@@ -55,6 +55,10 @@
         "weight": 2
       },
       {
+        "clip": "frolic",
+        "weight": 3
+      },
+      {
         "clip": "moo",
         "sound": "grazer_idle"
       }
@@ -62,7 +66,21 @@
     "idle_every": [
       4,
       10
-    ]
+    ],
+    "track": {
+      "nodes": {
+        "Neck": 0.55,
+        "Head": 0.45
+      },
+      "yaw": 70,
+      "pitch": 30,
+      "range": 6
+    },
+    "sway": {
+      "EarL": 1.2,
+      "EarR": 1.2,
+      "Tail1": 1
+    }
   },
   "grow": {
     "into": "grazer",
