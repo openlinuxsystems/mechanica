@@ -160,6 +160,13 @@ public sealed class CharacterAnimator
     private string? _stop;
     private float _stopTime;
     private float _stopLeaving;
+    // Getting on or off a ladder: the clip playing over everything, how far into it, how long the body has been walking
+    // off it, the mode last frame and how fast the climber was going up.
+    private string? _mount;
+    private float _mountTime;
+    private float _mountLeaving;
+    private CharacterMode _lastMode;
+    private float _climbRise;
     private float _movingSpeed;
     // Set on the frame a standing body sets off; the lean then gets its push.
     private bool _wasStanding = true;
@@ -200,6 +207,12 @@ public sealed class CharacterAnimator
 
     // Moving off in the middle of a stop, it gives way to the stride over this long (seconds).
     private const float StopLeave = 0.12f;
+
+    // Going up a ladder at least this fast (m/s) as it ends is climbing off its top.
+    private const float MountRise = 0.2f;
+
+    // Walking off faster than this (m/s) in the middle of climbing off, the stride takes over.
+    private const float MountWalkOff = 1f;
 
     /// <summary>Metres climbed in one cycle of the <c>climb</c> clip: each hand and foot moves up two rungs of a ladder (0.25 m apart).</summary>
     public const float ClimbCycleMetres = 0.5f;
@@ -388,7 +401,7 @@ public sealed class CharacterAnimator
             // Already dead when first seen (joining a world where they lie): lying there.
             if (pose.Dead && Version("downed") is { } downed && _lengths.ContainsKey(downed))
                 Start(downed, null);
-            Mode = Choose(pose);
+            Mode = _lastMode = Choose(pose);
             Array.Clear(_modeWeights);
             _modeWeights[(int)Mode] = 1f;
             if (Version(CharacterRig.HoldClip(_prop, pose.Guard)) is { } hold)
@@ -397,6 +410,7 @@ public sealed class CharacterAnimator
 
         Track(pose, velocity, delta);
         Mode = Choose(pose);
+        Mount(velocity);
         for (var i = 0; i < _modeWeights.Length; i++)
             _modeWeights[i] = Toward(_modeWeights[i], i == (int)Mode ? 1f : 0f, delta / _settings.ModeFade);
         Normalize(_modeWeights);
@@ -414,6 +428,53 @@ public sealed class CharacterAnimator
         Lean *= 1f - MathF.Max(down, LegsWeight);
         ShowProp = Prop != CharacterProp.None && _modeWeights[(int)CharacterMode.Swim] < 0.5f && _modeWeights[(int)CharacterMode.Sit] < 0.5f
             && _modeWeights[(int)CharacterMode.Climb] < 0.5f && !Grounded;
+    }
+
+    // Stepping onto a ladder from the ground reaches up onto it (climb_on); going off its top climbs over onto the floor
+    // (climb_off). Each plays over everything and gives way to what the body does next.
+    private void Mount(Vector3 velocity)
+    {
+        if (Mode != _lastMode)
+        {
+            string? clip = null;
+            if (Mode == CharacterMode.Climb && _lastMode is CharacterMode.Ground or CharacterMode.Crouch)
+                clip = "climb_on";
+            else if (_lastMode == CharacterMode.Climb && Mode is CharacterMode.Ground or CharacterMode.Air && _climbRise > MountRise)
+                clip = "climb_off";
+            if (clip is not null && _lengths.ContainsKey(clip))
+            {
+                (_mount, _mountTime, _mountLeaving) = (clip, 0f, 0f);
+                // The reach ends on the climb's first pose, so the climb starts there.
+                if (clip == "climb_on")
+                    _climbPhase = 0f;
+            }
+            else if (_mount == "climb_on" || Mode is CharacterMode.Swim or CharacterMode.Sit or CharacterMode.Climb)
+            {
+                _mount = null;
+            }
+        }
+        if (Mode == CharacterMode.Climb)
+            _climbRise = Finite(velocity).Y;
+        _lastMode = Mode;
+    }
+
+    // Lays the mount clip over the body layer, in fast at its start and out over its end (or as the body walks off).
+    private void AddMount(float horizontal, float delta)
+    {
+        if (_mount is not { } mount)
+            return;
+        _mountTime += delta;
+        _mountLeaving = mount == "climb_off" && horizontal > MountWalkOff ? _mountLeaving + delta : 0f;
+        var length = _lengths[mount];
+        if (_mountTime >= length || _mountLeaving >= StopLeave)
+        {
+            _mount = null;
+            return;
+        }
+        var w = Math.Clamp(_mountTime / 0.06f, 0f, 1f) * Math.Clamp((length - _mountTime) / 0.15f, 0f, 1f) * (1f - _mountLeaving / StopLeave);
+        for (var i = 0; i < _body.Count; i++)
+            _body[i] = _body[i] with { Weight = _body[i].Weight * (1f - w) };
+        Add(mount, _mountTime, w);
     }
 
     // Jumps, landings, water and the item in hand.
@@ -793,7 +854,8 @@ public sealed class CharacterAnimator
         if (sit > 0f)
             AddSit(pose.Seat ?? SeatStyle.Default, sit, Finite(pose.Pedal));
         // Climbing plays the cycle forward going up and backward coming down; held still it holds where it is.
-        if (pose.Climbing)
+        // Reaching onto the ladder the cycle waits on its first pose, where the reach ends.
+        if (pose.Climbing && !(_mount == "climb_on" && _mountTime < _lengths["climb_on"] - 0.15f))
             _climbPhase = (_climbPhase + Finite(pose.Velocity).Y * delta / ClimbCycleMetres) % 1f;
         if (_climbPhase < 0f)
             _climbPhase += 1f;
@@ -804,6 +866,7 @@ public sealed class CharacterAnimator
             else
                 Add("fall", _clock, climb);
         }
+        AddMount(horizontal, delta);
         if (_body.Count == 0)
             Add("idle", _clock, 1f);
     }
@@ -1114,7 +1177,7 @@ public sealed class CharacterAnimator
 
     /// <summary>True for clips that play once (jump, land and gestures) rather than loop.</summary>
     public static bool IsOneShot(string clip) =>
-        clip is "jump" or "land" or "jump_run" or "land_hard" or "stop_walk" or "stop_run" or "idle_look" or "idle_stretch" or "turn_l" or "turn_r"
+        clip is "jump" or "land" or "jump_run" or "land_hard" or "stop_walk" or "stop_run" or "climb_on" or "climb_off" or "idle_look" or "idle_stretch" or "turn_l" or "turn_r"
         || (CharacterRig.ReactionClips.Contains(clip) && !clip.StartsWith("downed", StringComparison.Ordinal))
         || (CharacterRig.UpperBodyClips.Contains(clip) && !clip.StartsWith("hold_", StringComparison.Ordinal));
 

@@ -146,7 +146,10 @@ each has the length of the clip it stands in for. Moving sideways they take up t
 rest, so the feet always follow the way the body goes; without all six the legs turn up to `max_body_turn_degrees`
 instead), `crouch_idle`, `crouch_walk`,
 `stop_walk` and `stop_run` (pulling up: the feet plant, the weight settles and the clip ends on idle; played when a body
-comes to a stand from `motion.stop_speeds`), `jump`, `jump_run` (a running leap), `fall`, `land`, `land_hard` (a long fall, a hand to the ground), `swim_idle`, `swim`, `climb` (a ladder: hands and feet on rungs 0.25 m apart, played forward or back as the climber moves up or down), `sit` (a chair, hands on a wheel), `sit_low` (a low seat, legs out in
+comes to a stand from `motion.stop_speeds`), `jump`, `jump_run` (a running leap), `fall`, `land`, `land_hard` (a long fall, a hand to the ground), `swim_idle`, `swim`, `climb` (a ladder: hands and feet on rungs 0.25 m apart, played forward or back as the climber moves up or down),
+`climb_on` (stepping onto a ladder from the ground: the hands reach up onto the rungs, then a foot; it ends on the climb's
+first pose) and `climb_off` (going off a ladder's top onto the floor: low with the hands pushing down on it, then up to
+standing), `sit` (a chair, hands on a wheel), `sit_low` (a low seat, legs out in
 front), `sit_ride` and `sit_ride_low` (the same with the hands resting on the thighs, for passengers), `sit_saddle` (astride a
 saddle, leaning forward with the hands on handlebars), `sit_saddle_ride` (astride, sitting up with the hands on the thighs)
 and the pedal versions `sit_gas`, `sit_brake`, `sit_low_gas` and `sit_low_brake` move the whole body; `hold_tool`, `hold_heavy`,

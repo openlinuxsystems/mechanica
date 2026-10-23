@@ -2759,7 +2759,43 @@ def interp_specs(keys, t, loop_period=None):
     return unflatten(template, catmull(pts, t))
 
 
+def mix_poses(parts):
+    """The pose between solved poses: [(weight, spec), ...] (weights adding to 1), each bone's turn slerped and the hips
+    moved between, so keys with different kinds of limbs (IK and FK arms, a grip and a hanging hand) can blend."""
+    poses = [(w, build_pose(sp)) for w, sp in parts if w > 1e-6]
+    out = Pose()
+    total = 0.0
+    for w, p in poses:
+        if total == 0.0:
+            out.Q = {b: q.copy() for b, q in p.Q.items()}
+            out.hips_z, out.hips_xy = p.hips_z, p.hips_xy
+        else:
+            u = w / (total + w)
+            for b in out.Q:
+                qa = Matrix([list(r) for r in out.Q[b]]).to_quaternion()
+                qb = Matrix([list(r) for r in p.Q[b]]).to_quaternion()
+                out.Q[b] = np.array(qa.slerp(qb, u).to_matrix())
+            out.hips_z = out.hips_z * (1 - u) + p.hips_z * u
+            out.hips_xy = tuple(a * (1 - u) + c * u for a, c in zip(out.hips_xy, p.hips_xy))
+        total += w
+    return out.fk()
+
+
+def mix_keys(keys, t):
+    """A one-shot through key specs [(time, spec), ...] that need not share a structure: each span eases from one solved
+    pose to the next (mix_poses)."""
+    if t <= keys[0][0]:
+        return keys[0][1]
+    for (t0, a), (t1, b) in zip(keys, keys[1:]):
+        if t <= t1:
+            u = sstep(t0, t1, t)
+            return {"mix": [(1.0 - u, a), (u, b)]}
+    return keys[-1][1]
+
+
 def build_pose(spec):
+    if "mix" in spec:
+        return mix_poses(spec["mix"])
     pose = Pose()
     pose.hips_z = spec.get("hips_z", 0.0)
     pose.hips_xy = (spec.get("hips_x", 0.0), spec.get("hips_y", 0.0))
@@ -3742,6 +3778,54 @@ def clip_climb(t):
         s[f"leg_{side}"] = {"ankle": tuple(ankle), "pitch": 6.0 - 10.0 * off_rung, "yaw": 0.0, "pole": (sg * 0.2, -1, 0.1),
                             "toe": 0.0}
     return s
+
+
+CLIMB_ON_SECONDS = 0.45
+CLIMB_OFF_SECONDS = 0.75
+
+
+def clip_climb_on(t):
+    """Getting on a ladder from the ground: both hands reach up onto the rungs while the feet are still on the ground, then
+    the first foot steps up onto a rung, ending on the climb's own first pose (the animator starts the climb there)."""
+    hold = clip_climb(0.0)
+    reach = dict(hold)
+    standing_legs(reach, -0.03)
+    reach["hips"] = (2.0, 0, 0)
+    reach["spine"] = (2.0, 0, 0)
+    return mix_keys([(0.0, idle_spec(0.0)), (0.22, reach), (CLIMB_ON_SECONDS, hold)], t)
+
+
+def clip_climb_off(t):
+    """Over the top of a ladder: the body comes up onto the floor low, both hands pushing down on it ahead, one knee up,
+    then rises over the planted feet and stands (the animator plays it as the climber steps off the top)."""
+    top = relaxed_upper(30)
+    standing_legs(top, -0.34, spread=0.03, front=-0.12)
+    top["hips_x"] = 0.0
+    top["hips"] = (38.0, 0, 0)
+    top["spine"] = (14.0, 0, 0)
+    top["chest"] = (8.0, 0, 0)
+    top["neck"] = (-26.0, 0, 0)
+    top["head"] = (-18.0, 0, 0)
+    for side in ("l", "r"):
+        top[f"shoulder_{side}"] = (0.0, 8.0, 0.0)
+        top[f"arm_{side}"] = {"down": 10.0, "swing": 68.0, "yaw": 0.0, "elbow": 10.0, "wrist": -55.0, "twist": 0.0}
+        top[f"fingers_{side}"] = 6.0
+    rise = relaxed_upper(24)
+    standing_legs(rise, -0.16, spread=0.02, front=-0.06)
+    rise["hips_x"] = 0.0
+    rise["hips"] = (20.0, 0, 0)
+    rise["spine"] = (8.0, 0, 0)
+    rise["chest"] = (4.0, 0, 0)
+    rise["neck"] = (-14.0, 0, 0)
+    rise["head"] = (-10.0, 0, 0)
+    for side in ("l", "r"):
+        rise[f"arm_{side}"] = {"down": 22.0, "swing": 26.0, "yaw": 0.0, "elbow": 30.0, "wrist": -10.0, "twist": 0.0}
+    up = relaxed_upper(20)
+    standing_legs(up, -0.02)
+    up["hips_x"] = 0.0
+    up["hips"] = (2.0, 0, 0)
+    up["spine"] = (-1.0, 0, 0)
+    return mix_keys([(0.0, top), (0.28, rise), (0.5, up), (CLIMB_OFF_SECONDS, idle_spec(CLIMB_OFF_SECONDS))], t)
 
 
 # The steering wheel the sit clips hold (the driver's seat models put theirs here: tools/part_kit/seat_kit.py and
@@ -6188,6 +6272,8 @@ CLIPS = {
     "swim_idle": (clip_swim_idle, 2.0, True, False),
     "swim": (clip_swim, 1.2, True, False),
     "climb": (clip_climb, CLIMB_T, True, False),
+    "climb_on": (clip_climb_on, CLIMB_ON_SECONDS, False, False),
+    "climb_off": (clip_climb_off, CLIMB_OFF_SECONDS, False, False),
     "sit": (clip_sit, 2.0, True, False),
     "sit_low": (clip_sit_low, 2.0, True, False),
     "sit_ride": (clip_sit_ride, 2.0, True, False),
