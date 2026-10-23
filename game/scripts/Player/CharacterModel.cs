@@ -79,6 +79,17 @@ public partial class CharacterModel : Node3D
     /// <summary>The modded held model in the right hand (an item's <c>held</c> section), or null.</summary>
     public Node3D? HeldNode => _held;
 
+    /// <summary>The middle of the right (or left) palm in world space, or null when the skeleton has no such hand.</summary>
+    public Vector3? HandOf(bool right)
+    {
+        var hand = _skeleton.FindBone(right ? "hand_r" : "hand_l");
+        var fingers = _skeleton.FindBone(right ? "fingers_r" : "fingers_l");
+        if (hand < 0 || fingers < 0)
+            return null;
+        var at = _skeleton.GlobalTransform;
+        return ((at * _skeleton.GetBoneGlobalPose(hand)).Origin + (at * _skeleton.GetBoneGlobalPose(fingers)).Origin) * 0.5f;
+    }
+
     /// <summary>The right hand's palm in the world (where held items sit), or null when the rig has no hand.</summary>
     public Vector3? HandPosition => _hand is null ? null : (_skeleton.GlobalTransform * _skeleton.GetBoneGlobalPose(_skeleton.FindBone(CharacterRig.PropBone))).Origin;
 
@@ -144,6 +155,13 @@ public partial class CharacterModel : Node3D
                     rotation[bone] = t;
                 else if (animation.TrackGetType(t) == Animation.TrackType.Position3D)
                     position[bone] = t;
+            }
+            // A hand without finger bones closes its one-bone fingers as the clip's middle finger does.
+            foreach (var (fingers, track) in CharacterRig.FingerFallback)
+            {
+                if (_skeleton.FindBone(fingers) is var bone and >= 0 && _skeleton.FindBone(track) < 0
+                    && animation.FindTrack($"{animation.TrackGetPath(0).GetConcatenatedNames()}:{track}", Animation.TrackType.Rotation3D) is var t and >= 0)
+                    rotation[bone] = t;
             }
             _clips[name] = new Clip(animation, rotation, position);
         }

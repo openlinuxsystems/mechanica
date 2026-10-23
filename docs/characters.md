@@ -58,6 +58,17 @@ shoulder_l, upper_arm_l, forearm_l, hand_l, fingers_l, thumb_l   (and the same w
 thigh_l, shin_l, foot_l, toe_l                                  (and the same with _r)
 ```
 
+The hands should also have the finger bones, three down each finger under `fingers_l` and two more
+down the thumb under `thumb_l` (and the same with `_r`):
+
+```
+index_1_l, index_2_l, index_3_l, middle_1_l .. middle_3_l, ring_1_l .. ring_3_l, pinky_1_l .. pinky_3_l,
+thumb_2_l, thumb_3_l
+```
+
+They are optional. A hand without them bends all four fingers at the knuckles on `fingers_l`, following the
+clips' middle finger, so an older one-bone hand still closes round what it holds, only less well.
+
 Extra bones (hair, a tail) are fine; no clip moves them. Keep the bone rest poses of the vanilla
 skeleton, since the clips are authored against them: start from `scrapper_male.glb`, change the mesh,
 and keep the armature. Model in metres, standing on the origin, facing +Z (Blender's -Y, the default glTF

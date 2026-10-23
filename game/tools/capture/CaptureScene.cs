@@ -133,7 +133,8 @@ public partial class CaptureScene : Node
         var derelicts = args.Length > 1 && args[1] == "derelicts";
         var signs = args.Length > 1 && args[1] == "signs";
         var botClips = args.Length > 1 && args[1] == "bot_clips";
-        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !factions && !ladder && !beds && !extinguisher && !drops && !derelicts && !signs && !botClips && !connectLines && !husbandry && !consumables && !grazerProducts && !fields && !gauges && !building && args[1] != "survey" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        var hands = args.Length > 1 && args[1] == "hands";
+        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !factions && !ladder && !beds && !extinguisher && !drops && !derelicts && !signs && !botClips && !hands && !connectLines && !husbandry && !consumables && !grazerProducts && !fields && !gauges && !building && args[1] != "survey" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
@@ -388,6 +389,11 @@ public partial class CaptureScene : Node
         if (moves)
         {
             AnimationShots();
+            return;
+        }
+        if (hands)
+        {
+            HandShots(args.Length > 2 ? args[2] : null);
             return;
         }
         if (botClips)
