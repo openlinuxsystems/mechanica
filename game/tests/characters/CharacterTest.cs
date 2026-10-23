@@ -13,7 +13,7 @@ namespace Mechanica.Game.Tests;
 /// pose on the shared rig. The host and a client each have to choose once, every peer draws each player as what
 /// they chose, a second pick is refused, and a client that leaves and comes back keeps theirs. A walking player's
 /// feet make footsteps on another peer, a held tool shows in their hand, a swing plays there, and a player who
-/// goes into deep water swims everywhere.
+/// goes into deep water swims everywhere. On a slope another peer draws both feet on the ground.
 /// </summary>
 public partial class CharacterTest : StagedTest
 {
@@ -33,6 +33,9 @@ public partial class CharacterTest : StagedTest
     private string? _refused;
     private ulong _drawnFrame;
     private Func<Vector3, float>? _seaLevel;
+    private readonly List<StaticBody3D> _ramps = [];
+    private Vector3 _slopeFrom;
+    private const float SlopeDegrees = 18f;
 
     protected override string Tag => "characters";
 
@@ -212,6 +215,58 @@ public partial class CharacterTest : StagedTest
                 player.WaterLevel = _seaLevel;
             var model = (CharacterModel)_a.Main.PlayerSync.Players[_host.Peer].Character!;
             return !player.Body.HasFlag(BodyFlags.Swimming) && model.Animator.Mode != CharacterMode.Swim && _events.Contains(CharacterEvent.WaterExit);
+        });
+
+        Add("on a slope the feet stand on the ground on another peer", frame =>
+        {
+            var player = _host.Main.LocalPlayer!;
+            if (frame == 0)
+            {
+                // A ramp high above the ground, tilted across the way the player faces, so one foot stands higher.
+                _slopeFrom = player.GlobalPosition;
+                var basis = new Basis(Vector3.Up, player.Rotation.Y) * new Basis(Vector3.Back, Mathf.DegToRad(SlopeDegrees));
+                var at = player.GlobalPosition + Vector3.Up * 40f;
+                foreach (var peer in new[] { _host, _a })
+                {
+                    var ramp = new StaticBody3D { Name = "Ramp", CollisionLayer = World.PhysicsLayers.Solid };
+                    ramp.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(6f, 0.4f, 6f) } });
+                    peer.Main.AddChild(ramp);
+                    ramp.GlobalTransform = new Transform3D(basis, at);
+                    _ramps.Add(ramp);
+                }
+                player.GlobalPosition = at + Vector3.Up * 1.2f;
+                player.Velocity = Vector3.Zero;
+            }
+            player.CurrentInput = new PlayerInput(0, 0, 0, 0, false, false);
+            if (frame < 120)
+                return false;
+            var model = (CharacterModel)_a.Main.PlayerSync.Players[_host.Peer].Character!;
+            var skeleton = model.Skeleton;
+            var space = model.GetWorld3D().DirectSpaceState;
+            var gaps = new List<float>();
+            var heights = new List<float>();
+            foreach (var name in new[] { "foot_l", "foot_r" })
+            {
+                var bone = skeleton.FindBone(name);
+                var ankle = skeleton.GlobalTransform * skeleton.GetBoneGlobalPose(bone).Origin;
+                var rest = (skeleton.GlobalTransform.Basis * new Vector3(0, skeleton.GetBoneGlobalRest(bone).Origin.Y, 0)).Length();
+                var query = PhysicsRayQueryParameters3D.Create(ankle + Vector3.Up, ankle + Vector3.Down * 2f, World.PhysicsLayers.Solid);
+                query.Exclude = [_a.Main.PlayerSync.Players[_host.Peer].GetRid()];
+                var hit = space.IntersectRay(query);
+                if (hit.Count == 0)
+                    return Check(false, $"there is ramp under {name}");
+                var ground = hit["position"].AsVector3().Y;
+                gaps.Add(ankle.Y - rest - ground);
+                heights.Add(ground);
+            }
+            Check(MathF.Abs(heights[0] - heights[1]) > 0.03f, $"the feet stand at different heights on the ramp ({heights[0] - heights[1]:F3} m)");
+            Check(gaps.All(g => MathF.Abs(g) < 0.035f), $"both feet are on the ground ({string.Join(", ", gaps.Select(g => $"{g:F3}"))} m)");
+            foreach (var ramp in _ramps)
+                ramp.QueueFree();
+            _ramps.Clear();
+            player.GlobalPosition = _slopeFrom;
+            player.Velocity = Vector3.Zero;
+            return true;
         });
 
         Add("a client that leaves and comes back keeps its character", frame =>

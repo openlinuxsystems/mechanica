@@ -131,6 +131,7 @@ public partial class CharacterModel : Node3D
         _spine = _skeleton.FindBone("spine");
         _chest = _skeleton.FindBone("chest");
         _head = _skeleton.FindBone("head");
+        ReadyFeet();
         _freeArm = new[] { "shoulder_l", "upper_arm_l", "forearm_l", "hand_l" }.Select(_skeleton.FindBone).Where(b => b >= 0).ToArray();
         // The eyes in the rest pose, kept in the head bone's frame.
         if (_head >= 0)
@@ -234,6 +235,7 @@ public partial class CharacterModel : Node3D
                 Position = new Vector3(0, Animator.Lift, 0) + offset;
             }
         }
+        _plantDelta += step;
         Pose();
         ShowProp(Animator.ShowProp && Player is not null ? Animator.Prop : CharacterProp.None);
         ShowHeld(_propShown is CharacterProp.Item or CharacterProp.Food or CharacterProp.Drink && Player is not null ? Player.ShownHeld : (ushort)0);
@@ -342,6 +344,7 @@ public partial class CharacterModel : Node3D
                     _rotations[bone] = (_rotations[bone] * new Quaternion(_pitchAxis[bone], lean.X / 2f) * new Quaternion(_rollAxis[bone], lean.Y / 2f)).Normalized();
             }
         }
+        PlantFeet();
         for (var b = 0; b < count; b++)
         {
             _skeleton.SetBonePoseRotation(b, _rotations[b]);

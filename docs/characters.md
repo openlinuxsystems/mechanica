@@ -196,6 +196,12 @@ the feet step round, how the upper body twists toward the look, the lean into sp
 into a carry while moving, the speed a jump becomes a leap, the idle fidgets, and how hit reactions fade. The build-up
 from a walk to a sprint and the ease back down are `sprint_acceleration` and `sprint_deceleration` in `game/data/player.json`.
 
+On uneven ground the feet are planted after the clips pose the body (`CharacterModel.Feet.cs`, `LegReach` in Core): each
+foot looks for the ground under it, up to 0.5 m above or below the floor the body stands on, the hips drop for the lower
+foot, each leg bends to put its foot where the clip has it but on that ground (up to 0.35 m), and a foot standing on the
+ground lies along it (up to 40 degrees). It needs the `hips`, `thigh_*`, `shin_*` and `foot_*` bones every character has,
+eases in and out, and lets go in the air, seated, climbing and swimming. Level ground leaves the clips as they are.
+
 `python tools/characters/render_clips.py OUT_DIR clip ... [--view side|front|threeq|back]` renders clips straight from their
 code (with the bpy module installed), and `tools/capture-animations.sh OUT_DIR [character]` records each move in a running
 world as GIFs and MP4s (`CAPTURE_ONLY=walk,run_side` keeps matching moves). A mod item gets the pose of its category (`consumable` rests on
