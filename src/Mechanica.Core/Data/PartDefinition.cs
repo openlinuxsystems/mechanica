@@ -991,6 +991,12 @@ public sealed record ScrubDefinition
     /// <summary>The clip's name in the model. It should move nodes the played clips leave alone.</summary>
     public string? Clip { get; init; }
 
+    /// <summary>
+    /// How fast the clip follows its readout, in clip lengths a second (a steering wheel turning rather than jumping),
+    /// on every peer alike. Omitted means it goes straight to the readout's point.
+    /// </summary>
+    public float? Rate { get; init; }
+
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }

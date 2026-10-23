@@ -262,7 +262,7 @@ public static class CharacterRig
     public static IReadOnlyList<string> FullBodyClips { get; } =
     [
         "idle", "walk", "jog", "run", "crouch_idle", "crouch_walk", "jump", "fall", "land", "swim_idle", "swim", "sit",
-        "sit_low", "sit_ride", "sit_ride_low", "sit_saddle", "sit_saddle_ride", "idle_look", "idle_stretch", "turn_l", "turn_r", "jump_run", "land_hard",
+        "sit_low", "sit_ride", "sit_ride_low", "sit_saddle", "sit_saddle_ride", "sit_gas", "sit_brake", "sit_low_gas", "sit_low_brake", "idle_look", "idle_stretch", "turn_l", "turn_r", "jump_run", "land_hard",
         "climb",
     ];
 
@@ -337,6 +337,7 @@ public static class CharacterRig
         "hold_paint", "hold_paint_aim", "paint_draw", "paint_stow", "paint_reload",
         "hold_paint_fp", "hold_paint_aim_fp", "paint_draw_fp", "paint_stow_fp", "paint_spray_fp", "paint_reload_fp",
         "hold_food", "hold_food_fp", "eat_fp", "hold_drink", "hold_drink_fp", "drink", "drink_fp",
+        "sit_steer", "sit_low_steer", "sit_saddle_steer",
     ];
 
     /// <summary>

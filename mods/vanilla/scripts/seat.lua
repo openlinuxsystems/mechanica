@@ -5,6 +5,9 @@
 -- no properties.steer_angle is a passenger seat: it drives nothing (its output stays 0) and steers nothing, but its
 -- links still put switches and buttons on the rider's hotbar, and it shows "passenger" (1) so an engine linked to it
 -- does not start when someone sits in it.
+-- A driving seat shows how far its wheel is turned as "wheel" (0 full left, 0.5 straight, 1 full right) and its pedals
+-- as "gas" and "brake" (0 to 1): its model turns its wheel and presses its pedals by them, and the driver's hands and
+-- feet follow.
 -- Its "seated" display is 1 while someone sits in it, and "rattle" is 1 while they do and an engine of the
 -- Creation shows "running". Its "clip" display names the model clip to play (part data display.clips): "enter" as
 -- someone sits, then "seated_loop", or "seated_rattle_loop" while an engine runs, and "exit" as they get up; a model
@@ -202,6 +205,10 @@ function on_update(dt)
   if properties.steer_angle then
     state.throttle = math.max(-1, math.min(1, z))
     steer(math.max(-1, math.min(1, x)))
+    -- The wheel and pedals: the model turns and presses them (display.clips.scrub) and the driver's hands and feet follow.
+    show("wheel", math.floor((math.max(-1, math.min(1, x)) + 1) * 50 + 0.5) / 100)
+    show("gas", math.floor(math.max(0, state.throttle) * 100 + 0.5) / 100)
+    show("brake", math.floor(math.max(0, -state.throttle) * 100 + 0.5) / 100)
   end
   if properties.aim_speed then
     aim(input, dt)

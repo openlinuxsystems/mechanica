@@ -19,8 +19,11 @@ What it builds (procedurally, from scratch: no .blend inputs, no downloads):
     fast shiver in the canvas.
   - ``exit`` (0.7 s, once): the cushions spring back, a last rattle, and the pallet creaks.
 
-  The nodes the clips move: ``Base`` (the pallet), ``Frame`` (pipe, wheel and column, a child of Base), ``SeatPan``
+  The nodes the clips move: ``Base`` (the pallet), ``Frame`` (pipe and column, a child of Base), ``SeatPan``
   and ``Backrest`` (children of Frame). Their rest transforms are the empty seat.
+* A ``steer`` clip (1 s) the game holds at the seat's ``wheel`` readout instead of playing (part data
+  ``display.clips.scrub``): ``Steering`` (the wheel, a child of Frame pivoted at its hub) turns about the column from
+  90 degrees left at 0 s to 90 degrees right at 1 s; the driver's hands ride round with it.
 * ``mods/vanilla/textures/items/scrap_drivers_seat_icon.png`` - the seat's picture for the hotbar, the inventory,
   the creation hotbar and the Fabricator, 256 x 256 on a clear background, seen from the right and above so the wheel face shows.
 
@@ -292,7 +295,9 @@ def build_frame():
     strut0 = plate_at + Vector((0.05, -0.07, 0.01))
     pipe(g, [strut0, base - d * 0.28 + Vector((0.02, 0, 0))], r=0.011, mat="fitting")
 
-    # the wheel: a light pipe rim, three bent spokes, a hub with a cap nut; square to the column, a little turned
+    # the wheel: a light pipe rim, three bent spokes, a hub with a cap nut; square to the column, a little turned. It
+    # turns with the steering, so it is a node of its own (Steering, build_scene)
+    frame_g, g = g, Geo()
     w = -d                                              # toward the driver and up
     up = Vector((0, 1, 0)) - w * w.y
     up = (up - w * up.dot(w)).normalized()              # in the wheel's plane, away from the driver (twelve o'clock)
@@ -315,6 +320,7 @@ def build_frame():
     cylinder(g, HUB + w * 0.018, HUB + w * 0.026, 0.026, "fitting", segs=20)
     hexnut(g, HUB + w * 0.026, w, 0.013, 0.012, "bolt")
     dome(g, HUB + w * 0.038, w, 0.008, "bolt", segs=8)
+    wheel_g, g = g, frame_g
 
     # the junction box the links plug into: a bolted box with two brass terminals and a lead to the seat frame
     jb = Vector((0.38, 0.40, DECK))
@@ -329,7 +335,7 @@ def build_frame():
     lead = [jb + Vector((-0.045, 0.0, 0.03)), jb + Vector((-0.07, -0.02, 0.012)), Vector((x + 0.03, 0.2, DECK + 0.01)),
             Vector((x + 0.026, -0.05, DECK + 0.012)), Vector((x, -0.10, Z_LOOP + 0.06))]
     sweep(g, [Vector(p) for p in bl.bezier(lead[0], lead[1], lead[2], lead[3], 12)] + [lead[4]], 0.0045, "bolt", segs=8)
-    return g
+    return g, wheel_g
 
 
 # =====================================================================================================
@@ -518,7 +524,11 @@ def build_scene():
     bpy.context.scene.collection.objects.link(root)
     rig = {"root": root}
     base = rig["base"] = make_object("Base", build_base(), mats, root)
-    frame = rig["frame"] = make_object("Frame", build_frame(), mats, base, (0, 0, DECK))
+    frame_g, wheel_g = build_frame()
+    frame = rig["frame"] = make_object("Frame", frame_g, mats, base, (0, 0, DECK))
+    # the wheel, pivoted at its hub on the Frame, turns about the column (the steer clip)
+    steering = rig["steering"] = make_object("Steering", wheel_g, mats, frame, HUB)
+    steering.location = HUB - Vector((0, 0, DECK))
     pan = build_cushion("SeatPan", PAN_HALF, 2, (0.006, 0.007, 0.008), 0.009, PAN_PATCHES, 611, (0, 0, PAN_HALF[2]))
     pan.parent = frame
     pan.location = Vector(PAN_AT) - Vector((0, 0, DECK))
@@ -596,6 +606,19 @@ def pose(rig, clip, t):
 
 
 CLIPS = {"enter": 0.8, "seated_loop": 2.0, "seated_rattle_loop": 2.0, "exit": 0.7}
+# The steer clip (part data display.clips.scrub, held at the seat's "wheel" readout): the wheel from WHEEL_TURN degrees
+# left at 0 s to as far right at STEER_SECONDS. tools/characters/build_characters.py WHEEL_TURN must match, so the
+# driver's hands ride round with it.
+WHEEL_TURN = 90.0
+STEER_SECONDS = 1.0
+
+
+def steer(rig, u):
+    """The wheel turned for the steer clip's point u (0 full left, 1 full right): clockwise as the driver sees it is a
+    negative turn about the column toward them."""
+    ob = rig["steering"]
+    ob.rotation_mode = "XYZ"
+    ob.rotation_euler = Matrix.Rotation(math.radians((1.0 - 2.0 * u) * WHEEL_TURN), 3, -column_dir()).to_euler("XYZ", ob.rotation_euler)
 
 
 def bake(rig):
@@ -619,6 +642,15 @@ def bake(rig):
         for ob in obs:
             lt.linear_keys(actions[ob.name])
             bl.push_track(ob, actions[ob.name], clip)
+    ob = rig["steering"]
+    ob.animation_data_create()
+    act = ob.animation_data.action = bpy.data.actions.new("steer_Steering")
+    frames = int(round(STEER_SECONDS * FPS))
+    for f in range(frames + 1):
+        steer(rig, f / frames)
+        ob.keyframe_insert("rotation_euler", frame=f)
+    lt.linear_keys(act)
+    bl.push_track(ob, act, "steer")
     rest(rig)
 
 
@@ -631,6 +663,7 @@ def rest(rig):
     rig["base"].rotation_euler = (0, 0, 0)
     rig["pan"].rotation_euler = (0, 0, 0)
     rig["back"].rotation_euler = Euler((math.radians(BACK_LEAN), 0, 0))
+    steer(rig, 0.5)
 
 
 def export(path):

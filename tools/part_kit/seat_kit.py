@@ -301,10 +301,11 @@ def seat_mount(g, hips_y, level, f):
     return rz + 0.04
 
 
-def dash(g, hub, level, f, hy):
+def dash(g, hub, level, f, hy, moving):
     """The driver's station at the plinth's front: a firewall panel on two legs with a cowl lip, the column out of it
-    at the vehicle angle to the wheel, a gauge pod on the column, pedals and a heel plate on the floor. Returns the
-    gauge screen's centre and normal."""
+    at the vehicle angle to the wheel, a gauge pod on the column, pedals and a heel plate on the floor. The wheel and
+    the two pedals turn, so they go in `moving` (name: (Geo, pivot, axis)) as nodes of their own; see moving_parts.
+    Returns the gauge screen's centre and normal."""
     t = math.radians(COLUMN_TILT)
     down = Vector((0, math.sin(t), -math.cos(t)))
     fy = hy - 0.045                                   # the firewall's back face
@@ -330,7 +331,9 @@ def dash(g, hub, level, f, hy):
     cylinder(g, hub + down * 0.03, hub + down * 0.085, 0.03, f["frame"], segs=14)
     if level >= 2:
         cylinder(g, land - down * 0.075, land - down * 0.045, 0.03, "rubber", segs=12)
-    wheel(g, hub, -down, level, f)
+    wg = Geo()
+    wheel(wg, hub, -down, level, f)
+    moving["Steering"] = (wg, hub, -down)
     # the gauge pod on top of the column under the wheel (between the knees), its face toward the driver
     face_n = -down
     w_up = face_n.cross(Vector((1, 0, 0))).normalized()      # up the wheel's face
@@ -342,7 +345,7 @@ def dash(g, hub, level, f, hy):
     if level < 3:
         cylinder(g, pod + face_n * 0.028, pod + face_n * 0.031, 0.014, f["trim"], segs=12)
     # pedals: throttle under the right foot, brake under the left; a heel plate from level 2
-    for x, w in ((0.12, 0.03), (-0.1, 0.042)):
+    for name, x, w in (("Throttle", 0.12, 0.03), ("Brake", -0.1, 0.042)):
         piv = Vector((x, fy - 0.02, DECK + 0.012))
         cylinder(g, piv - Vector((0.03, 0, 0)), piv + Vector((0.03, 0, 0)), 0.01, f["frame"], segs=10)
         cbox(g, (x, fy - 0.02, DECK + 0.004), (0.036, 0.018, 0.004), f["dark"], bevel=0.002)
@@ -351,9 +354,12 @@ def dash(g, hub, level, f, hy):
         nrm = Vector((0, math.sin(a), math.cos(a)))
         L = 0.11
         rot = along(d, (1, 0, 0))
-        cbox(g, tuple(piv + d * (L / 2)), (w, L / 2, 0.006), f["frame"], bevel=0.003, rot=rot)
+        pg = Geo()
+        cbox(pg, tuple(piv + d * (L / 2)), (w, L / 2, 0.006), f["frame"], bevel=0.003, rot=rot)
         if level >= 2:
-            cbox(g, tuple(piv + d * (L / 2 + 0.01) + nrm * 0.0065), (w - 0.005, L / 2 - 0.015, 0.002), "rubber", rot=rot)
+            cbox(pg, tuple(piv + d * (L / 2 + 0.01) + nrm * 0.0065), (w - 0.005, L / 2 - 0.015, 0.002), "rubber", rot=rot)
+        # pressed, the pedal tips forward about its hinge pin
+        moving[name] = (pg, piv, Vector((1, 0, 0)))
     if level >= 2:
         cbox(g, (0, fy - 0.2, DECK + 0.003), (0.2, 0.06, 0.003), f["dark"], bevel=0.002)
         for k in range(5):
@@ -383,10 +389,12 @@ def build_seat(mats, level, driver):
     K.pips(g, level, (-0.04 * (level - 1) / 2, hy - 0.03 - 0.0005, (DECK - hz) / 2), (0.04, 0, 0), (0, 1, 0), f)
     K.link_box(g, (-(hx - 0.13), hy - 0.12, DECK), (0, 1, 0), f)
     screen = None
+    moving = {}
     if driver:
         hub = Vector((0, H + HUB_FROM_HIPS[0], C + HUB_FROM_HIPS[1]))
-        screen = dash(g, hub, level, f, hy)
+        screen = dash(g, hub, level, f, hy, moving)
     K.make_object("Base", g, mats, root)
+    moving_parts(rig, moving, mats, root)
     if screen is not None and level >= 3:
         sg = Geo()
         cbox(sg, (0, 0, 0), (0.038, 0.018, 0.001), "cyan_glow", rot=screen[2])
@@ -579,6 +587,32 @@ def build_seat(mats, level, driver):
     return rig
 
 
+# How far the driver's controls move (tools/characters/build_characters.py WHEEL_TURN, BAR_TURN and PEDAL_PRESS must
+# match, so the hands and feet stay on them): the wheel turns WHEEL_TURN degrees each way about its column, the saddle's
+# bars BAR_TURN about their riser, and a pressed pedal tips PEDAL_TRAVEL forward about its hinge.
+WHEEL_TURN = 90.0
+BAR_TURN = 28.0
+PEDAL_TRAVEL = 14.0
+
+
+def moving_parts(rig, moving, mats, parent):
+    """The driver's controls as nodes of their own, pivoted where they turn, and the clips the game holds them at
+    (part data display.clips.scrub; K.bake_scrubs): ``steer`` turns the wheel (Steering) or the bars (Bars) from full
+    left to full right, ``gas`` and ``brake`` press the Throttle and Brake pedals."""
+    scrubs = rig.setdefault("scrubs", {})
+    for name, (geo, pivot, axis) in moving.items():
+        # the node's origin is its pivot (make_object keeps the vertices as given)
+        geo.v = [tuple(Vector(v) - Vector(pivot)) for v in geo.v]
+        ob = K.make_object(name, geo, mats, parent, tuple(pivot))
+        axis = Vector(axis).normalized()
+        if name in ("Steering", "Bars"):
+            # right is clockwise as the driver sees it: a negative turn about the axis toward them (or up the riser)
+            turn = WHEEL_TURN if name == "Steering" else BAR_TURN
+            scrubs["steer"] = ([ob], K.turner(ob, axis, lambda u, t=turn: (1.0 - 2.0 * u) * t), 0.5)
+        else:
+            scrubs["gas" if name == "Throttle" else "brake"] = ([ob], K.turner(ob, axis, lambda u: u * PEDAL_TRAVEL), 0.0)
+
+
 def wheel(g, hub, normal, level, f):
     """The steering wheel at `hub`, facing `normal` (toward the driver): a rubber rim on three spokes, a hub cap."""
     n = Vector(normal).normalized()
@@ -712,8 +746,9 @@ def build_saddle(mats, level, driver):
             K.squircle_loft(g, [(y, sx * 0.105, 0.012, z0, z1) for (y, z0, z1) in
                                 ((hips_y + 0.12, body_top - 0.12, body_top - 0.02), (hips_y + 0.2, body_top - 0.13, body_top - 0.01),
                                  (hips_y + 0.27 if driver else hips_y + 0.18, body_top - 0.12, body_top - 0.03))], f["fabric"], ring_pts=14, power=3.0)
+    moving = {}
     if driver:
-        handlebars(g, hips_y, floor, level, f, mats)
+        handlebars(g, hips_y, floor, level, f, mats, moving)
     else:
         grab_rail(g, hips_y, top, level, f)
     if level >= 4:
@@ -724,6 +759,7 @@ def build_saddle(mats, level, driver):
             sweep(g, bend(pts, 0.05), 0.012, f["frame"], segs=12)
             cylinder(g, pts[1] + Vector((0, -0.012, 0)), pts[1] + Vector((0, 0.012, 0)), 0.018, f["trim"], segs=14)
     K.make_object("Base", g, mats, root)
+    moving_parts(rig, moving, mats, root)
     if level >= 4:
         running_light(root, mats, "RunningLight", (0, -hy + 0.02 - 0.003, plate_top - 0.01), (hx - 0.1, 0.002, 0.004))
     if level >= 5:
@@ -732,7 +768,9 @@ def build_saddle(mats, level, driver):
     if driver and level >= 3:
         sg = Geo()
         box(sg, (0, 0, 0), (0.036, 0.001, 0.016), "cyan_glow")
-        K.make_object("DashScreen", sg, mats, root, g.dash_at)
+        # on the bars' pod, so it turns with them
+        bars = root.children_recursive[[o.name for o in root.children_recursive].index("Bars")]
+        K.make_object("DashScreen", sg, mats, bars, tuple(Vector(moving["Bars"][0].dash_at) - moving["Bars"][1]))
 
     # ---- Shell and Cushion: the saddle (no back) ----
     shell = rig["shell"] = K.make_empty("Shell", root, (0, 0, body_top))
@@ -757,14 +795,17 @@ def build_saddle(mats, level, driver):
     return rig
 
 
-def handlebars(g, hips_y, floor, level, f, mats):
+def handlebars(g, hips_y, floor, level, f, mats, moving):
     """The riser from the body's front up to a bar with rubber grips where the sit_saddle clip puts the hands, and a
-    small dash pod under the bar's middle."""
+    small dash pod under the bar's middle. Everything but the riser turns with the steering, about the riser: it goes
+    in `moving` as Bars (moving_parts)."""
     gx, gy, gz = SADDLE_GRIP
     grip_y, grip_z = hips_y + gy, floor + gz
     clamp = Vector((0, grip_y - 0.035, grip_z - 0.03))
     base = Vector((0, hips_y + 0.37, floor + 0.42))
     cylinder(g, base, clamp, 0.026, f["frame"], segs=18)
+    g = Geo()
+    moving["Bars"] = (g, base, clamp - base)
     for sx in (-1, 1):
         cylinder(g, base + Vector((sx * 0.035, -0.02, -0.1)), clamp + Vector((sx * 0.03, -0.01, -0.02)), 0.012, f["dark"], segs=12)
     box(g, tuple(clamp), (0.04, 0.025, 0.022), f["trim"], bevel=0.006)

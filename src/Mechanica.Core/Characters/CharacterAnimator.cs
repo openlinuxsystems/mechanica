@@ -19,10 +19,14 @@ namespace Mechanica.Core.Characters;
 /// <param name="Dead">Dead, until the respawn: the body collapses (<c>death</c>) and lies there (<c>downed</c>).</param>
 /// <param name="Climbing">On a ladder: the climb clip plays, its pace set by <see cref="Velocity"/>'s vertical part, and the hands
 /// leave what they hold for the rungs.</param>
+/// <param name="Steer">Seated, how far the wheel or handlebars are turned: -1 full left to 1 full right. The hands ride round
+/// with them (the <c>sit_steer</c> clips, held at that point) and the head looks into the turn.</param>
+/// <param name="Pedal">Seated, how far the throttle is pressed: 1 the right foot down on the throttle, -1 the left on the brake
+/// (<c>sit_gas</c>, <c>sit_brake</c>).</param>
 public readonly record struct CharacterPose(
     Vector3 Velocity, float Yaw, float Pitch, bool OnFloor, bool Swimming = false, bool Crawl = false, bool Seated = false,
     CharacterProp Prop = CharacterProp.None, CharacterGesture Gesture = CharacterGesture.None, byte GestureCount = 0,
-    bool Guard = false, SeatStyle? Seat = null, bool Dead = false, bool Climbing = false);
+    bool Guard = false, SeatStyle? Seat = null, bool Dead = false, bool Climbing = false, float Steer = 0f, float Pedal = 0f);
 
 /// <summary>Something a character did this frame that makes a sound.</summary>
 public enum CharacterEvent
@@ -135,6 +139,8 @@ public sealed class CharacterAnimator
     private float _bob, _bobSpeed;
     private Vector2 _lean, _leanSpeed;
     private float _seatFit;
+    private float _toLow;
+    private bool _saddle;
     private float _blendSpeed;
     private Vector2 _planar;
     private bool _havePlanar;
@@ -700,7 +706,7 @@ public sealed class CharacterAnimator
         if (swim > 0f)
             AddBlend(_swim, horizontal, _swimPhase, swim);
         if (sit > 0f)
-            AddSit(pose.Seat ?? SeatStyle.Default, sit);
+            AddSit(pose.Seat ?? SeatStyle.Default, sit, Finite(pose.Pedal));
         // Climbing plays the cycle forward going up and backward coming down; held still it holds where it is.
         if (pose.Climbing)
             _climbPhase = (_climbPhase + Finite(pose.Velocity).Y * delta / ClimbCycleMetres) % 1f;
@@ -720,10 +726,12 @@ public sealed class CharacterAnimator
     // The sitting clips for the seat: a chair (sit) blended with a low seat (sit_low) so the hips land on its cushion, with
     // the hands on a wheel or (sit_ride, sit_ride_low) on the thighs. A saddle is ridden astride (sit_saddle, hands on the
     // bars, or sit_saddle_ride, hands on the thighs). What the blend can't reach the model's lift makes up.
-    private void AddSit(SeatStyle seat, float weight)
+    // A driver's feet press the pedals (sit_gas, sit_brake) by how far the throttle is pressed.
+    private void AddSit(SeatStyle seat, float weight, float pedal)
     {
         var hips = _settings.Seat.ClipHips;
-        if (seat.Saddle && _lengths.ContainsKey("sit_saddle"))
+        _saddle = seat.Saddle && _lengths.ContainsKey("sit_saddle");
+        if (_saddle)
         {
             var clip = seat.HandsFree && _lengths.ContainsKey("sit_saddle_ride") ? "sit_saddle_ride" : "sit_saddle";
             var saddleHips = hips.GetValueOrDefault("sit_saddle", SeatRideSettings.SaddleHips);
@@ -737,8 +745,32 @@ public sealed class CharacterAnimator
         var want = float.IsFinite(seat.Cushion) ? seat.Cushion + _settings.Seat.HipsAboveCushion : highHips;
         var toLow = _lengths.ContainsKey(low) && highHips > lowHips ? Math.Clamp((highHips - want) / (highHips - lowHips), 0f, 1f) : 0f;
         _seatFit = want - (highHips + (lowHips - highHips) * toLow);
-        Add(high, _clock, weight * (1f - toLow));
-        Add(low, _clock, weight * toLow);
+        _toLow = toLow;
+        var press = seat.HandsFree ? 0f : Math.Clamp(pedal, -1f, 1f);
+        AddPedals(high, weight * (1f - toLow), press);
+        AddPedals(low, weight * toLow, press);
+    }
+
+    // A sitting clip, with its pedal version (`<clip>_gas` or `<clip>_brake`) blended in by how far the pedal is pressed.
+    private void AddPedals(string clip, float weight, float press)
+    {
+        var pressed = press > 0f ? $"{clip}_gas" : $"{clip}_brake";
+        var share = _lengths.ContainsKey(pressed) ? MathF.Abs(press) : 0f;
+        Add(clip, _clock, weight * (1f - share));
+        Add(pressed, _clock, weight * share);
+    }
+
+    // The driver's steer clips and their weights (all 0 when the seat leaves the hands free or the character has none):
+    // the chair's two blended like its sitting clips, or the saddle's.
+    private (string Clip, float Weight)[] SteerClips(CharacterPose pose)
+    {
+        if (!pose.Seated || (pose.Seat ?? SeatStyle.Default).HandsFree)
+            return [];
+        if (_saddle)
+            return _lengths.ContainsKey("sit_saddle_steer") ? [("sit_saddle_steer", 1f)] : [];
+        if (!_lengths.ContainsKey("sit_steer"))
+            return [];
+        return _lengths.ContainsKey("sit_low_steer") ? [("sit_steer", 1f - _toLow), ("sit_low_steer", _toLow)] : [("sit_steer", 1f)];
     }
 
     // The ride: the hips bob and the upper body sways on damped springs, pushed by each change in the seat's velocity.
@@ -809,7 +841,10 @@ public sealed class CharacterAnimator
             else
                 _holds[clip] = weight;
         }
-        var held = MathF.Min(1f, _holds.Values.Sum());
+        // A driver's hands ride the wheel or bars round as they turn: the steer clips held at the point they are turned to.
+        var steerClips = SteerClips(pose);
+        var steering = steerClips.Length > 0 ? _modeWeights[(int)CharacterMode.Sit] : 0f;
+        var held = MathF.Min(1f, _holds.Values.Sum() + steering);
 
         var gesture = 0f;
         if (_gesture is not null)
@@ -824,9 +859,12 @@ public sealed class CharacterAnimator
             gesture = Math.Clamp(MathF.Min(fadeIn, fadeOut), 0f, 1f);
         }
 
-        var scale = held > 0f ? (1f - gesture) / MathF.Max(1f, _holds.Values.Sum()) : 0f;
+        var scale = held > 0f ? (1f - gesture) / MathF.Max(1f, _holds.Values.Sum() + steering) : 0f;
         foreach (var (clip, weight) in _holds)
             AddTo(_upper, clip, _clock, weight * scale);
+        var turned = (Math.Clamp(Finite(pose.Steer), -1f, 1f) + 1f) / 2f;
+        foreach (var (clip, weight) in steerClips)
+            AddTo(_upper, clip, turned * _lengths[clip], weight * steering * scale);
         if (_gesture is not null)
             AddTo(_upper, _gesture, ClipTime(_gesture, _gestureTime), gesture);
         UpperWeight = Math.Clamp(held * (1f - gesture) + gesture, 0f, 1f);
@@ -983,6 +1021,8 @@ public sealed class CharacterAnimator
 
     private static float Toward(float from, float to, float maxStep) =>
         MathF.Abs(to - from) <= maxStep ? to : from + MathF.Sign(to - from) * maxStep;
+
+    private static float Finite(float v) => float.IsFinite(v) ? v : 0f;
 
     private static Vector3 Finite(Vector3 v) =>
         float.IsFinite(v.X) && float.IsFinite(v.Y) && float.IsFinite(v.Z) ? v : Vector3.Zero;

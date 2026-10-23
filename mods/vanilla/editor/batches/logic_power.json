@@ -23,7 +23,7 @@
         "logic": { "outputs": 6 },
         "sounds": { "enter": "seat_enter", "exit": "seat_exit" },
         "seat": { "offset": [0, -0.44, 0.14], "cushion": [0, -0.12, 0.14], "hands": "wheel", "bounce": 1 },
-        "display": { "clips": { "readout": "clip" } },
+        "display": { "clips": { "readout": "clip", "scrub": [{ "readout": "wheel", "clip": "steer", "rate": 2.5 }, { "readout": "gas", "clip": "gas", "rate": 6 }, { "readout": "brake", "clip": "brake", "rate": 6 }] } },
         "properties": { "steer_angle": 27, "steer_speed": 2.5, "steer_torque": 1500 },
         "upgrades": [
           {
@@ -103,7 +103,7 @@
         "sounds": { "enter": "scrap_seat_enter", "exit": "scrap_seat_exit" },
         "seat": { "offset": [0, -0.355, 0.4], "cushion": [0, 0.035, 0.4], "hands": "wheel", "bounce": 1.6 },
         "display": {
-          "clips": { "readout": "clip" }
+          "clips": { "readout": "clip", "scrub": [{ "readout": "wheel", "clip": "steer", "rate": 2 }] }
         },
         "properties": { "steer_angle": 22, "steer_speed": 1.5, "steer_torque": 800 }
       },
@@ -254,7 +254,7 @@
         "logic": { "outputs": 6 },
         "sounds": { "enter": "seat_enter", "exit": "seat_exit" },
         "seat": { "offset": [0, -0.45, 0.12], "cushion": [0, 0.078, 0.12], "hands": "wheel", "bounce": 1.3, "pose": "saddle" },
-        "display": { "clips": { "readout": "clip" } },
+        "display": { "clips": { "readout": "clip", "scrub": [{ "readout": "wheel", "clip": "steer", "rate": 2.5 }] } },
         "properties": { "steer_angle": 27, "steer_speed": 2.5, "steer_torque": 1500 },
         "upgrades": [
           {

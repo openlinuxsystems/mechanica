@@ -433,6 +433,39 @@ def bake_seat_clips(rig):
     for ob in obs:
         ob.animation_data.use_nla = False
     seat_rest(rig)
+    bake_scrubs(rig)
+
+
+def turner(ob, axis, degrees):
+    """apply(u) for bake_scrubs: turns `ob` about `axis` (its parent's frame, through its origin) by degrees(u)."""
+    def apply(u):
+        ob.rotation_mode = "XYZ"
+        ob.rotation_euler = Matrix.Rotation(math.radians(degrees(u)), 3, axis).to_euler("XYZ", ob.rotation_euler)
+    return apply
+
+
+SCRUB_SECONDS = 1.0
+
+
+def bake_scrubs(rig):
+    """The clips the game holds at the point a readout sets instead of playing (part data display.clips.scrub):
+    rig["scrubs"] maps a clip name to (objects, apply(u), rest), apply posing them for u from 0 (the clip's start) to
+    1 (its end); each is keyed every frame over SCRUB_SECONDS, then left at apply(rest)."""
+    for clip, (objects, apply, rest) in rig.get("scrubs", {}).items():
+        acts = {}
+        for ob in objects:
+            ob.animation_data_create()
+            acts[ob.name] = ob.animation_data.action = bpy.data.actions.new(f"{clip}_{ob.name}")
+        frames = int(round(SCRUB_SECONDS * FPS))
+        for f in range(frames + 1):
+            apply(f / frames)
+            for ob in objects:
+                ob.keyframe_insert("rotation_euler", frame=f)
+        for ob in objects:
+            lt.linear_keys(acts[ob.name])
+            push_track(ob, acts[ob.name], clip)
+            ob.animation_data.use_nla = False
+        apply(rest)
 
 
 SNAP = 0.12

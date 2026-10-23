@@ -37,7 +37,7 @@ public sealed class PartDisplayVisual
     private readonly List<(ScrubDefinition Scrub, AnimationPlayer Player, Animation Clip)> _scrubs = [];
     private readonly List<(EffectDefinition Effect, CpuParticles3D Particles, Color Colour)> _effects = [];
     // What each look was last set from, so a frame that changes nothing touches no node (every display, every frame).
-    private readonly List<float> _scrubShown = [];
+    private readonly List<float> _scrubShown = [];   // each scrub's point, 0 to 1
     private readonly List<float> _effectShown = [];
     private float _glowShown = float.NaN;
     private bool? _statusShown;
@@ -52,6 +52,20 @@ public sealed class PartDisplayVisual
 
     /// <summary>The part.</summary>
     public int Part { get; }
+
+    /// <summary>
+    /// Where the clip scrubbed by <paramref name="readout"/> is held now, 0 to 1 (eased toward the readout at the scrub's
+    /// rate), or null when the part scrubs no clip by it or has not drawn it yet.
+    /// </summary>
+    public float? Scrubbed(string readout)
+    {
+        for (var i = 0; i < _scrubs.Count; i++)
+        {
+            if (_scrubs[i].Scrub.Readout == readout && float.IsFinite(_scrubShown[i]))
+                return _scrubShown[i];
+        }
+        return null;
+    }
 
     /// <summary>The status icon, when the part has one (for tests).</summary>
     public MeshInstance3D? StatusIcon => _status;
@@ -342,15 +356,20 @@ public sealed class PartDisplayVisual
             for (var i = 0; i < _scrubs.Count; i++)
             {
                 var (scrub, player, clip) = _scrubs[i];
-                var at = Math.Clamp(Value(scrub.Readout), 0f, 1f) * (float)clip.Length;
+                var target = Math.Clamp(Value(scrub.Readout), 0f, 1f);
+                var was = _scrubShown[i];
+                // A scrub with a rate follows its readout at that pace (a steering wheel turning), on every peer alike.
+                var point = scrub.Rate is > 0f and var rate && float.IsFinite(was)
+                    ? Mathf.MoveToward(was, target, rate * (float)delta)
+                    : target;
                 // Only this display plays the scrub's own player, so its clip stays put once set.
-                if (at == _scrubShown[i])
+                if (point == was)
                     continue;
-                _scrubShown[i] = at;
+                _scrubShown[i] = point;
                 if (player.CurrentAnimation != scrub.Clip!)
                     player.Play(scrub.Clip!);
                 player.Pause();
-                player.Seek(at, update: true);
+                player.Seek(point * clip.Length, update: true);
             }
         }
         for (var i = 0; i < _effects.Count; i++)
