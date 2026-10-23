@@ -3703,29 +3703,69 @@ def clip_swim_idle(t):
     return s
 
 
-def clip_swim(t):
-    T = 1.2
+def swim_crawl(t, T, roll_amp=28.0, kick=14.0, kicks=3, reach=0.0, breathe=True):
+    """Front crawl at cycle T: each arm pulls through under the body and recovers over the water a half cycle apart, the
+    body rolls toward the pulling arm, the legs flutter kicks times a cycle. Every cycle the head turns out to the right
+    to breathe as the right arm recovers (the roll deepens on that side) and turns back down before the arm enters.
+    reach (degrees) stretches the arms longer in front for a harder stroke."""
     ph = t / T
     s = relaxed_upper(5)
-    roll = 28.0 * math.sin(2 * math.pi * (ph - 0.0))
+    roll = roll_amp * math.sin(2 * math.pi * ph)
+    # the breath: the right arm recovers about ph = 0.75 (it pulls at 0.25); the head is out for a fifth of the cycle
+    br = math.exp(-((((ph - 0.72 + 0.5) % 1.0) - 0.5) / 0.1) ** 2) if breathe else 0.0
+    roll -= 10.0 * br
     s["hips"] = (70.0, 0, 0)
     s["spine"] = (0.0, 0, -roll * 0.6)
     s["chest"] = (-2.0, 0, -roll * 0.4)
-    s["neck"] = (-30.0, 0, roll * 0.5)
-    s["head"] = (-25.0, 0, roll * 0.4)
+    # face down in the water between breaths, turned out to the side (and up a little) for the breath
+    s["neck"] = (-30.0 + 8.0 * br, 0, roll * 0.5 + 34.0 * br)
+    s["head"] = (-25.0 + 6.0 * br, 0, roll * 0.4 + 28.0 * br)
     for side, off in (("r", 0.25), ("l", 0.75)):
         # arm angle around the shoulder: 90 = pointing down in the water (mid-pull at t = off)
         phi = 90.0 - 360.0 * (ph - off)
         u = ((ph - off + 0.5) % 1.0)           # 0.5 = mid pull
         pull = math.exp(-((u - 0.5) / 0.16) ** 2)
         rec = math.exp(-((u - 0.0) / 0.14) ** 2) + math.exp(-((u - 1.0) / 0.14) ** 2)
-        s[f"arm_{side}"] = {"down": 30.0 - 10 * rec, "swing": phi, "yaw": 0.0, "elbow": 15 + 55 * pull + 70 * rec,
-                            "wrist": 10.0 * pull, "twist": 0.0}
-        s[f"fingers_{side}"] = 6.0
+        stretch = math.exp(-((u - 0.25) / 0.12) ** 2)     # long in front just after the hand goes in
+        s[f"arm_{side}"] = {"down": 30.0 - 10 * rec - reach * 0.3 * stretch, "swing": phi, "yaw": 0.0,
+                            "elbow": 15 + 55 * pull + 70 * rec - reach * stretch, "wrist": 10.0 * pull, "twist": 0.0}
+        # the hand flat and fingers together as it pulls, loose as it recovers
+        s[f"fingers_{side}"] = 6.0 + 14.0 * rec
     for side, off in (("l", 0.0), ("r", 0.5)):
-        k = math.sin(2 * math.pi * (3 * ph + off))
-        s[f"leg_{side}"] = {"thigh": (-6 + 14 * k, 0, 2), "knee": 18 + 14 * max(0.0, -k), "foot": 45, "toe_bend": 10}
+        k = math.sin(2 * math.pi * (kicks * ph + off))
+        s[f"leg_{side}"] = {"thigh": (-6 + kick * k, 0, 2), "knee": 18 + kick * max(0.0, -k), "foot": 45, "toe_bend": 10}
     s["hips_z"] = 0.0
+    return s
+
+
+def clip_swim(t):
+    return swim_crawl(t, 1.2)
+
+
+def clip_swim_fast(t):
+    """Sprinting in the water: a longer reach, a deeper roll and a six-beat kick, on the swim's beat."""
+    return swim_crawl(t, 0.9, roll_amp=36.0, kick=20.0, kicks=6, reach=12.0)
+
+
+def clip_swim_back(t):
+    """Swimming backward (played in reverse, as the swim is): sitting back upright in the water, the hands scull out and
+    in in front of the chest pushing the water away and the legs kick under the body, the head up and looking ahead."""
+    T = 1.2
+    ph = 2 * math.pi * t / T
+    s = relaxed_upper(10)
+    s["hips"] = (22.0, 0, 0)
+    s["spine"] = (-6.0 + 2.0 * math.sin(2 * ph), 0, 0)
+    s["chest"] = (-6.0, 0, 0)
+    s["neck"] = (-2.0, 0, 0)
+    s["head"] = (-4.0 + 2.0 * math.sin(2 * ph), 0, 0)
+    for side, sg in (("l", 1), ("r", -1)):
+        c = math.sin(ph)
+        s[f"arm_{side}"] = {"down": 18.0 + 10.0 * c, "swing": 48.0 - 12.0 * c, "yaw": 26.0 * c, "elbow": 48.0 + 14.0 * c,
+                            "wrist": -10.0 * c, "twist": -30.0 + 18.0 * c}
+        s[f"fingers_{side}"] = 8.0
+    for side, off in (("l", 0.0), ("r", math.pi)):
+        k = math.sin(2 * ph + off)
+        s[f"leg_{side}"] = {"thigh": (-30 - 16 * k, 0, 8), "knee": 60 + 24 * max(0.0, k), "foot": 30 + 12 * k, "toe_bend": 0}
     return s
 
 
@@ -6271,6 +6311,8 @@ CLIPS = {
     "land_hard": (clip_land_hard, LAND_HARD_SECONDS, False, False),
     "swim_idle": (clip_swim_idle, 2.0, True, False),
     "swim": (clip_swim, 1.2, True, False),
+    "swim_fast": (clip_swim_fast, 0.9, True, False),
+    "swim_back": (clip_swim_back, 1.2, True, False),
     "climb": (clip_climb, CLIMB_T, True, False),
     "climb_on": (clip_climb_on, CLIMB_ON_SECONDS, False, False),
     "climb_off": (clip_climb_off, CLIMB_OFF_SECONDS, False, False),

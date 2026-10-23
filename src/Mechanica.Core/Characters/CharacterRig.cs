@@ -261,7 +261,7 @@ public static class CharacterRig
     /// <summary>Clips that play on the whole body.</summary>
     public static IReadOnlyList<string> FullBodyClips { get; } =
     [
-        "idle", "walk", "walk_back", "strafe_l", "strafe_r", "jog", "strafe_jog_l", "strafe_jog_r", "run", "strafe_run_l", "strafe_run_r", "crouch_idle", "crouch_walk", "jump", "fall", "land", "swim_idle", "swim", "sit",
+        "idle", "walk", "walk_back", "strafe_l", "strafe_r", "jog", "strafe_jog_l", "strafe_jog_r", "run", "strafe_run_l", "strafe_run_r", "crouch_idle", "crouch_walk", "jump", "fall", "land", "swim_idle", "swim", "swim_fast", "swim_back", "sit",
         "sit_low", "sit_ride", "sit_ride_low", "sit_saddle", "sit_saddle_ride", "sit_gas", "sit_brake", "sit_low_gas", "sit_low_brake", "idle_look", "idle_stretch", "turn_l", "turn_r", "jump_run", "land_hard",
         "climb", "climb_on", "climb_off", "stop_walk", "stop_run",
     ];

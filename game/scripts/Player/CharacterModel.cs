@@ -328,6 +328,9 @@ public partial class CharacterModel : Node3D
             }
         }
 
+        // Diving or rising, the swimmer's whole body tips at the hips.
+        if (!FirstPerson && _hips >= 0 && Animator.SwimPitch != 0f)
+            _rotations[_hips] = (_rotations[_hips] * new Quaternion(_pitchAxis[_hips], Animator.SwimPitch)).Normalized();
         var pitch = FirstPerson ? 0f : -Animator.HeadPitch / 2f;
         foreach (var bone in new[] { _neck, _head })
         {

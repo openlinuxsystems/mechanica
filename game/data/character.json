@@ -9,7 +9,8 @@
     "jog": 4.0,
     "run": 7.0,
     "crouch_walk": 1.5,
-    "swim": 2.5
+    "swim": 2.5,
+    "swim_fast": 4.0
   },
   "step_phases": [0.0, 0.5],
   "stroke_phases": [0.25, 0.75],
@@ -40,7 +41,8 @@
   // spine, chest, neck and head (twist_shares); the body leans into speeding up, slowing and turning on a spring; a
   // jump at run_jump_speed or faster is a leap; swings and throws use the legs while standing (below gesture_legs_speed);
   // after standing still a while the fidgets play in turn; pulling up from stop_speeds (a walk's, a run's) plays stop_walk
-  // or stop_run, and setting off dips the body start_lean_degrees into the first stride; hit reactions fade in fast and a knockdown lies a moment;
+  // or stop_run, and setting off dips the body start_lean_degrees into the first stride; a swimmer diving or rising as it
+  // swims tips up to max_dive_degrees along its path; hit reactions fade in fast and a knockdown lies a moment;
   // moving with something in hand, hold_carry of the stride's spine sway (and a free left arm's swing) still shows.
   "motion": {
     "turn_in_place_degrees": 55,
@@ -61,6 +63,7 @@
     "fidget_fade": 0.5,
     "stop_speeds": [1, 3.5],
     "start_lean_degrees": 10,
+    "max_dive_degrees": 50,
     "reaction_fade_in": 0.04,
     "reaction_fade_out": 0.2,
     "lie_seconds": 0.6,

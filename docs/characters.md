@@ -146,7 +146,10 @@ each has the length of the clip it stands in for. Moving sideways they take up t
 rest, so the feet always follow the way the body goes; without all six the legs turn up to `max_body_turn_degrees`
 instead), `crouch_idle`, `crouch_walk`,
 `stop_walk` and `stop_run` (pulling up: the feet plant, the weight settles and the clip ends on idle; played when a body
-comes to a stand from `motion.stop_speeds`), `jump`, `jump_run` (a running leap), `fall`, `land`, `land_hard` (a long fall, a hand to the ground), `swim_idle`, `swim`, `climb` (a ladder: hands and feet on rungs 0.25 m apart, played forward or back as the climber moves up or down),
+comes to a stand from `motion.stop_speeds`), `jump`, `jump_run` (a running leap), `fall`, `land`, `land_hard` (a long fall, a hand to the ground), `swim_idle`, `swim` (a front crawl that turns the head out to breathe every stroke), `swim_fast` (sprinting: a longer
+reach and a six-beat kick, on the swim's beat; played from `clip_speeds.swim_fast`), `swim_back` (going backward: upright,
+sculling, played in reverse on the swim's beat, so it has the swim's length); diving or rising as it swims along, the
+body tips at the hips along its path (`motion.max_dive_degrees`), `climb` (a ladder: hands and feet on rungs 0.25 m apart, played forward or back as the climber moves up or down),
 `climb_on` (stepping onto a ladder from the ground: the hands reach up onto the rungs, then a foot; it ends on the climb's
 first pose) and `climb_off` (going off a ladder's top onto the floor: low with the hands pushing down on it, then up to
 standing), `sit` (a chair, hands on a wheel), `sit_low` (a low seat, legs out in

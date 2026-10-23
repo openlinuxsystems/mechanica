@@ -190,7 +190,7 @@ public sealed class CharacterAnimator
         FirstPerson = firstPerson;
         _ground = Blend("idle", "walk", "jog", "run");
         _crouch = Blend("crouch_idle", "crouch_walk");
-        _swim = Blend("swim_idle", "swim");
+        _swim = Blend("swim_idle", "swim", "swim_fast");
         _modeWeights[(int)CharacterMode.Ground] = 1f;
         _nextFidget = _settings.Motion.FidgetAfter[0];
     }
@@ -276,6 +276,12 @@ public sealed class CharacterAnimator
 
     /// <summary>Radians the neck and head pitch to follow the look.</summary>
     public float HeadPitch { get; private set; }
+
+    /// <summary>
+    /// How far a swimmer's body pitches head-down (radians, negative head-up) to dive or rise as it swims along: turned
+    /// at the hips, eased, and nothing out of the water or treading water on the spot.
+    /// </summary>
+    public float SwimPitch { get; private set; }
 
     /// <summary>Whether the prop in hand is drawn (not while swimming or seated).</summary>
     public bool ShowProp { get; private set; }
@@ -420,6 +426,7 @@ public sealed class CharacterAnimator
         Tilt(pose, velocity, delta);
         Fidgets(pose, horizontal, delta);
         HeadPitch = float.IsFinite(pose.Pitch) ? pose.Pitch * _settings.HeadPitchShare : 0f;
+        Dive(velocity, horizontal, delta);
         BuildBody(pose, horizontal, delta);
         BuildUpper(pose, delta);
         // Lying on the ground, the twist and the lean give way to the clip.
@@ -428,6 +435,22 @@ public sealed class CharacterAnimator
         Lean *= 1f - MathF.Max(down, LegsWeight);
         ShowProp = Prop != CharacterProp.None && _modeWeights[(int)CharacterMode.Swim] < 0.5f && _modeWeights[(int)CharacterMode.Sit] < 0.5f
             && _modeWeights[(int)CharacterMode.Climb] < 0.5f && !Grounded;
+    }
+
+    // A swimmer going down while it swims along tips head-first into the dive, and going up tips back toward the
+    // surface, by the angle of its path (all of it once it swims at half a stroke's speed or more).
+    private void Dive(Vector3 velocity, float horizontal, float delta)
+    {
+        var target = 0f;
+        if (Mode == CharacterMode.Swim && horizontal > _settings.MinStepSpeed)
+        {
+            var max = _settings.Motion.MaxDiveDegrees * MathF.PI / 180f;
+            var along = Math.Clamp(horizontal / MathF.Max(SpeedOf("swim") * 0.5f, 0.1f), 0f, 1f);
+            target = Math.Clamp(MathF.Atan2(-Finite(velocity).Y, horizontal), -max, max) * along * (_backward ? -1f : 1f);
+        }
+        SwimPitch += (target - SwimPitch) * (1f - MathF.Exp(-delta / 0.25f));
+        if (!float.IsFinite(SwimPitch))
+            SwimPitch = 0f;
     }
 
     // Stepping onto a ladder from the ground reaches up onto it (climb_on); going off its top climbs over onto the floor
@@ -1091,8 +1114,8 @@ public sealed class CharacterAnimator
             var side = strafe is null ? 0f : MathF.Abs(_strafe);
             if (strafe is not null)
                 Add(strafe, time, layerWeight * share * side);
-            // Stepping backward, the walk gives way to walk_back (played in reverse on the same beat, as the walk is).
-            var shown = _backward && clip == "walk" && _lengths.TryGetValue("walk_back", out var back) && back == _lengths[clip] ? "walk_back" : clip;
+            // Going backward, the walk gives way to walk_back and the swim to swim_back (played in reverse on the same beat).
+            var shown = _backward && clip is "walk" or "swim" && _lengths.TryGetValue(clip + "_back", out var back) && back == _lengths[clip] ? clip + "_back" : clip;
             Add(shown, time, layerWeight * share * (1f - side));
         }
     }
