@@ -316,6 +316,22 @@ public partial class CreationNode : Node3D
     /// <summary>What each part with a <c>display</c> section shows on itself (UI spec §12).</summary>
     public IReadOnlyList<PartDisplayVisual> Displays => _displays;
 
+    /// <summary>
+    /// How far a driver's seat has its wheel turned (-1 left to 1 right) and its throttle pressed (1 the throttle, -1 the
+    /// brake) as its model draws them: its <c>wheel</c>, <c>gas</c> and <c>brake</c> scrubs, eased alike on every peer.
+    /// Zero for what the part does not scrub.
+    /// </summary>
+    public (float Steer, float Pedal) SeatControls(int part)
+    {
+        foreach (var display in _displays)
+        {
+            if (display.Part == part)
+                return (display.Scrubbed("wheel") is { } wheel ? wheel * 2f - 1f : 0f,
+                    (display.Scrubbed("gas") ?? 0f) - (display.Scrubbed("brake") ?? 0f));
+        }
+        return (0f, 0f);
+    }
+
     /// <summary>Draws every part's display from <paramref name="readouts"/> (after <see cref="ApplyAnimations"/>).</summary>
     public void ApplyDisplays(Core.Logic.PartReadouts readouts, bool connecting, double delta)
     {

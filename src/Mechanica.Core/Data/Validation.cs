@@ -872,6 +872,8 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
                 Readout(scrub.Readout, $"{p}.clips.scrub[{i}]");
                 if (string.IsNullOrWhiteSpace(scrub.Clip) || scrub.Clip.Length > 64)
                     sink.Error(Code, $"{p}.clips.scrub[{i}].clip", "clip must name one of the model's clips (1 to 64 characters).");
+                if (scrub.Rate is { } rate && !(rate > 0f && rate <= 100f))
+                    sink.Error(Code, $"{p}.clips.scrub[{i}].rate", "rate must be above 0 and at most 100 clip lengths a second.");
                 KnownKeys.WarnUnknown(scrub.Extra, $"{p}.clips.scrub[{i}]", sink, typeof(ScrubDefinition));
             }
             ClipName(clips.Idle, $"{p}.clips.idle", sink);

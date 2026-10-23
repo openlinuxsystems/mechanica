@@ -408,7 +408,16 @@ public partial class PlayerController : CharacterBody3D
         Velocity.ToNumerics(), SeatYaw ?? ClimbYaw ?? Rotation.Y, _head.Rotation.X,
         Body.HasFlag(BodyFlags.OnFloor), Body.HasFlag(BodyFlags.Swimming), Body.HasFlag(BodyFlags.Crawl), Seated || Body.HasFlag(BodyFlags.Seated),
         ShownProp, ShownGesture.Gesture, ShownGesture.Count, Body.HasFlag(BodyFlags.Guard), Seated ? SeatStyle : null, _dead,
-        Climbing);
+        Climbing, Controls.Steer, Controls.Pedal);
+
+    // The seat's wheel and pedals as drawn, while seated.
+    private (float Steer, float Pedal) Controls => Seated && SeatControls is { } controls ? controls() : (0f, 0f);
+
+    /// <summary>
+    /// How far the seat the player sits in has its wheel turned and throttle pressed, as its model draws them
+    /// (<see cref="CreationNode.SeatControls"/>), so the hands and feet move with them; set with <see cref="Seat"/>.
+    /// </summary>
+    public Func<(float Steer, float Pedal)>? SeatControls { get; set; }
 
     /// <summary>How the seat the player sits in holds it (its legs, hands and bounce); set with <see cref="Seat"/>.</summary>
     public SeatStyle SeatStyle { get; set; } = SeatStyle.Default;

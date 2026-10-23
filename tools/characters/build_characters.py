@@ -3665,6 +3665,77 @@ def clip_climb(t):
     return s
 
 
+# The steering wheel the sit clips hold (the driver's seat models put theirs here: tools/part_kit/seat_kit.py and
+# tools/scrap_seat): the hands grip the rim at SIT_GRIP (chest space; x out to the left hand, y back, z up), square to a
+# column WHEEL_TILT degrees from upright, the rim WHEEL_R round the hub. Steering turns the wheel up to WHEEL_TURN
+# degrees each way, and the saddle's bars BAR_TURN degrees about their riser.
+SIT_GRIP = (0.17, -0.42, 1.22)
+WHEEL_TILT = 40.0
+WHEEL_R = 0.19
+WHEEL_TURN = 90.0
+BAR_TURN = 28.0
+BAR_PIVOT = (0.0, -0.37, 0.42)      # the riser's foot (world: from the feet under the hips) ...
+BAR_AXIS = (0.0, -0.015, 0.47)      # ... and up it to the bar clamp (tools/part_kit/seat_kit.py handlebars)
+# The steer clips (sit_steer, sit_low_steer, sit_saddle_steer) are held, not played: the game sets the point from how
+# far the wheel is turned, 0 s full left, STEER_T full right, the middle straight ahead (CharacterAnimator).
+STEER_T = 1.0
+# How far the head and neck turn to look into a full-lock turn (degrees).
+STEER_LOOK = (6.0, 13.0)
+
+
+def wheel_axes():
+    """The wheel's face toward the driver, and up its face away from the driver (twelve o'clock), in chest space."""
+    t = math.radians(WHEEL_TILT)
+    return np.array([0.0, math.sin(t), math.cos(t)]), np.array([0.0, -math.cos(t), math.sin(t)])
+
+
+def wheel_hands(s, steer, br=0.0):
+    """Both hands on the wheel's rim, the wheel turned `steer` of full lock (-1 left to 1 right): each grip turns with
+    the rim about the hub, so the hands ride round with it."""
+    gx, gy, gz = SIT_GRIP
+    n, up = wheel_axes()
+    hub = np.array([0.0, gy, gz]) - up * math.sqrt(WHEEL_R ** 2 - gx ** 2)
+    # right is clockwise as the driver sees it: a negative turn about the face's normal
+    R = axis_rot(n, -steer * WHEEL_TURN)
+    for side in ("l", "r"):
+        sg = side_sign(side)
+        grip = hub + R @ (np.array([sg * gx, gy, gz]) - hub) + np.array([0.0, 0.0, 0.002 * br])
+        d = R @ norm(np.array([sg * -0.2, -0.95, -0.2]))
+        w = R @ norm(np.array([sg * -0.2, 0.0, 1.0]))
+        # the elbow that rises over the top drops out to its side as the wheel turns
+        lift = max(0.0, -sg * steer)
+        s[f"arm_{side}"] = arm_ik_from_grip(side, grip, d, w, pole=(sg * (0.7 + 0.5 * lift), 0.4, -1.0 + 0.4 * lift))
+        s[f"fingers_{side}"], s[f"grip_{side}"], s[f"thumb_{side}"] = 82.0, RIM_RADIUS, 32.0
+    return s
+
+
+def bar_hands(s, steer, br=0.0):
+    """Both hands on the saddle's handlebar grips (SADDLE_GRIP), the bars turned `steer` of full lock about the riser."""
+    gx, gy, gz = SADDLE_GRIP
+    pivot, axis = np.array(BAR_PIVOT), norm(np.array(BAR_AXIS))
+    R = axis_rot(axis, -steer * BAR_TURN)
+    for side in ("l", "r"):
+        sg = side_sign(side)
+        grip = pivot + R @ (np.array([sg * gx, gy, gz]) - pivot) + np.array([0.0, 0.0, 0.002 * br])
+        s[f"arm_{side}"] = arm_ik_from_grip(side, grip, R @ np.array([0.0, -0.55, -0.85]), R @ np.array([-sg * 1.0, 0.0, 0.25]),
+                                            pole=(sg * 0.55, 0.5, -0.9), space="world")
+        s[f"fingers_{side}"], s[f"grip_{side}"], s[f"thumb_{side}"] = 82.0, RIM_RADIUS, 32.0
+    return s
+
+
+def steer_look(s, steer):
+    """The head and neck turn to look where the wheel steers (right is a negative yaw)."""
+    neck, head = s.get("neck", (0, 0, 0)), s.get("head", (0, 0, 0))
+    s["neck"] = (neck[0], neck[1], neck[2] - STEER_LOOK[0] * steer)
+    s["head"] = (head[0], head[1] - 2.0 * steer, head[2] - STEER_LOOK[1] * steer)
+    return s
+
+
+def steer_of(t):
+    """A steer clip's point as how far the wheel is turned: -1 full left at 0 s, 1 full right at STEER_T."""
+    return max(-1.0, min(1.0, 2.0 * t / STEER_T - 1.0))
+
+
 def clip_sit(t):
     T = 2.0
     ph = 2 * math.pi * t / T
@@ -3678,12 +3749,7 @@ def clip_sit(t):
     s["head"] = (0.4 * br, 0, 1.5 * math.sin(ph * 0.5 * 2))
     for side in ("l", "r"):
         s[f"leg_{side}"] = {"thigh": (-84, 0, 6), "knee": 80, "foot": -6, "toe_bend": 0}
-        sg = side_sign(side)
-        grip = np.array([sg * 0.17, -0.42, 1.22 + 0.002 * br])
-        s[f"arm_{side}"] = arm_ik_from_grip(side, grip, (sg * -0.2, -0.95, -0.2), (sg * -0.2, 0.0, 1.0),
-                                            pole=(sg * 0.7, 0.4, -1.0))
-        s[f"fingers_{side}"], s[f"grip_{side}"], s[f"thumb_{side}"] = 82.0, RIM_RADIUS, 32.0
-    return s
+    return wheel_hands(s, 0.0, br)
 
 
 # Seat heights the sit clips are made for: the hips (the pelvis bone) above the floor the feet rest on, in m. The game
@@ -3711,11 +3777,7 @@ def clip_sit_low(t):
         sg = side_sign(side)
         s[f"leg_{side}"] = {"ankle": (sg * 0.13, -0.70, 0.085), "pitch": 0.0, "yaw": 4.0, "pole": (sg * 0.15, -0.4, 1.0),
                             "toe": 0.0}
-        grip = np.array([sg * 0.17, -0.42, 1.22 + 0.002 * br])
-        s[f"arm_{side}"] = arm_ik_from_grip(side, grip, (sg * -0.2, -0.95, -0.2), (sg * -0.2, 0.0, 1.0),
-                                            pole=(sg * 0.7, 0.4, -1.0))
-        s[f"fingers_{side}"], s[f"grip_{side}"], s[f"thumb_{side}"] = 82.0, RIM_RADIUS, 32.0
-    return s
+    return wheel_hands(s, 0.0, br)
 
 
 def ride_hands(s):
@@ -3762,16 +3824,7 @@ def saddle_base(t, lean):
 
 def clip_sit_saddle(t):
     """A driver astride a saddle, leaning forward a little to the handlebar grips (SADDLE_GRIP)."""
-    s = saddle_base(t, 16.0)
-    br = math.sin(2 * math.pi * t / 2.0)
-    gx, gy, gz = SADDLE_GRIP
-    for side in ("l", "r"):
-        sg = side_sign(side)
-        grip = np.array([sg * gx, gy, gz + 0.002 * br])
-        s[f"arm_{side}"] = arm_ik_from_grip(side, grip, (0.0, -0.55, -0.85), (-sg * 1.0, 0.0, 0.25),
-                                            pole=(sg * 0.55, 0.5, -0.9), space="world")
-        s[f"fingers_{side}"], s[f"grip_{side}"], s[f"thumb_{side}"] = 82.0, RIM_RADIUS, 32.0
-    return s
+    return bar_hands(saddle_base(t, 16.0), 0.0, math.sin(2 * math.pi * t / 2.0))
 
 
 def clip_sit_saddle_ride(t):
@@ -3785,6 +3838,51 @@ def clip_sit_ride(t):
 
 def clip_sit_ride_low(t):
     return ride_hands(clip_sit_low(t))
+
+
+def clip_sit_steer(t):
+    """The sit clip's upper body with the wheel turned (held at a point, STEER_T)."""
+    return steer_look(wheel_hands(clip_sit(0.0), steer_of(t)), steer_of(t))
+
+
+def clip_sit_low_steer(t):
+    return steer_look(wheel_hands(clip_sit_low(0.0), steer_of(t)), steer_of(t))
+
+
+def clip_sit_saddle_steer(t):
+    return steer_look(bar_hands(saddle_base(0.0, 16.0), steer_of(t)), steer_of(t))
+
+
+# The pedals under a driver's seat's wheel: the right foot presses the throttle (sit_gas, sit_low_gas), the left the
+# brake (sit_brake, sit_low_brake), PEDAL_PRESS degrees at the ankle. The game blends them in by how far the seat's
+# throttle is pressed forward or back.
+PEDAL_PRESS = 16.0
+
+
+def pedal(s, side, sit_low):
+    leg = dict(s[f"leg_{side}"])
+    if sit_low:
+        leg["pitch"] = leg.get("pitch", 0.0) - PEDAL_PRESS
+    else:
+        leg["foot"] = leg.get("foot", 0.0) - PEDAL_PRESS
+    s[f"leg_{side}"] = leg
+    return s
+
+
+def clip_sit_gas(t):
+    return pedal(clip_sit(t), "r", False)
+
+
+def clip_sit_brake(t):
+    return pedal(clip_sit(t), "l", False)
+
+
+def clip_sit_low_gas(t):
+    return pedal(clip_sit_low(t), "r", True)
+
+
+def clip_sit_low_brake(t):
+    return pedal(clip_sit_low(t), "l", True)
 
 
 # ------------------------------------------------------------------------------------------------
@@ -6002,6 +6100,13 @@ CLIPS = {
     "sit_ride_low": (clip_sit_ride_low, 2.0, True, False),
     "sit_saddle": (clip_sit_saddle, 2.0, True, False),
     "sit_saddle_ride": (clip_sit_saddle_ride, 2.0, True, False),
+    "sit_steer": (clip_sit_steer, STEER_T, False, True),
+    "sit_low_steer": (clip_sit_low_steer, STEER_T, False, True),
+    "sit_saddle_steer": (clip_sit_saddle_steer, STEER_T, False, True),
+    "sit_gas": (clip_sit_gas, 2.0, True, False),
+    "sit_brake": (clip_sit_brake, 2.0, True, False),
+    "sit_low_gas": (clip_sit_low_gas, 2.0, True, False),
+    "sit_low_brake": (clip_sit_low_brake, 2.0, True, False),
     "hold_tool": (clip_hold_tool, 2.0, True, True),
     "hold_heavy": (clip_hold_heavy, 2.0, True, True),
     "hold_heavy_block": (clip_hold_heavy_block, 2.0, True, True),

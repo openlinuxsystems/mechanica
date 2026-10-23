@@ -12,14 +12,16 @@ public class SeatRideTests
     {
         ["idle"] = 3f, ["sit"] = 2f, ["sit_low"] = 2f, ["sit_ride"] = 2f, ["sit_ride_low"] = 2f,
         ["sit_saddle"] = 2f, ["sit_saddle_ride"] = 2f,
+        ["sit_steer"] = 1f, ["sit_low_steer"] = 1f, ["sit_saddle_steer"] = 1f,
+        ["sit_gas"] = 2f, ["sit_brake"] = 2f, ["sit_low_gas"] = 2f, ["sit_low_brake"] = 2f,
     };
 
     private static readonly SeatRideSettings Settings = new();
 
     private static CharacterAnimator Make() => new(new CharacterSettings(), Lengths);
 
-    private static CharacterPose Sitting(SeatStyle seat, Vector3 velocity = default, float yaw = 0f) =>
-        new(velocity, yaw, 0, OnFloor: true, Seated: true, Seat: seat);
+    private static CharacterPose Sitting(SeatStyle seat, Vector3 velocity = default, float yaw = 0f, float steer = 0f, float pedal = 0f) =>
+        new(velocity, yaw, 0, OnFloor: true, Seated: true, Seat: seat, Steer: steer, Pedal: pedal);
 
     private static void Run(CharacterAnimator animator, Func<int, CharacterPose> pose, float seconds)
     {
@@ -29,6 +31,8 @@ public class SeatRideTests
     }
 
     private static float Weight(CharacterAnimator animator, string clip) => animator.Body.Where(c => c.Clip == clip).Sum(c => c.Weight);
+
+    private static ClipWeight Upper(CharacterAnimator animator, string clip) => Assert.Single(animator.Upper, c => c.Clip == clip);
 
     [Fact]
     public void AChairHeightCushionPlaysTheChairPose()
@@ -243,5 +247,57 @@ public class SeatRideTests
         Assert.True(float.IsNaN(SeatStyle.For(old).Cushion));
         Assert.True(SeatStyle.For(old).HandsFree);
         Assert.Equal(new Vec3(0, -0.1f, 0), SeatStyle.Anchor(old));
+    }
+
+    [Fact]
+    public void ADriversHandsRideTheWheelToWhereItIsTurned()
+    {
+        var animator = Make();
+        var cushion = Settings.ClipHips["sit"] - Settings.HipsAboveCushion;
+        Run(animator, _ => Sitting(new SeatStyle(cushion, false, 0f), steer: 0.5f), 1f);
+        var steer = Upper(animator, "sit_steer");
+        Assert.Equal(0.75f, steer.Time, 3);
+        Assert.Equal(1f, steer.Weight, 3);
+        Assert.Equal(1f, animator.UpperWeight, 3);
+
+        Run(animator, _ => Sitting(new SeatStyle(cushion, false, 0f), steer: -1f), 0.1f);
+        Assert.Equal(0f, Upper(animator, "sit_steer").Time, 3);
+    }
+
+    [Fact]
+    public void ALowSeatSteersWithBothSteerClipsAndASaddleWithItsOwn()
+    {
+        var animator = Make();
+        var (high, low) = (Settings.ClipHips["sit"], Settings.ClipHips["sit_low"]);
+        Run(animator, _ => Sitting(new SeatStyle((high + low) / 2f - Settings.HipsAboveCushion, false, 0f), steer: 1f), 1f);
+        Assert.Equal(0.5f, Upper(animator, "sit_steer").Weight, 3);
+        Assert.Equal(0.5f, Upper(animator, "sit_low_steer").Weight, 3);
+        Assert.Equal(1f, Upper(animator, "sit_low_steer").Time, 3);
+
+        var saddle = Make();
+        Run(saddle, _ => Sitting(new SeatStyle(Settings.ClipHips["sit_saddle"] - Settings.HipsAboveCushion, false, 0f, Saddle: true), steer: -0.5f), 1f);
+        Assert.Equal(0.25f, Upper(saddle, "sit_saddle_steer").Time, 3);
+    }
+
+    [Fact]
+    public void APassengerNeitherSteersNorPressesPedals()
+    {
+        var animator = Make();
+        Run(animator, _ => Sitting(new SeatStyle(float.NaN, true, 1f), steer: 1f, pedal: 1f), 1f);
+        Assert.Empty(animator.Upper);
+        Assert.Equal("sit_ride", Assert.Single(animator.Body).Clip);
+    }
+
+    [Fact]
+    public void TheThrottlePressesTheRightPedalAndReverseTheLeft()
+    {
+        var animator = Make();
+        var cushion = Settings.ClipHips["sit"] - Settings.HipsAboveCushion;
+        Run(animator, _ => Sitting(new SeatStyle(cushion, false, 0f), pedal: 0.75f), 1f);
+        Assert.Equal(0.25f, Weight(animator, "sit"), 3);
+        Assert.Equal(0.75f, Weight(animator, "sit_gas"), 3);
+        Run(animator, _ => Sitting(new SeatStyle(cushion, false, 0f), pedal: -1f), 0.1f);
+        Assert.Equal(1f, Weight(animator, "sit_brake"), 3);
+        Assert.Equal(0f, Weight(animator, "sit_gas"), 3);
     }
 }

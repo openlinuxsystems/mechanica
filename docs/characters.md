@@ -130,14 +130,19 @@ the legs blend `sit` and `sit_low` so the hips land on the cushion, whatever its
 while the head looks around. While it sits, the body rides along: sitting down sinks it into the seat and lets it settle, then
 each change in the seat's own motion pushes springs that bob the hips and sway the upper body (a bump throws it up,
 braking tips it forward, a turn leans it out), scaled by the seat's `seat.bounce`, so a smooth road barely shows and rough
-ground throws the driver about. The springs are `seat` in `game/data/character.json`.
+ground throws the driver about. The springs are `seat` in `game/data/character.json`. A driver's hands stay on the controls as they move: the
+seat's model turns its wheel or bars and presses its pedals by the seat script's `wheel`, `gas` and `brake` readouts (its
+`display.clips.scrub`, eased at their `rate`), and the body holds `sit_steer` (`sit_low_steer` on a low seat,
+`sit_saddle_steer` on a saddle) at the same point, 0 s full left to the clip's end full right, so the hands ride round
+with the rim and the head looks into the turn; the feet press the pedals with `sit_gas` and `sit_brake` (`sit_low_gas`,
+`sit_low_brake`) blended in. A character without those clips holds the wheel still.
 
 The animation set is shared by every character: `idle`, `idle_look` and `idle_stretch` (fidgets), `turn_l` and `turn_r`
 (stepping round on the spot), `walk`, `jog`, `run`, `crouch_idle`, `crouch_walk`,
 `jump`, `jump_run` (a running leap), `fall`, `land`, `land_hard` (a long fall, a hand to the ground), `swim_idle`, `swim`, `climb` (a ladder: hands and feet on rungs 0.25 m apart, played forward or back as the climber moves up or down), `sit` (a chair, hands on a wheel), `sit_low` (a low seat, legs out in
 front), `sit_ride` and `sit_ride_low` (the same with the hands resting on the thighs, for passengers), `sit_saddle` (astride a
-saddle, leaning forward with the hands on handlebars) and `sit_saddle_ride` (astride, sitting up with the hands on the thighs)
-move the whole body; `hold_tool`, `hold_heavy`,
+saddle, leaning forward with the hands on handlebars), `sit_saddle_ride` (astride, sitting up with the hands on the thighs)
+and the pedal versions `sit_gas`, `sit_brake`, `sit_low_gas` and `sit_low_brake` move the whole body; `hold_tool`, `hold_heavy`,
 `hold_heavy_block` (the Sledgehammer raised across the chest while right click blocks, in Creative), `hold_gun`, `hold_item`,
 `hold_refine` (the Refine Tool scraping at a resource node, a stroke every 0.75 s), `hold_connect` (the Connect Tool at
 chest height, tip forward, with a slow sway), `hold_connect_aim` (raised and aimed while a node is under the crosshair or a

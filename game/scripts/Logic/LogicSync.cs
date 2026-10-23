@@ -218,6 +218,7 @@ public partial class LogicSync : Node
                         ? SeatStyle.For(creation.DefinitionOf(seat.Part)) : SeatStyle.Default;
                     player.SeatFrame = () => SeatTransform(seat.Creation, seat.Part) is { } at ? at.Feet.Basis : null;
                     player.Seat = () => SeatPose(seat.Creation, seat.Part);
+                    player.SeatControls = () => Creations.NodeOf(seat.Creation)?.SeatControls(seat.Part) ?? (0f, 0f);
                 }
                 if (!player.Simulated)
                     player.SitStill();

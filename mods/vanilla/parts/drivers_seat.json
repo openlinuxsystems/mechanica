@@ -111,7 +111,24 @@
   ],
   "display": {
     "clips": {
-      "readout": "clip"
+      "readout": "clip",
+      "scrub": [
+        {
+          "readout": "wheel",
+          "clip": "steer",
+          "rate": 2.5
+        },
+        {
+          "readout": "gas",
+          "clip": "gas",
+          "rate": 6
+        },
+        {
+          "readout": "brake",
+          "clip": "brake",
+          "rate": 6
+        }
+      ]
     }
   },
   "properties": {

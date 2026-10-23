@@ -42,7 +42,14 @@
   },
   "display": {
     "clips": {
-      "readout": "clip"
+      "readout": "clip",
+      "scrub": [
+        {
+          "readout": "wheel",
+          "clip": "steer",
+          "rate": 2
+        }
+      ]
     }
   },
   "properties": {
