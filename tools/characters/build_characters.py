@@ -2886,7 +2886,8 @@ def _pose_hand(pose, side, spec):
     # The thumb swings round in front of the palm from its base (opposition, about the hand's length), bends in toward
     # the fingers there, then curls at its two joints over them.
     thumb = spec.get(f"thumb_{side}", 10.0)
-    opp = THUMB_OPPOSE * thumb
+    # a live thumb rests a little in toward the index finger; a flat or spread hand (0 or less) opens it right out
+    opp = THUMB_OPPOSE * thumb + 9.0 * smoothstep(0.0, 10.0, thumb)
     pose.Q[f"thumb_{side}"] = axis_rot(sg * d, opp) @ axis_rot(thumb_axis(side), THUMB_FLEX * thumb)
     pose.Q[f"thumb_2_{side}"] = axis_rot(joint_axis(f"thumb_2_{side}", side), THUMB_MID * thumb + 4.0)
     pose.Q[f"thumb_3_{side}"] = axis_rot(joint_axis(f"thumb_3_{side}", side), THUMB_END * thumb + 6.0)

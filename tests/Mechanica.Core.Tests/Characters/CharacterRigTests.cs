@@ -34,7 +34,7 @@ public class CharacterRigTests
     [Fact]
     public void FingerBonesAreOptionalArmAndUpperBodyBones()
     {
-        Assert.Equal(26, CharacterRig.FingerBones.Count);
+        Assert.Equal(28, CharacterRig.FingerBones.Count);
         Assert.Empty(CharacterRig.FingerBones.Intersect(CharacterRig.Bones));
         Assert.All(CharacterRig.FingerBones, b => Assert.Contains(b, CharacterRig.ArmBones));
         Assert.All(CharacterRig.FingerBones, b => Assert.Contains(b, CharacterRig.UpperBodyBones));
