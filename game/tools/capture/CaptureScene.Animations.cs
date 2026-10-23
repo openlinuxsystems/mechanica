@@ -48,8 +48,6 @@ public partial class CaptureScene
         Move("turn_on_spot", 150, front, f => { _yaw += f < 75 ? 0.035f : -0.035f; Drive(); }, still: true);
         Move("strafe", 90, front, f => Drive(x: f < 45 ? 0.5f : -0.5f));
         Move("strafe_jog", 90, front, f => Drive(x: f < 45 ? 1f : -1f));
-        Move("slope_stand", 90, front, f => { if (f == 0) Ramp(18f); Drive(); if (f == 89) Unramp(); }, still: true);
-        Move("slope_walk", 90, side, f => { if (f == 0) Ramp(18f); Drive(z: 0.4f); if (f == 89) Unramp(); });
         Move("strafe_diagonal", 120, front, f => Drive(x: f < 60 ? 0.7f : -0.7f, z: f < 30 || f >= 90 ? 0.7f : -0.7f));
         Move("zigzag", 120, new Vector3(4.5f, 2.2f, 2.5f), f => { _yaw += 0.03f * Mathf.Sin(f * 0.08f); Drive(z: 1f); });
         Move("walk_tool", 60, front, f => { if (f == 0) Tool<Building.ConnectTool>(); Drive(z: 0.5f); });
@@ -234,30 +232,6 @@ public partial class CaptureScene
             water.QueueFree();
         };
         GetTree().ProcessFrame += fly;
-    }
-
-    private StaticBody3D? _ramp;
-
-    // A slab tilted by degrees across the way the player faces, its top through their feet, so one foot stands higher; it
-    // is raised so its low edge clears the ground.
-    private void Ramp(float degrees)
-    {
-        Unramp();
-        var at = Player.GlobalPosition + Vector3.Up * 1.6f;
-        var basis = new Basis(Vector3.Up, Player.Rotation.Y) * new Basis(Vector3.Back, Mathf.DegToRad(degrees));
-        _ramp = new StaticBody3D { Name = "Ramp", CollisionLayer = World.PhysicsLayers.Solid };
-        var size = new Vector3(8f, 1f, 12f);
-        _ramp.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = size } });
-        _ramp.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = size }, MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.55f, 0.56f, 0.58f) } });
-        _main.AddChild(_ramp);
-        _ramp.GlobalTransform = new Transform3D(basis, at - basis.Y * (size.Y / 2f));
-        _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, at + Vector3.Up * 0.3f, 0f);
-    }
-
-    private void Unramp()
-    {
-        _ramp?.QueueFree();
-        _ramp = null;
     }
 
     private void Drive(float x = 0, float z = 0, bool sprint = false, bool crawl = false, bool jump = false) =>
