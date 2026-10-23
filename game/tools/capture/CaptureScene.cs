@@ -349,7 +349,7 @@ public partial class CaptureScene : Node
         }
         if (landmarks)
         {
-            LandmarkShots();
+            LandmarkShots(args.Length > 2 ? args[2].Split(',') : null);
             return;
         }
         if (crash)
@@ -983,7 +983,8 @@ public partial class CaptureScene : Node
             Shot($"survey_00_{i}_go", 300, () =>
             {
                 GD.Print($"[capture] {name} at {at}");
-                _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, at + Vector3.Up * 2f, 0f);
+                // The player stands 20 m off, between the first two looks, so the eye-height camera is never inside them.
+                _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, Ground(at + Vector3.Forward.Rotated(Vector3.Up, 1.05f) * 20f) + Vector3.Up * 2f, 0f);
             });
             for (var d = 0; d < 3; d++)
             {
@@ -1185,12 +1186,13 @@ public partial class CaptureScene : Node
 
     // The nearest of each landmark (docs/world-generation.md, Landmarks): wide from about 1.3 times its size, a little
     // above it, and low at the edge of its pad, to show it sits on the ground and the terrain meets it.
-    private void LandmarkShots()
+    // `only` names POI prefabs to shoot in place of the landmarks (tools/capture-landmarks.sh OUT warehouse,poi_05).
+    private void LandmarkShots(string[]? only)
     {
         Engine.TimeScale = 1.0;
         var gen = _main.Streamer.Generator;
         Shot("landmarks_00_wait", 60, () => { });
-        var nearest = gen.Pois.Where(p => p.Poi.Prefab.Id?.StartsWith("landmark_", StringComparison.Ordinal) == true)
+        var nearest = gen.Pois.Where(p => only is null ? p.Poi.Prefab.Id?.StartsWith("landmark_", StringComparison.Ordinal) == true : only.Contains(p.Poi.Prefab.Id))
             .GroupBy(p => p.Poi.Prefab.Id!).Select(g => g.MinBy(p => p.Centre.Length())!).OrderBy(p => p.Poi.Prefab.Id, StringComparer.Ordinal);
         foreach (var poi in nearest)
         {
