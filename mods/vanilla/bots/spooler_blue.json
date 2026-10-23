@@ -61,6 +61,19 @@
     },
     "effects": {
       "tape": "shot"
+    },
+    "track": {
+      "nodes": {
+        "Torso": 0.3,
+        "Head": 0.7
+      },
+      "yaw": 70,
+      "pitch": 30,
+      "range": 8
+    },
+    "sway": {
+      "Antenna": 1.6,
+      "HeadReel": 0.5
     }
   },
   "raid_cost": 2,

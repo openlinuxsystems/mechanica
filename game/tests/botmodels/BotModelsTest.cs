@@ -33,6 +33,7 @@ public partial class BotModelsTest : StagedTest
     private int _spooler;
     private int _duster;
     private int _shooter;
+    private int _grazer;
     private Vector3 _hit;
 
     protected override string Tag => "botmodels";
@@ -166,6 +167,26 @@ public partial class BotModelsTest : StagedTest
             return true;
         });
         Add("the canister lands and goes", _ => !Shots(_client).Any(s => s.Target.DistanceTo(_hit) < 0.01f));
+        Add("a Grazer next to a player turns its head to watch them", frame =>
+        {
+            if (frame == 0)
+            {
+                var at = _client.Main.LocalPlayer!.GlobalPosition;
+                _grazer = Spawn("vanilla:grazer", new Vector3(at.X + 1.5f, 0, at.Z + 3f));
+            }
+            if (Body(_client, _grazer)?.Model is not { } model)
+                return false;
+            // It wanders: keep the player 3 m ahead of it and 1.5 m to its left.
+            var player = _client.Main.LocalPlayer!;
+            var ahead = -model.GlobalBasis.Z with { Y = 0 };
+            var left = -model.GlobalBasis.X with { Y = 0 };
+            player.GlobalPosition = model.GlobalPosition + ahead.Normalized() * 3f + left.Normalized() * 1.5f;
+            if (frame < 90)
+                return false;
+            Check(model.Gaze.Length() > 10f, $"its head turns toward the player ({model.Gaze}, clip {model.Clip})");
+            Check(model.Gaze.X is > 0f and <= 70.5f, $"to its left, no further than its track's yaw ({model.Gaze.X:0.0} degrees)");
+            return true;
+        });
     }
 
     private int Spawn(string type, Vector3 at)

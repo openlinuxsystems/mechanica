@@ -340,6 +340,38 @@ public sealed record BotModelDefinition
     /// <summary>The shortest and longest wait between <see cref="Idles"/>, in seconds, <c>[min, max]</c>. Omitted means [6, 14].</summary>
     public List<float>? IdleEvery { get; init; }
 
+    /// <summary>How its head follows a player nearby (cosmetic, each peer on its own). Omitted means it never turns to look.</summary>
+    public BotTrackDefinition? Track { get; init; }
+
+    /// <summary>
+    /// Nodes that swing on their pivots as the bot starts, stops, turns and is hit (antennas, ears, tails, sacks), each
+    /// with how loose it is (above 0, up to 3; 1 is a stiff antenna's sway). Cosmetic, each peer on its own.
+    /// </summary>
+    public Dictionary<string, float>? Sway { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// How a bot model's head turns to the player nearest it (<see cref="BotModelDefinition.Track"/>): the named nodes turn
+/// on their own pivots over the clip playing, each by its share of the turn, parents first.
+/// </summary>
+public sealed record BotTrackDefinition
+{
+    /// <summary>The nodes that turn, each with its share of the turn (0 to 1); a neck and head might be 0.55 and 0.45.</summary>
+    public Dictionary<string, float>? Nodes { get; init; }
+
+    /// <summary>The most it turns left or right, degrees (up to 170). Omitted means 70.</summary>
+    public float? Yaw { get; init; }
+
+    /// <summary>The most it looks up or down, degrees (up to 80). Omitted means 30.</summary>
+    public float? Pitch { get; init; }
+
+    /// <summary>How near a player must be, m, while it is calm (it always looks at one while engaged). Omitted means 6.</summary>
+    public float? Range { get; init; }
+
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }

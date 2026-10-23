@@ -33,6 +33,8 @@
         // Built by tools/scuttler/build_scuttler.py, which prints the clip speeds.
         "model": {
           "mesh": "meshes/bots/scuttler_green.glb",
+          "sway": { "Tail0": 0.8, "Sack": 0.9 },
+          "track": { "nodes": { "Stalk": 0.45, "EyeHead": 0.55 }, "yaw": 80, "pitch": 35, "range": 8 },
           "attacks": {
             "whip": ["tail_slam", "tail_sweep", "claw_combo"]
           },
@@ -150,6 +152,8 @@
       "set": {
         "model": {
           "mesh": "meshes/bots/scuttler_blue.glb",
+          "sway": { "Tail0": 0.8, "Sack": 0.9 },
+          "track": { "nodes": { "Stalk": 0.45, "EyeHead": 0.55 }, "yaw": 80, "pitch": 35, "range": 8 },
           "attacks": {
             "whip": null,
             "drill": ["drill_ram"]
@@ -301,6 +305,8 @@
       "set": {
         "model": {
           "mesh": "meshes/bots/scuttler_yellow.glb",
+          "sway": { "Tail0": 0.8, "Sack": 0.9 },
+          "track": { "nodes": { "Stalk": 0.45, "EyeHead": 0.55 }, "yaw": 80, "pitch": 35, "range": 8 },
           "attacks": {
             "whip": null,
             "stomp": ["stomp"]
@@ -445,6 +451,8 @@
       "set": {
         "model": {
           "mesh": "meshes/bots/scuttler_red.glb",
+          "sway": { "Tail0": 0.8, "Sack": 0.9 },
+          "track": { "nodes": { "Stalk": 0.45, "EyeHead": 0.55 }, "yaw": 80, "pitch": 35, "range": 8 },
           "attacks": {
             "whip": null,
             "explode": ["detonate"]
@@ -570,6 +578,8 @@
       "set": {
         "model": {
           "mesh": "meshes/bots/scuttler_seed.glb",
+          "sway": { "Tail0": 0.8, "Sack": 0.9 },
+          "track": { "nodes": { "Stalk": 0.45, "EyeHead": 0.55 }, "yaw": 80, "pitch": 35, "range": 8 },
           "attacks": {
             "whip": null,
             "nip": ["claw_snap"]
@@ -702,6 +712,8 @@
       "set": {
         "model": {
           "mesh": "meshes/bots/rakehand.glb",
+          "sway": { "Antenna": 1.6 },
+          "track": { "nodes": { "Torso": 0.3, "Head": 0.7 }, "yaw": 75, "pitch": 30, "range": 8 },
           "attacks": {
             "poke": ["fork_jab"],
             "swing": ["fork_sweep"]
@@ -896,6 +908,8 @@
       "set": {
         "model": {
           "mesh": "meshes/bots/rakehand_baler.glb",
+          "sway": { "Antenna": 1.6 },
+          "track": { "nodes": { "Torso": 0.3, "Head": 0.7 }, "yaw": 75, "pitch": 30, "range": 8 },
           "attacks": {
             "poke": ["pitch"],
             "swing": ["haymaker"]
@@ -962,6 +976,8 @@
       "set": {
         "model": {
           "mesh": "meshes/bots/rakehand_scarecrow.glb",
+          "sway": { "Antenna": 1.6 },
+          "track": { "nodes": { "Torso": 0.3, "Head": 0.7 }, "yaw": 75, "pitch": 30, "range": 8 },
           "attacks": {
             "poke": ["lunge_jab"],
             "swing": ["spin_sweep"]
@@ -1187,6 +1203,8 @@
       "set": {
         "model": {
           "mesh": "meshes/bots/spooler_blue.glb",
+          "sway": { "Antenna": 1.6, "HeadReel": 0.5 },
+          "track": { "nodes": { "Torso": 0.3, "Head": 0.7 }, "yaw": 70, "pitch": 30, "range": 8 },
           "attacks": {
             "tape": ["tape_shot"]
           },
@@ -1303,6 +1321,8 @@
       "set": {
         "model": {
           "mesh": "meshes/bots/spooler_green.glb",
+          "sway": { "Antenna": 1.6, "HeadReel": 0.5 },
+          "track": { "nodes": { "Torso": 0.3, "Head": 0.7 }, "yaw": 70, "pitch": 30, "range": 8 },
           "attacks": {
             "tape": null,
             "bubble": ["bubble_shot"]
@@ -1397,6 +1417,8 @@
       "set": {
         "model": {
           "mesh": "meshes/bots/spooler_yellow.glb",
+          "sway": { "Antenna": 1.6, "HeadReel": 0.5 },
+          "track": { "nodes": { "Torso": 0.3, "Head": 0.7 }, "yaw": 70, "pitch": 30, "range": 8 },
           "attacks": {
             "tape": ["rapid_shot"]
           },
@@ -1443,6 +1465,8 @@
       "set": {
         "model": {
           "mesh": "meshes/bots/spooler_red.glb",
+          "sway": { "Antenna": 1.6, "HeadReel": 0.5 },
+          "track": { "nodes": { "Torso": 0.3, "Head": 0.7 }, "yaw": 70, "pitch": 30, "range": 8 },
           "attacks": {
             "tape": ["heavy_shot"]
           },
@@ -1479,6 +1503,8 @@
         // Built by tools/thresher/build_thresher.py (the Harvester), which prints the clip speeds.
         "model": {
           "mesh": "meshes/bots/thresher.glb",
+          "sway": { "StackCap": 0.8, "Beacon": 1.0 },
+          "track": { "nodes": { "Torso": 0.4, "Head": 0.6 }, "yaw": 60, "pitch": 25, "range": 10 },
           "attacks": {
             "kick": ["track_stomp"],
             "swipe": ["sickle_swipe"],
@@ -1639,6 +1665,8 @@
       "set": {
         "model": {
           "mesh": "meshes/bots/thresher_tiller.glb",
+          "sway": { "StackCap": 0.8, "Beacon": 1.0 },
+          "track": { "nodes": { "Head": 1 }, "yaw": 50, "pitch": 20, "range": 10 },
           "attacks": {
             "kick": null,
             "swipe": null,
@@ -1782,6 +1810,8 @@
       "set": {
         "model": {
           "mesh": "meshes/bots/thresher_duster.glb",
+          "sway": { "StackCap": 0.8, "Beacon": 1.0 },
+          "track": { "nodes": { "Torso": 0.4, "Head": 0.6 }, "yaw": 60, "pitch": 25, "range": 10 },
           "attacks": {
             "kick": null,
             "swipe": null,
@@ -1935,6 +1965,8 @@
         "color": "#c9b48a",
         "model": {
           "mesh": "meshes/bots/grazer.glb",
+          "sway": { "EarL": 1.2, "EarR": 1.2, "Tail1": 1.0 },
+          "track": { "nodes": { "Neck": 0.55, "Head": 0.45 }, "yaw": 70, "pitch": 30, "range": 6 },
           "variants": [
             "meshes/bots/grazer_fawn.glb",
             "meshes/bots/grazer_chocolate.glb"
@@ -2001,6 +2033,8 @@
         "color": "#c9b48a",
         "model": {
           "mesh": "meshes/bots/grazer_calf.glb",
+          "sway": { "EarL": 1.2, "EarR": 1.2, "Tail1": 1.0 },
+          "track": { "nodes": { "Neck": 0.55, "Head": 0.45 }, "yaw": 70, "pitch": 30, "range": 6 },
           "variants": [
             "meshes/bots/grazer_fawn_calf.glb",
             "meshes/bots/grazer_chocolate_calf.glb"
@@ -2015,6 +2049,7 @@
             { "clip": "chew", "weight": 2 },
             { "clip": "look", "weight": 3 },
             { "clip": "tail_flick", "weight": 2 },
+            { "clip": "frolic", "weight": 3 },
             { "clip": "moo", "sound": "grazer_idle" }
           ],
           "idle_every": [4, 10]

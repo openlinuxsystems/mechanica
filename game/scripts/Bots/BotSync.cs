@@ -416,7 +416,10 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
             body.GlobalPosition = view.Position.ToGodot();
             body.Rotation = new Vector3(0, Mathf.DegToRad(view.Yaw), 0);
             if (body.Model is { } model)
+            {
                 model.HitFrom = () => NearestPlayer(body.GlobalPosition);
+                model.GazeAt = () => NearestPlayer(body.GlobalPosition) is { } feet ? feet + Vector3.Up * 1.5f : null;
+            }
         }
         body.Show(view, follow: !Session.IsHost);
     }

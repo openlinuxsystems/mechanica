@@ -58,6 +58,18 @@
     "clip_speeds": {
       "patrol": 1.29,
       "chase": 3.04
+    },
+    "track": {
+      "nodes": {
+        "Torso": 0.3,
+        "Head": 0.7
+      },
+      "yaw": 75,
+      "pitch": 30,
+      "range": 8
+    },
+    "sway": {
+      "Antenna": 1.6
     }
   },
   "raid_cost": 1,

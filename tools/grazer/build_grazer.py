@@ -690,7 +690,7 @@ CLIPS = {
     "idle": 3.0, "patrol": GAITS["patrol"][0], "chase": GAITS["chase"][0], "alert": 1.0, "lose_interest": 1.2,
     "hit": 0.5, "death": 2.2, "jump": 0.45, "fall": 0.8, "land": 0.5,
     "graze": 4.0, "chew": 3.0, "look": 2.6, "tail_flick": 1.4, "moo": 2.2,
-    "eat": 2.4, "happy": 1.8, "lie_down": 1.6, "sleep": 4.0, "get_up": 1.6,
+    "eat": 2.4, "happy": 1.8, "frolic": 1.6, "lie_down": 1.6, "sleep": 4.0, "get_up": 1.6,
 }
 
 
@@ -712,9 +712,16 @@ def gait(p, clip, u):
             s = -swing + 2 * swing * smooth(q)
             p.leg(name, s, lift * math.sin(math.pi * q))
     w = 2 * math.pi * u
+    if CALF[0]:
+        bob *= 2.2                                    # a calf bounces along on its long legs
     p.move("Body", (0, 0, bob * math.cos(2 * w)))
     p.turn("Body", X, -rock * math.cos(w) if clip == "chase" else rock * math.sin(2 * w) * 0.5)
-    p.turn("Body", Y, 1.5 * math.sin(w))
+    # the barrel rolls toward the hind leg in stance and swings a little side to side with the hips; the neck
+    # takes the swing back out, so the head stays on its line
+    p.turn("Body", Y, 2.5 * math.sin(w))
+    if clip == "patrol":
+        p.turn("Body", Z, 2.0 * math.sin(w + 0.4))
+        p.turn("Neck", Z, -1.6 * math.sin(w + 0.4))
 
 
 def pose(p, clip, t, length):
@@ -729,9 +736,12 @@ def pose(p, clip, t, length):
     elif clip in GAITS:
         gait(p, clip, u)
         if clip == "patrol":
-            p.head(6 + 4 * math.sin(2 * w), 2 * math.sin(w))
-            p.ears(8 + 4 * math.sin(2 * w))
-            p.tail(14 * math.sin(w), 4)
+            # the head nods down as each front hoof lands (FR at u 0.25, FL at 0.75); ears and tail swing a beat
+            # behind the body
+            nod = 5 if CALF[0] else 4
+            p.head(6 + nod * math.sin(2 * w - 0.6), 2 * math.sin(w))
+            p.ears(8 + 4 * math.sin(2 * w - 1.2), 0, 6 * pulse(u, 0.3, 0.34, 0.4) if CALF[0] else 0)
+            p.tail(14 * math.sin(w - 0.9), 16 if CALF[0] else 4, 8 * math.sin(w - 1.6))
         else:
             # fleeing: head forward and down, ears pinned back, tail up and streaming
             p.head(14 + 6 * math.sin(w), 0)
@@ -844,6 +854,22 @@ def pose(p, clip, t, length):
         p.turn("Body", X, -3 * k)
         p.ears(-10 * k, 14 * k)
         p.tail(0, 10 * k)
+    elif clip == "frolic":
+        # a calf's play: two bucking hops, the hind legs kicking out behind, the head tossed, the tail straight up
+        for start in (0.1, 0.5):
+            hop = pulse(u, start, start + 0.12, start + 0.26)
+            kick = pulse(u, start + 0.08, start + 0.16, start + 0.28)
+            p.move("Body", (0, 0, 0.16 * hop))
+            p.turn("Body", X, 10 * kick - 6 * hop)
+            for name in LEGS:
+                if name[0] == "B":
+                    p.leg(name, -36 * kick, 30 * hop)
+                else:
+                    p.leg(name, 18 * hop, 50 * hop)
+            p.head(-14 * hop + 10 * kick, 12 * kick * (1 if start < 0.3 else -1), 10 * kick)
+        p.tail(10 * math.sin(2 * math.pi * 3 * t), 45 * env(u, 0.05, 0.15) * (1 - env(u, 0.8, 0.95)))
+        p.ears(-8, 20 * env(u, 0.05, 0.15) * (1 - env(u, 0.8, 0.95)), 14 * pulse(u, 0.3, 0.34, 0.4))
+        p.jaw(8 * pulse(u, 0.2, 0.3, 0.5))
     elif clip == "eat":
         # eats from a trough or a hand: head forward and down to about knee height, three bites, chews
         k = env(u, 0.0, 0.18) * (1 - env(u, 0.85, 1.0))

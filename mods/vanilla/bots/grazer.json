@@ -108,7 +108,21 @@
     "idle_every": [
       5,
       12
-    ]
+    ],
+    "track": {
+      "nodes": {
+        "Neck": 0.55,
+        "Head": 0.45
+      },
+      "yaw": 70,
+      "pitch": 30,
+      "range": 6
+    },
+    "sway": {
+      "EarL": 1.2,
+      "EarR": 1.2,
+      "Tail1": 1
+    }
   },
   "passive": true,
   "drops": [

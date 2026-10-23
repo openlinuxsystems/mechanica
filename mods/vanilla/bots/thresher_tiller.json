@@ -28,6 +28,19 @@
     },
     "effects": {
       "stomp": "shockwave"
+    },
+    "track": {
+      "nodes": {
+        "Torso": 0.4,
+        "Head": 1
+      },
+      "yaw": 50,
+      "pitch": 20,
+      "range": 10
+    },
+    "sway": {
+      "StackCap": 0.8,
+      "Beacon": 1
     }
   },
   "melee_immune": true,
