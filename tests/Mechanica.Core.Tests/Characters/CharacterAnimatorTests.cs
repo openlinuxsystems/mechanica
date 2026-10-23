@@ -406,6 +406,42 @@ public class CharacterAnimatorTests
     }
 
     [Fact]
+    public void GettingOnALadderReachesUpAndClimbingOffItsTopClimbsOver()
+    {
+        var lengths = new Dictionary<string, float>(Lengths) { ["climb"] = 1f, ["climb_on"] = 0.45f, ["climb_off"] = 0.75f };
+        float Share(CharacterAnimator a, string clip) => a.Body.Where(c => c.Clip == clip).Sum(c => c.Weight);
+        var animator = new CharacterAnimator(new CharacterSettings(), lengths);
+        var climbing = new CharacterPose(new Vector3(0, 1f, 0), 0, 0, OnFloor: false, Climbing: true);
+        Run(animator, Standing(), 0.5f);
+
+        // Onto it: the reach plays over everything, the cycle waiting on its first pose, then the climb takes over.
+        Run(animator, climbing, 0.15f);
+        Assert.True(Share(animator, "climb_on") > 0.9f, string.Join(", ", animator.Body));
+        Assert.Contains(animator.Body, c => c.Clip == "climb" && c.Time < 1e-3f);
+        Run(animator, climbing, 0.6f);
+        Assert.Equal(0f, Share(animator, "climb_on"), 2);
+        Assert.Equal(1f, Share(animator, "climb"), 2);
+
+        // Off the top (still going up), onto the floor: the climb over, ending standing.
+        Run(animator, Standing(), 0.2f);
+        Assert.True(Share(animator, "climb_off") > 0.9f, string.Join(", ", animator.Body));
+        Run(animator, Standing(), 0.7f);
+        Assert.Equal(0f, Share(animator, "climb_off"), 2);
+
+        // Down to the bottom and off, no climb over.
+        Run(animator, climbing, 1f);
+        Run(animator, climbing with { Velocity = new Vector3(0, -1f, 0) }, 0.5f);
+        Run(animator, Standing(), 0.1f);
+        Assert.Equal(0f, Share(animator, "climb_off"), 2);
+
+        // Walking straight off the top, the stride takes over.
+        Run(animator, climbing, 1f);
+        Run(animator, Standing(), 0.1f);
+        Run(animator, Standing(vz: -4f), 0.2f);
+        Assert.Equal(0f, Share(animator, "climb_off"), 2);
+    }
+
+    [Fact]
     public void TheLegsKeepWalkingThroughASwing()
     {
         var animator = Make();
