@@ -3142,6 +3142,17 @@ def clip_walk(t):
                       arm_lag=0.05, wrist_flop=10.0, nod=2.0)
 
 
+def clip_walk_back(t):
+    """Stepping backward (the animator plays it in reverse, as it does the walk, so in this forward form a toe-off is a
+    landing): it reaches back onto the ball of the foot and rolls down onto the heel, lifting the feet a little higher
+    to feel for the ground; the weight sits back over the heels, the steps are careful (a longer stance), the arms hang
+    a little forward and away from the body for balance and barely swing, and the head stays up, facing ahead."""
+    return locomotion(t, WALK_T, 1.5, 0.58, hips_base=-0.045, bob=0.008, lift=0.13, strike_pitch=4, off_pitch=26,
+                      lean=-3, arm_swing=10, elbow=30, elbow_extra=8, fingers=28, hips_yaw=4, chest_yaw=5,
+                      center_y=0.06, heel_frac=0.2, toe_frac=0.38, sway=0.035, roll=4.0, bend=0.8, shoulder=3.0,
+                      arm_lag=0.06, wrist_flop=6.0, nod=1.0, arm_down=30)
+
+
 def clip_jog(t):
     return locomotion(t, 0.72, 4.0, 0.33, hips_base=-0.055, bob=0.03, lift=0.28, strike_pitch=8, off_pitch=64,
                       lean=10, arm_swing=36, elbow=72, elbow_extra=14, fingers=52, hips_yaw=10, chest_yaw=12,
@@ -3987,9 +3998,10 @@ def heavy_key(grip_r, axis, spacing=SLEDGE_SPACING, d_hint=None, space="chest", 
 
 # Ready pose: held in front across the body, ready to swing (Chase's reference, Scrap Mechanic's title screen): the head
 # up by the right shoulder, the handle running down to the left hip, the right fist high on the shaft and the left low
-# on the grip, the striking face turned forward.
-HEAVY_R = np.array([-0.06, -0.3, 1.38])
-HEAVY_AXIS = norm(np.array([-0.5, -0.12, 0.86]))
+# on the grip, the striking face turned forward. The head sits out beside the right shoulder rather than in front of
+# the face, so the face shows from the front.
+HEAVY_R = np.array([-0.13, -0.27, 1.3])
+HEAVY_AXIS = norm(np.array([-0.64, -0.06, 0.77]))
 HEAVY_D = (0.0, -1.0, 0.0)
 HEAVY_BODY = dict(spine=(2.0, 0, -4.0), chest=(2.0, 0, -6.0), neck=(0.0, 0, 4.0), head=(0.0, 0, 4.0))
 
@@ -6087,6 +6099,7 @@ CLIPS = {
     "turn_l": (clip_turn_l, TURN_SECONDS, False, False),
     "turn_r": (clip_turn_r, TURN_SECONDS, False, False),
     "walk": (clip_walk, WALK_T, True, False),
+    "walk_back": (clip_walk_back, WALK_T, True, False),
     "jog": (clip_jog, 0.72, True, False),
     "run": (clip_run, 0.6, True, False),
     "crouch_idle": (clip_crouch_idle, 2.0, True, False),

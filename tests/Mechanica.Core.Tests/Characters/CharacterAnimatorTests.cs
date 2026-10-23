@@ -306,6 +306,23 @@ public class CharacterAnimatorTests
     }
 
     [Fact]
+    public void SteppingBackwardPlaysTheBackpedalWhenTheRigHasIt()
+    {
+        var lengths = new Dictionary<string, float>(Lengths) { ["walk_back"] = 1f };
+        var animator = new CharacterAnimator(new CharacterSettings(), lengths);
+        Run(animator, Standing(vz: 1.5f), 1f);
+        Assert.Equal(1f, animator.Body.Where(c => c.Clip == "walk_back").Sum(c => c.Weight), 2);
+        Assert.DoesNotContain(animator.Body, c => c.Clip == "walk");
+        Run(animator, Standing(vz: -1.5f), 1f);
+        Assert.Equal(1f, animator.Body.Where(c => c.Clip == "walk").Sum(c => c.Weight), 2);
+        Assert.DoesNotContain(animator.Body, c => c.Clip == "walk_back");
+        // A rig without it walks backward on the walk, as before.
+        var plain = Make();
+        Run(plain, Standing(vz: 1.5f), 1f);
+        Assert.Equal(1f, plain.Body.Where(c => c.Clip == "walk").Sum(c => c.Weight), 2);
+    }
+
+    [Fact]
     public void TheLegsKeepWalkingThroughASwing()
     {
         var animator = Make();
