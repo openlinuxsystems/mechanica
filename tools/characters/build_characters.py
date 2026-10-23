@@ -143,11 +143,61 @@ def _skeleton():
     return bones
 
 
-SKELETON = _skeleton()
+# The hand: three bones down each finger (knuckle, middle joint, end joint) under `fingers` (the knuckle line, which a
+# clip leaves still), and the thumb's three (`thumb` at the base of the palm, then its two joints). In the hand's rest
+# frame: (along toward the fingers, across toward the thumb, out of the palm), in m. Each finger is (name, across,
+# knuckle along, length, radius); its bones split the length at FINGER_SPLIT.
+FINGERS = [("index", 0.029, 0.082, 0.078, 0.0092), ("middle", 0.0095, 0.084, 0.086, 0.0096),
+           ("ring", -0.0095, 0.082, 0.081, 0.0092), ("pinky", -0.028, 0.077, 0.066, 0.0082)]
+FINGER_SPLIT = (0.0, 0.45, 0.73, 1.0)
+THUMB_POINTS = [(0.014, 0.020, 0.006), (0.040, 0.043, 0.008), (0.061, 0.056, 0.006), (0.084, 0.067, 0.003)]
+FINGER_BONES = [f"{f[0]}_{i}" for f in FINGERS for i in (1, 2, 3)] + ["thumb_2", "thumb_3"]
+
+
+def _rest_hand_frame(bones, side):
+    """hand_frame (below) from the raw bone table, before BONE exists."""
+    h, f = np.array(bones[f"hand_{side}"][1]), np.array(bones[f"fingers_{side}"][1])
+    d = (f - h) / np.linalg.norm(f - h)
+    w = np.array([0.0, -1.0, 0.0])
+    w = w - np.dot(w, d) * d
+    w /= np.linalg.norm(w)
+    n = np.cross(d, w)
+    n = n / np.linalg.norm(n) * (1.0 if side == "l" else -1.0)
+    return h, d, w, n
+
+
+def _with_fingers(bones):
+    table = {b[0]: (b[1], b[2], b[3]) for b in bones}
+    out = []
+    for name, parent, h, t in bones:
+        if name.startswith("thumb_"):
+            side = name[-1]
+            o, d, w, n = _rest_hand_frame(table, side)
+            pts = [o + d * a + w * c + n * p for a, c, p in THUMB_POINTS]
+            pts = [tuple(float(x) for x in q) for q in pts]
+            out.append((name, parent, pts[0], pts[1]))
+            out.append((f"thumb_2_{side}", name, pts[1], pts[2]))
+            out.append((f"thumb_3_{side}", f"thumb_2_{side}", pts[2], pts[3]))
+            continue
+        out.append((name, parent, h, t))
+        if name.startswith("fingers_"):
+            side = name[-1]
+            o, d, w, n = _rest_hand_frame(table, side)
+            for fname, across, knuckle, length, _ in FINGERS:
+                pts = [tuple(float(x) for x in o + d * (knuckle + length * u) + w * across) for u in FINGER_SPLIT]
+                parent_bone = name
+                for i in range(3):
+                    bname = f"{fname}_{i + 1}_{side}"
+                    out.append((bname, parent_bone, pts[i], pts[i + 1]))
+                    parent_bone = bname
+    return out
+
+
+SKELETON = _with_fingers(_skeleton())
 BONE = {b[0]: {"parent": b[1], "head": np.array(b[2]), "tail": np.array(b[3])} for b in SKELETON}
 BONE_NAMES = [b[0] for b in SKELETON]
 UPPER_BODY_BONES = ["spine", "chest", "neck", "head"] + [
-    f"{n}_{s}" for s in ("l", "r") for n in ("shoulder", "upper_arm", "forearm", "hand", "fingers", "thumb")]
+    f"{n}_{s}" for s in ("l", "r") for n in ("shoulder", "upper_arm", "forearm", "hand", "fingers", "thumb", *FINGER_BONES)]
 
 
 def bone_head(name):
@@ -1734,6 +1784,28 @@ def hand_local(along, across, palm):
     return bone_head("hand_l") + d * along + w * across + n * palm
 
 
+def palm_weights(sc):
+    """The palm follows the forearm into the wrist and the hand bone, and its knuckle edge rolls with the first bones of
+    the fingers nearest it (half way at the very edge), so a closing fist rounds the knuckles instead of leaving a lip."""
+    base = chain_weights(["forearm_l", "hand_l"], blend=0.05)
+
+    def fn(v):
+        w = base(v)
+        d, wa, n = hand_frame("l")
+        rel = v - bone_head("hand_l")
+        along, across = rel @ d, rel @ wa
+        roll = 0.5 * smoothstep(0.066 * sc, 0.094 * sc, along)
+        acr = np.array([f[1] * sc for f in FINGERS])
+        share = np.exp(-((across[:, None] - acr[None, :]) / 0.011) ** 2) + 1e-6
+        share /= share.sum(axis=1, keepdims=True)
+        hand = w.pop("hand_l")
+        w["hand_l"] = hand * (1.0 - roll)
+        for i, f in enumerate(FINGERS):
+            w[f"{f[0]}_1_l"] = hand * roll * share[:, i]
+        return w
+    return fn
+
+
 def glove(palm_mat, finger_mat, tip_mat, cuff_mat, cuff_keys, accent_mat=None, fingerless=True,
           female=False):
     """Left hand (glove, fingers, thumb, cuff). Mirror for the right hand."""
@@ -1746,27 +1818,47 @@ def glove(palm_mat, finger_mat, tip_mat, cuff_mat, cuff_keys, accent_mat=None, f
         rings.append(dict(c=hand_local(along * sc, 0.0, off), a=w, b=n, rx=hw * sc, ry=ht * sc, e=2.6))
     # tangent = w x n = d (left hand): rings progress along d
     palm = loft(rings, 16, True, True, palm_mat, True, 0.0, 0.004)
-    parts.append(palm.skin(chain_weights(["forearm_l", "hand_l", "fingers_l"], blends=[0.05, 0.03])))
-    # fingers
-    for across, length, r in [(0.029, 0.078, 0.0092), (0.0095, 0.086, 0.0096), (-0.0095, 0.081, 0.0092),
-                              (-0.028, 0.066, 0.0082)]:
+    parts.append(palm.skin(palm_weights(sc)))
+    # fingers: a knuckle bulge at each joint, a pad under each phalanx and a rounded tip, skinned down their three
+    # bones so each joint bends on its own crease
+    for fname, across, knuckle, length, r in FINGERS:
         across *= sc
-        length *= sc
         r *= sc
-        pts = [hand_local(0.074 * sc + length * u, across, 0.001 - 0.002 * u) for u in np.linspace(0, 1, 6)]
-        rad = [r * k for k in (1.02, 1.0, 0.97, 0.94, 0.9, 0.82)]
-        f = tube(pts, rad, 8, n, finger_mat, cap=True, bulge=0.004)
+        length *= 0.97 if female else 1.0
+        start = knuckle - 0.012
+        us = np.linspace(0.0, 1.0, 15)
+        ends = knuckle + length
+        pts, rad = [], []
+        for u in us:
+            a = start + (ends - start) * u
+            k = (a - knuckle) / length
+            bump = sum(0.08 * math.exp(-((k - j) / 0.06) ** 2) for j in FINGER_SPLIT[:3])
+            taper = 1.02 - 0.16 * max(k, 0.0)
+            tip = math.sqrt(max(1.0 - max((k - 0.86) / 0.14, 0.0) ** 2, 0.0)) if k > 0.86 else 1.0
+            rad.append(r * (taper + bump) * (0.35 + 0.65 * tip))
+            pts.append(hand_local(a, across, 0.001 - 0.0015 * max(k, 0.0)))
+        rad[0] = r * 1.05
+        f = tube(pts, rad, 10, n, finger_mat, cap=True, bulge=0.0)
         if fingerless:
-            cut = 0.074 * sc + length * 0.42
+            cut = knuckle + length * 0.40
             assign_mats(f, lambda c, cut=cut: tip_mat if (c - bone_head("hand_l")) @ d > cut else None)
-        parts.append(f.skin(chain_weights(["hand_l", "fingers_l"], blend=0.025)))
-    # thumb
-    pts = [hand_local(0.012 * sc, 0.022 * sc, 0.006), hand_local(0.038 * sc, 0.042 * sc, 0.008),
-           hand_local(0.06 * sc, 0.056 * sc, 0.006), hand_local(0.08 * sc, 0.066 * sc, 0.003)]
-    th = tube(pts, [0.015 * sc, 0.0118 * sc, 0.0105 * sc, 0.0092 * sc], 8, n, finger_mat, cap=True, bulge=0.004)
+        bones = ["hand_l"] + [f"{fname}_{i}_l" for i in (1, 2, 3)]
+        parts.append(f.skin(chain_weights(bones, blends=[0.016, 0.011, 0.009], start=hand_local(start, across, 0.0))))
+    # thumb: the fleshy base along the palm, then its two joints
+    tp = [np.array(hand_local(a * sc, c * sc, p)) for a, c, p in THUMB_POINTS]
+    pts, rad = [], []
+    for u in np.linspace(0.0, 3.0, 16):
+        i = min(int(u), 2)
+        pts.append(tp[i] + (tp[i + 1] - tp[i]) * (u - i))
+        k = u / 3.0
+        bump = 0.07 * math.exp(-((u - 1.0) / 0.18) ** 2) + 0.07 * math.exp(-((u - 2.0) / 0.18) ** 2)
+        tip = math.sqrt(max(1.0 - max((k - 0.86) / 0.14, 0.0) ** 2, 0.0)) if k > 0.86 else 1.0
+        rad.append(sc * (0.0155 - 0.0062 * k + bump * 0.01) * (0.35 + 0.65 * tip))
+    th = tube(pts, rad, 10, n, finger_mat, cap=True, bulge=0.0)
     if fingerless:
-        assign_mats(th, lambda c: tip_mat if (c - bone_head("hand_l")) @ d > 0.068 * sc else None)
-    parts.append(th.skin(chain_weights(["hand_l", "thumb_l"], blend=0.03)))
+        assign_mats(th, lambda c: tip_mat if (c - bone_head("hand_l")) @ d > 0.066 * sc else None)
+    parts.append(th.skin(chain_weights(["hand_l", "thumb_l", "thumb_2_l", "thumb_3_l"], blends=[0.02, 0.012, 0.01],
+                                       start=hand_local(-0.004, 0.012 * sc, 0.004))))
     # cuff
     rings = []
     for along, hw, ht in cuff_keys:
@@ -2685,11 +2777,120 @@ def build_pose(spec):
         arm = spec.get(f"arm_{side}")
         if arm:
             _pose_arm(pose, side, arm)
-        if f"fingers_{side}" in spec:
-            pose.Q[f"fingers_{side}"] = axis_rot(curl_axis(side), spec[f"fingers_{side}"])
-        if f"thumb_{side}" in spec:
-            pose.Q[f"thumb_{side}"] = axis_rot(thumb_axis(side), spec[f"thumb_{side}"])
+        _pose_hand(pose, side, spec)
     return pose.fk()
+
+
+# How much more each finger closes than the middle one as the hand closes (a hand curls from the little finger), and
+# how far each fans out about the palm normal (degrees, + toward the thumb) when open.
+FINGER_CASCADE = {"index": 0.88, "middle": 1.0, "ring": 1.06, "pinky": 1.13}
+FINGER_FAN = {"index": 5.0, "middle": 0.0, "ring": -4.0, "pinky": -9.0}
+# The handle a closed hold wraps round when its clip names none (m): a tool's or the Sledgehammer's.
+HANDLE_RADIUS = 0.015
+# How far a pistol grip's index finger stays out of the fist, along the trigger (0 to 1 of point_<side>).
+TRIGGER_POINT = 0.42
+# A steering wheel's rim or handlebar grip, and a ladder rung (m).
+RIM_RADIUS = 0.014
+RUNG_RADIUS = 0.017
+# Shares of a spec's thumb value (degrees) the thumb's base turns in front of the palm and bends in by, and its two
+# joints bend by.
+THUMB_OPPOSE, THUMB_FLEX, THUMB_MID, THUMB_END = 0.9, 0.35, 0.5, 0.7
+
+
+def finger_joints(closure, cascade=1.0):
+    """The knuckle, middle and end joint bends (degrees) of a finger closed by `closure` (the old one-bone curl: 0 open,
+    about 90 a fist): every joint shares the bend, the middle joint most, the end joint following it."""
+    c = max(0.0, closure) * cascade
+    # a live hand is never flat: past a few degrees of closing the fingers take on their resting curl
+    tone = smoothstep(0.0, 20.0, c) * cascade
+    mcp = min(0.78 * c + 11.0 * tone, 88.0)
+    pip = min(1.08 * c + 24.0 * tone, 104.0)
+    dip = min(0.62 * pip + 0.08 * c, 72.0)
+    return mcp, pip, dip
+
+
+_GRIP_CACHE = {}
+
+
+def grip_joints(radius, finger):
+    """Knuckle, middle and end joint bends that wrap `finger` round a handle of `radius` m centred on the fist's grip
+    point (grip_point), solved in the plane the finger closes in: the finger's palm-side pad lies on the handle without
+    sinking into it."""
+    key = (round(radius, 4), finger)
+    if key in _GRIP_CACHE:
+        return _GRIP_CACHE[key]
+    _, across, knuckle, length, r = next(f for f in FINGERS if f[0] == finger)
+    lens = [length * (FINGER_SPLIT[i + 1] - FINGER_SPLIT[i]) for i in range(3)]
+    centre = np.array([0.062 - knuckle, 0.028])
+    best, out = np.inf, (0.0, 0.0, 0.0)
+    for mcp in np.arange(0.0, 96.0, 2.0):
+        for pip in np.arange(0.0, 112.0, 2.0):
+            dip = 0.66 * pip
+            ang, at, cost = 0.0, np.zeros(2), 0.0
+            for i, (bend, seg) in enumerate(zip((mcp, pip, dip), lens)):
+                ang += math.radians(bend)
+                tangent = np.array([math.cos(ang), math.sin(ang)])
+                inward = np.array([-math.sin(ang), math.cos(ang)])
+                for u in (0.35, 0.7, 1.0) if i else (0.6, 1.0):
+                    pad = at + tangent * seg * u + inward * r * 0.9
+                    gap = np.linalg.norm(pad - centre) - radius
+                    cost += gap * gap * (12.0 if gap < 0 else 1.0)
+                at = at + tangent * seg
+            cost += 1e-7 * (mcp + pip)
+            if cost < best:
+                best, out = cost, (float(mcp), float(pip), float(dip))
+    _GRIP_CACHE[key] = out
+    return out
+
+
+def joint_axis(bone, side):
+    """The axis a finger or thumb bone bends about toward the palm, in rest axes."""
+    d, w, n = hand_frame(side)
+    t = norm(bone_tail(bone) - bone_head(bone))
+    if bone.startswith("thumb"):
+        return norm(np.cross(t, norm(n - 0.6 * w)))
+    return norm(np.cross(t, n))
+
+
+def _pose_hand(pose, side, spec):
+    """The fingers and thumb from a spec: `fingers_<side>` closes the fingers (degrees, as the one-bone curl it once
+    was), round a handle of radius `grip_<side>` (m) where the clip names one, `point_<side>` (0 to 1) straightens the
+    index finger out of either, `spread_<side>` fans them (degrees); `thumb_<side>` turns the thumb in across the palm
+    (degrees) and bends its joints with it."""
+    closure = spec.get(f"fingers_{side}")
+    grip = spec.get(f"grip_{side}", 0.0)
+    if closure is None and f"thumb_{side}" not in spec:
+        return
+    closure = 18.0 if closure is None else closure
+    point = spec.get(f"point_{side}", 0.0)
+    spread = spec.get(f"spread_{side}", 0.0)
+    d, w, n = hand_frame(side)
+    sg = side_sign(side)
+    for name, *_ in FINGERS:
+        joints = finger_joints(closure, FINGER_CASCADE[name])
+        # closing round something: the clip's handle as the fingers close past 40, or (a hold's 85 to 95) the usual
+        # handle in the fist
+        wrap_by = smoothstep(40.0, 75.0, closure) if grip > 0.0 else smoothstep(60.0, 88.0, closure)
+        if wrap_by > 0.0:
+            wrap = grip_joints(grip if grip > 0.0 else HANDLE_RADIUS, name)
+            joints = tuple(j + (w - j) * wrap_by for j, w in zip(joints, wrap))
+        if name == "index" and point > 0.0:
+            joints = tuple(j * (1.0 - point) + o * point for j, o in zip(joints, (2.0, 4.0, 2.0)))
+        fan = FINGER_FAN[name] * max(0.0, 1.0 - closure / 55.0) * (1.0 - wrap_by) + spread * FINGER_FAN[name] / 9.0
+        for i, bend in enumerate(joints):
+            bone = f"{name}_{i + 1}_{side}"
+            q = axis_rot(joint_axis(bone, side), bend)
+            if i == 0:
+                q = axis_rot(n, -sg * fan) @ q
+            pose.Q[bone] = q
+    # The thumb swings round in front of the palm from its base (opposition, about the hand's length), bends in toward
+    # the fingers there, then curls at its two joints over them.
+    thumb = spec.get(f"thumb_{side}", 10.0)
+    # a live thumb rests a little in toward the index finger; a flat or spread hand (0 or less) opens it right out
+    opp = THUMB_OPPOSE * thumb + 9.0 * smoothstep(0.0, 10.0, thumb)
+    pose.Q[f"thumb_{side}"] = axis_rot(sg * d, opp) @ axis_rot(thumb_axis(side), THUMB_FLEX * thumb)
+    pose.Q[f"thumb_2_{side}"] = axis_rot(joint_axis(f"thumb_2_{side}", side), THUMB_MID * thumb + 4.0)
+    pose.Q[f"thumb_3_{side}"] = axis_rot(joint_axis(f"thumb_3_{side}", side), THUMB_END * thumb + 6.0)
 
 
 def _pose_leg(pose, side, leg):
@@ -3453,7 +3654,8 @@ def clip_climb(t):
         # the hand comes off the rung and back a little as it reaches up
         grip = np.array([sg * 0.2, CLIMB_RUNG_Y + 0.08 * off_rung, CLIMB_HAND_TOP - down])
         s[f"arm_{side}"] = arm_ik_from_grip(side, grip, (0.0, -0.45, 0.9), (-sg, 0.0, 0.0), pole=(sg * 0.8, 0.3, -0.7))
-        s[f"fingers_{side}"] = 75.0 - 55.0 * off_rung
+        s[f"fingers_{side}"] = 85.0 - 65.0 * off_rung
+        s[f"grip_{side}"] = RUNG_RADIUS
         s[f"thumb_{side}"] = 40.0 - 25.0 * off_rung
         # the opposite foot moves with each hand
         down, off_rung = _climb_limb(ph + off + 0.5)
@@ -3480,7 +3682,7 @@ def clip_sit(t):
         grip = np.array([sg * 0.17, -0.42, 1.22 + 0.002 * br])
         s[f"arm_{side}"] = arm_ik_from_grip(side, grip, (sg * -0.2, -0.95, -0.2), (sg * -0.2, 0.0, 1.0),
                                             pole=(sg * 0.7, 0.4, -1.0))
-        s[f"thumb_{side}"] = 35.0
+        s[f"fingers_{side}"], s[f"grip_{side}"], s[f"thumb_{side}"] = 82.0, RIM_RADIUS, 32.0
     return s
 
 
@@ -3512,7 +3714,7 @@ def clip_sit_low(t):
         grip = np.array([sg * 0.17, -0.42, 1.22 + 0.002 * br])
         s[f"arm_{side}"] = arm_ik_from_grip(side, grip, (sg * -0.2, -0.95, -0.2), (sg * -0.2, 0.0, 1.0),
                                             pole=(sg * 0.7, 0.4, -1.0))
-        s[f"thumb_{side}"] = 35.0
+        s[f"fingers_{side}"], s[f"grip_{side}"], s[f"thumb_{side}"] = 82.0, RIM_RADIUS, 32.0
     return s
 
 
@@ -3568,7 +3770,7 @@ def clip_sit_saddle(t):
         grip = np.array([sg * gx, gy, gz + 0.002 * br])
         s[f"arm_{side}"] = arm_ik_from_grip(side, grip, (0.0, -0.55, -0.85), (-sg * 1.0, 0.0, 0.25),
                                             pole=(sg * 0.55, 0.5, -0.9), space="world")
-        s[f"thumb_{side}"] = 35.0
+        s[f"fingers_{side}"], s[f"grip_{side}"], s[f"thumb_{side}"] = 82.0, RIM_RADIUS, 32.0
     return s
 
 
@@ -4009,6 +4211,7 @@ def clip_hold_gun(t, T=2.0):
     s = upper_base(t, T, 0.6)
     s.update(gun_arms(GUN_R + np.array([0, 0, 0.003 * math.sin(ph)])))
     s["fingers_r"] = 92.0
+    s["point_r"] = TRIGGER_POINT
     s["thumb_r"] = 40.0
     s["fingers_l"] = 40.0
     s["thumb_l"] = 15.0
@@ -4870,6 +5073,7 @@ def connect_key(grip, probe, up=(0.0, 0.0, 1.0), roll=0.0, t=0.0, amp=1.0, **bod
     relaxed_left(s, 2 * math.pi * t / 2.0)
     s["arm_r"] = connect_arm(grip, probe, up, roll)
     s["fingers_r"], s["thumb_r"] = 92.0, 40.0
+    s["point_r"] = TRIGGER_POINT
     s.update(body)
     return s
 
@@ -4959,6 +5163,7 @@ def connect_key_fp(grip, probe, up=(0.0, 0.0, 1.0), roll=0.0, t=0.0):
     s["arm_r"] = connect_arm(grip, probe, up, roll, pole=FP_POLES[0])
     s["arm_l"] = dict(RELAXED_ARM, swing=15.0, down=45.0, elbow=40.0)
     s["fingers_r"], s["thumb_r"] = 92.0, 40.0
+    s["point_r"] = TRIGGER_POINT
     return s
 
 
@@ -5028,6 +5233,7 @@ def weld_key(grip, tip, up=(0.0, 0.0, 1.0), roll=0.0, t=0.0, amp=1.0, **body):
     relaxed_left(s, 2 * math.pi * t / 2.0)
     s["arm_r"] = weld_arm(grip, tip, up, roll)
     s["fingers_r"], s["thumb_r"] = 92.0, 40.0
+    s["point_r"] = TRIGGER_POINT
     s.update(body)
     return s
 
@@ -5093,6 +5299,7 @@ def weld_key_fp(grip, tip, up=(0.0, 0.0, 1.0), roll=0.0, t=0.0):
     s["arm_r"] = weld_arm(grip, tip, up, roll, pole=FP_POLES[0])
     s["arm_l"] = dict(RELAXED_ARM, swing=15.0, down=45.0, elbow=40.0)
     s["fingers_r"], s["thumb_r"] = 92.0, 40.0
+    s["point_r"] = TRIGGER_POINT
     return s
 
 
@@ -5210,6 +5417,7 @@ def paint_key(grip, probe, up=(0.0, 0.0, 1.0), roll=0.0, t=0.0, amp=1.0, **body)
     relaxed_left(s, 2 * math.pi * t / 2.0)
     s["arm_r"] = paint_arm(grip, probe, up, roll)
     s["fingers_r"], s["thumb_r"] = 90.0, 40.0
+    s["point_r"] = TRIGGER_POINT
     s.update(body)
     return s
 
@@ -5333,6 +5541,7 @@ def paint_key_fp(grip, probe, up=(0.0, 0.0, 1.0), roll=0.0, t=0.0):
     s["arm_r"] = paint_arm(grip, probe, up, roll, pole=FP_POLES[0])
     s["arm_l"] = dict(RELAXED_ARM, swing=15.0, down=45.0, elbow=40.0)
     s["fingers_r"], s["thumb_r"] = 90.0, 40.0
+    s["point_r"] = TRIGGER_POINT
     return s
 
 

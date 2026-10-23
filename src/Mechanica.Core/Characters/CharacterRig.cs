@@ -174,25 +174,49 @@ public static class CharacterRig
     ];
 
     /// <summary>
+    /// The finger bones a character's hands may have under <c>fingers_*</c> (three down each finger: knuckle, middle and end
+    /// joint) and <c>thumb_*</c> (its two joints). They are optional: a hand without them bends all four fingers on
+    /// <c>fingers_*</c> at the knuckles, which then follows the middle finger's knuckle (<see cref="FingerFallback"/>).
+    /// </summary>
+    public static IReadOnlyList<string> FingerBones { get; } =
+    [
+        .. new[] { "l", "r" }.SelectMany(side => new[] { "index", "middle", "ring", "pinky" }
+            .SelectMany(finger => new[] { $"{finger}_1_{side}", $"{finger}_2_{side}", $"{finger}_3_{side}" })
+            .Concat([$"thumb_2_{side}", $"thumb_3_{side}"])),
+    ];
+
+    /// <summary>
+    /// For a hand without <see cref="FingerBones"/>: the clip track each one-bone finger plays instead of its own, so the
+    /// fingers still close as the clips' hands do.
+    /// </summary>
+    public static IReadOnlyDictionary<string, string> FingerFallback { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["fingers_l"] = "middle_1_l",
+        ["fingers_r"] = "middle_1_r",
+    };
+
+    /// <summary>
     /// Bones the upper-body layer (hold poses and gestures) moves. Everything else follows the locomotion, so
     /// a player can walk while swinging the Sledgehammer. Extra bones under these (a braid) count as upper body too.
     /// </summary>
-    public static IReadOnlySet<string> UpperBodyBones { get; } = new HashSet<string>(StringComparer.Ordinal)
-    {
-        "spine", "chest", "neck", "head",
-        "shoulder_l", "upper_arm_l", "forearm_l", "hand_l", "fingers_l", "thumb_l",
-        "shoulder_r", "upper_arm_r", "forearm_r", "hand_r", "fingers_r", "thumb_r",
-    };
+    public static IReadOnlySet<string> UpperBodyBones { get; } = new HashSet<string>(
+        new[]
+        {
+            "spine", "chest", "neck", "head",
+            "shoulder_l", "upper_arm_l", "forearm_l", "hand_l", "fingers_l", "thumb_l",
+            "shoulder_r", "upper_arm_r", "forearm_r", "hand_r", "fingers_r", "thumb_r",
+        }.Concat(FingerBones), StringComparer.Ordinal);
 
     /// <summary>
     /// The bones first-person arms are made of: forearms and hands, what a player sees of their own body when looking
     /// ahead. Upper arms are left out; that close to the eye they would fill the sides of the view.
     /// </summary>
-    public static IReadOnlySet<string> ArmBones { get; } = new HashSet<string>(StringComparer.Ordinal)
-    {
-        "forearm_l", "hand_l", "fingers_l", "thumb_l",
-        "forearm_r", "hand_r", "fingers_r", "thumb_r",
-    };
+    public static IReadOnlySet<string> ArmBones { get; } = new HashSet<string>(
+        new[]
+        {
+            "forearm_l", "hand_l", "fingers_l", "thumb_l",
+            "forearm_r", "hand_r", "fingers_r", "thumb_r",
+        }.Concat(FingerBones), StringComparer.Ordinal);
 
     /// <summary>
     /// The triangles of a skinned mesh that belong to the arms: those whose three corners each follow an arm bone

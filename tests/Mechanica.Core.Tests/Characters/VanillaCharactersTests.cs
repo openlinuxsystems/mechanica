@@ -31,6 +31,27 @@ public class VanillaCharactersTests
     }
 
     [Fact]
+    public void EveryVanillaCharacterHasJointedFingers()
+    {
+        foreach (var name in new[] { "scrapper_male", "scrapper_female", "farmer" })
+        {
+            var summary = GltfSummary.Read(Path.Combine(Vanilla, "meshes", "characters", $"{name}.glb"));
+            Assert.Empty(CharacterRig.FingerBones.Except(summary.Joints));
+        }
+    }
+
+    [Fact]
+    public void TheAnimationSetPosesEveryFingerJoint()
+    {
+        Assert.True(AssetPath.TryParse(Settings().Animations, "vanilla", AssetKind.Mesh, out var asset, out var error), error);
+        var summary = GltfSummary.Read(asset.Resolve(Path.Combine(TestMods.RepoRoot, "mods", asset.ModId)));
+        // Older one-bone hands play the middle finger's knuckle on their fingers bone instead (CharacterRig.FingerFallback).
+        foreach (var track in CharacterRig.FingerFallback.Values)
+            Assert.Contains(track, summary.Animation("idle")!.Targets);
+        Assert.Empty(CharacterRig.FingerBones.Except(summary.Animation("hold_heavy")!.Targets));
+    }
+
+    [Fact]
     public void TheSledgeSwingMeetsItsHitStraightAfterTheClick()
     {
         // The hit lands at the click (building.json sledge.strike_seconds 0); every swing clip is authored with its impact

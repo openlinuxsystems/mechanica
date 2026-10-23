@@ -1253,7 +1253,7 @@ def bone_group(bone):
         return "feet"
     if bone in ("hips", "root") or bone.startswith(("thigh", "shin")):
         return "legs"
-    if bone.startswith(("upper_arm", "forearm", "hand", "fingers", "thumb")):
+    if bone.startswith(("upper_arm", "forearm", "hand", "fingers", "thumb", "index", "middle", "ring", "pinky")):
         return "arms"
     return "torso"
 

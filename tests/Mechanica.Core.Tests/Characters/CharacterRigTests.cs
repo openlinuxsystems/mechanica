@@ -32,6 +32,16 @@ public class CharacterRigTests
         Assert.Throws<ArgumentException>(() => CharacterRig.ArmTriangles(null, 3, [1, 1], [1, 1], 1, IsArm));
 
     [Fact]
+    public void FingerBonesAreOptionalArmAndUpperBodyBones()
+    {
+        Assert.Equal(28, CharacterRig.FingerBones.Count);
+        Assert.Empty(CharacterRig.FingerBones.Intersect(CharacterRig.Bones));
+        Assert.All(CharacterRig.FingerBones, b => Assert.Contains(b, CharacterRig.ArmBones));
+        Assert.All(CharacterRig.FingerBones, b => Assert.Contains(b, CharacterRig.UpperBodyBones));
+        Assert.All(CharacterRig.FingerFallback, f => Assert.Contains(f.Key, CharacterRig.Bones));
+    }
+
+    [Fact]
     public void FirstPersonArmsAreForearmsAndHandsOnTheUpperBody()
     {
         Assert.Subset(CharacterRig.UpperBodyBones.ToHashSet(), CharacterRig.ArmBones.ToHashSet());
