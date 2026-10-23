@@ -323,6 +323,47 @@ public class CharacterAnimatorTests
     }
 
     [Fact]
+    public void SteppingSidewaysBlendsTheStrafeClipsAndTurnsTheLegsTheRest()
+    {
+        var lengths = new Dictionary<string, float>(Lengths)
+        {
+            ["strafe_l"] = 1f, ["strafe_r"] = 1f, ["strafe_jog_l"] = 0.72f, ["strafe_jog_r"] = 0.72f,
+            ["strafe_run_l"] = 0.6f, ["strafe_run_r"] = 0.6f,
+        };
+        float Share(CharacterAnimator a, string clip) => a.Body.Where(c => c.Clip == clip).Sum(c => c.Weight);
+        var d = 1.5f / MathF.Sqrt(2f);
+
+        // Straight to the right: all strafe, the legs turned the strafe's heading short of the way they go.
+        var animator = new CharacterAnimator(new CharacterSettings(), lengths);
+        Run(animator, Standing(vx: 1.5f), 1f);
+        Assert.Equal(1f, Share(animator, "strafe_r"), 2);
+        Assert.Equal(45f, MathF.Abs(animator.BodyTurn) * 180f / MathF.PI, 1);
+        // Ahead and to the right: half and half, and the legs turn half as far.
+        Run(animator, Standing(vx: d, vz: -d), 1f);
+        Assert.Equal(0.5f, Share(animator, "strafe_r"), 2);
+        Assert.Equal(0.5f, Share(animator, "walk"), 2);
+        Assert.Equal(22.5f, MathF.Abs(animator.BodyTurn) * 180f / MathF.PI, 1);
+        // Left, and back to the right (the left clip played in reverse steps back to the right).
+        Run(animator, Standing(vx: -1.5f), 1f);
+        Assert.Equal(1f, Share(animator, "strafe_l"), 2);
+        Run(animator, Standing(vx: d, vz: d), 1f);
+        Assert.Equal(0.5f, Share(animator, "strafe_l"), 2);
+        Assert.Equal(0f, Share(animator, "strafe_r"), 2);
+        // Sprinting sideways uses the run's version.
+        Run(animator, Standing(vx: 7f), 1f);
+        Assert.Equal(1f, Share(animator, "strafe_run_r"), 2);
+        // Straight ahead, none; crouching, none either.
+        Run(animator, Standing(vz: -1.5f), 1f);
+        Assert.DoesNotContain(animator.Body, c => c.Clip.StartsWith("strafe", StringComparison.Ordinal));
+
+        // A rig without them turns the legs as far as they go, as before.
+        var plain = Make();
+        Run(plain, Standing(vx: 1.5f), 1f);
+        Assert.Equal(1f, Share(plain, "walk"), 2);
+        Assert.Equal(60f, MathF.Abs(plain.BodyTurn) * 180f / MathF.PI, 1);
+    }
+
+    [Fact]
     public void TheLegsKeepWalkingThroughASwing()
     {
         var animator = Make();

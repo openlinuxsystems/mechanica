@@ -47,6 +47,8 @@ public partial class CaptureScene
         Move("start_stop", 120, side, f => Drive(z: f is > 15 and < 75 ? 1f : 0f, sprint: f is > 15 and < 75));
         Move("turn_on_spot", 150, front, f => { _yaw += f < 75 ? 0.035f : -0.035f; Drive(); }, still: true);
         Move("strafe", 90, front, f => Drive(x: f < 45 ? 0.5f : -0.5f));
+        Move("strafe_jog", 90, front, f => Drive(x: f < 45 ? 1f : -1f));
+        Move("strafe_diagonal", 120, front, f => Drive(x: f < 60 ? 0.7f : -0.7f, z: f < 30 || f >= 90 ? 0.7f : -0.7f));
         Move("zigzag", 120, new Vector3(4.5f, 2.2f, 2.5f), f => { _yaw += 0.03f * Mathf.Sin(f * 0.08f); Drive(z: 1f); });
         Move("walk_tool", 60, front, f => { if (f == 0) Tool<Building.ConnectTool>(); Drive(z: 0.5f); });
         Move("run_sledge", 45, side, f => { if (f == 0) Tool<Building.SledgeTool>(); Drive(z: 1f); });

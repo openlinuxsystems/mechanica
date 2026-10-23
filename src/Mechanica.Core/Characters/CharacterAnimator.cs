@@ -134,6 +134,9 @@ public sealed class CharacterAnimator
     private float _gestureTime;
     private float _bodyTurn;
     private bool _backward;
+    // How far the feet step on the strafe diagonal, -1 (all left) to 1 (all right), eased toward where it should be.
+    private float _strafe;
+    private bool? _canStrafe;
     private bool _riding;
     private Vector3 _seatVelocity;
     private float _bob, _bobSpeed;
@@ -176,6 +179,13 @@ public sealed class CharacterAnimator
         _modeWeights[(int)CharacterMode.Ground] = 1f;
         _nextFidget = _settings.Motion.FidgetAfter[0];
     }
+
+    /// <summary>
+    /// How far off the way the hips face a strafe clip (<c>strafe_l</c>, <c>strafe_r</c> and their jog and run versions)
+    /// steps, in degrees. Moving sideways, the legs turn the rest of the way and the clips stand in for the walk, jog and
+    /// run in proportion, so the feet always track the way the body goes.
+    /// </summary>
+    public const float StrafeHeadingDegrees = 45f;
 
     /// <summary>Metres climbed in one cycle of the <c>climb</c> clip: each hand and foot moves up two rungs of a ladder (0.25 m apart).</summary>
     public const float ClimbCycleMetres = 0.5f;
@@ -517,6 +527,7 @@ public sealed class CharacterAnimator
         if (standing)
         {
             _backward = false;
+            _strafe = 0f;
             _bodyTurn -= turned;
             var limit = motion.MaxTwistDegrees * MathF.PI / 180f;
             if (_turn is { } turn)
@@ -545,6 +556,7 @@ public sealed class CharacterAnimator
         }
         _turn = null;
         var target = 0f;
+        var strafe = 0f;
         if (Mode is CharacterMode.Ground or CharacterMode.Crouch or CharacterMode.Swim && horizontal > _settings.MinStepSpeed)
         {
             var (sin, cos) = MathF.SinCos(float.IsFinite(pose.Yaw) ? pose.Yaw : 0f);
@@ -555,15 +567,27 @@ public sealed class CharacterAnimator
             if (_backward)
                 angle = angle > 0 ? angle - MathF.PI : angle + MathF.PI;
             var limit = _settings.MaxBodyTurnDegrees * MathF.PI / 180f;
+            // On the ground the strafe clips take up to half the way off ahead (all of it at their heading, sideways)
+            // and the legs turn the rest, so a sidestep shows as one and the chest stays almost square to the look.
+            if (Mode == CharacterMode.Ground && CanStrafe)
+            {
+                strafe = Math.Clamp(angle / (MathF.PI / 2f), -1f, 1f);
+                angle -= strafe * StrafeHeadingDegrees * MathF.PI / 180f;
+            }
             target = -Math.Clamp(angle, -limit, limit);
         }
         else if (Mode is not CharacterMode.Air)
         {
             _backward = false;
         }
+        else
+        {
+            strafe = _strafe;
+        }
         var step = _settings.BodyTurnRate * MathF.PI / 180f * delta;
         // Turning the look turns the body with it; the feet then catch up with where they should point.
         _bodyTurn = Toward(_bodyTurn, target, step);
+        _strafe = Toward(_strafe, strafe, step / (StrafeHeadingDegrees * MathF.PI / 180f * 2f));
         Twist = pose.Seated || Mode is CharacterMode.Swim or CharacterMode.Climb ? 0f : -_bodyTurn * TwistShare();
     }
 
@@ -932,13 +956,35 @@ public sealed class CharacterAnimator
     // skipIdle: the share of idle something else stands in for.
     private void AddBlend((string Clip, float Speed)[] set, float speed, float phase, float layerWeight, float skipIdle = 0f)
     {
+        var ground = ReferenceEquals(set, _ground);
         foreach (var (clip, weight) in Weights(set, speed))
         {
             var share = clip == "idle" ? MathF.Max(0f, weight - skipIdle) : weight;
+            var time = SpeedOf(clip) > 0f ? phase * _lengths[clip] : _clock;
+            // Stepping sideways, the strafe clip takes its share (on the same beat; backward it plays in reverse, so the
+            // left one steps back to the right).
+            var strafe = ground ? StrafeClip(clip, _strafe) : null;
+            var side = strafe is null ? 0f : MathF.Abs(_strafe);
+            if (strafe is not null)
+                Add(strafe, time, layerWeight * share * side);
             // Stepping backward, the walk gives way to walk_back (played in reverse on the same beat, as the walk is).
             var shown = _backward && clip == "walk" && _lengths.TryGetValue("walk_back", out var back) && back == _lengths[clip] ? "walk_back" : clip;
-            Add(shown, SpeedOf(clip) > 0f ? phase * _lengths[clip] : _clock, layerWeight * share);
+            Add(shown, time, layerWeight * share * (1f - side));
         }
+    }
+
+    // True when the rig has every strafe clip, each as long as the clip it stands in for (so it keeps the beat).
+    private bool CanStrafe => _canStrafe ??= _ground.Where(g => SpeedOf(g.Clip) > 0f)
+        .All(g => StrafeClip(g.Clip, -1f) is not null && StrafeClip(g.Clip, 1f) is not null)
+        && _ground.Any(g => SpeedOf(g.Clip) > 0f);
+
+    // The strafe clip standing in for a moving ground clip on the given side (negative left), if the rig has it.
+    private string? StrafeClip(string clip, float side)
+    {
+        if (side == 0f || clip is not ("walk" or "jog" or "run"))
+            return null;
+        var name = (clip == "walk" ? "strafe_" : $"strafe_{clip}_") + (side < 0f ? "l" : "r");
+        return _lengths.TryGetValue(name, out var length) && length == _lengths[clip] ? name : null;
     }
 
     private static float Smooth(float x) => x * x * (3f - 2f * x);
