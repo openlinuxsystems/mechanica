@@ -1,0 +1,27 @@
+{
+  // The day and night cycle: the colours of the sky (far land fades into its horizon colour), the sun or moon's light and the
+  // light that fills shadows, at keyed hours. Between keys everything blends; the last key blends round into the first
+  // across midnight. Mornings are golden, noon is clear, evenings orange and nights deep blue but never pitch black.
+  // Engine settings: not moddable. Loaded by game/scripts/World/DayNight.cs; see src/Mechanica.Core/World/SkySettings.cs.
+  "keys": [
+    { "hour": 0.0,  "sky_top": "#0a1430", "sky_horizon": "#1b2a4a", "light": "#9fb6e8", "light_energy": 0.32, "ambient": "#3a4c7a", "ambient_energy": 0.45, "stars": 1.0, "exposure": 1.0 },
+    { "hour": 4.5,  "sky_top": "#152450", "sky_horizon": "#3e4568", "light": "#9fb6e8", "light_energy": 0.26, "ambient": "#45507a", "ambient_energy": 0.45, "stars": 0.7, "exposure": 1.0 },
+    { "hour": 5.6,  "sky_top": "#3a5a90", "sky_horizon": "#eaa47a", "light": "#ffae78", "light_energy": 0.7,  "ambient": "#7c86aa", "ambient_energy": 0.5, "stars": 0.1, "exposure": 1.0 },
+    { "hour": 7.0,  "sky_top": "#5a8cc8", "sky_horizon": "#f0d2a8", "light": "#ffd49c", "light_energy": 1.05, "ambient": "#a3aec6", "ambient_energy": 0.55, "stars": 0.0, "exposure": 1.0 },
+    { "hour": 10.0, "sky_top": "#3f7bc6", "sky_horizon": "#b8d2ea", "light": "#fff3e0", "light_energy": 1.3,  "ambient": "#a8bcd6", "ambient_energy": 0.62, "stars": 0.0, "exposure": 1.0 },
+    { "hour": 14.0, "sky_top": "#4280c6", "sky_horizon": "#c0d5e8", "light": "#fff0d8", "light_energy": 1.25, "ambient": "#aabbd2", "ambient_energy": 0.6, "stars": 0.0, "exposure": 1.0 },
+    { "hour": 16.8, "sky_top": "#5384c2", "sky_horizon": "#efc792", "light": "#ffc27c", "light_energy": 1.0,  "ambient": "#a5a8be", "ambient_energy": 0.55, "stars": 0.0, "exposure": 1.0 },
+    { "hour": 18.2, "sky_top": "#394e88", "sky_horizon": "#ee8858", "light": "#ff985a", "light_energy": 0.6,  "ambient": "#7a7298", "ambient_energy": 0.48, "stars": 0.1, "exposure": 1.0 },
+    { "hour": 19.6, "sky_top": "#1b2956", "sky_horizon": "#5e5076", "light": "#a6b4e0", "light_energy": 0.28, "ambient": "#41507c", "ambient_energy": 0.45, "stars": 0.6, "exposure": 1.0 }
+  ],
+  "sunrise": 5.8,
+  "sunset": 18.4,
+  "noon_elevation": 60.0,
+  "midnight_elevation": 45.0,
+  "sunrise_bearing": 80.0,
+  "horizon_fade": 5.0,
+  // Haze starts this far out (m) and thickens until the land is gone at the view distance; curve 1 is even.
+  "haze_start": 80.0,
+  "haze_curve": 1.8,
+  "grade": { "tonemap": "filmic", "white_point": 6.0, "contrast": 1.06, "saturation": 0.88, "brightness": 1.0 }
+}

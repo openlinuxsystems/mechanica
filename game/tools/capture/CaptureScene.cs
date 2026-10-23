@@ -135,9 +135,11 @@ public partial class CaptureScene : Node
         var botClips = args.Length > 1 && args[1] == "bot_clips";
         var hands = args.Length > 1 && args[1] == "hands";
         var driving = args.Length > 1 && args[1] == "driving";
-        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !factions && !ladder && !beds && !extinguisher && !drops && !derelicts && !signs && !botClips && !hands && !driving && !connectLines && !husbandry && !consumables && !grazerProducts && !fields && !gauges && !building && args[1] != "survey" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !factions && !ladder && !beds && !extinguisher && !drops && !derelicts && !signs && !botClips && !hands && !driving && !connectLines && !husbandry && !consumables && !grazerProducts && !fields && !gauges && !building && args[1] != "survey" && args[1] != "daynight" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
+        // Captures hold the sky at mid-morning so shots compare across runs; `daynight` walks it through the day.
+        World.DayNight.HoldHour = 10.5;
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         // Building the block wall needs Creative: free parts and no build reach.
         _main.Options = LaunchOptions.Offline with { Seed = args.Length > 1 && args[1] == "survey" ? 1 : 7, GameMode = blocks || building || signs || soil || wheels || portable || liftCapture || connectLines || husbandry || consumables ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
@@ -365,6 +367,11 @@ public partial class CaptureScene : Node
         if (opening)
         {
             OpeningShots();
+            return;
+        }
+        if (args.Length > 1 && args[1] == "daynight")
+        {
+            DayNightShots();
             return;
         }
         if (args.Length > 1 && args[1] == "survey")

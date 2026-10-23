@@ -297,6 +297,9 @@ public partial class Main : Node3D
     /// <summary>The host's Lua part scripts.</summary>
     public ScriptSync Scripts { get; private set; } = null!;
 
+    /// <summary>The day and night cycle: the sun, moon, sky and haze over the world's clock.</summary>
+    public DayNight DayNight { get; private set; } = null!;
+
     /// <summary>The logic and power bus, links, part settings and seats (chunk 10).</summary>
     public LogicSync Logic { get; private set; } = null!;
 
@@ -565,6 +568,7 @@ public partial class Main : Node3D
         Fire.RegisterActions(Actions.Dispatcher);
         Scripts.Runtime.Fire = Fire.Actions;
         Scripts.Runtime.DayLength = () => Streamer.Generator?.Data.Definition.DayLength ?? Mechanica.Core.World.WorldGenDefinition.DefaultDayLength;
+        AddChild(DayNight = new DayNight { Name = "DayNight", Session = Session, Clock = () => Scripts.Runtime.Time, DayLength = Scripts.Runtime.DayLength });
         AddChild(Fire);
         Logic = new LogicSync
         {
