@@ -28,23 +28,13 @@ public sealed partial class ScriptRuntime
     public Func<double> DayLength { get; set; } = () => WorldGenDefinition.DefaultDayLength;
 
     /// <summary>The hour a new world starts at (<c>world.time_of_day()</c> at time 0).</summary>
-    public const double StartHour = 6;
+    public const double StartHour = WorldClock.StartHour;
 
     /// <summary>
     /// The in-game time of day in hours, 0 (midnight) up to 24: a world starts at <see cref="StartHour"/> and one
     /// <see cref="DayLength"/> of <see cref="Time"/> is a whole day.
     /// </summary>
-    public double TimeOfDay
-    {
-        get
-        {
-            var day = DayLength();
-            if (!(day > 0) || !double.IsFinite(day))
-                day = WorldGenDefinition.DefaultDayLength;
-            var hours = (StartHour + 24 * (_time % day) / day) % 24;
-            return hours < 0 ? hours + 24 : hours;
-        }
-    }
+    public double TimeOfDay => WorldClock.HourAt(_time, DayLength());
 
     private void OnPartDamaged(PartDamage damage)
     {

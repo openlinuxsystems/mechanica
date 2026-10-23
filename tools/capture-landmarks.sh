@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Renders the landmarks (docs/world-generation.md, Landmarks), the nearest of each kind, wide from about 1.3 times
 # its size and low at its foot, in a running world to PNGs
-# (see game/tools/capture/CaptureScene.cs). Usage: tools/capture-landmarks.sh OUT_DIR
+# (see game/tools/capture/CaptureScene.cs). Usage: tools/capture-landmarks.sh OUT_DIR [POI_IDS]
+# POI_IDS (comma separated prefab ids) shoots those POIs in place of the landmarks.
 # Needs a display; without one it uses xvfb-run. Uses $GODOT if set, otherwise the pinned build.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
@@ -12,4 +13,4 @@ dotnet build "$root/Mechanica.sln" -c Debug
 run=()
 [ -z "${DISPLAY:-}" ] && run=(xvfb-run -a -s "-screen 0 1280x720x24")
 "${run[@]}" "$godot" --rendering-driver opengl3 --rendering-method gl_compatibility --path "$root/game" \
-  res://tools/capture/CaptureScene.tscn -- "$out" landmarks
+  res://tools/capture/CaptureScene.tscn -- "$out" landmarks ${2:+"$2"}

@@ -90,7 +90,9 @@ public static class DisplayApplier
                     env.FogAerialPerspective = 1f;
                 }
                 env.FogDensity = 1f;
-                env.FogDepthBegin = _graphics.ViewDistance * 0.55f;
+                // Haze from a few dozen metres out (sky.json), thickening until the land is gone at the view distance.
+                env.FogDepthBegin = Mathf.Min(Mechanica.Game.World.DayNight.Current.HazeStart, _graphics.ViewDistance * 0.55f);
+                env.FogDepthCurve = Mechanica.Game.World.DayNight.Current.HazeCurve;
                 env.FogDepthEnd = _graphics.ViewDistance;
                 break;
             case DirectionalLight3D light:

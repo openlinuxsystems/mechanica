@@ -135,9 +135,11 @@ public partial class CaptureScene : Node
         var botClips = args.Length > 1 && args[1] == "bot_clips";
         var hands = args.Length > 1 && args[1] == "hands";
         var driving = args.Length > 1 && args[1] == "driving";
-        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !factions && !ladder && !beds && !extinguisher && !drops && !derelicts && !signs && !botClips && !hands && !driving && !connectLines && !husbandry && !consumables && !grazerProducts && !fields && !gauges && !building && args[1] != "survey" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !factions && !ladder && !beds && !extinguisher && !drops && !derelicts && !signs && !botClips && !hands && !driving && !connectLines && !husbandry && !consumables && !grazerProducts && !fields && !gauges && !building && args[1] != "survey" && args[1] != "daynight" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
+        // Captures hold the sky at mid-morning so shots compare across runs; `daynight` walks it through the day.
+        World.DayNight.HoldHour = 10.5;
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         // Building the block wall needs Creative: free parts and no build reach.
         _main.Options = LaunchOptions.Offline with { Seed = args.Length > 1 && args[1] == "survey" ? 1 : 7, GameMode = blocks || building || signs || soil || wheels || portable || liftCapture || connectLines || husbandry || consumables ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
@@ -349,7 +351,7 @@ public partial class CaptureScene : Node
         }
         if (landmarks)
         {
-            LandmarkShots();
+            LandmarkShots(args.Length > 2 ? args[2].Split(',') : null);
             return;
         }
         if (crash)
@@ -365,6 +367,11 @@ public partial class CaptureScene : Node
         if (opening)
         {
             OpeningShots();
+            return;
+        }
+        if (args.Length > 1 && args[1] == "daynight")
+        {
+            DayNightShots();
             return;
         }
         if (args.Length > 1 && args[1] == "survey")
@@ -983,7 +990,8 @@ public partial class CaptureScene : Node
             Shot($"survey_00_{i}_go", 300, () =>
             {
                 GD.Print($"[capture] {name} at {at}");
-                _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, at + Vector3.Up * 2f, 0f);
+                // The player stands 20 m off, between the first two looks, so the eye-height camera is never inside them.
+                _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, Ground(at + Vector3.Forward.Rotated(Vector3.Up, 1.05f) * 20f) + Vector3.Up * 2f, 0f);
             });
             for (var d = 0; d < 3; d++)
             {
@@ -1185,12 +1193,13 @@ public partial class CaptureScene : Node
 
     // The nearest of each landmark (docs/world-generation.md, Landmarks): wide from about 1.3 times its size, a little
     // above it, and low at the edge of its pad, to show it sits on the ground and the terrain meets it.
-    private void LandmarkShots()
+    // `only` names POI prefabs to shoot in place of the landmarks (tools/capture-landmarks.sh OUT warehouse,poi_05).
+    private void LandmarkShots(string[]? only)
     {
         Engine.TimeScale = 1.0;
         var gen = _main.Streamer.Generator;
         Shot("landmarks_00_wait", 60, () => { });
-        var nearest = gen.Pois.Where(p => p.Poi.Prefab.Id?.StartsWith("landmark_", StringComparison.Ordinal) == true)
+        var nearest = gen.Pois.Where(p => only is null ? p.Poi.Prefab.Id?.StartsWith("landmark_", StringComparison.Ordinal) == true : only.Contains(p.Poi.Prefab.Id))
             .GroupBy(p => p.Poi.Prefab.Id!).Select(g => g.MinBy(p => p.Centre.Length())!).OrderBy(p => p.Poi.Prefab.Id, StringComparer.Ordinal);
         foreach (var poi in nearest)
         {
