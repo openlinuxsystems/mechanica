@@ -39,6 +39,8 @@ public partial class CaptureScene
         Move("idle", 150, front, _ => Drive());
         Move("walk_side", 60, side, _ => Drive(z: 0.5f));
         Move("walk_front", 60, front, _ => Drive(z: 0.5f));
+        Move("walk_back_side", 60, side, _ => Drive(z: -0.5f));
+        Move("walk_back_front", 60, front, _ => Drive(z: -0.5f));
         Move("jog_side", 45, side, _ => Drive(z: 1f));
         Move("run_side", 45, side, _ => Drive(z: 1f, sprint: true));
         Move("run_front", 45, front, _ => Drive(z: 1f, sprint: true));

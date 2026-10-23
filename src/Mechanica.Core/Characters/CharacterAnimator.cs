@@ -935,7 +935,9 @@ public sealed class CharacterAnimator
         foreach (var (clip, weight) in Weights(set, speed))
         {
             var share = clip == "idle" ? MathF.Max(0f, weight - skipIdle) : weight;
-            Add(clip, SpeedOf(clip) > 0f ? phase * _lengths[clip] : _clock, layerWeight * share);
+            // Stepping backward, the walk gives way to walk_back (played in reverse on the same beat, as the walk is).
+            var shown = _backward && clip == "walk" && _lengths.TryGetValue("walk_back", out var back) && back == _lengths[clip] ? "walk_back" : clip;
+            Add(shown, SpeedOf(clip) > 0f ? phase * _lengths[clip] : _clock, layerWeight * share);
         }
     }
 
