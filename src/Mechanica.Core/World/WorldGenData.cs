@@ -66,6 +66,9 @@ public sealed record Scatter(int Index, int Biome, WorldObjectDefinition Object,
     /// <summary>Qualified ids (<c>mod_id:poi_id</c>) of the POIs <see cref="NearDefinition.Pois"/> names, or null.</summary>
     public IReadOnlySet<string>? NearPois { get; init; }
 
+    /// <summary>The rule's <see cref="ScatterRule.Face"/>, or null.</summary>
+    public FaceDefinition? Face { get; init; }
+
     /// <summary>The rule's <see cref="ScatterRule.Away"/>, or null.</summary>
     public AwayDefinition? Away { get; init; }
 
@@ -159,6 +162,7 @@ public sealed class WorldGenData
                     Key = key,
                     NearPois = rule.Near?.Pois is { } near ? near.Select(QualifyPoi).ToHashSet(StringComparer.Ordinal) : null,
                     Away = rule.Away,
+                    Face = rule.Face,
                     AwayPois = rule.Away?.Pois is { } away ? away.Select(QualifyPoi).ToHashSet(StringComparer.Ordinal) : null,
                 };
                 scatter.Add(loaded);

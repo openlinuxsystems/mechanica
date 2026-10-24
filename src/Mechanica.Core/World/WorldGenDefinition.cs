@@ -353,6 +353,41 @@ public sealed record ScatterRule
     /// <summary>Stands the rule's objects beside roads, facing them (pylons, signs, wrecks). Omitted: anywhere off the road.</summary>
     public RoadsideDefinition? Roadside { get; init; }
 
+    /// <summary>
+    /// Stands the rule's objects at the foot of cliff faces and steep banks, facing out from them (the rock walls that dress
+    /// the cliffs). Omitted: anywhere.
+    /// </summary>
+    public FaceDefinition? Face { get; init; }
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// Keeps a scatter rule to the foot of a face (<see cref="ScatterRule.Face"/>): each cell's spot slides along the slope to
+/// where the ground starts to climb steeply, and is kept when the ground climbs at least <see cref="Rise"/> and at most
+/// <see cref="Max"/> metres within <see cref="Run"/> metres uphill. The object stands there turned so its front (+z) faces
+/// downhill, its x axis along the face.
+/// </summary>
+public sealed record FaceDefinition
+{
+    /// <summary>Least the ground climbs within the run, in metres.</summary>
+    public float Rise { get; init; } = 6f;
+
+    /// <summary>Most the ground climbs within the run, in metres. Omitted: no limit.</summary>
+    public float? Max { get; init; }
+
+    /// <summary>Metres uphill from the foot over which the climb is measured.</summary>
+    public float Run { get; init; } = 8f;
+
+    /// <summary>
+    /// True to look for faces only in and near the sheer share of the cliff terraces (<see cref="CliffsDefinition.Sheer"/>),
+    /// where nearly all of them are: much cheaper to generate, but the steep sides of mountains and ravines elsewhere are
+    /// left bare. Default false.
+    /// </summary>
+    public bool Sheer { get; init; }
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -751,7 +786,8 @@ public sealed record MeshDefinition
 
     /// <summary>
     /// Other models (mod paths) of the same size and origin, drawn instead of <see cref="File"/> on some placements
-    /// (<see cref="WorldObjectPlacement.Variant"/>) so neighbours do not match. Only rock deposit blocks pick one.
+    /// (<see cref="WorldObjectPlacement.Variant"/>) so neighbours do not match. Only rock deposit blocks and the objects of
+    /// face rules (<see cref="ScatterRule.Face"/>) pick one; a variant's own collider mesh is used with <see cref="Collide"/>.
     /// </summary>
     public List<string>? Variants { get; init; }
 

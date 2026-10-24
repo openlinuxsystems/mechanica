@@ -59,6 +59,10 @@
         { "layer": "meadow_hollow", "scale": 80.0, "cover": 0.08, "ground": "dirt", "paint": 0.35, "height": -1.6, "soft": 0.1 }
       ],
       "scatter": [
+        // Cliff rocks first, so the rock walls keep their place at the foot of every face.
+        { "object": "cliff_wall", "spacing": 11.0, "chance": 0.85, "face": { "rise": 6.0, "run": 8.0, "sheer": true } },
+        { "object": "cliff_low", "spacing": 18.0, "chance": 0.8, "face": { "rise": 3.5, "max": 5.9, "run": 8.0, "sheer": true } },
+        { "object": "scree", "spacing": 16.0, "chance": 0.7, "face": { "rise": 4.0, "run": 8.0, "sheer": true } },
         { "object": "scene_orchard", "spacing": 300.0, "chance": 0.75, "near": { "objects": ["scene_farmstead", "scene_farmyard", "scene_kitchen_garden"], "within": 200.0 } },
         { "object": "scene_wheat_field", "spacing": 320.0, "chance": 0.75, "near": { "objects": ["scene_farmstead", "scene_farmyard", "scene_kitchen_garden"], "within": 200.0 } },
         { "object": "scene_vegetable_field", "spacing": 340.0, "chance": 0.75, "near": { "objects": ["scene_farmstead", "scene_farmyard", "scene_kitchen_garden"], "within": 200.0 } },
@@ -164,6 +168,10 @@
         { "layer": "forest_hollow", "scale": 90.0, "cover": 0.08, "ground": "dirt", "paint": 0.4, "height": -1.5, "soft": 0.1 }
       ],
       "scatter": [
+        // Cliff rocks first, so the rock walls keep their place at the foot of every face.
+        { "object": "cliff_wall", "spacing": 11.0, "chance": 0.85, "face": { "rise": 6.0, "run": 8.0, "sheer": true } },
+        { "object": "cliff_low", "spacing": 18.0, "chance": 0.8, "face": { "rise": 3.5, "max": 5.9, "run": 8.0, "sheer": true } },
+        { "object": "scree", "spacing": 16.0, "chance": 0.7, "face": { "rise": 4.0, "run": 8.0, "sheer": true } },
         { "object": "scene_logging_camp", "spacing": 130.0, "chance": 0.6 },
         { "object": "scene_settler_camp", "spacing": 195.0, "chance": 0.4 },
         { "object": "scene_forest_floor", "spacing": 105.0, "chance": 0.7 },
@@ -239,6 +247,10 @@
         { "layer": "field_flowers", "scale": 100.0, "cover": 0.12, "soft": 0.12 }
       ],
       "scatter": [
+        // Cliff rocks first, so the rock walls keep their place at the foot of every face.
+        { "object": "cliff_wall", "spacing": 11.0, "chance": 0.85, "face": { "rise": 6.0, "run": 8.0, "sheer": true } },
+        { "object": "cliff_low", "spacing": 18.0, "chance": 0.8, "face": { "rise": 3.5, "max": 5.9, "run": 8.0, "sheer": true } },
+        { "object": "scree", "spacing": 16.0, "chance": 0.7, "face": { "rise": 4.0, "run": 8.0, "sheer": true } },
         { "object": "scene_wheat_field", "spacing": 125.0, "chance": 0.8 },
         { "object": "scene_vegetable_field", "spacing": 160.0, "chance": 0.7 },
         { "object": "scene_corn_field", "spacing": 180.0, "chance": 0.6 },
@@ -329,6 +341,10 @@
         { "layer": "desert_scrub", "scale": 80.0, "cover": 0.2, "ground": "dirt", "paint": 0.3, "soft": 0.12 }
       ],
       "scatter": [
+        // Cliff rocks first, so the rock walls keep their place at the foot of every face.
+        { "object": "cliff_wall", "spacing": 11.0, "chance": 0.85, "face": { "rise": 6.0, "run": 8.0, "sheer": true } },
+        { "object": "cliff_low", "spacing": 18.0, "chance": 0.8, "face": { "rise": 3.5, "max": 5.9, "run": 8.0, "sheer": true } },
+        { "object": "scree", "spacing": 16.0, "chance": 0.7, "face": { "rise": 4.0, "run": 8.0, "sheer": true } },
         { "object": "scene_roadblock", "spacing": 165.0, "chance": 0.5 },
         { "object": "scene_colony_pipeline", "spacing": 135.0, "chance": 0.6 },
         { "object": "scene_harvester_wreck", "spacing": 195.0, "chance": 0.5 },
@@ -395,6 +411,10 @@
         { "layer": "autumn_hollow", "scale": 90.0, "cover": 0.08, "ground": "dirt", "paint": 0.4, "height": -1.5, "soft": 0.1 }
       ],
       "scatter": [
+        // Cliff rocks first, so the rock walls keep their place at the foot of every face.
+        { "object": "cliff_wall", "spacing": 11.0, "chance": 0.85, "face": { "rise": 6.0, "run": 8.0, "sheer": true } },
+        { "object": "cliff_low", "spacing": 18.0, "chance": 0.8, "face": { "rise": 3.5, "max": 5.9, "run": 8.0, "sheer": true } },
+        { "object": "scree", "spacing": 16.0, "chance": 0.7, "face": { "rise": 4.0, "run": 8.0, "sheer": true } },
         { "object": "scene_logging_camp", "spacing": 135.0, "chance": 0.6 },
         { "object": "scene_fence_line", "spacing": 225.0, "chance": 0.4 },
         { "object": "scene_forest_floor", "spacing": 110.0, "chance": 0.7 },
@@ -453,6 +473,10 @@
       "ground": "burnt",
       "bumps": 1.0,
       "scatter": [
+        // Cliff rocks first, so the rock walls keep their place at the foot of every face.
+        { "object": "cliff_wall", "spacing": 11.0, "chance": 0.85, "face": { "rise": 6.0, "run": 8.0, "sheer": true } },
+        { "object": "cliff_low", "spacing": 18.0, "chance": 0.8, "face": { "rise": 3.5, "max": 5.9, "run": 8.0, "sheer": true } },
+        { "object": "scree", "spacing": 16.0, "chance": 0.7, "face": { "rise": 4.0, "run": 8.0, "sheer": true } },
         { "object": "scene_burned_camp", "spacing": 135.0, "chance": 0.6 },
         { "object": "scene_logging_camp", "spacing": 195.0, "chance": 0.4 },
         { "object": "scene_burned_snags", "spacing": 105.0, "chance": 0.7 },
@@ -534,6 +558,10 @@
         { "layer": "mountain_scree", "scale": 70.0, "cover": 0.18, "ground": "rock", "paint": 0.55, "height": 1.2 }
       ],
       "scatter": [
+        // Cliff rocks first, so the rock walls keep their place at the foot of every face.
+        { "object": "cliff_wall", "spacing": 11.0, "chance": 0.85, "face": { "rise": 6.0, "run": 8.0, "sheer": true } },
+        { "object": "cliff_low", "spacing": 18.0, "chance": 0.8, "face": { "rise": 3.5, "max": 5.9, "run": 8.0, "sheer": true } },
+        { "object": "scree", "spacing": 16.0, "chance": 0.7, "face": { "rise": 4.0, "run": 8.0, "sheer": true } },
         { "object": "scene_colony_pipeline", "spacing": 195.0, "chance": 0.64 },
         { "object": "scene_radio_station", "spacing": 285.0, "chance": 0.8 },
         { "object": "scene_stone_shrine", "spacing": 255.0, "chance": 0.64 },
@@ -9338,6 +9366,35 @@
           ] }
         ]
       }
+    },
+    // Cliff rocks (docs/world-generation.md, Cliff faces): sculpted rock walls, low bands and scree that the inland
+    // biomes stand at the foot of the cliff terraces and steep banks (scatter "face"), built by tools/structures/cliff_rocks.py.
+    {
+      "id": "cliff_wall",
+      "collider": { "shape": "box", "size": [14.0, 8.0, 5.0], "at": [0.0, 4.0, -2.5] },
+      "mesh": { "file": "meshes/world/cliffs/cliff_wall_a.glb", "variants": ["meshes/world/cliffs/cliff_wall_b.glb", "meshes/world/cliffs/cliff_wall_c.glb"], "collide": true },
+      "footprint": 4.5,
+      "scale": [0.95, 1.08],
+      "max_slope": 1.0,
+      "damage_from": []
+    },
+    {
+      "id": "cliff_low",
+      "collider": { "shape": "box", "size": [10.0, 4.5, 5.0], "at": [0.0, 2.2, -2.5] },
+      "mesh": { "file": "meshes/world/cliffs/cliff_low_a.glb", "variants": ["meshes/world/cliffs/cliff_low_b.glb"], "collide": true },
+      "footprint": 4.0,
+      "scale": [0.9, 1.1],
+      "max_slope": 1.0,
+      "damage_from": []
+    },
+    {
+      "id": "scree",
+      "collider": { "shape": "box", "size": [7.0, 2.0, 5.5], "at": [0.0, 1.0, 1.4] },
+      "mesh": { "file": "meshes/world/cliffs/scree_a.glb", "variants": ["meshes/world/cliffs/scree_b.glb"], "collide": true },
+      "footprint": 2.5,
+      "scale": [0.85, 1.15],
+      "max_slope": 1.0,
+      "damage_from": []
     }
   ]
 }

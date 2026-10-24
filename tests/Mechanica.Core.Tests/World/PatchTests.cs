@@ -119,6 +119,34 @@ public class PatchTests
         Assert.Contains(data.Diagnostics, d => d.JsonPath == "$.biomes[0].scatter[0].cluster" && d.Severity == DiagnosticSeverity.Warning);
     }
 
+    [Fact]
+    public void FaceRulesStandAtTheFootOfCliffsFacingOut()
+    {
+        using var mods = new TestMods().Mod("vanilla").File("vanilla", WorldGenData.DefinitionFile, """
+            {
+              "terrain": { "coast_width": 0, "coast_biome_width": 0, "sea_level": -500, "sea_floor": -500, "noise_scale": 400,
+                "cliffs": { "step": 8, "levels": 3, "scale": 300, "contrast": 1.4, "face": 6, "sheer": 1, "inland": 1 } },
+              "biomes": [{ "id": "a", "relief": 1, "scatter": [{ "object": "wall", "spacing": 12, "chance": 1, "face": { "rise": 6, "run": 8 } }] }],
+              "objects": [{ "id": "wall", "footprint": 4, "max_slope": 1, "collider": { "shape": "box", "size": [12, 8, 4] } }]
+            }
+            """);
+        var data = WorldGenData.Load(mods.Load());
+        Assert.DoesNotContain(data.Diagnostics, d => d.Severity == DiagnosticSeverity.Error);
+        var world = new WorldGenerator(data, 3, WorldSize);
+        var walls = world.ObjectsIn(-1000f, -1000f, 1000f, 1000f).ToList();
+        Assert.True(walls.Count > 20, $"{walls.Count} walls");
+        foreach (var w in walls)
+        {
+            // Front (+z turned by the yaw) faces downhill: the ground climbs behind the wall and falls away in front of it.
+            var front = new System.Numerics.Vector2(MathF.Sin(w.Yaw), MathF.Cos(w.Yaw));
+            float x = w.Position.X, z = w.Position.Z;
+            var behind = world.HeightAt(x - front.X * 8f, z - front.Y * 8f) - w.Position.Y;
+            var ahead = world.HeightAt(x + front.X * 4f, z + front.Y * 4f) - w.Position.Y;
+            Assert.True(behind >= 5f, $"wall at ({x}, {z}) has only {behind} m of face behind it");
+            Assert.True(ahead <= 1f, $"wall at ({x}, {z}) has ground {ahead} m up in front of it");
+        }
+    }
+
     private static WorldGenerator World(string patches, string scatter, string flora, string bumps = "", float biomeBumps = 1f)
     {
         var data = Load(patches, scatter, flora, bumps, biomeBumps);

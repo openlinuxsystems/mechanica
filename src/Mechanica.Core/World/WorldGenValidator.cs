@@ -344,6 +344,17 @@ internal static class WorldGenValidator
                     if (roadside.Bend is { } bend && !(bend is > 0f and < 180f))
                         sink.Error(Code, $"{rulePath}.roadside.bend", $"bend must be an angle in degrees above 0 and under 180 (got {bend}).");
                 }
+                if (rule.Face is { } face)
+                {
+                    KnownKeys.WarnUnknown(face.Extra, $"{rulePath}.face", sink, typeof(FaceDefinition));
+                    Positive(face.Rise, $"{rulePath}.face.rise", sink);
+                    if (!(face.Run is > 0f and <= 30f))
+                        sink.Error(Code, $"{rulePath}.face.run", $"run must be above 0 and at most 30 m (got {face.Run}).");
+                    if (face.Max is { } most && !(most >= face.Rise))
+                        sink.Error(Code, $"{rulePath}.face.max", $"max must be at least rise ({face.Rise}; got {most}).");
+                    if (rule.Water is not null || rule.Perch is not null || rule.Roadside is not null)
+                        sink.Error(Code, $"{rulePath}.face", "a face rule cannot also be a water, perch or roadside rule.");
+                }
                 if (rule.Cluster is { } cluster)
                 {
                     KnownKeys.WarnUnknown(cluster.Extra, $"{rulePath}.cluster", sink, typeof(ClusterDefinition));
