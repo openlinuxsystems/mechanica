@@ -22,6 +22,11 @@ structure's centre (glTF +Y up, front towards +Z):
   warehouses (2, 3 and 4 floors; warehouses.py, from the kit in colony_kit.py): exteriors with their floors, the stair
   inside, a fire escape to the roof, and each one's silhouette piece (a water tower, a flue stack, a tower crane). Their
   colliders are the kit's plain boxes and ramps (walls round the openings, slabs, stairs walked as ramps, railings).
+* ``meshes/structures/small_ruin.glb``, ``ruin.glb``, ``forest_ruin.glb``, ``mountain_lookout.glb`` and
+  ``ruin_city_{centre,keep,west,east,northeast,southwest,southeast}.glb`` - the Old Stone ruins (ruins.py and
+  ruin_city.py, from the kit in stone_kit.py): a chapel on its terrace, a hall with its dais and gallery, a forest
+  shrine, a broken watchtower climbed to its top, and a walled stone town in seven models that share its origin. Their
+  colliders are the kit's plain boxes and ramps (each course of a wall, floors, stairs walked as ramps, rubble banks).
 * ``meshes/structures/cargo_crate_colony.glb`` - a framed Colony cargo crate (decoration in the cargo spill).
 * ``meshes/structures/landmark_*.glb`` - the eight landmarks (landmarks.py): set pieces that stand alone in open
   country, placed by the ``pois/landmark_*.json`` prefabs. Their colliders keep what a player climbs walkable: each
@@ -54,9 +59,10 @@ How to run (Blender as a Python module, no Blender UI needed):
     python tools/structures/build_structures.py formations            # only the rock formations (or the ones named)
     python tools/structures/build_structures.py sv04                  # only the SV-04 wreck, its containers and spills
     python tools/structures/build_structures.py warehouses [warehouse_small ...]   # only the warehouses
+    python tools/structures/build_structures.py ruins [ruin ruin_city ...]        # only the Old Stone ruins
 
 The outputs are committed; re-run this script after changing it (or kit.py, frame.py, families.py, ship.py, cargo_ship.py, crash_site.py, sv04_layout.py,
-workshop.py, colony_kit.py, warehouses.py, landmarks.py, props*.py, rock_formations.py, textures.py) and commit the result. The build is deterministic (seeded noise only).
+workshop.py, colony_kit.py, warehouses.py, stone_kit.py, ruins.py, ruin_city.py, landmarks.py, props*.py, rock_formations.py, textures.py) and commit the result. The build is deterministic (seeded noise only).
 """
 
 from __future__ import annotations
@@ -102,6 +108,8 @@ import crash_site as CS  # noqa: E402
 import workshop as W  # noqa: E402
 import landmarks as LM  # noqa: E402
 import warehouses as WH  # noqa: E402
+import ruins as RU  # noqa: E402
+import ruin_city as RC  # noqa: E402
 
 STRUCTURES = K.MESH / "structures"
 WORLD = K.MESH / "world"
@@ -189,7 +197,20 @@ def warehouses(only=()):
             single(name, lambda name=name: WH.warehouse(name))
 
 
+def ruins(only=()):
+    for name, build in RU.RUINS.items():
+        if not only or name in only:
+            single(name, build)
+    if not only or "ruin_city" in only:
+        fresh()
+        for key, root in RC.ruin_city().items():
+            report(f"ruin_city_{key}", K.export(root, STRUCTURES / f"ruin_city_{key}.glb"))
+
+
 def main():
+    if sys.argv[1:2] == ["ruins"]:
+        ruins(sys.argv[2:])
+        return
     if sys.argv[1:2] == ["warehouses"]:
         warehouses(sys.argv[2:])
         return
@@ -215,6 +236,7 @@ def main():
     single("stone_court", court)
     single("workshop", lambda: W.workshop())
     warehouses()
+    ruins()
     single("cargo_crate_colony", crate)
     landmarks()
     single("scrap_pile_metal", pile("metal"), WORLD, collider=False)

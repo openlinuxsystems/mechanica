@@ -4,7 +4,9 @@
 The spec's 50 mandatory structures get simple volumes of the right footprint and height until each is designed on its
 own: a concrete pad, the building's bounding volume, and a few shapes that make the type readable from a distance
 (silos, a smokestack, a tower). Warehouses are built: their models come from the Colony Works kit
-(tools/structures/warehouses.py) on the placeholder shells' layout, and this script writes their markers. Edit the table here and re-run; never edit the written files.
+(tools/structures/warehouses.py) on the placeholder shells' layout, and the Old Stone ruins (Small Ruin, Ruin, Forest
+Ruin, Mountain Lookout, Ruin City) come from the stone kit (tools/structures/ruins.py, ruin_city.py) round the
+placeholders' markers; this script writes their markers. Edit the table here and re-run; never edit the written files.
 
 Usage: tools/author-poi-placeholders.py [OUT_DIR]   (default: mods/vanilla/pois)
 """
@@ -167,8 +169,13 @@ for floors, poi_id, name, (w, d), top in [(2, "warehouse_small", "Warehouse (2 f
     markers, h = warehouse(floors, w, d)
     add(poi_id, name, [w, top, d], "road", [], markers, models=[{"file": f"meshes/structures/{poi_id}.glb", "at": [0.0, 0.0, 0.0]}])
 
-add("small_ruin", "Small Ruin", [14, 5, 12], "track", placeholder(14, 12, 5, RUIN),
-    [loot_part("wooden_crate", [-9.0, 0.3, 2.0], "crate", [2, 4])], flora="meadow", ground=None)
+def stone(name):
+    """An Old Stone ruin's model (tools/structures/ruins.py, ruin_city.py), at the POI's origin."""
+    return {"file": f"meshes/structures/{name}.glb", "at": [0.0, 0.0, 0.0]}
+
+
+add("small_ruin", "Small Ruin", [14, 5, 12], "track", [],
+    [loot_part("wooden_crate", [-9.0, 0.3, 2.0], "crate", [2, 4])], flora="meadow", ground=None, models=[stone("small_ruin")])
 add("farmer_shack", "Farmer Shack", [12, 5, 10], "track",
     placeholder(12, 10, 5, WOOD, [box([5, 2.5, 4], [10, 1.25, 4], HAY)]),
     [loot_part("wooden_crate", [-8.0, 0.3, 2.0], "crate", [2, 4]), part("barrel", [-8.0, 0.3, -2.0]),
@@ -196,15 +203,12 @@ add("silo_district", "Silo District", [90, 26, 70], "road",
      part("construction_light", [10.0, 0.3, -30.0]), part("danger_sign", [0.0, 0.3, 37.0], yaw=180.0),
      derelict("farm_trailer", [30.0, 0.3, 20.0], yaw=10.0), derelict("old_tractor", [30.0, 0.3, 28.0], yaw=10.0),
      sign("colony_sign", [6.0, 0.3, 37.0], FACE_FRONT, "SILO DISTRICT\nFarmbots loose\nKeep out")])
-add("ruin", "Ruin", [30, 10, 24], "track",
-    [box([34, 0.3, 28], [0, 0.15, 0], RUIN), volume(30, 0.5, 10, RUIN, z=-12), volume(0.5, 24, 7, RUIN, x=-15),
-     volume(12, 0.5, 4, RUIN, x=9, z=12), volume(14, 12, 3, RUIN, x=6, z=-4, y=0.3)],
+add("ruin", "Ruin", [30, 11, 24], "track", [],
     [loot_part("wooden_crate", [-10.0, 0.3, 4.0], "crate", [2, 4]), part("skull_sign", [-14.5, 0.3, 8.0], yaw=-90.0)],
-    flora="meadow", ground=None)
-add("mountain_lookout", "Mountain Lookout", [10, 14, 10], "track",
-    [box([14, 0.3, 14], [0, 0.15, 0], RUIN), *[cylinder(0.4, 12, [x, 6.3, z], METAL) for x in (-4, 4) for z in (-4, 4)],
-     box([10, 2.5, 10], [0, 13.5, 0], RUIN)],
-    [loot_part("wooden_crate", [2.5, 14.75, 2.5], "crate", [2, 4])], flora="mountain", ground=None)
+    flora="meadow", ground=None, models=[stone("ruin")])
+# A broken watchtower: the stair inside winds up to its top floor, where the crate is.
+add("mountain_lookout", "Mountain Lookout", [10, 20, 10], "track", [],
+    [loot_part("wooden_crate", [2.5, 14.75, 2.5], "crate", [2, 4])], flora="mountain", ground=None, models=[stone("mountain_lookout")])
 add("campsite", "Campsite", [20, 3, 20], "track",
     [box([3, 2.4, 4], [-5, 1.2, -4], "#5f8a4a", 20), box([3, 2.4, 4], [5, 1.2, -3], "#5f8a4a", -15),
      box([4, 2.8, 5], [0, 1.4, 6], "#8a6a4a"), cylinder(1, 0.4, [0, 0.2, 0], BURNT)],
@@ -258,13 +262,11 @@ add("camp", "Camp", [14, 3, 14], "track",
      sign("signboard", [-3.5, 0.0, 5.5], FACE_FRONT, "Gone for parts\nWorkshop {distance:%s} {direction:%s}\nBack by dark" % (WORKSHOP, WORKSHOP))],
     ground="dirt", margin=12,
     spacing={"spacing": [570.0, 820.0], "biomes": ["forest", "autumn_forest", "burned_forest"], "priority": 20, "clearance": 48.0})
-add("forest_ruin", "Forest Ruin", [16, 5, 16], "track",
-    [box([7, 4, 0.6], [-4, 2, -7.5], RUIN), box([3, 2, 0.6], [5, 1, -7.5], RUIN), box([0.6, 4.5, 9], [-7.5, 2.25, -2], RUIN),
-     box([0.6, 1.5, 5], [7.5, 0.75, 3], RUIN), box([2, 0.8, 1.5], [2, 0.4, 2], RUIN, 30), cylinder(0.5, 5, [-7.5, 2.5, 7.5], RUIN)],
+add("forest_ruin", "Forest Ruin", [16, 5, 16], "track", [],
     # Loot crates, and a Ruin Chest against the west wall that fills again 5 days after it is emptied (as Scrap Mechanic's).
     [loot_part("wooden_crate", [-5.0, 0.0, -5.0], "crate", [2, 4]), loot_part("wooden_crate", [4.0, 0.0, 5.0], "crate", [2, 4]),
      loot_part("ruin_chest", [-6.4, 0.0, 0.0], "ruin_chest", [1, 6], yaw=-90.0, refill_days=5)],
-    flora="forest", ground=None, margin=12,
+    flora="forest", ground=None, margin=12, models=[stone("forest_ruin")],
     spacing={"spacing": [710.0, 1020.0], "biomes": ["forest", "autumn_forest"], "priority": 21, "clearance": 48.0})
 add("roadside_kiosk", "Roadside Kiosk", [6, 3.5, 5], "none",
     [box([10, 0.2, 8], [0, 0.1, 0], PAD), box([5, 2.6, 3.5], [0, 1.5, 0.5], WOOD), box([6, 0.2, 2], [0, 2.9, -1.8], CANVAS, 0),
@@ -343,17 +345,14 @@ add("capsule_scrapyard", "Capsule Scrapyard", [50, 6, 40], "track",
      part("construction_light", [-24.0, 0.3, -18.0]), part("construction_light", [24.0, 0.3, -18.0]),
      part("battery", [-4.0, 0.3, 0.0]), part("scrap_wheel", [4.0, 0.3, 0.0]), part("warning_light", [0.0, 0.3, -18.5]),
      derelict("rover_frame", [12.0, 0.3, 0.0], yaw=90.0)])
-add("ruin_city", "Ruin City", [160, 40, 140], "road",
-    [box([168, 0.3, 148], [0, 0.15, 0], RUIN),
-     *[volume(w, d, h, RUIN, x=x, z=z, y=0.3) for w, d, h, x, z in
-       [(30, 24, 40, -50, -40), (24, 24, 28, -10, -50), (36, 20, 34, 40, -44), (20, 30, 22, -56, 10),
-        (28, 28, 36, 50, 8), (40, 18, 16, 0, 0), (22, 22, 30, -30, 48), (30, 20, 24, 30, 50)]],
-     box([150, 0.3, 10], [0, 0.45, 26], "#5a5e62")],
+# Ruin City is built: a walled stone town (tools/structures/ruin_city.py) in seven models sharing the POI's origin.
+add("ruin_city", "Ruin City", [160, 40, 140], "road", [],
     [loot_part("ruin_chest", [0.0, 0.3, -25.0], "ruin_chest", [1, 6], refill_days=5),
      loot_part("wooden_crate", [-40.0, 0.3, -15.0], "crate", [2, 4]), loot_part("metal_crate", [40.0, 0.3, -20.0], "warehouse_crate", [2, 4]),
      loot_part("wooden_crate", [0.0, 0.3, 40.0], "crate", [2, 4]), part("danger_sign", [0.0, 0.3, 70.0], yaw=180.0),
      part("traffic_cone", [-12.0, 0.6, 24.0]), part("traffic_cone", [12.0, 0.6, 28.0]),
-     sign("colony_sign", [7.0, 0.3, 70.0], FACE_FRONT, "COLONY TOWN\nEVACUATED\nDo not enter")])
+     sign("colony_sign", [7.0, 0.3, 70.0], FACE_FRONT, "OLD STONE TOWN\nOlder than the colony")],
+    models=[stone("ruin_city_" + piece) for piece in ("centre", "keep", "west", "east", "northeast", "southwest", "southeast")])
 add("haymaze", "Haymaze", [60, 3, 60], "road",
     [box([64, 0.3, 64], [0, 0.15, 0], "#8a7a5a"),
      *[box([w, 3, 2], [x, 1.8, z], HAY) for w, x, z in [(60, 0, -29), (60, 0, 29), (40, -10, -15), (40, 10, 0), (40, -10, 15)]],

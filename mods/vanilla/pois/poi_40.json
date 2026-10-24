@@ -1,5 +1,5 @@
 {
-  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
+  // Built (World Map spec §4): the structure is its model; this file places it and its markers.
   // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
   "id": "poi_40",
   "name": "POI-40 Ruin City",
@@ -11,17 +11,14 @@
     { "op": "flatten", "radius": 120.0, "blend": 20.0 }
   ],
   "ground": [{ "ground": "lot", "radius": 112.0, "blend": 10.0, "noise": 4.0 }],
-  "pieces": [
-    { "shape": "box", "size": [168.0, 0.3, 148.0], "at": [0.0, 0.15, 0.0], "color": "#9c988c" },
-    { "shape": "box", "size": [30.0, 40.0, 24.0], "at": [-50.0, 20.3, -40.0], "color": "#9c988c" },
-    { "shape": "box", "size": [24.0, 28.0, 24.0], "at": [-10.0, 14.3, -50.0], "color": "#9c988c" },
-    { "shape": "box", "size": [36.0, 34.0, 20.0], "at": [40.0, 17.3, -44.0], "color": "#9c988c" },
-    { "shape": "box", "size": [20.0, 22.0, 30.0], "at": [-56.0, 11.3, 10.0], "color": "#9c988c" },
-    { "shape": "box", "size": [28.0, 36.0, 28.0], "at": [50.0, 18.3, 8.0], "color": "#9c988c" },
-    { "shape": "box", "size": [40.0, 16.0, 18.0], "at": [0.0, 8.3, 0.0], "color": "#9c988c" },
-    { "shape": "box", "size": [22.0, 30.0, 22.0], "at": [-30.0, 15.3, 48.0], "color": "#9c988c" },
-    { "shape": "box", "size": [30.0, 24.0, 20.0], "at": [30.0, 12.3, 50.0], "color": "#9c988c" },
-    { "shape": "box", "size": [150.0, 0.3, 10.0], "at": [0.0, 0.45, 26.0], "color": "#5a5e62" }
+  "models": [
+    { "file": "meshes/structures/ruin_city_centre.glb", "at": [0.0, 0.0, 0.0] },
+    { "file": "meshes/structures/ruin_city_keep.glb", "at": [0.0, 0.0, 0.0] },
+    { "file": "meshes/structures/ruin_city_west.glb", "at": [0.0, 0.0, 0.0] },
+    { "file": "meshes/structures/ruin_city_east.glb", "at": [0.0, 0.0, 0.0] },
+    { "file": "meshes/structures/ruin_city_northeast.glb", "at": [0.0, 0.0, 0.0] },
+    { "file": "meshes/structures/ruin_city_southwest.glb", "at": [0.0, 0.0, 0.0] },
+    { "file": "meshes/structures/ruin_city_southeast.glb", "at": [0.0, 0.0, 0.0] }
   ],
   "markers": [
     { "type": "part", "ref": "ruin_chest", "at": [0.0, 0.3, -25.0], "loot": "ruin_chest", "loot_rolls": [1, 6], "refill_days": 5.0 },
@@ -31,6 +28,6 @@
     { "type": "part", "ref": "danger_sign", "at": [0.0, 0.3, 70.0], "yaw": 180.0 },
     { "type": "part", "ref": "traffic_cone", "at": [-12.0, 0.6, 24.0] },
     { "type": "part", "ref": "traffic_cone", "at": [12.0, 0.6, 28.0] },
-    { "type": "part", "ref": "colony_sign", "at": [7.0, 0.3, 70.0], "yaw": 0.0, "settings": { "text": "COLONY TOWN\nEVACUATED\nDo not enter" } }
+    { "type": "part", "ref": "colony_sign", "at": [7.0, 0.3, 70.0], "yaw": 0.0, "settings": { "text": "OLD STONE TOWN\nOlder than the colony" } }
   ]
 }
