@@ -1,0 +1,28 @@
+{
+  "id": "colony_burger",
+  "stations": [
+    "field_kitchen"
+  ],
+  "inputs": [
+    {
+      "item": "grazer_steak",
+      "count": 1
+    },
+    {
+      "item": "tomato",
+      "count": 5
+    },
+    {
+      "item": "potato",
+      "count": 10
+    }
+  ],
+  "outputs": [
+    {
+      "item": "colony_burger",
+      "count": 1
+    }
+  ],
+  "time": 13,
+  "order": 3230
+}

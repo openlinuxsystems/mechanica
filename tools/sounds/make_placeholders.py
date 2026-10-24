@@ -771,6 +771,12 @@ ev("stations", "freezer_start", lambda rng: edges(peak(mix(0.7, (thud(rng, 0.3, 
 ev("stations", "freezer_work", noise_loop(150, 1200, 2.0, 0.3, ((120, 0.12), (240, 0.05))), loop=2.0, volume_db=-6.0, max_distance=25.0)
 ev("stations", "freezer_complete", lambda rng: edges(peak(mix(0.8, (beeps([1568, 1319, 1047], 0.1), 0), (hiss(rng, 0.5, 3000, 9000, 0.02, 0.3, 0.25), 0.2)), 0.6)),
    **TOOL)
+# The Field Kitchen (consumables batch C4): burners clicking alight with a whoomph, a sizzle over the hum of its oven fan,
+# and a kitchen timer's ding.
+ev("stations", "field_kitchen_start", lambda rng: edges(peak(mix(0.7, (click(rng, 2200, 0.15), 0), (whoosh(rng, 0.4, 150, 1800) * 0.6, 0.08)), 0.6)), **TOOL)
+ev("stations", "field_kitchen_work", noise_loop(1800, 7000, 2.0, 0.35, ((100, 0.08), (200, 0.03))), loop=2.0, volume_db=-8.0, max_distance=25.0)
+ev("stations", "field_kitchen_complete", lambda rng: edges(peak(tone(1760, 0.9) * decay(0.9, 0.35) + tone(2637, 0.9) * decay(0.9, 0.2) * 0.4, 0.6)),
+   **TOOL)
 ev("stations", "bed_use", lambda rng: edges(peak(whoosh(rng, 0.4, 100, 1200) + tone(660, 0.4) * decay(0.4, 0.2) * 0.2, 0.5)), **QUIET)
 ev("stations", "bed_set", lambda rng: beeps([523, 784, 1046], 0.12), **QUIET)
 ev("stations", "radio_on", lambda rng: edges(peak(click(rng, 1200, 0.4) * 0.6 + band(noise(rng, 0.4), 500, 6000) * decay(0.4, 0.15) * 0.4, 0.6)), **QUIET)

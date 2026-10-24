@@ -1,7 +1,7 @@
 // Consumables batch C1 (Scrap Mechanic parity, consumables map): the produce, the four seeds, Chemical and Gasoline,
 // moved here from survival.json. The wiki's stats (1.5 kg per weight bar; durability = bars; friction and buoyancy =
 // bars / 10; flammable and stack size as the wiki) and the Food page's heals (properties.health, read by food.lua).
-// Gasoline keeps 20 kg (a 2x2x2 can). The Potato stays edible until a cooking station gives it a use. The seeds keep
+// Gasoline keeps 20 kg (a 2x2x2 can). The seeds keep
 // their numbers until the Crops step. Chemical is made by emptying a Chemical Bucket at the Fabricator: the recipe's
 // second output gives the empty Water Bucket back.
 // Batch C2b: Bloom Tea and Grazer Shake are drinks (properties.drink: the drink clip and sound, and the player may
@@ -9,6 +9,9 @@
 // growth until harvest (soil.lua; it still needs water). properties.eat_seconds is how long one eat or drink takes.
 // Batch C3: Grazer Milk is a drink a tame Grazer gives (bots/grazer.json tame.produce: 5 carrots from its Feeding Trough,
 // then Use on it); Grazer Steak is not edible, a cooking input that Grazers drop (bots/grazer.json drops).
+// Batch C4: the Field Kitchen (parts_stations.json) cooks the Garden Burger (4 Carrot + 2 Tomato + 10 Potato, 10 s) and the
+// Colony Burger (1 Grazer Steak + 5 Tomato + 10 Potato, 13 s), the 3200 recipe group; both heal 30 (perks come later).
+// The Potato is no longer edible: ammo and a cooking input.
 // Re-run with tools/author-vanilla.sh.
 {
   "format_version": 1,
@@ -62,8 +65,9 @@
       "template": "item",
       "set": {
         "name": "Potato",
-        "description": "Heals a little when eaten. Potato weapons fire them.",
-        "category": "consumable",
+        "description": "Too starchy to eat raw: potato weapons fire them, and the Field Kitchen cooks them into burgers.",
+        "category": "resource",
+        "tab": "consumable",
         "mass": 3,
         "durability": 2,
         "friction": 0.4,
@@ -72,10 +76,8 @@
         "stack_size": 50,
         "icon": "textures/items/potato_icon.png",
         "visual": { "color": "#ffffff" },
-        "held": { "mesh": "meshes/items/potato_held.glb", "offset": [-0.04, 0.082, 0], "rotation": [180, 0, 90], "juice": "#d8c898" },
-        "sounds": { "pickup": "pickup_produce", "eat": "eat_soft" },
-        "script": "scripts/food.lua",
-        "properties": { "health": 8, "eat_seconds": 1.4 }
+        "held": { "mesh": "meshes/items/potato_held.glb", "offset": [-0.04, 0.082, 0], "rotation": [180, 0, 90] },
+        "sounds": { "pickup": "pickup_produce" }
       },
       "model": [{ "kind": "mesh", "mesh": "meshes/items/potato.glb" }]
     },
@@ -330,6 +332,70 @@
           "outputs": [{ "item": "fertilizer", "count": 5 }, { "item": "water_bucket", "count": 1 }],
           "time": 10,
           "order": 1960
+        }
+      ]
+    },
+    {
+      "file": "parts/garden_burger.json",
+      "template": "item",
+      "set": {
+        "name": "Garden Burger",
+        "description": "A veggie patty with lettuce and tomato in a wholemeal bun. Eat it to heal. Cooked at the Field Kitchen. Flammable.",
+        "category": "consumable",
+        "mass": 3,
+        "durability": 1,
+        "friction": 0.4,
+        "buoyancy": 0.7,
+        "flammable": true,
+        "stack_size": 10,
+        "icon": "textures/items/garden_burger_icon.png",
+        "visual": { "color": "#ffffff" },
+        "held": { "mesh": "meshes/items/garden_burger_held.glb", "offset": [-0.04, 0.086, 0], "rotation": [180, 0, 90], "juice": "#d9b779" },
+        "sounds": { "pickup": "pickup_produce", "eat": "eat_soft" },
+        "script": "scripts/food.lua",
+        "properties": { "health": 30, "eat_seconds": 1.4 }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/garden_burger.glb" }],
+      "recipes": [
+        {
+          "id": "garden_burger",
+          "stations": ["field_kitchen"],
+          "inputs": [{ "item": "carrot", "count": 4 }, { "item": "tomato", "count": 2 }, { "item": "potato", "count": 10 }],
+          "outputs": [{ "item": "garden_burger", "count": 1 }],
+          "time": 10,
+          "order": 3220
+        }
+      ]
+    },
+    {
+      "file": "parts/colony_burger.json",
+      "template": "item",
+      "set": {
+        "name": "Colony Burger",
+        "description": "A grilled Grazer steak with cheese, tomato and onion in a brioche bun, flying the colony's flag. Eat it to heal. Cooked at the Field Kitchen. Flammable.",
+        "category": "consumable",
+        "mass": 3,
+        "durability": 1,
+        "friction": 0.4,
+        "buoyancy": 0.7,
+        "flammable": true,
+        "stack_size": 10,
+        "icon": "textures/items/colony_burger_icon.png",
+        "visual": { "color": "#ffffff" },
+        "held": { "mesh": "meshes/items/colony_burger_held.glb", "offset": [-0.04, 0.086, 0], "rotation": [180, 0, 90], "juice": "#c99a62" },
+        "sounds": { "pickup": "pickup_produce", "eat": "eat_soft" },
+        "script": "scripts/food.lua",
+        "properties": { "health": 30, "eat_seconds": 1.4 }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/colony_burger.glb" }],
+      "recipes": [
+        {
+          "id": "colony_burger",
+          "stations": ["field_kitchen"],
+          "inputs": [{ "item": "grazer_steak", "count": 1 }, { "item": "tomato", "count": 5 }, { "item": "potato", "count": 10 }],
+          "outputs": [{ "item": "colony_burger", "count": 1 }],
+          "time": 13,
+          "order": 3230
         }
       ]
     }

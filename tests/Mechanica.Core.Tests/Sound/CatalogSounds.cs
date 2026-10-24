@@ -46,5 +46,6 @@ internal static class CatalogSounds
         "scuttler_head_bass", "scuttler_head_drum", "scuttler_head_voice", "cash_register_open", "cash_register_close",
         "canister_fuse", "canister_explode", "plasma_drill_start", "plasma_drill_loop", "plasma_drill_stop",
         "sticky_wheel_pump", "sticky_wheel_loop", "freezer_start", "freezer_work", "freezer_complete", "extinguisher_spray",
+        "field_kitchen_start", "field_kitchen_work", "field_kitchen_complete",
     ];
 }

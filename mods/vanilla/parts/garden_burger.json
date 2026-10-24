@@ -1,0 +1,32 @@
+{
+  "id": "garden_burger",
+  "name": "Garden Burger",
+  "description": "A veggie patty with lettuce and tomato in a wholemeal bun. Eat it to heal. Cooked at the Field Kitchen. Flammable.",
+  "category": "consumable",
+  "mass": 3,
+  "durability": 1,
+  "friction": 0.4,
+  "buoyancy": 0.7,
+  "flammable": true,
+  "stack_size": 10,
+  "mesh": "meshes/items/garden_burger.glb",
+  "icon": "textures/items/garden_burger_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "script": "scripts/food.lua",
+  "sounds": {
+    "pickup": "pickup_produce",
+    "eat": "eat_soft"
+  },
+  "held": {
+    "mesh": "meshes/items/garden_burger_held.glb",
+    "offset": [-0.04, 0.086, 0],
+    "rotation": [180, 0, 90],
+    "juice": "#d9b779"
+  },
+  "properties": {
+    "health": 30,
+    "eat_seconds": 1.4
+  }
+}

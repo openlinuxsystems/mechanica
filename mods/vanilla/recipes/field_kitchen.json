@@ -1,0 +1,28 @@
+{
+  "id": "field_kitchen",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block_2",
+      "count": 40
+    },
+    {
+      "item": "circuit_board",
+      "count": 10
+    },
+    {
+      "item": "component_kit",
+      "count": 10
+    }
+  ],
+  "outputs": [
+    {
+      "item": "field_kitchen",
+      "count": 1
+    }
+  ],
+  "time": 11,
+  "order": 1850
+}
