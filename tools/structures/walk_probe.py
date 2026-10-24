@@ -59,7 +59,7 @@ def floors(bvh, x, y, top):
     out = []
     o = Vector((x, y, top))
     d = Vector((0, 0, -1))
-    for _ in range(40):
+    for _ in range(160):     # every layer down to the ground (stair cores and towers stack many)
         hit, n, _i, dist = bvh.ray_cast(o, d)
         if hit is None:
             break

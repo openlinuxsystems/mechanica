@@ -4,7 +4,9 @@
 The spec's 50 mandatory structures get simple volumes of the right footprint and height until each is designed on its
 own: a concrete pad, the building's bounding volume, and a few shapes that make the type readable from a distance
 (silos, a smokestack, a tower). Warehouses are built: their models come from the Colony Works kit
-(tools/structures/warehouses.py) on the placeholder shells' layout, and the Old Stone ruins (Small Ruin, Ruin, Forest
+(tools/structures/warehouses.py) on the placeholder shells' layout, each in its fenced yard (a wider flattened disc,
+`flat`), as do the Colony Works sites (packing stations, silo cluster, silo district, growlab, chemical lake facility,
+roadside kiosk: tools/structures/colony_sites.py) round the placeholders' markers, and the Old Stone ruins (Small Ruin, Ruin, Forest
 Ruin, Mountain Lookout, Ruin City) come from the stone kit (tools/structures/ruins.py, ruin_city.py) round the
 placeholders' markers, as do the settler sites (shacks, camps, scrapyards, the haymaze, the Scrap City garage:
 tools/structures/settlers.py); this script writes their markers. Edit the table here and re-run; never edit the written files.
@@ -142,11 +144,12 @@ TYPES = {}
 
 
 def add(poi_id, name, size, road, pieces, markers=None, flora=None, ground="lot", basin=None, spacing=None, pools=None, margin=28,
-        models=None):
+        models=None, flat=None):
     """margin: metres of ground blending round the pad (small spaced POIs blend in over less). models: a built POI's
-    structure models, in place of placeholder pieces."""
+    structure models, in place of placeholder pieces. flat: the flattened disc's radius when the model reaches past
+    the pad (a warehouse's yard), the POI's radius kept, so its ground blends in over less."""
     TYPES[poi_id] = dict(id=poi_id, name=name, size=size, road=road, pieces=pieces, markers=markers or [], flora=flora,
-                         ground=ground, basin=basin, spacing=spacing, pools=pools or [], margin=margin, models=models or [])
+                         ground=ground, basin=basin, spacing=spacing, pools=pools or [], margin=margin, models=models or [], flat=flat)
 
 
 def pool(liquid, radius, at=(0, 0), level=-1.0):
@@ -163,16 +166,22 @@ def geysers(count, radius, at=(0, 0), turn=0.0):
                     round(at[1] + radius * math.sin(2 * math.pi * k / count + turn), 2)]} for k in range(count)]
 
 
-# Height is the model's top: the roof tank, the flue stack, the crane.
-for floors, poi_id, name, (w, d), top in [(2, "warehouse_small", "Warehouse (2 floors)", (40, 30), 20.5),
-                                          (3, "warehouse", "Warehouse (3 floors)", (55, 40), 32.5),
-                                          (4, "warehouse_large", "Large Warehouse (4 floors)", (70, 50), 44.75)]:
+# Height is the model's top: the roof tank, the flue stack, the crane. flat is the radius the yard round the warehouse
+# needs flattened (its fence's cut corners stay 1.5 m inside it): warehouses.YARD_FLAT, which the build checks.
+for floors, poi_id, name, (w, d), top, flat in [(2, "warehouse_small", "Warehouse (2 floors)", (40, 30), 20.5, 47.0),
+                                                (3, "warehouse", "Warehouse (3 floors)", (55, 40), 32.5, 56.0),
+                                                (4, "warehouse_large", "Large Warehouse (4 floors)", (70, 50), 44.75, 65.0)]:
     markers, h = warehouse(floors, w, d)
-    add(poi_id, name, [w, top, d], "road", [], markers, models=[{"file": f"meshes/structures/{poi_id}.glb", "at": [0.0, 0.0, 0.0]}])
+    add(poi_id, name, [w, top, d], "road", [], markers, models=[{"file": f"meshes/structures/{poi_id}.glb", "at": [0.0, 0.0, 0.0]}], flat=flat)
 
 def stone(name):
     """An Old Stone ruin's model (tools/structures/ruins.py, ruin_city.py), at the POI's origin."""
     return {"file": f"meshes/structures/{name}.glb", "at": [0.0, 0.0, 0.0]}
+
+
+def built(name):
+    """A built structure's model (tools/structures/colony_sites.py, settlers.py ...), at the POI's origin."""
+    return [{"file": f"meshes/structures/{name}.glb", "at": [0.0, 0.0, 0.0]}]
 
 
 add("small_ruin", "Small Ruin", [14, 5, 12], "track", [],
@@ -183,28 +192,23 @@ add("farmer_shack", "Farmer Shack", [12, 5.75, 10], "track", [],
      derelict("farm_cart", [8.0, 0.3, -6.0], yaw=20.0),
      sign("signboard", [3.0, 0.3, 7.5], FACE_FRONT, "FRESH VEG\nat the farm\nWorkshop {distance:%s} {direction:%s}" % (WORKSHOP, WORKSHOP))], flora="meadow", ground=None,
     models=[{"file": "meshes/structures/farmer_shack.glb", "at": [0.0, 0.0, 0.0]}])
-add("packing_station_vegetable", "Packing Station (Vegetable)", [36, 8, 24], "road",
-    placeholder(36, 24, 8, METAL, [box([3, 3, 0.4], [0, 10, 12.2], "#5fa83a"), box([20, 1.2, 3], [0, 1.0, 15], ROOF)]),
+# Colony Works sites (tools/structures/colony_sites.py): the model brings its own concrete pad; height is the model's top.
+add("packing_station_vegetable", "Packing Station (Vegetable)", [36, 11, 24], "road", [],
     [loot_part("wooden_crate", [-15.0, 0.3, 14.5], "crate", [2, 4]), part("stacked_crates", [15.0, 0.3, 14.5]),
-     derelict("farm_trailer", [-15.0, 0.3, -14.5], yaw=90.0)])
-add("packing_station_fruit", "Packing Station (Fruit)", [36, 8, 24], "road",
-    placeholder(36, 24, 8, METAL, [box([3, 3, 0.4], [0, 10, 12.2], "#c8402f"), box([20, 1.2, 3], [0, 1.0, 15], ROOF)]),
+     derelict("farm_trailer", [-15.0, 0.3, -14.5], yaw=90.0)], models=built("packing_station_vegetable"))
+add("packing_station_fruit", "Packing Station (Fruit)", [36, 11, 24], "road", [],
     [loot_part("wooden_crate", [-15.0, 0.3, 14.5], "crate", [2, 4]), part("stacked_crates", [15.0, 0.3, 14.5]),
-     derelict("farm_trailer", [-15.0, 0.3, -14.5], yaw=90.0)])
-add("silo_cluster", "Silo Cluster", [30, 18, 30], "road",
-    [box([38, 0.3, 38], [0, 0.15, 0], PAD), *silos(4, 4, 18, 8), volume(10, 8, 6, METAL, x=-10, z=12, y=0.3)],
+     derelict("farm_trailer", [-15.0, 0.3, -14.5], yaw=90.0)], models=built("packing_station_fruit"))
+add("silo_cluster", "Silo Cluster", [30, 22.75, 30], "road", [],
     [loot_part("metal_crate", [2.0, 0.3, 14.0], "crate", [2, 4]), part("warning_light", [17.0, 0.3, 17.0]),
      derelict("old_tractor", [-10.0, 0.3, -15.0], yaw=80.0),
-     sign("colony_sign", [-2.0, 0.3, 17.5], FACE_FRONT, "AGRI WORKS SILOS\nWorkshop {distance:%s} {direction:%s}" % (WORKSHOP, WORKSHOP))])
-add("silo_district", "Silo District", [90, 26, 70], "road",
-    [box([98, 0.3, 78], [0, 0.15, 0], PAD),
-     *[cylinder(5, 26, [x, 13.3, z], YELLOW) for x in (-30, -18, -6, 6) for z in (-22, -10)],
-     volume(30, 20, 12, METAL, x=26, z=-14, y=0.3), volume(24, 16, 10, METAL, x=-20, z=20, y=0.3),
-     box([60, 1, 1], [-12, 24, -16], "#3f6fa8"), box([0.3, 2, 30], [44, 1.3, 20], METAL)],
+     sign("colony_sign", [-2.0, 0.3, 17.5], FACE_FRONT, "AGRI WORKS SILOS\nWorkshop {distance:%s} {direction:%s}" % (WORKSHOP, WORKSHOP))],
+    models=built("silo_cluster"))
+add("silo_district", "Silo District", [90, 30.75, 70], "road", [],
     [loot_part("metal_crate", [26.0, 0.3, 0.0], "warehouse_crate", [2, 4]), loot_part("wooden_crate", [-20.0, 0.3, 32.0], "crate", [2, 4]),
      part("construction_light", [10.0, 0.3, -30.0]), part("danger_sign", [0.0, 0.3, 37.0], yaw=180.0),
      derelict("farm_trailer", [30.0, 0.3, 20.0], yaw=10.0), derelict("old_tractor", [30.0, 0.3, 28.0], yaw=10.0),
-     sign("colony_sign", [6.0, 0.3, 37.0], FACE_FRONT, "SILO DISTRICT\nFarmbots loose\nKeep out")])
+     sign("colony_sign", [6.0, 0.3, 37.0], FACE_FRONT, "SILO DISTRICT\nFarmbots loose\nKeep out")], models=built("silo_district"))
 add("ruin", "Ruin", [30, 11, 24], "track", [],
     [loot_part("wooden_crate", [-10.0, 0.3, 4.0], "crate", [2, 4]), part("skull_sign", [-14.5, 0.3, 8.0], yaw=-90.0)],
     flora="meadow", ground=None, models=[stone("ruin")])
@@ -223,16 +227,15 @@ add("large_camp", "Large Camp", [50, 10, 40], "track", [],
      part("chair", [-4.0, 0.3, 6.0], yaw=180.0), derelict("go_kart", [0.0, 0.3, 14.0], yaw=90.0),
      sign("signboard", [6.0, 0.3, 20.5], FACE_FRONT, "SETTLERS' CAMP\nTrade, rest, mend\nWorkshop {distance:%s} {direction:%s}" % (WORKSHOP, WORKSHOP))],
     models=[{"file": "meshes/structures/large_camp.glb", "at": [0.0, 0.0, 0.0]}])
-add("growlab", "Growlab", [30, 8, 20], "road",
-    placeholder(30, 20, 8, GLASS, [volume(10, 8, 6, METAL, x=-20, y=0.3)]),
-    [loot_part("metal_crate", [12.0, 0.3, 12.5], "crate", [2, 4])])
+add("growlab", "Growlab", [30, 11.75, 20], "road", [],
+    [loot_part("metal_crate", [12.0, 0.3, 12.5], "crate", [2, 4])], models=built("growlab"))
 add("farmers_hideout", "Farmers Hideout", [40, 15.5, 30], "road", [],
     [loot_part("metal_crate", [-17.0, 0.3, 17.5], "warehouse_crate", [2, 4]), part("beware_bots_sign", [8.0, 0.3, 18.5], yaw=180.0)],
     models=[{"file": "meshes/structures/farmers_hideout.glb", "at": [0.0, 0.0, 0.0]}])
 # Chemical pools (Chemical item: an empty bucket dipped in one; standing in one hurts) and oil geysers (Crude Oil by hand).
-add("chemical_lake_facility", "Chemical Lake Facility", [40, 10, 30], "track",
-    placeholder(40, 30, 10, RUIN, [box([1, 1, 18], [-10, 0.8, 26], YELLOW), box([1, 1, 18], [10, 0.8, 26], YELLOW)]),
-    basin=dict(at=[0, 36], radius=16, depth=1.5, wobble=0.15), pools=[pool("chemical", 22, at=(0, 36))])
+# Its model stops at the bank: its intake pipes end on headwalls 20 m from the pool's centre, past the basin's widest bank.
+add("chemical_lake_facility", "Chemical Lake Facility", [40, 10.5, 30], "track", [],
+    basin=dict(at=[0, 36], radius=16, depth=1.5, wobble=0.15), pools=[pool("chemical", 22, at=(0, 36))], models=built("chemical_lake_facility"))
 add("chemical_lake", "Chemical Lake", [52, 2, 52], "track",
     [box([1, 1, 20], [26, 0.8, 0], YELLOW), cylinder(2, 3, [30, 1.5, 12], YELLOW)],
     flora="meadow", ground="dirt", basin=dict(at=[0, 0], radius=24, depth=1.5, wobble=0.3), pools=[pool("chemical", 37)])
@@ -265,12 +268,10 @@ add("forest_ruin", "Forest Ruin", [16, 5, 16], "track", [],
      loot_part("ruin_chest", [-6.4, 0.0, 0.0], "ruin_chest", [1, 6], yaw=-90.0, refill_days=5)],
     flora="forest", ground=None, margin=12, models=[stone("forest_ruin")],
     spacing={"spacing": [710.0, 1020.0], "biomes": ["forest", "autumn_forest"], "priority": 21, "clearance": 48.0})
-add("roadside_kiosk", "Roadside Kiosk", [6, 3.5, 5], "none",
-    [box([10, 0.2, 8], [0, 0.1, 0], PAD), box([5, 2.6, 3.5], [0, 1.5, 0.5], WOOD), box([6, 0.2, 2], [0, 2.9, -1.8], CANVAS, 0),
-     box([5, 1, 0.3], [0, 1.0, -1.4], WOOD), box([0.2, 2.2, 0.2], [3.8, 1.1, -3.2], METAL), box([1.6, 1, 0.1], [3.8, 2.6, -3.2], YELLOW)],
+add("roadside_kiosk", "Roadside Kiosk", [6, 5.25, 5], "none", [],
     [loot_part("wooden_crate", [0.0, 0.2, -2.4], "crate", [2, 4]), loot_part("wooden_crate", [-3.5, 0.2, 2.0], "crate", [2, 4]),
      part("sale_sign", [-2.6, 0.2, -3.2])],
-    margin=6,
+    margin=6, models=built("roadside_kiosk"),
     spacing={"spacing": [520.0, 900.0], "biomes": ["meadow", "forest", "field", "desert", "autumn_forest", "burned_forest"],
              "priority": 40, "clearance": 0.0, "roadside": 8.0})
 add("farming_patch", "Farming Patch", [24, 1, 20], "track",
@@ -376,7 +377,7 @@ def write(poi):
     w, h, d = poi["size"]
     reach = math.hypot(w + 8, d + 8) / 2
     radius = radius_of(w, d, poi["margin"])
-    level = math.ceil(reach + min(8, poi["margin"] / 2))
+    level = poi["flat"] or math.ceil(reach + min(8, poi["margin"] / 2))
     terrain = [{"op": "flatten", "radius": float(level), "blend": float(radius - level)}]
     if poi["basin"]:
         b = poi["basin"]

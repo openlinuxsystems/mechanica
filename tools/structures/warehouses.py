@@ -14,12 +14,16 @@ the roof at 4 m a floor. Blender frame: origin on the ground at the footprint's 
 All three: ribbed bone cladding in steel-blue posts and belts on a concrete plinth, framed corners with hazard-banded
 feet, windows on every floor (some broken), a big painted number for each floor beside the stair, the colony logo
 over the door, a fire escape up the right side to the roof, a switchback stair inside, a closed roller door at the
-back, downpipes, rooftop air handlers, vents, ducts, skylights and a capsule tank. yard() lays out a yard of the
-existing props round one for the review renders (the POIs place their own scenes).
+back, downpipes, rooftop air handlers, vents, ducts, skylights and a capsule tank. Round each, part of its model, the
+yard (yard()): a fenced gravel lot with its corners cut to stay on the flattened pad (YARD_FLAT, the POI's flatten
+radius), a sliding gate open in front where the road comes in and another at the back, floodlight masts, containers,
+pallets, drums, cable drums and beams, a dead forklift, a fuel tank, the transformer and a power pole. WALK lists the
+spots walk_settlers.py checks a player reaches.
 """
 import math
 import random
 
+import bmesh
 import bpy
 from mathutils import Vector
 
@@ -46,7 +50,7 @@ def front_bays(w):
     return [C.BAY] * k + [w - 10.0 * k] + [C.BAY] * k
 
 
-def warehouse(name="warehouse", floors=None, w=None, d=None, code=None, seed=None):
+def warehouse(name="warehouse", floors=None, w=None, d=None, code=None, seed=None, with_yard=True):
     f0, w0, d0, c0, s0 = WAREHOUSES[name]
     floors, w, d, code, seed = floors or f0, w or w0, d or d0, code or c0, seed or s0
     rnd = random.Random(seed)
@@ -162,6 +166,8 @@ def warehouse(name="warehouse", floors=None, w=None, d=None, code=None, seed=Non
     C.head_house(P, -hw, -hw + fb[0], -hd, -hd + 2 * C.BAY, H, HEAD_H, code.split()[-1], seed=seed)
     roof(P, name, hw, hd, H, rnd)
     weather(P, hw, hd, rnd)
+    if with_yard:
+        yard(P, name)
     C.quiet_all(P)
     if K.EXPORT:
         C.lighten(P)
@@ -246,51 +252,131 @@ def weather(P, hw, hd, rnd):
             blade.rotation_euler = (math.radians(rnd.uniform(-20, 20)), math.radians(rnd.uniform(-20, 20)), math.radians(rnd.uniform(0, 360)))
 
 
-# ================================================================== the yard sketch (review renders only)
+# ================================================================== the yard
+# The fenced yard round each warehouse, part of its model: fence lines (x0, x1, y0, y1) in Blender metres. Its corners
+# are cut so every fence post stands on the flattened pad: author-poi-placeholders.py gives the warehouses a flatten
+# radius (YARD_FLAT) that reaches past the fence; yard() checks the fence fits inside it.
+YARD = {
+    "warehouse_small": (-30.0, 30.0, -31.0, 22.0),
+    "warehouse": (-37.5, 43.5, -36.0, 28.0),
+    "warehouse_large": (-49.0, 45.0, -41.0, 33.0),
+}
+YARD_FLAT = {"warehouse_small": 47.0, "warehouse": 56.0, "warehouse_large": 65.0}
+GATE = 5.0          # half the front gate's opening (the road in, centred on the door)
+BACK_GATE = 4.0     # half the back gate's opening (behind the back roller door)
+
+
+def yard_outline(name):
+    """The yard fence's corners (x, y), counter-clockwise from the front left, each corner cut by enough (3 m at
+    least) to keep it 1.5 m inside the flattened pad."""
+    x0, x1, y0, y1 = YARD[name]
+    R = YARD_FLAT[name] - 1.5
+
+    def cut(cx, cy):
+        need = max(abs(cx) - math.sqrt(max(0.0, R * R - cy * cy)), abs(cy) - math.sqrt(max(0.0, R * R - cx * cx)))
+        return max(3.0, math.ceil((need + 0.5) * 2) / 2)
+    c = [cut(x0, y0), cut(x1, y0), cut(x1, y1), cut(x0, y1)]
+    pts = [(x0 + c[0], y0), (x1 - c[1], y0), (x1, y0 + c[1]), (x1, y1 - c[2]), (x1 - c[2], y1), (x0 + c[3], y1), (x0, y1 - c[3]), (x0, y0 + c[0])]
+    assert all(math.hypot(x, y) <= R + 1e-6 for x, y in pts), f"{name}: the yard fence leaves the flattened pad"
+    return pts
+
+
+def _pallets(P, loc, n, yaw, rnd):
+    """A stack of n empty pallets, each three runners under five deck boards (plain boxes: a stack is seen from the
+    yard, not up close), colliding as one block."""
+    G = C.group(P, "pallet_stack", loc, yaw)
+    for j in range(n):
+        Q = C.group(G, "pallet", (rnd.uniform(-0.03, 0.03), rnd.uniform(-0.03, 0.03), j * 0.144), rnd.uniform(-4, 4))
+        wood = K.mat(f"pallet_wood{j % 3}", ("#9a7f5c", "#8c7353", "#a58a64")[j % 3], rough=0.9, grime=0.3, noise_scale=4)
+        for x in (-0.53, 0.0, 0.53):
+            K.box("pallet_runner", (0.14, 1.0, 0.122), wood, loc=(x, 0, 0.061), bev=0, parent=Q)
+        for k in range(5):
+            K.box("pallet_deck", (1.2, 0.14, 0.022), wood, loc=(0, -0.43 + k * 0.215, 0.133), bev=0, parent=Q)
+    C.quiet_all(G)
+    C.solid(G, "pallets", (1.2, 1.0, 0.144 * n), (0, 0, 0.072 * n))
+    return G
+
+
 def yard(P, name):
-    """A sketch of a yard round the warehouse from the existing props (and the kit's floodlight masts and fence):
-    a fenced lot with a sliding gate in front of the door, pallets and drums by the door, containers along the left,
-    a dead forklift, cable drums and beams by the right, power poles in from the road to the intake on the left wall.
-    For the review renders; a POI places its own."""
+    """The yard round the warehouse (part of its model): a gravel lot inside a welded-mesh fence with its corners cut,
+    a sliding gate open in front of the door where the road comes in and a smaller one behind the back roller door, a
+    worn concrete apron with parking bays before the front, floodlight masts in the cut corners, shipping containers
+    (one stacked) along the left, loaded pallets, empty pallet stacks and drums by the door, a dead forklift, cable
+    drums (and on the large one steel beams) on the right, a fuel tank and the transformer at the back, a power pole by the intake on
+    the left wall. The way from the gate to the door, the markers' ground in front of it and the fire escape's foot are
+    kept clear; every prop collides as its box."""
+    import props_colony_a as CA  # noqa: PLC0415
+    import props_colony_b as CB  # noqa: PLC0415
+    import props_industry as PI  # noqa: PLC0415
     floors, w, d, _, seed = WAREHOUSES[name]
     rnd = random.Random(seed + 50)
     hw, hd = w / 2, d / 2
-    props = K.MESH / "world/props"
+    x0, x1, y0, y1 = YARD[name]
+    pts = yard_outline(name)
     G = C.group(P, "yard")
-    # the lot: gravel inside the fence, a worn concrete apron in front, the road out through the gate
-    fx0, fx1, fy0, fy1 = -hw - 12.0, hw + 9.0, -hd - 22.0, hd + 8.0
-    K.box("gravel", (fx1 - fx0, fy1 - fy0, 0.02), K.mat("gravel", "#8f8a7e", rough=1.0, noise_scale=3, ao=0.2), loc=((fx0 + fx1) / 2, (fy0 + fy1) / 2, 0.01), bev=0, parent=G)
-    K.box("road", (9.0, 80.0, 0.03), K.mat("asphalt", "#5d5f60", rough=0.95, noise_scale=2, ao=0.2), loc=(0.0, fy0 - 40.0 + 0.5, 0.015), bev=0, parent=G)
-    K.box("apron", (w + 20.0, 22.0, 0.04), K.mat("worn_concrete", "#a9a79e", rough=0.9, grime=0.2, noise_scale=2, ao=0.3), loc=(0, -hd - 11.0, 0.02), bev=0, parent=G)
-    for x in (-hw + 2.0, -hw + 5.0, -hw + 8.0, hw - 8.0, hw - 5.0, hw - 2.0):     # parking bay lines
-        K.box("bay_line", (0.15, 6.0, 0.01), C.mustard(0.6), loc=(x, -hd - 14.0, 0.045), bev=0, parent=G)
-    C.mesh_fence(G, (fx0, fy0), (-5.0, fy0))
-    C.mesh_fence(G, (5.0, fy0), (fx1, fy0))
-    C.mesh_fence(G, (5.0, fy0), (-5.0, fy0), gate=(0.0, 1.0))
-    C.mesh_fence(G, (fx1, fy0), (fx1, fy1))
-    C.mesh_fence(G, (fx1, fy1), (fx0, fy1))
-    C.mesh_fence(G, (fx0, fy1), (fx0, fy0))
-    for x, y, yaw in ((fx0 + 1.5, fy0 + 1.5, -45), (fx1 - 1.5, fy0 + 1.5, 45), (fx1 - 1.5, fy1 - 1.5, 135), (fx0 + 1.5, fy1 - 1.5, -135)):
-        C.floodlight_mast(G, (x, y, 0), h=12.0, yaw=yaw + 180, lit=False)
-    # by the door
-    for k, (x, y, yaw) in enumerate(((-9.0, -hd - 3.0, 5), (-10.6, -hd - 3.2, -8), (-9.8, -hd - 5.0, 20), (9.5, -hd - 3.0, 0), (11.0, -hd - 3.4, 12))):
-        for j in range(rnd.randint(1, 4)):
-            K.inst(props / "pallet.glb", (x, y, j * 0.16), yaw=yaw + rnd.uniform(-4, 4))
-    K.inst(props / "barrel_pallet.glb", (-7.5, -hd - 6.5, 0), yaw=12)
-    K.inst(props / "chemical_drums.glb", (13.0, -hd - 6.0, 0), yaw=-30)
-    K.inst(props / "forklift_wreck.glb", (6.0, -hd - 8.0, 0), yaw=200)
-    for x, y in ((-4.2, -hd - 2.4), (4.2, -hd - 2.6), (3.3, -hd - 9.0)):
-        K.inst(props / "traffic_cone.glb", (x, y, 0), yaw=rnd.uniform(0, 360))
-    # containers along the left, cable drums and beams by the right
-    for k in range(3 if floors > 2 else 2):
-        K.inst(props / ("shipping_container_open.glb" if k == 1 else "shipping_container.glb"), (-hw - 6.5, -hd + 2.0 + k * 7.5, 0), yaw=90 + rnd.uniform(-3, 3))
-    K.inst(props / "shipping_container.glb", (-hw - 6.5, -hd + 2.0 + 7.5, 2.6), yaw=88)
-    K.inst(props / "cable_drum_stack.glb", (hw + 5.5, -hd - 4.0, 0), yaw=20)
-    if name != "warehouse":      # the stack stands there
-        K.inst(props / "steel_beam_stack.glb", (hw + 5.0, hd - 4.0, 0), yaw=90)
-    K.inst(props / "fuel_tank.glb", (-hw - 6.0, hd + 3.0, 0), yaw=0)
-    K.inst(props / "transformer_box.glb", (-hw - 2.5, hd - 6.0, 0), yaw=90)
-    # power in from the road
-    for k, (x, y) in enumerate(((-hw - 10.0, -hd - 30.0), (-hw - 10.0, -hd - 6.0), (-hw - 10.0, hd - 2.5))):
-        K.inst(props / "power_pole.glb", (x, y, 0), yaw=90)
+    # the ground: gravel inside the fence, the apron before the front, the road out through the gate, bay lines
+    bm = bmesh.new()
+    bm.faces.new([bm.verts.new((x, y, 0.012)) for x, y in pts])
+    gravel = K.from_bm("yard_gravel", bm, K.mat("gravel", "#8f8a7e", rough=1.0, noise_scale=3, ao=0.2))
+    gravel.parent = G
+    C.quiet(gravel)
+    asphalt = K.mat("asphalt", "#5d5f60", rough=0.95, noise_scale=2, ao=0.2)
+    C.quiet(K.box("yard_road", (9.0, 9.0, 0.02), asphalt, loc=(0.0, y0 - 3.5, 0.01), bev=0, parent=G))
+    C.quiet(K.box("yard_drive", (9.0, -hd - 2.0 - y0, 0.02), asphalt, loc=(0.0, (y0 - hd - 2.0) / 2, 0.022), bev=0, parent=G))
+    C.quiet(K.box("yard_apron", (w + 6.0, 9.0, 0.02), K.mat("worn_concrete", "#a9a79e", rough=0.9, grime=0.2, noise_scale=2, ao=0.3), loc=(0, -hd - 4.5, 0.018), bev=0, parent=G))
+    for x in (-hw + 2.0, -hw + 5.0, -hw + 8.0, hw - 8.0, hw - 5.0, hw - 2.0):
+        C.quiet(K.box("bay_line", (0.15, 6.0, 0.01), C.mustard(0.6), loc=(x, y0 + 6.0, 0.03), bev=0, parent=G))
+    # the fence: the front side split round the gate, the back round its gate, the rest whole
+    F = C.group(G, "yard_fence")
+    sides = [(pts[k], pts[(k + 1) % 8]) for k in range(8)]
+    for k, (a, b) in enumerate(sides):
+        if k == 0:
+            C.mesh_fence(F, a, (-GATE, y0), lite=True)
+            C.mesh_fence(F, (GATE, y0), (-GATE, y0), gate=(0.0, 1.0), name="front_gate", lite=True)
+            C.mesh_fence(F, (GATE, y0), b, lite=True)
+        elif k == 4:
+            C.mesh_fence(F, a, (BACK_GATE, y1), lite=True)
+            C.mesh_fence(F, (-BACK_GATE, y1), (BACK_GATE, y1), gate=(0.0, 1.0), name="back_gate", lite=True)
+            C.mesh_fence(F, (-BACK_GATE, y1), b, lite=True)
+        else:
+            C.mesh_fence(F, a, b, lite=True)
+    for x in (-GATE - 0.3, GATE + 0.3):
+        C.quiet(K.box("gate_pier", (0.4, 0.4, 2.6), C.steel(), loc=(x, y0, 1.3), bev=0.03, parent=F))
+        C.hazard_band(C.group(F, "gate_haz", (x, y0 - 0.21, 0)), (0, 0, 0.3), 0.4, 1.0)
+        C.solid(F, "gate_pier", (0.4, 0.4, 2.6), (x, y0, 1.3))
+    # floodlight masts in the cut corners, facing the yard
+    for k in (1, 3, 5, 7):
+        (ax, ay), (bx, by) = sides[k]
+        mx, my = (ax + bx) / 2, (ay + by) / 2
+        u = Vector((-mx, -my, 0)).normalized()
+        C.floodlight_mast(G, (mx + u.x * 1.5, my + u.y * 1.5, 0), h=12.0, yaw=math.degrees(math.atan2(u.x, -u.y)), lit=False)
+    # by the door: loaded pallets and empty stacks either side, clear of the signs, lights and cones
+    for k, (x, y, yaw) in enumerate(((-11.0, -hd - 3.0, 5), (11.0, -hd - 3.0, 0))):
+        C.prop(G, lambda k=k: CB.pallet(21 + k), (x, y, 0), yaw=yaw)
+    for x, y, n in ((-13.0, -hd - 3.0, 4), (-14.5, -hd - 4.4, 2), (13.2, -hd - 3.2, 3)):
+        _pallets(G, (x, y, 0), n, rnd.uniform(-6, 6), rnd)
+    C.prop(G, lambda: PI.chemical_drums(64), (hw - 4.0, -hd - 6.5, 0), yaw=-30)
+    C.prop(G, lambda: CB.forklift_wreck(22), (hw - 9.0, -hd - 9.5, 0), yaw=200)
+    # containers along the left (behind the truck doors' way for the medium warehouse), cable drums and beams right
+    cy = (hd - 16.5, hd - 9.0) if name == "warehouse" else tuple(-hd + 3.0 + k * 7.5 for k in range(3 if floors > 2 else 2))
+    for k, y in enumerate(cy):
+        C.prop(G, lambda k=k: CA.shipping_container_open(27) if k == 1 else CA.shipping_container(26), (-hw - 6.5, y, 0), yaw=90 + rnd.uniform(-3, 3))
+    C.prop(G, lambda: CA.shipping_container(29), (-hw - 6.5, cy[0], 2.6), yaw=88)
+    C.prop(G, lambda: PI.cable_drum_stack(62), (hw + 5.5, -hd - 4.0, 0), yaw=20)
+    if name == "warehouse_large":
+        C.prop(G, lambda: PI.steel_beam_stack(59), (hw + 5.5, hd + 3.0 if name == "warehouse_large" else hd - 4.0, 0), yaw=90)
+    C.prop(G, lambda: CA.fuel_tank(28), (-hw - 6.0, hd + 3.0, 0), yaw=0)
+    C.prop(G, lambda: CA.transformer_box(31), (-hw - 2.5, -hd + 4.0 if name == "warehouse" else hd - 6.0, 0), yaw=90)
+    # power in to the intake on the left wall
+    C.prop(G, lambda: CA.power_pole(22), (x0 + 2.0, -hd - 6.0, 0), yaw=90, collide=((0.5, 0.5, 9.0), (0, 0, 4.5)))
     return G
+
+
+# Spots walk_settlers.py checks a player reaches on each warehouse's collider (Blender frame), and the ground it walks.
+WALK = {}
+for _n, (_f, _w, _d, _c, _s) in WAREHOUSES.items():
+    _x0, _x1, _y0, _y1 = YARD[_n]
+    WALK[_n] = {"half": (max(-_x0, _x1) + 8.0, max(-_y0, _y1) + 8.0),
+                "targets": {"outside the front gate": (0.0, _y0 - 1.5, 0.0), "through the back gate": (0.0, _y1 + 1.5, 0.0),
+                            "inside the door": (0.0, -_d / 2 + 4.0, 0.3), "on the roof": (-_w / 2 + 10.0, -_d / 2 + 3.0, 4.0 * _f + 0.3),
+                            "by the containers": (-_w / 2 - 3.5, YARD[_n][2] + 8.0 if _n != "warehouse" else _d / 2 - 12.0, 0.0)}}

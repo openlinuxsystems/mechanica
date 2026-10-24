@@ -7,8 +7,9 @@ steps no more than 0.35 m. It floods out from the POI's front edge and reports:
 
 * every marker of the prefab: the surface under it (at the marker's height, on the model or the ground), that nothing
   stands in the space it needs (a part: 0.6 m square, 1.2 m up; a derelict: 3 x 6 m, 2.5 m up, turned by its yaw) and
-  that a player can walk up to it;
-* every target settlers.WALK lists for the POI (inside rooms, decks, the maze's heart): reachable or not;
+  that a player can walk up to it (a door marker, which fills its opening in the wall, only that);
+* every target settlers.WALK, colony_sites.WALK or warehouses.WALK lists for the POI (inside rooms, decks, silo roofs,
+  the maze's heart, a warehouse's yard): reachable or not; a table entry's ``half`` widens the walked area (a yard);
 * the share of the footprint a player can walk.
 
 Exits 1 if any check fails. Blender frame: the POI's (x, y, z) is Blender (x, -z, y).
@@ -46,7 +47,9 @@ def load(name):
 
 # Types without a pooled prefab of their own are probed through their first numbered site.
 SITE = {"farmer_shack": "poi_04", "campsite": "poi_10", "farmers_hideout": "poi_20", "capsule_scrapyard": "poi_41",
-        "haymaze": "poi_42", "large_camp": "poi_43", "scrap_city_garage": "poi_50"}
+        "haymaze": "poi_42", "large_camp": "poi_43", "scrap_city_garage": "poi_50",
+        "packing_station_vegetable": "poi_05", "packing_station_fruit": "poi_18", "silo_cluster": "poi_06",
+        "silo_district": "poi_26", "growlab": "poi_14", "chemical_lake_facility": "poi_23"}
 
 
 def probe(name, walk=None):
@@ -54,7 +57,7 @@ def probe(name, walk=None):
                                if not line.strip().startswith("//")))
     w, _, d = poi["size"]
     verts, polys = load(name)
-    X, Y = w / 2 + 9.0, d / 2 + 9.0
+    X, Y = (walk or {}).get("half", (w / 2 + 9.0, d / 2 + 9.0))
     base = len(verts)
     verts += [Vector((-X - 5, -Y - 5, 0)), Vector((X + 5, -Y - 5, 0)), Vector((X + 5, Y + 5, 0)), Vector((-X - 5, Y + 5, 0))]
     polys.append([base, base + 1, base + 2, base + 3])
@@ -69,7 +72,7 @@ def probe(name, walk=None):
             y = -Y + j * CELL
             z = top
             spots = []
-            for _ in range(16):
+            for _ in range(64):     # every layer down to the ground (a stair tower has many)
                 hit = bvh.ray_cast(Vector((x, y, z)), Vector((0, 0, -1)))
                 if hit[0] is None:
                     break
@@ -131,6 +134,8 @@ def probe(name, walk=None):
                 if h[0] is not None and h[0].z > mz + 0.1:
                     clear = False
         ok_reach = reach(mx, my, mz, r=1.6 if m["type"] == "derelict" else 1.0)
+        if m["type"] == "door":     # a door fills its opening in the wall: only that you can walk up to it
+            support = clear = True
         status = "ok" if support and clear and ok_reach else "FAIL"
         if status != "ok":
             fails.append(f"marker {k} {m.get('ref')}")
@@ -145,11 +150,12 @@ def probe(name, walk=None):
 
 
 def main():
-    try:
-        import settlers  # noqa: PLC0415
-        walks = settlers.WALK
-    except ImportError:
-        walks = {}
+    walks = {}
+    for mod in ("settlers", "colony_sites", "warehouses"):
+        try:
+            walks.update(__import__(mod).WALK)
+        except ImportError:
+            pass
     bad = {}
     for name in sys.argv[1:]:
         f = probe(name, walks.get(name))
