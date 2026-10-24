@@ -130,7 +130,7 @@ def sheet(scene, shoot):
     P = K.link(bpy.data.objects.new("sheet", None))
     K.box("sheet_pad", (100.0, 64.0, 0.06), M("#b9b6ac", wear=0, grime=0, scratches=0), loc=(0.0, 24.0, 0.03), bev=0, parent=P)
     rows = build(P)
-    shoot("kit_sheet", (0.0, -40.0, 46.0), (0.0, 23.0, 0.0), 30, 1600, 1100)
+    shoot("kit_sheet", (0.0, -44.0, 50.0), (0.0, 24.0, 0.0), 25, 1600, 1100)
     hidden = {ob.name for ob in P.children_recursive if ob.hide_render}
 
     def only(k, x0, x1):
