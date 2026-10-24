@@ -841,7 +841,7 @@ public sealed partial class WorldGenerator
     // The direction the ground rises fastest at a point, from central differences over 2 m, or null where it is level.
     private Vector2? Gradient(Vector2 p)
     {
-        var g = new Vector2(HeightAt(p.X + 2f, p.Y) - HeightAt(p.X - 2f, p.Y), HeightAt(p.X, p.Y + 2f) - HeightAt(p.X, p.Y - 2f)) / 4f;
+        var g = new Vector2(FaceHeight(p.X + 2f, p.Y) - FaceHeight(p.X - 2f, p.Y), FaceHeight(p.X, p.Y + 2f) - FaceHeight(p.X, p.Y - 2f)) / 4f;
         return g.Length() < 0.05f ? null : Vector2.Normalize(g);
     }
 
@@ -855,7 +855,7 @@ public sealed partial class WorldGenerator
         // Most of the land has no face in reach: two samples rule it out before anything finer.
         var low = spot - dir * FootReach;
         var high = spot + dir * (FootReach + face.Run);
-        if (HeightAt(high.X, high.Y) - HeightAt(low.X, low.Y) < face.Rise)
+        if (FaceHeight(high.X, high.Y) - FaceHeight(low.X, low.Y) < face.Rise)
             return false;
         // Then a coarse line of samples up the slope finds where it climbs enough within a run, if anywhere: a hillside
         // climbs over the whole line, a face within a run of it.
@@ -865,7 +865,7 @@ public sealed partial class WorldGenerator
         for (var k = 0; k < n; k++)
         {
             var p = low + dir * (k * step);
-            line[k] = HeightAt(p.X, p.Y);
+            line[k] = FaceHeight(p.X, p.Y);
         }
         var span = (int)MathF.Ceiling(face.Run / step);
         var first = -1;
@@ -888,7 +888,7 @@ public sealed partial class WorldGenerator
         for (var k = 0; k < m; k++)
         {
             var p = spot + dir * (t0 - 1f + k * 0.5f);
-            fine[k] = HeightAt(p.X, p.Y);
+            fine[k] = FaceHeight(p.X, p.Y);
         }
         for (var k = 2; k + 2 < m; k++)
         {
@@ -898,7 +898,7 @@ public sealed partial class WorldGenerator
             // Steep just above, gentle just below: the foot.
             if (fine[k + 2] - h < 0.6f || h - fine[k - 2] > 0.45f)
                 continue;
-            var rise = HeightAt(p.X + dir.X * face.Run, p.Y + dir.Y * face.Run) - h;
+            var rise = FaceHeight(p.X + dir.X * face.Run, p.Y + dir.Y * face.Run) - h;
             if (rise < face.Rise || rise > (face.Max ?? float.MaxValue))
                 return false;
             spot = p;
@@ -910,6 +910,14 @@ public sealed partial class WorldGenerator
 
     // Furthest a face rule's spot slides to find the foot of its face.
     private const float FootReach = 8f;
+
+    // The ground face rules look for faces in: everything but the bumps, whose steeper banks would otherwise pass for
+    // low cliffs. The bumps are smooth over a face's width, so the foot found on this ground is the foot on the real one.
+    private float FaceHeight(float x, float z)
+    {
+        var sample = SampleBiomes(x, z);
+        return KeepPads(x, z, Roads.Shape(x, z, ApplyPois(x, z, RawHeight(x, z, sample))));
+    }
 
     // Which biomes have ground in or near each BiomeTile-metre tile, as bits, from a 3 by 3 grid of samples a little
     // wider than the tile: face rules from every biome ask everywhere, and a biome sample is dear.
