@@ -46,6 +46,9 @@ structure's centre (glTF +Y up, front towards +Z):
   models, with a collider so their openings stay open), a sea stack and a balanced rock (world objects).
   factions_bots_a.py (Scuttlers and Rakehands) and factions_bots_b.py (Spoolers and Threshers) are the bot factions'
   marks: their lairs and the smaller pieces of their faction sites.
+* ``meshes/world/cliffs/*.glb`` - sculpted rock that dresses the cliff terraces (cliff_rocks.py): bedded walls for an
+  8 m step, a 60 degree corner, low outcrop bands and scree fans, each with its origin at the foot of its face and a
+  low-poly collider.
 
 A structure model is one mesh of every part with a few shared detail textures (textures.py), a ``collider`` mesh of
 its larger parts (the game collides with that and does not draw it), and its point lights. World object models have
@@ -61,13 +64,14 @@ How to run (Blender as a Python module, no Blender UI needed):
     python tools/structures/build_structures.py props props_fields    # only the props of the modules named
     python tools/structures/build_structures.py landmarks [landmark_ziggurat ...]   # only the landmarks
     python tools/structures/build_structures.py formations            # only the rock formations (or the ones named)
+    python tools/structures/build_structures.py cliffs [cliff_wall_a ...]   # only the cliff rocks
     python tools/structures/build_structures.py sv04                  # only the SV-04 wreck, its containers and spills
     python tools/structures/build_structures.py warehouses [warehouse_small ...]   # only the warehouses
     python tools/structures/build_structures.py ruins [ruin ruin_city ...]        # only the Old Stone ruins
     python tools/structures/build_structures.py settlers [farmer_shack ...]        # only the settler buildings
 
 The outputs are committed; re-run this script after changing it (or kit.py, frame.py, families.py, ship.py, cargo_ship.py, crash_site.py, sv04_layout.py,
-workshop.py, colony_kit.py, warehouses.py, stone_kit.py, ruins.py, ruin_city.py, settler_kit.py, settlers.py, landmarks.py, props*.py, rock_formations.py, textures.py) and commit the result. The build is deterministic (seeded noise only).
+workshop.py, colony_kit.py, warehouses.py, stone_kit.py, ruins.py, ruin_city.py, settler_kit.py, settlers.py, landmarks.py, props*.py, rock_formations.py, cliff_rocks.py, textures.py) and commit the result. The build is deterministic (seeded noise only).
 """
 
 from __future__ import annotations
@@ -106,6 +110,7 @@ import props_coast  # noqa: E402
 import props_fields  # noqa: E402
 import props_roadside  # noqa: E402
 import rock_formations  # noqa: E402
+import cliff_rocks  # noqa: E402
 import factions_bots_a  # noqa: E402
 import factions_bots_b  # noqa: E402
 import ship as S  # noqa: E402
@@ -197,6 +202,12 @@ def formations(only=()):
             single(name, build, WORLD / "formations", collider=name in rock_formations.COLLIDE)
 
 
+def cliffs(only=()):
+    for name, build in cliff_rocks.PROPS.items():
+        if not only or name in only:
+            single(name, build, WORLD / "cliffs")
+
+
 def warehouses(only=()):
     for name in WH.WAREHOUSES:
         if not only or name in only:
@@ -238,6 +249,9 @@ def main():
     if sys.argv[1:2] == ["formations"]:
         formations(sys.argv[2:])
         return
+    if sys.argv[1:2] == ["cliffs"]:
+        cliffs(sys.argv[2:])
+        return
     if sys.argv[1:2] == ["sv04"]:
         ship()
         return
@@ -259,6 +273,7 @@ def main():
     single("scrap_pile_wood", pile("wood"), WORLD, collider=False)
     props()
     formations()
+    cliffs()
 
 
 if __name__ == "__main__":

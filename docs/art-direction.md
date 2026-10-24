@@ -193,6 +193,7 @@ python tools/structures/build_structures.py
 | `settlers.py` | The settler sites built from that kit: the farmer's shack, the farmers' hideout, the camps, both scrapyards, the haymaze and the Scrap City garage (`build_structures.py settlers [names]` builds only them) |
 | `walk_settlers.py` | Walks a settler site's collider as a player (0.35 m steps, 1.9 m headroom): every marker stands on ground in the clear and in reach, and each spot `settlers.WALK` names can be reached (`python3 tools/structures/walk_settlers.py NAME...`) |
 | `render_settlers.py` | Review renders of the settler kit sheet and sites, each with a 1.8 m player |
+| `cliff_rocks.py` | Sculpted rock that dresses the 8 m cliff terraces, in the stone and with the voxel-remeshed, worn, bedded and faceted sculpt of the rock formations (`rock_formations.py`): bedded walls 13 to 16 m long (`cliff_wall_a` to `_c`), a 60° convex corner, 4 to 5 m outcrop bands and scree fans, each with its origin on the ground at the foot of its face, the face towards +Z, the back running into the hillside, and a low-poly `collider` (`build_structures.py cliffs` builds only them); `render_cliffs.py` renders the kit and a dressed step for review |
 | `build_structures.py` | Exports every vanilla structure and the starting scrap piles |
 
 The outputs are committed. Re-run the build after changing any of these files and commit the result; it is

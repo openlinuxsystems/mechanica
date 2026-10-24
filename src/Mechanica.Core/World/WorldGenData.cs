@@ -18,7 +18,23 @@ public sealed record Biome(int Index, string Id, string Name, float Weight, floa
 
     /// <summary>Share of the hills and cliffs it keeps (<see cref="BiomeDefinition.Hills"/>).</summary>
     public float Hills { get; init; } = 1f;
+
+    /// <summary>Share of the bumps it keeps (<see cref="BiomeDefinition.Bumps"/>).</summary>
+    public float Bumps { get; init; } = 1f;
+
+    /// <summary>Its sub-areas (<see cref="BiomeDefinition.Patches"/>).</summary>
+    public IReadOnlyList<Patch> Patches { get; init; } = [];
 }
+
+/// <summary>A biome's sub-area (<see cref="PatchDefinition"/>) ready for generation.</summary>
+/// <param name="Layer">Cluster layer name.</param>
+/// <param name="Scale">Noise wavelength in metres.</param>
+/// <param name="Cover">Share of the ground covered.</param>
+/// <param name="Ground">Ground layer painted, or -1.</param>
+/// <param name="Paint">How fully the ground covers a patch's middle.</param>
+/// <param name="Height">Metres a patch's middle rises (below 0: sinks).</param>
+/// <param name="Soft">Edge softness in noise units.</param>
+public sealed record Patch(string Layer, float Scale, float Cover, int Ground, float Paint, float Height, float Soft);
 
 /// <summary>A site (<see cref="SiteDefinition"/>) ready for placement, with its prefab or pool resolved.</summary>
 /// <param name="Index">Place in <see cref="WorldGenData.Sites"/>.</param>
@@ -50,6 +66,9 @@ public sealed record Scatter(int Index, int Biome, WorldObjectDefinition Object,
     /// <summary>Qualified ids (<c>mod_id:poi_id</c>) of the POIs <see cref="NearDefinition.Pois"/> names, or null.</summary>
     public IReadOnlySet<string>? NearPois { get; init; }
 
+    /// <summary>The rule's <see cref="ScatterRule.Face"/>, or null.</summary>
+    public FaceDefinition? Face { get; init; }
+
     /// <summary>The rule's <see cref="ScatterRule.Away"/>, or null.</summary>
     public AwayDefinition? Away { get; init; }
 
@@ -70,7 +89,11 @@ public sealed record Scatter(int Index, int Biome, WorldObjectDefinition Object,
 /// <param name="Colors">Tints to pick from (0..1 RGB).</param>
 /// <param name="MaxSlope">Steepest ground it grows on (rise over run).</param>
 public sealed record Flora(int Index, int Biome, FloraKind Kind, float Density, float Coverage, float PatchSize, float MinScale, float MaxScale,
-    IReadOnlyList<FloraModel> Models, IReadOnlyList<Vector3> Colors, float MaxSlope);
+    IReadOnlyList<FloraModel> Models, IReadOnlyList<Vector3> Colors, float MaxSlope)
+{
+    /// <summary>Index in its biome's <see cref="Biome.Patches"/> of the patch layer it keeps to, or -1.</summary>
+    public int Patch { get; init; } = -1;
+}
 
 /// <summary>A ground texture ready for drawing, with its layer index in <see cref="WorldGenData.Grounds"/>.</summary>
 /// <param name="Index">Texture layer.</param>
@@ -121,6 +144,7 @@ public sealed class WorldGenData
             Ridge = b.Ridge,
             Terrace = b.Terrace,
             Hills = b.Hills,
+            Bumps = b.Bumps,
         })];
         Objects = (definition.Objects ?? []).ToDictionary(o => o.Id!);
         Liquids = (definition.Liquids ?? []).ToDictionary(l => l.Id!);
@@ -138,6 +162,7 @@ public sealed class WorldGenData
                     Key = key,
                     NearPois = rule.Near?.Pois is { } near ? near.Select(QualifyPoi).ToHashSet(StringComparer.Ordinal) : null,
                     Away = rule.Away,
+                    Face = rule.Face,
                     AwayPois = rule.Away?.Pois is { } away ? away.Select(QualifyPoi).ToHashSet(StringComparer.Ordinal) : null,
                 };
                 scatter.Add(loaded);
@@ -155,7 +180,11 @@ public sealed class WorldGenData
                 var models = rule.Models is { Count: > 0 } ids ? ids.Select(id => FloraModels.Find(id)!).ToList() : FloraModels.OfKind(kind);
                 var colors = rule.Colors is { Count: > 0 } tints ? tints.Select(ParseColor).ToList() : [Vector3.One];
                 var (min, max) = rule.Scale is [var lo, var hi] ? (lo, hi) : (1f, 1f);
-                flora.Add(new Flora(flora.Count, Biomes.First(b => b.Id == biome.Id).Index, kind, rule.Density, rule.Coverage, rule.PatchSize, min, max, models, colors, rule.MaxSlope));
+                var index = Biomes.First(b => b.Id == biome.Id).Index;
+                flora.Add(new Flora(flora.Count, index, kind, rule.Density, rule.Coverage, rule.PatchSize, min, max, models, colors, rule.MaxSlope)
+                {
+                    Patch = rule.Layer is { } layer ? (biome.Patches ?? []).FindIndex(p => p.Layer == layer) : -1,
+                });
             }
         }
         FloraRules = flora;
@@ -164,6 +193,12 @@ public sealed class WorldGenData
         Grounds = [.. (definition.Grounds ?? []).Select((g, i) => new Ground(i, g.Id!, assetFile?.Invoke(g.Texture!, definitionMod, AssetKind.Texture), g.Tile, g.Flora,
             g.FloraTint is { } tint ? ParseColor(tint) : null))];
         BiomeGrounds = [.. (definition.Biomes ?? []).Select(b => b.Ground is { } id ? GroundIndex(id) : -1)];
+        Biomes = [.. Biomes.Select((b, i) => b with
+        {
+            Patches = [.. (definition.Biomes![i].Patches ?? []).Select(p => new Patch(p.Layer!, p.Scale, p.Cover,
+                p.Ground is { } ground ? GroundIndex(ground) : -1, p.Paint, p.Height, p.Soft))],
+        })];
+        CoastBiome = CoastBiome is { } edge ? Biomes[edge.Index] : null;
         SlopeGround = definition.SlopeGround is { Ground: { } slope } ? GroundIndex(slope) : -1;
         ShoulderGround = definition.Roads?.ShoulderGround is { } shoulder ? GroundIndex(shoulder) : -1;
         TrackGround = definition.Roads?.TrackGround is { } track ? GroundIndex(track) : -1;

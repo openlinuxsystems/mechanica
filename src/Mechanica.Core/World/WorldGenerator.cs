@@ -50,6 +50,7 @@ public sealed partial class WorldGenerator
     private readonly uint _hillSalt;
     private readonly uint _cliffSalt;
     private readonly uint _edgeSalt;
+    private readonly uint _bumpSalt;
     private readonly int _cellReach;
     private readonly uint _sheerSalt;
     private readonly float _sheerThreshold;
@@ -100,6 +101,7 @@ public sealed partial class WorldGenerator
         _hillSalt = Noise.Salt(seed, 10);
         _cliffSalt = Noise.Salt(seed, 11);
         _edgeSalt = Noise.Salt(seed, 13);
+        _bumpSalt = Noise.Salt(seed, 14);
         _clusterSalt = Noise.Salt(seed, 101);
         // A cell two or more away is at least 0.19 cell sizes further than the nearest point, one three or more away
         // at least 1.19: look one cell out while every blend and ramp fits inside the first, two cells out otherwise.
@@ -157,7 +159,50 @@ public sealed partial class WorldGenerator
     public float HeightAt(float x, float z)
     {
         var sample = SampleBiomes(x, z);
-        return KeepPads(x, z, Roads.Shape(x, z, ApplyPois(x, z, RawHeight(x, z, sample))));
+        return Shaped(x, z, sample);
+    }
+
+    // The ground: the raw terrain flattened by the POIs and cut by the roads, then the bumps over the top, and every fixed pad
+    // held at its height.
+    private float Shaped(float x, float z, in BiomeSample sample) =>
+        KeepPads(x, z, Bumped(x, z, sample, Roads.Shape(x, z, ApplyPois(x, z, RawHeight(x, z, sample)))));
+
+    // Metres beyond a road's bed or a POI's edge over which the bumps rise to full height.
+    private const float BumpClearance = 20f;
+
+    // The bumps go on last, so the roads plan their routes and the POIs their pads on the smoother ground under them, and
+    // they ease out towards each road and POI, which keep the ground they shaped.
+    private float Bumped(float x, float z, in BiomeSample sample, float h)
+    {
+        if (_terrain.Bumps is not { Height: > 0f } bumps || sample.Bumps <= 0f)
+            return h;
+        var keep = sample.Hills * Keep(x, z);
+        if (keep <= 0f)
+            return h;
+        keep *= Noise.SmoothStep(1f, BumpClearance, Roads.Clearance(x, z));
+        foreach (var poi in PoisNear(x, z))
+        {
+            if (keep <= 0f)
+                break;
+            keep *= Noise.SmoothStep(poi.Radius, poi.Radius + BumpClearance, Vector2.Distance(poi.Centre, new Vector2(x, z)));
+        }
+        if (keep <= 0f)
+            return h;
+        float u = x / bumps.Scale, v = z / bumps.Scale;
+        var n = Noise.Fractal(u, v, _bumpSalt, bumps.Octaves, 2f, bumps.Gain);
+        if (bumps.Banks > 0f)
+        {
+            // A bank: the noise folded about zero gives long crests; the square softens their foot.
+            var fold = 1f - 2f * MathF.Abs(Noise.Fractal(u * 0.7f, v * 0.7f, Noise.Mix(_bumpSalt), bumps.Octaves, 2f, bumps.Gain));
+            n += (fold * MathF.Abs(fold) - n) * bumps.Banks;
+        }
+        if (bumps.Cover < 1f)
+        {
+            // The noise is roughly even over -0.3..0.3, so this threshold leaves about the cover's share above it.
+            var stretch = Noise.Fractal(x / bumps.CoverScale, z / bumps.CoverScale, Noise.Mix(_bumpSalt ^ 0xC0BEu), 2, 2f, 0.5f);
+            n *= Noise.SmoothStep(-0.08f, 0.08f, stretch - 0.6f * (0.5f - bumps.Cover));
+        }
+        return h + bumps.Height * sample.Bumps * keep * n;
     }
 
     /// <summary>Ground height before roads cut and fill it: what the road router plans on.</summary>
@@ -211,7 +256,7 @@ public sealed partial class WorldGenerator
                 float x = ox + (i - 1) * res, z = oz + (j - 1) * res;
                 weights.Clear();
                 var sample = SampleBiomes(x, z, weights);
-                var h = KeepPads(x, z, Roads.Shape(x, z, ApplyPois(x, z, RawHeight(x, z, sample))));
+                var h = Shaped(x, z, sample);
                 bordered[j * m + i] = h;
                 if (i >= 1 && i <= n && j >= 1 && j <= n)
                 {
@@ -227,6 +272,7 @@ public sealed partial class WorldGenerator
                             if (Data.BiomeGrounds[b] >= 0)
                                 grounds[g + Data.BiomeGrounds[b]] += weights[b];
                         }
+                        PaintPatches(grounds, g, weights, x, z);
                     }
                 }
             }
@@ -452,6 +498,15 @@ public sealed partial class WorldGenerator
             {
                 for (var ix = ix0; ix <= ix1; ix++)
                 {
+                    if (rule.Face is not null)
+                    {
+                        if (FaceSpot(rule, ix, iz) is { } foot && foot.X >= x0 && foot.X < x1 && foot.Y >= z0 && foot.Y < z1 && !Crowded(rule, foot, perched))
+                        {
+                            foreach (var placement in Place(rule, ix, iz, foot))
+                                yield return placement;
+                        }
+                        continue;
+                    }
                     if (!Candidate(rule, ix, iz, out var spot, perched) || spot.X < x0 || spot.X >= x1 || spot.Y < z0 || spot.Y >= z1)
                         continue;
                     if (Fits(rule, spot) && !Crowded(rule, spot, perched))
@@ -478,8 +533,32 @@ public sealed partial class WorldGenerator
     /// What a scatter rule places in one of its cells: its object, a scene's pieces or a rock deposit's blocks; nothing when
     /// the cell holds none.
     /// </summary>
-    public IEnumerable<WorldObjectPlacement> InCell(Scatter rule, int cellX, int cellZ) =>
-        Candidate(rule, cellX, cellZ, out var spot) && Fits(rule, spot) && !Crowded(rule, spot) ? Place(rule, cellX, cellZ, spot) : [];
+    public IEnumerable<WorldObjectPlacement> InCell(Scatter rule, int cellX, int cellZ)
+    {
+        if (rule.Face is not null)
+            return FaceSpot(rule, cellX, cellZ) is { } foot && !Crowded(rule, foot) ? Place(rule, cellX, cellZ, foot) : [];
+        return Candidate(rule, cellX, cellZ, out var spot) && Fits(rule, spot) && !Crowded(rule, spot) ? Place(rule, cellX, cellZ, spot) : [];
+    }
+
+    // Face rules' fitting spots by cell. Finding a face's foot takes dozens of height samples and every later rule's
+    // crowding check asks for the same cells again, so the answers are kept (they never change), up to FaceCacheSize.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<(int Rule, int X, int Z), Vector2?> _faceSpots = new();
+    private const int FaceCacheSize = 200_000;
+    private int _faceSpotCount;
+
+    private Vector2? FaceSpot(Scatter rule, int ix, int iz)
+    {
+        if (_faceSpots.TryGetValue((rule.Index, ix, iz), out var known))
+            return known;
+        Vector2? found = Candidate(rule, ix, iz, out var spot) && Fits(rule, spot) ? spot : null;
+        // Counted by hand: a concurrent dictionary's Count takes every one of its locks.
+        if (_faceSpots.TryAdd((rule.Index, ix, iz), found) && Interlocked.Increment(ref _faceSpotCount) >= FaceCacheSize)
+        {
+            _faceSpots.Clear();
+            Interlocked.Exchange(ref _faceSpotCount, 0);
+        }
+        return found;
+    }
 
     // The object a scatter spot holds: one, or every cube of a rock outcrop.
     private IEnumerable<WorldObjectPlacement> Place(Scatter rule, int ix, int iz, Vector2 spot)
@@ -489,6 +568,8 @@ public sealed partial class WorldGenerator
         var scale = o.Scale is [var lo, var hi] ? lo + (hi - lo) * Noise.Unit(Noise.Mix(salt)) : 1f;
         var yaw = rule.Roadside is { } roadside && Roads.Nearest(spot.X, spot.Y, RoadReach, roadside.Road) is { } road
             ? MathF.Atan2(road.Point.X - spot.X, road.Point.Y - spot.Y)
+            : rule.Face is not null && Uphill(spot) is { } up
+            ? MathF.Atan2(-up.X, -up.Y)
             : Noise.Unit(salt) * 2f * MathF.PI;
         if (o.Scene is { } scene)
         {
@@ -499,7 +580,9 @@ public sealed partial class WorldGenerator
         if (o.Outcrop is not { } outcrop)
         {
             var y = (rule.Water == ScatterWater.Surface ? WaterLevelAt(spot.X, spot.Y) : HeightAt(spot.X, spot.Y)) - o.Sink * scale;
-            yield return new WorldObjectPlacement(new WorldObjectId(rule.Key, ix, iz), o, new Vector3(spot.X, y, spot.Y), yaw, scale);
+            // Rock along a face picks among its models, so a row of walls never repeats.
+            var variant = rule.Face is not null && o.Mesh?.Variants is { Count: > 0 } variants ? (int)(Noise.Mix(salt ^ 0xFACEu) % (uint)(variants.Count + 1)) : 0;
+            yield return new WorldObjectPlacement(new WorldObjectId(rule.Key, ix, iz), o, new Vector3(spot.X, y, spot.Y), yaw, scale, variant);
             yield break;
         }
         // A rock deposit: mounds of blocks turned by the deposit's yaw, each mound stood on the lowest ground under
@@ -653,6 +736,16 @@ public sealed partial class WorldGenerator
     private int BlockVariants(string id) => 1 + (Data.Objects.GetValueOrDefault(id)?.Mesh?.Variants?.Count ?? 0);
 
     // The scatter rule's spot in a cell, if the cell's dice roll keeps it.
+    // A cell's random spot before any rule moves it, or null when the cell's roll leaves it empty.
+    private Vector2? CellSpot(Scatter rule, int ix, int iz)
+    {
+        var salt = _scatterSalt ^ (uint)rule.Key;
+        if (Noise.Unit(Noise.Hash(salt, ix, iz, 0)) >= rule.Chance)
+            return null;
+        var s = rule.Spacing;
+        return new Vector2((ix + 0.1f + 0.8f * Noise.Unit(Noise.Hash(salt, ix, iz, 1))) * s, (iz + 0.1f + 0.8f * Noise.Unit(Noise.Hash(salt, ix, iz, 2))) * s);
+    }
+
     private bool Candidate(Scatter rule, int ix, int iz, out Vector2 spot, Dictionary<(int Rule, int X, int Z), Vector2>? perched = null)
     {
         spot = default;
@@ -671,6 +764,10 @@ public sealed partial class WorldGenerator
         }
         var s = rule.Spacing;
         spot = new Vector2((ix + 0.1f + 0.8f * Noise.Unit(Noise.Hash(salt, ix, iz, 1))) * s, (iz + 0.1f + 0.8f * Noise.Unit(Noise.Hash(salt, ix, iz, 2))) * s);
+        // A face's foot takes many height samples to find: only look for it in the rule's own biome. The cheap tests go
+        // first, since every biome's face rules ask everywhere.
+        if (rule.Face is { } face)
+            return (!face.Sheer || NearSheer(spot)) && BiomeNear(spot, rule.Biome) && BiomeShare(spot.X, spot.Y, rule.Biome) > 0f && AtFoot(face, ref spot, out _);
         if (rule.Roadside is { } roadside)
         {
             if (roadside.Even)
@@ -732,6 +829,131 @@ public sealed partial class WorldGenerator
         return MathF.Abs(HeightAt(spot.X, spot.Y) - hit.Height) <= RoadsideRise + 1f;
     }
 
+    // The way up a face from its foot: the slope's direction 3 m up it, where the face is steepest, so the foot's own
+    // flattening never turns the object. Null on level ground.
+    private Vector2? Uphill(Vector2 foot)
+    {
+        if (Gradient(foot) is not { } dir)
+            return null;
+        return Gradient(foot + dir * 3f) is { } face && Vector2.Dot(face, dir) > 0.5f ? face : dir;
+    }
+
+    // The direction the ground rises fastest at a point, from central differences over 2 m, or null where it is level.
+    private Vector2? Gradient(Vector2 p)
+    {
+        var g = new Vector2(FaceHeight(p.X + 2f, p.Y) - FaceHeight(p.X - 2f, p.Y), FaceHeight(p.X, p.Y + 2f) - FaceHeight(p.X, p.Y - 2f)) / 4f;
+        return g.Length() < 0.05f ? null : Vector2.Normalize(g);
+    }
+
+    // Slides a face rule's spot along the slope to the foot of the face above or below it, the last metre before the
+    // ground climbs steeply, and says whether the face there climbs as the rule wants. The spot moves at most FootReach.
+    private bool AtFoot(FaceDefinition face, ref Vector2 spot, out Vector2 up)
+    {
+        up = default;
+        if (Gradient(spot) is not { } dir)
+            return false;
+        // Most of the land has no face in reach: two samples rule it out before anything finer.
+        var low = spot - dir * FootReach;
+        var high = spot + dir * (FootReach + face.Run);
+        if (FaceHeight(high.X, high.Y) - FaceHeight(low.X, low.Y) < face.Rise)
+            return false;
+        // Then a coarse line of samples up the slope finds where it climbs enough within a run, if anywhere: a hillside
+        // climbs over the whole line, a face within a run of it.
+        const float step = 3f;
+        var n = (int)((2f * FootReach + face.Run) / step) + 1;
+        Span<float> line = stackalloc float[n];
+        for (var k = 0; k < n; k++)
+        {
+            var p = low + dir * (k * step);
+            line[k] = FaceHeight(p.X, p.Y);
+        }
+        var span = (int)MathF.Ceiling(face.Run / step);
+        var first = -1;
+        for (var k = 0; k + span < n && k * step <= 2f * FootReach; k++)
+        {
+            if (line[k + span] - line[k] >= face.Rise)
+            {
+                first = k;
+                break;
+            }
+        }
+        if (first < 0)
+            return false;
+        // The foot lies within a step or two of where that run starts: heights every half metre from a metre below
+        // the window to a metre above it.
+        var t0 = MathF.Max(-FootReach, first * step - FootReach - step);
+        var t1 = MathF.Min(FootReach, first * step - FootReach + 2f * step);
+        var m = (int)MathF.Round((t1 - t0) / 0.5f) + 5;
+        Span<float> fine = stackalloc float[m];
+        for (var k = 0; k < m; k++)
+        {
+            var p = spot + dir * (t0 - 1f + k * 0.5f);
+            fine[k] = FaceHeight(p.X, p.Y);
+        }
+        for (var k = 2; k + 2 < m; k++)
+        {
+            var t = t0 - 1f + k * 0.5f;
+            var p = spot + dir * t;
+            var h = fine[k];
+            // Steep just above, gentle just below: the foot.
+            if (fine[k + 2] - h < 0.6f || h - fine[k - 2] > 0.45f)
+                continue;
+            var rise = FaceHeight(p.X + dir.X * face.Run, p.Y + dir.Y * face.Run) - h;
+            if (rise < face.Rise || rise > (face.Max ?? float.MaxValue))
+                return false;
+            spot = p;
+            up = dir;
+            return true;
+        }
+        return false;
+    }
+
+    // Furthest a face rule's spot slides to find the foot of its face.
+    private const float FootReach = 8f;
+
+    // The ground face rules look for faces in: everything but the bumps, whose steeper banks would otherwise pass for
+    // low cliffs. The bumps are smooth over a face's width, so the foot found on this ground is the foot on the real one.
+    private float FaceHeight(float x, float z)
+    {
+        var sample = SampleBiomes(x, z);
+        return KeepPads(x, z, Roads.Shape(x, z, ApplyPois(x, z, RawHeight(x, z, sample))));
+    }
+
+    // Which biomes have ground in or near each BiomeTile-metre tile, as bits, from a 3 by 3 grid of samples a little
+    // wider than the tile: face rules from every biome ask everywhere, and a biome sample is dear.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<(int X, int Z), ulong> _biomeTiles = new();
+    private const float BiomeTile = 32f;
+    private int _biomeTileCount;
+
+    private bool BiomeNear(Vector2 spot, int biome)
+    {
+        if (Data.Biomes.Count > 64)
+            return true;
+        var key = ((int)MathF.Floor(spot.X / BiomeTile), (int)MathF.Floor(spot.Y / BiomeTile));
+        if (!_biomeTiles.TryGetValue(key, out var bits))
+        {
+            Span<float> weights = stackalloc float[Data.Biomes.Count];
+            for (var j = 0; j < 3; j++)
+            {
+                for (var i = 0; i < 3; i++)
+                {
+                    SampleBiomes((key.Item1 + i * 0.5f) * BiomeTile + (i - 1) * 8f, (key.Item2 + j * 0.5f) * BiomeTile + (j - 1) * 8f, weights);
+                    for (var b = 0; b < weights.Length; b++)
+                    {
+                        if (weights[b] > 0f)
+                            bits |= 1ul << b;
+                    }
+                }
+            }
+            if (_biomeTiles.TryAdd(key, bits) && Interlocked.Increment(ref _biomeTileCount) >= FaceCacheSize)
+            {
+                _biomeTiles.Clear();
+                Interlocked.Exchange(ref _biomeTileCount, 0);
+            }
+        }
+        return (bits & (1ul << biome)) != 0;
+    }
+
     // Metres before and after a roadside spot over which the road's bend is measured.
     private const float BendReach = 20f;
 
@@ -766,8 +988,18 @@ public sealed partial class WorldGenerator
             return false;
         if (rule.Water is { } water)
             return Wet(water, spot) && (water == ScatterWater.Surface || SlopeAt(spot.X, spot.Y) <= MathF.Min(_terrain.MaxScatterSlope, rule.Object.MaxSlope ?? float.MaxValue));
-        if (!Dry(spot) || SlopeAt(spot.X, spot.Y) > MathF.Min(_terrain.MaxScatterSlope, rule.Object.MaxSlope ?? float.MaxValue))
+        if (!Dry(spot) || SlopeAt(spot.X, spot.Y) > MathF.Min(rule.Face is null ? _terrain.MaxScatterSlope : float.MaxValue, rule.Object.MaxSlope ?? float.MaxValue))
             return false;
+        // A face's rock reaches back up the face and over its top: none of that may be a road, a structure or water.
+        if (rule.Face is { } face && Uphill(spot) is { } up)
+        {
+            for (var d = 2f; d <= face.Run; d += 3f)
+            {
+                var p = spot + up * d;
+                if (!InWorld(p.X, p.Y) || Built(p) || Roads.Near(p.X, p.Y, 1f) || !Dry(p))
+                    return false;
+            }
+        }
         if (rule.Perch is { } perch && !Perched(spot, perch))
             return false;
         if (rule.Object.Scene is { Level: { } level } && !Level(spot, rule.Object.Footprint, level))
@@ -873,6 +1105,14 @@ public sealed partial class WorldGenerator
             {
                 for (var ix = (int)MathF.Floor((spot.X - reach) / s); ix <= (int)MathF.Floor((spot.X + reach) / s); ix++)
                 {
+                    if (other.Face is not null)
+                    {
+                        // The foot is at most FootReach from the cell's spot: rule out far cells before looking for it.
+                        if (CellSpot(other, ix, iz) is { } raw && Vector2.Distance(raw, spot) < reach + FootReach
+                            && FaceSpot(other, ix, iz) is { } foot && Vector2.Distance(foot, spot) < reach)
+                            return true;
+                        continue;
+                    }
                     if (Candidate(other, ix, iz, out var near, perched) && Vector2.Distance(near, spot) < reach && Fits(other, near))
                         return true;
                 }
@@ -889,6 +1129,8 @@ public sealed partial class WorldGenerator
         public float TerraceStep;
         public float TerraceWeight;
         public float Hills;
+        public float Bumps;
+        public float Patch;
         public Vector3 Color;
         public int Biome;
     }
@@ -939,6 +1181,59 @@ public sealed partial class WorldGenerator
         }
     }
 
+    // How far, in the layer's noise, the ground rises from a patch's edge to its full height: about a sixth of the patch
+    // size, so a knoll's sides stay as gentle as the bumps.
+    private const float PatchRamp = 0.35f;
+
+    // How deep a point lies inside a patch layer's patches, in the layer's noise: 0 at the edge where the clustered rules'
+    // objects stop (their roll is the same noise, see ClusterRoll), above 0 inside, below 0 outside.
+    private float PatchDepth(Patch patch, float x, float z)
+    {
+        // ClusterRoll keeps a spot when 0.88 * smooth + 0.12 * dice < cover; at the average dice that is
+        // smooth < (cover - 0.06) / 0.88, and smooth is a logistic of 8 times the noise.
+        var c = Math.Clamp((patch.Cover - 0.06f) / 0.88f, 1e-3f, 1f - 1e-3f);
+        var edge = -MathF.Log(1f / c - 1f) / 8f;
+        var salt = _clusterSalt ^ Noise.Hash(patch.Layer);
+        return edge - Noise.Fractal(x / patch.Scale, z / patch.Scale, salt, 2, 2.1f, 0.5f);
+    }
+
+    // Metres a biome's patches lift (or sink) the ground at a point.
+    private float PatchRise(Biome biome, float x, float z)
+    {
+        var rise = 0f;
+        foreach (var patch in biome.Patches)
+        {
+            if (patch.Height != 0f)
+                rise += patch.Height * Noise.SmoothStep(-patch.Soft, PatchRamp, PatchDepth(patch, x, z));
+        }
+        return rise;
+    }
+
+    /// <summary>
+    /// 0 to 1: how fully a point lies in one of a biome's patches (<see cref="Biome.Patches"/>), soft across the edge.
+    /// </summary>
+    public float PatchWeight(int biome, int patch, float x, float z)
+    {
+        var p = Data.Biomes[biome].Patches[patch];
+        return Noise.SmoothStep(-p.Soft, p.Soft, PatchDepth(p, x, z));
+    }
+
+    // Paints a sample's biome patches over its biome grounds, each weighted by its biome's share there.
+    private void PaintPatches(float[] grounds, int at, ReadOnlySpan<float> weights, float x, float z)
+    {
+        for (var b = 0; b < weights.Length; b++)
+        {
+            if (weights[b] <= 0f)
+                continue;
+            var patches = Data.Biomes[b].Patches;
+            for (var p = 0; p < patches.Count; p++)
+            {
+                if (patches[p].Ground >= 0)
+                    Over(grounds, at, patches[p].Ground, weights[b] * patches[p].Paint * PatchWeight(b, p, x, z));
+            }
+        }
+    }
+
     // Lays a ground over a sample's others with a weight: the others shrink to make room.
     private static void Over(float[] grounds, int at, int ground, float weight)
     {
@@ -954,6 +1249,7 @@ public sealed partial class WorldGenerator
         var t = _terrain;
         var size = t.BiomeCellSize;
         var edge = EdgeDistance(x, z);
+        var (px0, pz0) = (x, z);
         if (t.BiomeWarp > 0f)
         {
             // Bend the borders: look the cells up at a point pushed around by smooth noise.
@@ -991,6 +1287,7 @@ public sealed partial class WorldGenerator
         }
         var total = 0f;
         var shares = 0f;
+        Span<float> share = stackalloc float[Data.Biomes.Count];
         var jitter = MathF.Min(t.BiomeEdgeNoise, 0.6f * t.BiomeBlend);
         for (var k = 0; k < cells; k++)
         {
@@ -1019,6 +1316,8 @@ public sealed partial class WorldGenerator
             result.Relief += w * b.Relief;
             result.Ridge += w * b.Ridge;
             result.Color += w * b.Color;
+            result.Bumps += w * b.Bumps;
+            share[b.Index] += w;
             if (b.Terrace > 0f)
             {
                 result.TerraceStep += w * b.Terrace;
@@ -1033,6 +1332,12 @@ public sealed partial class WorldGenerator
         result.Ridge /= total;
         result.TerraceWeight /= total;
         result.Color /= total;
+        result.Bumps /= total;
+        for (var b = 0; b < share.Length; b++)
+        {
+            if (share[b] > 0f && Data.Biomes[b].Patches.Count > 0)
+                result.Patch += share[b] / total * PatchRise(Data.Biomes[b], px0, pz0);
+        }
         for (var k = 0; k < weights.Length; k++)
             weights[k] /= shares;
 
@@ -1047,6 +1352,8 @@ public sealed partial class WorldGenerator
                 result.TerraceWeight *= 1f - k;
                 result.Hills += (MathF.Min(result.Hills, coast.Hills) - result.Hills) * k;
                 result.Color += (coast.Color - result.Color) * k;
+                result.Bumps += (coast.Bumps - result.Bumps) * k;
+                result.Patch += (PatchRise(coast, px0, pz0) - result.Patch) * k;
                 for (var b = 0; b < weights.Length; b++)
                     weights[b] *= 1f - k;
                 if (!weights.IsEmpty)
@@ -1140,21 +1447,19 @@ public sealed partial class WorldGenerator
             var terraced = t.SeaLevel + sample.TerraceStep * (floor + Noise.SmoothStep(0.6f, 1f, steps - floor));
             h += (terraced - h) * sample.TerraceWeight;
         }
-        if (t.Hills is not null || t.Cliffs is not null)
-            h += HillsAndCliffs(x, z, sample.Hills);
+        if (t.Hills is not null || t.Cliffs is not null || sample.Patch != 0f)
+            h += HillsAndCliffs(x, z, sample);
         if (t.CoastWidth > 0f)
             h = t.SeaFloor + (h - t.SeaFloor) * Noise.SmoothStep(0f, t.CoastWidth, EdgeDistance(x, z));
         return MathF.Min(h, RiverSurface(x, z));
     }
 
-    // The broad hills and the cliff terraces (Scrap Mechanic's two layers of relief): both lie flat at the shores, on
-    // rivers, in flat biomes and round fixed pads, and climb to full height over the shore and pad ramps.
-    private float HillsAndCliffs(float x, float z, float keep)
+    // Share of the hills kept at a point by the coast, the rivers and the fixed pads, which they ease up from over their ramps.
+    private float Keep(float x, float z)
     {
         var t = _terrain;
         var ramp = t.Hills?.ShoreRamp ?? 0f;
-        var edge = EdgeDistance(x, z);
-        keep *= Noise.SmoothStep(t.CoastWidth, t.CoastWidth + ramp, edge);
+        var keep = Noise.SmoothStep(t.CoastWidth, t.CoastWidth + ramp, EdgeDistance(x, z));
         if (keep > 0f && RiverDistance(x, z) is var river && river < ramp)
             keep *= Noise.SmoothStep(0f, ramp, river);
         var padRamp = t.Hills?.PadRamp ?? 0f;
@@ -1166,6 +1471,18 @@ public sealed partial class WorldGenerator
             if (d < radius + padRamp)
                 keep *= Noise.SmoothStep(radius, radius + padRamp, d);
         }
+        return keep;
+    }
+
+    // The broad hills and the cliff terraces (Scrap Mechanic's two layers of relief): both lie flat at the shores, on
+    // rivers, in flat biomes and round fixed pads, and climb to full height over the shore and pad ramps.
+    // The biomes' patch heights (and the bumps, in Bumped) lie flat the same way.
+    private float HillsAndCliffs(float x, float z, in BiomeSample sample)
+    {
+        var t = _terrain;
+        var ramp = t.Hills?.ShoreRamp ?? 0f;
+        var edge = EdgeDistance(x, z);
+        var keep = sample.Hills > 0f ? sample.Hills * Keep(x, z) : 0f;
         if (keep <= 0f)
             return 0f;
         var h = 0f;
@@ -1191,7 +1508,7 @@ public sealed partial class WorldGenerator
             var floor = MathF.Floor(level);
             h += cliffs.Step * (floor + Noise.SmoothStep(1f - face, 1f, level - floor));
         }
-        return h;
+        return h + sample.Patch * keep;
     }
 
     // Metres of ground a cliff face takes here: sheer (face) where the sheer noise is above the threshold that leaves
@@ -1205,6 +1522,11 @@ public sealed partial class WorldGenerator
         var sheer = Noise.SmoothStep(_sheerThreshold - SheerBlend, _sheerThreshold + SheerBlend, SheerNoise(x, z, cliffs));
         return cliffs.GentleFace + (cliffs.Face - cliffs.GentleFace) * sheer;
     }
+
+    // Whether a point lies in or near the sheer share of the cliff terraces (terrain.cliffs.sheer), within about the reach a
+    // face rule's spot slides: one noise sample that spares most of the island the search for a face's foot.
+    private bool NearSheer(Vector2 p) =>
+        _terrain.Cliffs is not { } cliffs || cliffs.Sheer >= 1f || SheerNoise(p.X, p.Y, cliffs) >= _sheerThreshold - 2f * SheerBlend;
 
     // Half the width, in sheer noise, of the blend from a sheer face to a gentle one.
     private const float SheerBlend = 0.04f;

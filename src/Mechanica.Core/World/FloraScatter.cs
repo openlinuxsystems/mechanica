@@ -88,6 +88,8 @@ public static class FloraScatter
                         continue;
                     var ruleSalt = salt ^ ((uint)rule.Index * 0x85EBCA6Bu);
                     var patch = Patch(rule, ruleSalt, x0 + res / 2f, z0 + res / 2f);
+                    if (rule.Patch >= 0 && patch > 0f)
+                        patch *= generator.PatchWeight(rule.Biome, rule.Patch, x0 + res / 2f, z0 + res / 2f);
                     var expected = rule.Density * area * densityScale * patch;
                     if (expected <= 0f)
                         continue;

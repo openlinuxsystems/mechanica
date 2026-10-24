@@ -23,6 +23,9 @@
     // Two layers of relief over the biomes' own, after Scrap Mechanic's overworld: broad hills a kilometre across, and
     // plateaus in 8 m cliff steps that climb towards the middle of the island. Both lie flat by water.
     "hills": { "height": 45.0, "scale": 1100.0, "octaves": 4, "gain": 0.5, "contrast": 2.0, "shore_ramp": 320.0, "pad_ramp": 160.0 },
+    // Mounds, hollows and low banks a few metres high every 30 to 80 m over
+    // the hills, gentle enough to drive, over about half the land; biomes scale them.
+    "bumps": { "height": 4.5, "scale": 55.0, "octaves": 2, "gain": 0.45, "banks": 0.35, "cover": 0.5, "cover_scale": 500.0 },
     "cliffs": { "step": 8.0, "levels": 4, "scale": 800.0, "contrast": 1.4, "face": 6.0, "sheer": 0.15, "gentle_face": 24.0, "sheer_scale": 1000.0, "inland": 1400.0 }
   },
   "coast_biome": "coastal",
@@ -48,10 +51,21 @@
       "relief": 10.0,
       "color": "#4a7a2e",
       "ground": "grass",
+      "bumps": 0.8,
+      "patches": [
+        { "layer": "meadow_rocks", "scale": 70.0, "cover": 0.2, "ground": "dirt", "paint": 0.45, "height": 2.2 },
+        { "layer": "meadow_grove", "scale": 110.0, "cover": 0.14, "ground": "forest_floor", "paint": 0.7, "height": 0.6 },
+        { "layer": "meadow_flowers", "scale": 90.0, "cover": 0.14, "ground": "dry_grass", "paint": 0.25, "soft": 0.12 },
+        { "layer": "meadow_hollow", "scale": 80.0, "cover": 0.08, "ground": "dirt", "paint": 0.35, "height": -1.6, "soft": 0.1 }
+      ],
       "scatter": [
-        { "object": "scene_orchard", "spacing": 300.0, "chance": 0.6, "near": { "objects": ["scene_farmstead", "scene_farmyard", "scene_kitchen_garden"], "within": 200.0 } },
-        { "object": "scene_wheat_field", "spacing": 320.0, "chance": 0.6, "near": { "objects": ["scene_farmstead", "scene_farmyard", "scene_kitchen_garden"], "within": 200.0 } },
-        { "object": "scene_vegetable_field", "spacing": 340.0, "chance": 0.6, "near": { "objects": ["scene_farmstead", "scene_farmyard", "scene_kitchen_garden"], "within": 200.0 } },
+        // Cliff rocks first, so the rock walls keep their place at the foot of every face.
+        { "object": "cliff_wall", "spacing": 11.0, "chance": 0.85, "face": { "rise": 6.0, "run": 8.0, "sheer": true } },
+        { "object": "cliff_low", "spacing": 18.0, "chance": 0.8, "face": { "rise": 3.5, "max": 5.9, "run": 8.0, "sheer": true } },
+        { "object": "scree", "spacing": 16.0, "chance": 0.7, "face": { "rise": 4.0, "run": 8.0, "sheer": true } },
+        { "object": "scene_orchard", "spacing": 300.0, "chance": 0.75, "near": { "objects": ["scene_farmstead", "scene_farmyard", "scene_kitchen_garden"], "within": 200.0 } },
+        { "object": "scene_wheat_field", "spacing": 320.0, "chance": 0.75, "near": { "objects": ["scene_farmstead", "scene_farmyard", "scene_kitchen_garden"], "within": 200.0 } },
+        { "object": "scene_vegetable_field", "spacing": 340.0, "chance": 0.75, "near": { "objects": ["scene_farmstead", "scene_farmyard", "scene_kitchen_garden"], "within": 200.0 } },
         { "object": "scene_ploughed_field", "spacing": 400.0, "chance": 0.5, "near": { "objects": ["scene_farmstead", "scene_farmyard", "scene_kitchen_garden"], "within": 200.0 } },
         { "object": "scene_overgrown_field", "spacing": 520.0, "chance": 0.4 },
         { "object": "scene_settler_camp", "spacing": 135.0, "chance": 0.6 },
@@ -126,7 +140,7 @@
         { "object": "roadside_tire_pile", "spacing": 90.0, "chance": 0.03, "roadside": { "road": "track", "gap": 2.6 } },
         { "object": "scene_scuttler_nest", "spacing": 170.0, "chance": 0.15, "near": { "objects": ["scene_junk_pile", "scene_scrap_outpost", "scene_salvager_crash", "scene_harvester_wreck", "scene_escape_pod", "scene_salvager_wreck", "scene_squatter_camp", "scene_rover_wreck", "scene_breakdown"], "within": 300.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
         { "object": "scene_rakehand_shrine", "spacing": 170.0, "chance": 0.2, "near": { "objects": ["scene_farmstead", "scene_hay_field", "scene_farmyard", "scene_field_edge", "scene_farm_wreck", "scene_kitchen_garden"], "within": 300.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
-        { "object": "scene_spooler_tower", "spacing": 200.0, "chance": 0.3, "near": { "objects": ["scene_plant", "scene_container_yard", "scene_workyard", "scene_crane_site"], "pois": ["poi_03", "poi_08", "poi_15", "poi_19", "poi_21", "poi_24", "poi_27", "poi_28", "poi_31", "poi_35", "warehouse", "warehouse_small", "warehouse_large"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "scene_spooler_tower", "spacing": 200.0, "chance": 0.26, "near": { "objects": ["scene_plant", "scene_container_yard", "scene_workyard", "scene_crane_site"], "pois": ["poi_03", "poi_08", "poi_15", "poi_19", "poi_21", "poi_24", "poi_27", "poi_28", "poi_31", "poi_35", "warehouse", "warehouse_small", "warehouse_large"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
         { "object": "scene_scuttler_marks", "spacing": 360.0, "chance": 0.3, "near": { "objects": ["scene_junk_pile", "scene_scrap_outpost", "scene_salvager_crash", "scene_harvester_wreck", "scene_escape_pod", "scene_salvager_wreck", "scene_squatter_camp", "scene_rover_wreck", "scene_breakdown"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
         { "object": "scene_rakehand_marks", "spacing": 360.0, "chance": 0.3, "near": { "objects": ["scene_farmstead", "scene_hay_field", "scene_farmyard", "scene_field_edge", "scene_farm_wreck", "scene_kitchen_garden"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
         { "object": "scene_spooler_marks", "spacing": 360.0, "chance": 0.3, "near": { "objects": ["scene_plant", "scene_container_yard", "scene_workyard", "scene_crane_site"], "pois": ["poi_03", "poi_08", "poi_15", "poi_19", "poi_21", "poi_24", "poi_27", "poi_28", "poi_31", "poi_35", "warehouse", "warehouse_small", "warehouse_large"], "within": 150.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } }
@@ -135,7 +149,9 @@
         { "kind": "grass", "density": 2.4, "coverage": 0.85, "patch_size": 16.0, "scale": [0.8, 1.35], "colors": ["#6ea83a", "#7cb442", "#92b840", "#619e36"] },
         { "kind": "ground_cover", "density": 0.35, "coverage": 0.55, "patch_size": 9.0, "scale": [0.8, 1.3], "colors": ["#78c23e", "#8acb45"] },
         { "kind": "bush", "density": 0.012, "coverage": 0.6, "patch_size": 40.0, "scale": [0.75, 1.3],
-          "models": ["bush_round", "bush_spiky", "bush_low", "bush_flowering", "bush_lumpy"], "colors": ["#62b03a", "#76c040", "#5fa84c", "#4f9e86"] }
+          "models": ["bush_round", "bush_spiky", "bush_low", "bush_flowering", "bush_lumpy"], "colors": ["#62b03a", "#76c040", "#5fa84c", "#4f9e86"] },
+        { "kind": "ground_cover", "density": 1.6, "coverage": 0.9, "patch_size": 7.0, "scale": [0.9, 1.4], "models": ["flowers_yellow", "flowers_white", "flowers_purple"], "colors": ["#78c23e", "#8acb45"], "layer": "meadow_flowers" },
+        { "kind": "grass", "density": 1.4, "coverage": 0.9, "patch_size": 8.0, "scale": [1.2, 1.7], "models": ["grass_tall", "grass_wide"], "colors": ["#4e8a34", "#5a9a3a"], "layer": "meadow_hollow" }
       ]
     },
     {
@@ -146,7 +162,16 @@
       "relief": 22.0,
       "color": "#3f6d3a",
       "ground": "forest_floor",
+      "bumps": 1.1,
+      "patches": [
+        { "layer": "forest_rocks", "scale": 80.0, "cover": 0.1, "ground": "rock", "paint": 0.35, "height": 2.6 },
+        { "layer": "forest_hollow", "scale": 90.0, "cover": 0.08, "ground": "dirt", "paint": 0.4, "height": -1.5, "soft": 0.1 }
+      ],
       "scatter": [
+        // Cliff rocks first, so the rock walls keep their place at the foot of every face.
+        { "object": "cliff_wall", "spacing": 11.0, "chance": 0.85, "face": { "rise": 6.0, "run": 8.0, "sheer": true } },
+        { "object": "cliff_low", "spacing": 18.0, "chance": 0.8, "face": { "rise": 3.5, "max": 5.9, "run": 8.0, "sheer": true } },
+        { "object": "scree", "spacing": 16.0, "chance": 0.7, "face": { "rise": 4.0, "run": 8.0, "sheer": true } },
         { "object": "scene_logging_camp", "spacing": 130.0, "chance": 0.6 },
         { "object": "scene_settler_camp", "spacing": 195.0, "chance": 0.4 },
         { "object": "scene_forest_floor", "spacing": 105.0, "chance": 0.7 },
@@ -194,14 +219,17 @@
         { "object": "road_sign_animal", "spacing": 90.0, "chance": 0.05, "roadside": { "road": "road", "gap": 2.0 } },
         { "object": "roadside_shrine", "spacing": 90.0, "chance": 0.04, "roadside": { "road": "track", "gap": 1.8 } },
         { "object": "scene_scuttler_nest", "spacing": 150.0, "chance": 1.0, "near": { "objects": ["scene_junk_pile", "scene_scrap_outpost", "scene_salvager_crash", "scene_harvester_wreck", "scene_escape_pod", "scene_salvager_wreck", "scene_squatter_camp", "scene_rover_wreck", "scene_breakdown"], "within": 300.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
-        { "object": "scene_spooler_tower", "spacing": 200.0, "chance": 0.3, "near": { "pois": ["poi_03", "poi_08", "poi_15", "poi_19", "poi_21", "poi_24", "poi_27", "poi_28", "poi_31", "poi_35", "warehouse", "warehouse_small", "warehouse_large"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
-        { "object": "scene_scuttler_marks", "spacing": 320.0, "chance": 0.3, "near": { "objects": ["scene_junk_pile", "scene_scrap_outpost", "scene_salvager_crash", "scene_harvester_wreck", "scene_escape_pod", "scene_salvager_wreck", "scene_squatter_camp", "scene_rover_wreck", "scene_breakdown"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } }
+        { "object": "scene_spooler_tower", "spacing": 200.0, "chance": 0.26, "near": { "pois": ["poi_03", "poi_08", "poi_15", "poi_19", "poi_21", "poi_24", "poi_27", "poi_28", "poi_31", "poi_35", "warehouse", "warehouse_small", "warehouse_large"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "scene_scuttler_marks", "spacing": 320.0, "chance": 0.3, "near": { "objects": ["scene_junk_pile", "scene_scrap_outpost", "scene_salvager_crash", "scene_harvester_wreck", "scene_escape_pod", "scene_salvager_wreck", "scene_squatter_camp", "scene_rover_wreck", "scene_breakdown"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "boulder", "spacing": 18.0, "chance": 0.6, "cluster": { "layer": "forest_rocks", "scale": 80.0, "cover": 0.1 } },
+        { "object": "small_rock", "spacing": 9.0, "chance": 0.5, "cluster": { "layer": "forest_rocks", "scale": 80.0, "cover": 0.1 } }
       ],
       "flora": [
         { "kind": "grass", "density": 1.2, "coverage": 0.6, "patch_size": 10.0, "scale": [0.8, 1.4], "colors": ["#568f36", "#64983c", "#4d8738"] },
         { "kind": "ground_cover", "density": 0.5, "coverage": 0.65, "patch_size": 8.0, "scale": [0.8, 1.4], "models": ["clover", "sprouts", "flowers_white", "flowers_purple"], "colors": ["#5aaa3a", "#68b444"] },
         { "kind": "bush", "density": 0.03, "coverage": 0.7, "patch_size": 30.0, "scale": [0.8, 1.45],
-          "models": ["bush_round", "bush_spiky", "bush_low", "bush_flowering", "bush_lumpy"], "colors": ["#4e9a36", "#5aa83a", "#3f8c4c", "#46907e"] }
+          "models": ["bush_round", "bush_spiky", "bush_low", "bush_flowering", "bush_lumpy"], "colors": ["#4e9a36", "#5aa83a", "#3f8c4c", "#46907e"] },
+        { "kind": "grass", "density": 1.2, "coverage": 0.9, "patch_size": 8.0, "scale": [1.2, 1.7], "models": ["grass_tall", "grass_wide"], "colors": ["#4a8232", "#548c36"], "layer": "forest_hollow" }
       ]
     },
     {
@@ -213,7 +241,16 @@
       "hills": 0.4,
       "color": "#c9b046",
       "ground": "dry_grass",
+      "bumps": 0.2,
+      "patches": [
+        { "layer": "field_copse", "scale": 60.0, "cover": 0.05, "ground": "forest_floor", "paint": 0.6, "height": 1.5 },
+        { "layer": "field_flowers", "scale": 100.0, "cover": 0.12, "soft": 0.12 }
+      ],
       "scatter": [
+        // Cliff rocks first, so the rock walls keep their place at the foot of every face.
+        { "object": "cliff_wall", "spacing": 11.0, "chance": 0.85, "face": { "rise": 6.0, "run": 8.0, "sheer": true } },
+        { "object": "cliff_low", "spacing": 18.0, "chance": 0.8, "face": { "rise": 3.5, "max": 5.9, "run": 8.0, "sheer": true } },
+        { "object": "scree", "spacing": 16.0, "chance": 0.7, "face": { "rise": 4.0, "run": 8.0, "sheer": true } },
         { "object": "scene_wheat_field", "spacing": 125.0, "chance": 0.8 },
         { "object": "scene_vegetable_field", "spacing": 160.0, "chance": 0.7 },
         { "object": "scene_corn_field", "spacing": 180.0, "chance": 0.6 },
@@ -276,7 +313,7 @@
         { "object": "roadside_tire_pile", "spacing": 90.0, "chance": 0.03, "roadside": { "road": "track", "gap": 2.6 } },
         { "object": "scene_scuttler_nest", "spacing": 170.0, "chance": 0.15, "near": { "objects": ["scene_junk_pile", "scene_scrap_outpost", "scene_salvager_crash", "scene_harvester_wreck", "scene_escape_pod", "scene_salvager_wreck", "scene_squatter_camp", "scene_rover_wreck", "scene_breakdown"], "within": 300.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
         { "object": "scene_rakehand_shrine", "spacing": 160.0, "chance": 0.15, "near": { "objects": ["scene_farmstead", "scene_hay_field", "scene_farmyard", "scene_field_edge", "scene_farm_wreck", "scene_kitchen_garden"], "within": 300.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
-        { "object": "scene_spooler_tower", "spacing": 200.0, "chance": 0.3, "near": { "objects": ["scene_plant", "scene_container_yard", "scene_workyard", "scene_crane_site"], "pois": ["poi_03", "poi_08", "poi_15", "poi_19", "poi_21", "poi_24", "poi_27", "poi_28", "poi_31", "poi_35", "warehouse", "warehouse_small", "warehouse_large"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "scene_spooler_tower", "spacing": 200.0, "chance": 0.26, "near": { "objects": ["scene_plant", "scene_container_yard", "scene_workyard", "scene_crane_site"], "pois": ["poi_03", "poi_08", "poi_15", "poi_19", "poi_21", "poi_24", "poi_27", "poi_28", "poi_31", "poi_35", "warehouse", "warehouse_small", "warehouse_large"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
         { "object": "scene_thresher_den", "spacing": 150.0, "chance": 0.7, "near": { "objects": ["scene_harvest_wreck", "scene_farm_wreck", "scene_harvester_wreck"], "pois": ["farmbot_scrapyard", "poi_32", "poi_41"], "within": 350.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
         { "object": "scene_scuttler_marks", "spacing": 360.0, "chance": 0.3, "near": { "objects": ["scene_junk_pile", "scene_scrap_outpost", "scene_salvager_crash", "scene_harvester_wreck", "scene_escape_pod", "scene_salvager_wreck", "scene_squatter_camp", "scene_rover_wreck", "scene_breakdown"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
         { "object": "scene_rakehand_marks", "spacing": 320.0, "chance": 0.3, "near": { "objects": ["scene_farmstead", "scene_hay_field", "scene_farmyard", "scene_field_edge", "scene_farm_wreck", "scene_kitchen_garden"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
@@ -285,7 +322,8 @@
       ],
       "flora": [
         { "kind": "grass", "density": 2.6, "coverage": 0.9, "patch_size": 24.0, "scale": [1.0, 1.5], "models": ["grass_tall", "grass_tipped"], "colors": ["#e0c04a", "#d4b03e", "#e8cc5a", "#c9a83a"] },
-        { "kind": "ground_cover", "density": 0.15, "coverage": 0.4, "patch_size": 10.0, "models": ["sprouts", "flowers_yellow"], "colors": ["#c8b444"] }
+        { "kind": "ground_cover", "density": 0.15, "coverage": 0.4, "patch_size": 10.0, "models": ["sprouts", "flowers_yellow"], "colors": ["#c8b444"] },
+        { "kind": "ground_cover", "density": 1.4, "coverage": 0.9, "patch_size": 7.0, "scale": [0.9, 1.4], "models": ["flowers_yellow", "flowers_white"], "colors": ["#a8b440", "#b8bc48"], "layer": "field_flowers" }
       ]
     },
     {
@@ -297,7 +335,16 @@
       "terrace": 6.0,
       "color": "#dcc07a",
       "ground": "sand",
+      "bumps": 1.4,
+      "patches": [
+        { "layer": "desert_rocks", "scale": 90.0, "cover": 0.25, "ground": "rock", "paint": 0.3, "height": 3.0 },
+        { "layer": "desert_scrub", "scale": 80.0, "cover": 0.2, "ground": "dirt", "paint": 0.3, "soft": 0.12 }
+      ],
       "scatter": [
+        // Cliff rocks first, so the rock walls keep their place at the foot of every face.
+        { "object": "cliff_wall", "spacing": 11.0, "chance": 0.85, "face": { "rise": 6.0, "run": 8.0, "sheer": true } },
+        { "object": "cliff_low", "spacing": 18.0, "chance": 0.8, "face": { "rise": 3.5, "max": 5.9, "run": 8.0, "sheer": true } },
+        { "object": "scree", "spacing": 16.0, "chance": 0.7, "face": { "rise": 4.0, "run": 8.0, "sheer": true } },
         { "object": "scene_roadblock", "spacing": 165.0, "chance": 0.5 },
         { "object": "scene_colony_pipeline", "spacing": 135.0, "chance": 0.6 },
         { "object": "scene_harvester_wreck", "spacing": 195.0, "chance": 0.5 },
@@ -342,7 +389,7 @@
         { "object": "scene_roadside_wreck", "spacing": 90.0, "chance": 0.04, "roadside": { "road": "road", "gap": 3.6 } },
         { "object": "roadside_tire_pile", "spacing": 90.0, "chance": 0.03, "roadside": { "road": "track", "gap": 2.6 } },
         { "object": "balanced_rock", "spacing": 300.0, "chance": 0.5 },
-        { "object": "scene_spooler_tower", "spacing": 200.0, "chance": 0.3, "near": { "objects": ["scene_plant", "scene_container_yard", "scene_workyard", "scene_crane_site"], "pois": ["poi_03", "poi_08", "poi_15", "poi_19", "poi_21", "poi_24", "poi_27", "poi_28", "poi_31", "poi_35", "warehouse", "warehouse_small", "warehouse_large"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "scene_spooler_tower", "spacing": 200.0, "chance": 0.26, "near": { "objects": ["scene_plant", "scene_container_yard", "scene_workyard", "scene_crane_site"], "pois": ["poi_03", "poi_08", "poi_15", "poi_19", "poi_21", "poi_24", "poi_27", "poi_28", "poi_31", "poi_35", "warehouse", "warehouse_small", "warehouse_large"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
         { "object": "scene_thresher_den", "spacing": 140.0, "chance": 1.0, "near": { "pois": ["farmbot_scrapyard", "poi_32", "poi_41"], "within": 400.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
         { "object": "scene_thresher_marks", "spacing": 300.0, "chance": 0.3, "near": { "pois": ["farmbot_scrapyard", "poi_32", "poi_41"], "within": 300.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } }
       ],
@@ -359,7 +406,15 @@
       "relief": 18.0,
       "color": "#c8642a",
       "ground": "forest_floor",
+      "bumps": 1.0,
+      "patches": [
+        { "layer": "autumn_hollow", "scale": 90.0, "cover": 0.08, "ground": "dirt", "paint": 0.4, "height": -1.5, "soft": 0.1 }
+      ],
       "scatter": [
+        // Cliff rocks first, so the rock walls keep their place at the foot of every face.
+        { "object": "cliff_wall", "spacing": 11.0, "chance": 0.85, "face": { "rise": 6.0, "run": 8.0, "sheer": true } },
+        { "object": "cliff_low", "spacing": 18.0, "chance": 0.8, "face": { "rise": 3.5, "max": 5.9, "run": 8.0, "sheer": true } },
+        { "object": "scree", "spacing": 16.0, "chance": 0.7, "face": { "rise": 4.0, "run": 8.0, "sheer": true } },
         { "object": "scene_logging_camp", "spacing": 135.0, "chance": 0.6 },
         { "object": "scene_fence_line", "spacing": 225.0, "chance": 0.4 },
         { "object": "scene_forest_floor", "spacing": 110.0, "chance": 0.7 },
@@ -416,7 +471,12 @@
       "relief": 14.0,
       "color": "#4a403a",
       "ground": "burnt",
+      "bumps": 1.0,
       "scatter": [
+        // Cliff rocks first, so the rock walls keep their place at the foot of every face.
+        { "object": "cliff_wall", "spacing": 11.0, "chance": 0.85, "face": { "rise": 6.0, "run": 8.0, "sheer": true } },
+        { "object": "cliff_low", "spacing": 18.0, "chance": 0.8, "face": { "rise": 3.5, "max": 5.9, "run": 8.0, "sheer": true } },
+        { "object": "scree", "spacing": 16.0, "chance": 0.7, "face": { "rise": 4.0, "run": 8.0, "sheer": true } },
         { "object": "scene_burned_camp", "spacing": 135.0, "chance": 0.6 },
         { "object": "scene_logging_camp", "spacing": 195.0, "chance": 0.4 },
         { "object": "scene_burned_snags", "spacing": 105.0, "chance": 0.7 },
@@ -447,7 +507,7 @@
         { "object": "scene_roadside_wreck", "spacing": 90.0, "chance": 0.04, "roadside": { "road": "road", "gap": 3.6 } },
         { "object": "roadside_tire_pile", "spacing": 90.0, "chance": 0.03, "roadside": { "road": "track", "gap": 2.6 } },
         { "object": "scene_scuttler_nest", "spacing": 160.0, "chance": 1.0, "near": { "objects": ["scene_junk_pile", "scene_scrap_outpost", "scene_salvager_crash", "scene_harvester_wreck", "scene_escape_pod", "scene_salvager_wreck", "scene_squatter_camp", "scene_rover_wreck", "scene_breakdown"], "within": 300.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
-        { "object": "scene_spooler_tower", "spacing": 200.0, "chance": 0.3, "near": { "pois": ["poi_03", "poi_08", "poi_15", "poi_19", "poi_21", "poi_24", "poi_27", "poi_28", "poi_31", "poi_35", "warehouse", "warehouse_small", "warehouse_large"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "scene_spooler_tower", "spacing": 200.0, "chance": 0.26, "near": { "pois": ["poi_03", "poi_08", "poi_15", "poi_19", "poi_21", "poi_24", "poi_27", "poi_28", "poi_31", "poi_35", "warehouse", "warehouse_small", "warehouse_large"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
         { "object": "scene_thresher_den", "spacing": 140.0, "chance": 1.0, "near": { "pois": ["farmbot_scrapyard", "poi_32", "poi_41"], "within": 400.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
         { "object": "scene_scuttler_marks", "spacing": 320.0, "chance": 0.3, "near": { "objects": ["scene_junk_pile", "scene_scrap_outpost", "scene_salvager_crash", "scene_harvester_wreck", "scene_escape_pod", "scene_salvager_wreck", "scene_squatter_camp", "scene_rover_wreck", "scene_breakdown"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
         { "object": "scene_thresher_marks", "spacing": 300.0, "chance": 0.3, "near": { "pois": ["farmbot_scrapyard", "poi_32", "poi_41"], "within": 300.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } }
@@ -465,6 +525,7 @@
       "hills": 0.0,
       "color": "#3a7fb8",
       "ground": "sand",
+      "bumps": 0.0,
       "scatter": [
 
         { "object": "scene_marsh_edge", "spacing": 200.0, "chance": 0.5 },
@@ -492,22 +553,30 @@
       "ridge": 0.8,
       "color": "#8a8780",
       "ground": "rock",
+      "bumps": 1.3,
+      "patches": [
+        { "layer": "mountain_scree", "scale": 70.0, "cover": 0.18, "ground": "rock", "paint": 0.55, "height": 1.2 }
+      ],
       "scatter": [
-        { "object": "scene_colony_pipeline", "spacing": 195.0, "chance": 0.4 },
-        { "object": "scene_radio_station", "spacing": 285.0, "chance": 0.5 },
-        { "object": "scene_stone_shrine", "spacing": 255.0, "chance": 0.4 },
-        { "object": "scene_stone_ruin", "spacing": 255.0, "chance": 0.4 },
-        { "object": "scene_salvager_crash", "spacing": 315.0, "chance": 0.4 },
-        { "object": "scene_ring_gate", "spacing": 520.0, "chance": 0.4 },
-        { "object": "scene_stone_circle", "spacing": 420.0, "chance": 0.4 },
-        { "object": "scene_old_tower", "spacing": 440.0, "chance": 0.4 },
-        { "object": "scene_aqueduct", "spacing": 520.0, "chance": 0.3 },
-        { "object": "scene_survey_post", "spacing": 460.0, "chance": 0.4 },
-        { "object": "scene_quarry_works", "spacing": 480.0, "chance": 0.4 },
-        { "object": "scene_crane_site", "spacing": 560.0, "chance": 0.3 },
-        { "object": "scene_boulder_field", "spacing": 320.0, "chance": 0.4 },
-        { "object": "scene_beacon_site", "spacing": 420.0, "chance": 0.3 },
-        { "object": "scene_wind_farm", "spacing": 520.0, "chance": 0.3 },
+        // Cliff rocks first, so the rock walls keep their place at the foot of every face.
+        { "object": "cliff_wall", "spacing": 11.0, "chance": 0.85, "face": { "rise": 6.0, "run": 8.0, "sheer": true } },
+        { "object": "cliff_low", "spacing": 18.0, "chance": 0.8, "face": { "rise": 3.5, "max": 5.9, "run": 8.0, "sheer": true } },
+        { "object": "scree", "spacing": 16.0, "chance": 0.7, "face": { "rise": 4.0, "run": 8.0, "sheer": true } },
+        { "object": "scene_colony_pipeline", "spacing": 195.0, "chance": 0.64 },
+        { "object": "scene_radio_station", "spacing": 285.0, "chance": 0.8 },
+        { "object": "scene_stone_shrine", "spacing": 255.0, "chance": 0.64 },
+        { "object": "scene_stone_ruin", "spacing": 255.0, "chance": 0.64 },
+        { "object": "scene_salvager_crash", "spacing": 315.0, "chance": 0.64 },
+        { "object": "scene_ring_gate", "spacing": 520.0, "chance": 0.64 },
+        { "object": "scene_stone_circle", "spacing": 420.0, "chance": 0.64 },
+        { "object": "scene_old_tower", "spacing": 440.0, "chance": 0.64 },
+        { "object": "scene_aqueduct", "spacing": 520.0, "chance": 0.48 },
+        { "object": "scene_survey_post", "spacing": 460.0, "chance": 0.64 },
+        { "object": "scene_quarry_works", "spacing": 480.0, "chance": 0.64 },
+        { "object": "scene_crane_site", "spacing": 560.0, "chance": 0.48 },
+        { "object": "scene_boulder_field", "spacing": 320.0, "chance": 0.64 },
+        { "object": "scene_beacon_site", "spacing": 420.0, "chance": 0.48 },
+        { "object": "scene_wind_farm", "spacing": 520.0, "chance": 0.48 },
         { "object": "rock_spire", "spacing": 160.0, "chance": 0.5 },
         { "object": "rock_shelf", "spacing": 220.0, "chance": 0.4 },
         { "object": "boulder_split", "spacing": 160.0, "chance": 0.5 },
@@ -528,7 +597,9 @@
         { "object": "scene_guard_rail", "spacing": 60.0, "chance": 0.8, "roadside": { "road": "road", "gap": 3.4, "side": "outside", "bend": 8.0 } },
         { "object": "road_sign_warning_curve", "spacing": 70.0, "chance": 0.6, "roadside": { "road": "road", "gap": 2.2, "side": "outside", "bend": 12.0 } },
         { "object": "road_sign_junction", "spacing": 60.0, "chance": 0.8, "roadside": { "road": "road", "gap": 2.0, "junction": 45.0 } },
-        { "object": "roadside_shrine", "spacing": 90.0, "chance": 0.04, "roadside": { "road": "track", "gap": 1.8 } }
+        { "object": "roadside_shrine", "spacing": 90.0, "chance": 0.04, "roadside": { "road": "track", "gap": 1.8 } },
+        { "object": "boulder", "spacing": 14.0, "chance": 0.55, "cluster": { "layer": "mountain_scree", "scale": 70.0, "cover": 0.18 } },
+        { "object": "small_rock", "spacing": 6.0, "chance": 0.6, "cluster": { "layer": "mountain_scree", "scale": 70.0, "cover": 0.18 } }
       ],
       "flora": [
         { "kind": "grass", "density": 0.6, "coverage": 0.4, "patch_size": 10.0, "scale": [0.6, 1.1], "models": ["grass_short", "grass_tipped"], "colors": ["#8aa04a", "#7a9444"] }
@@ -543,6 +614,7 @@
       "hills": 0.2,
       "color": "#d9c890",
       "ground": "sand",
+      "bumps": 0.6,
       "scatter": [
         { "object": "scene_settler_camp", "spacing": 195.0, "chance": 0.4 },
         { "object": "scene_campsite", "spacing": 180.0, "chance": 0.5 },
@@ -9294,6 +9366,35 @@
           ] }
         ]
       }
+    },
+    // Cliff rocks (docs/world-generation.md, Cliff faces): sculpted rock walls, low bands and scree that the inland
+    // biomes stand at the foot of the cliff terraces and steep banks (scatter "face"), built by tools/structures/cliff_rocks.py.
+    {
+      "id": "cliff_wall",
+      "collider": { "shape": "box", "size": [14.0, 8.0, 5.0], "at": [0.0, 4.0, -2.5] },
+      "mesh": { "file": "meshes/world/cliffs/cliff_wall_a.glb", "variants": ["meshes/world/cliffs/cliff_wall_b.glb", "meshes/world/cliffs/cliff_wall_c.glb"], "collide": true },
+      "footprint": 4.5,
+      "scale": [0.95, 1.08],
+      "max_slope": 1.0,
+      "damage_from": []
+    },
+    {
+      "id": "cliff_low",
+      "collider": { "shape": "box", "size": [10.0, 4.5, 5.0], "at": [0.0, 2.2, -2.5] },
+      "mesh": { "file": "meshes/world/cliffs/cliff_low_a.glb", "variants": ["meshes/world/cliffs/cliff_low_b.glb"], "collide": true },
+      "footprint": 4.0,
+      "scale": [0.9, 1.1],
+      "max_slope": 1.0,
+      "damage_from": []
+    },
+    {
+      "id": "scree",
+      "collider": { "shape": "box", "size": [7.0, 2.0, 5.5], "at": [0.0, 1.0, 1.4] },
+      "mesh": { "file": "meshes/world/cliffs/scree_a.glb", "variants": ["meshes/world/cliffs/scree_b.glb"], "collide": true },
+      "footprint": 2.5,
+      "scale": [0.85, 1.15],
+      "max_slope": 1.0,
+      "damage_from": []
     }
   ]
 }

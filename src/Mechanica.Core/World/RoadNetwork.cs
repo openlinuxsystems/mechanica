@@ -302,6 +302,34 @@ public sealed partial class RoadNetwork
     }
 
     /// <summary>
+    /// Metres from a point to the nearest road bed, track or junction plate (bridges left out), up to 48: how far the point
+    /// is from ground the roads shape.
+    /// </summary>
+    public float Clearance(float x, float z)
+    {
+        var best = MaxBlend;
+        if (_chains.Count == 0)
+            return best;
+        var key = Key(x, z);
+        var p = new Vector2(x, z);
+        if (_segments.TryGetValue(key, out var near))
+        {
+            foreach (var (c, i) in near)
+            {
+                var chain = _chains[c];
+                if (!(chain.Bridge[i] && chain.Bridge[i + 1]))
+                    best = MathF.Min(best, MathF.Max(0f, Project(chain, i, p).Distance - Core(chain)));
+            }
+        }
+        if (_junctions.TryGetValue(key, out var nodes))
+        {
+            foreach (var n in nodes)
+                best = MathF.Min(best, MathF.Max(0f, OffPlate(_nodes[n], p) - _def!.Curb - _def.Shoulder));
+        }
+        return best;
+    }
+
+    /// <summary>
     /// The outline of a junction's plate, anticlockwise seen from above (+x towards +z), starting down its first arm: a square
     /// the road's width across, each arm's mouth reaching out to <see cref="RoadNode.Radius"/>, and a rounded corner where two
     /// arms meet. A round plate for a junction of more than four roads.
