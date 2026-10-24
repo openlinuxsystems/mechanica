@@ -101,7 +101,6 @@ def kit_sheet():
     G = C.group(R, "core", (-36.0, y - 4.0, z))
     C.stair_core(G, (0, 0, 0.3), 3)
     K.box("core_wall", (0.2, 8.0, 12.0), C.bone(), loc=(-0.45, 4.0, 6.0), bev=0.02, parent=G)
-    K.box("core_front", (4.6, 0.2, 12.0), C.bone(1), loc=(2.1, -0.45, 6.0), bev=0.02, parent=G)
     tag(R, "STAIR CORE", (-34.0, y - 5.4, z + 0.01))
     G = C.group(R, "escape", (-23.0, y - 4.0, z), 90)
     C.wall(G, "esc_wall", 10.0, 2, seed=8, plan=lambda b, f: "door" if b == 1 else "window")
