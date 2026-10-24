@@ -27,6 +27,10 @@ structure's centre (glTF +Y up, front towards +Z):
   ruin_city.py, from the kit in stone_kit.py): a chapel on its terrace, a hall with its dais and gallery, a forest
   shrine, a broken watchtower climbed to its top, and a walled stone town in seven models that share its origin. Their
   colliders are the kit's plain boxes and ramps (each course of a wall, floors, stairs walked as ramps, rubble banks).
+* ``meshes/structures/farmer_shack.glb``, ``farmers_hideout.glb``, ``campsite.glb``, ``large_camp.glb``, ``camp.glb``,
+  ``farmbot_scrapyard.glb``, ``capsule_scrapyard.glb``, ``haymaze.glb`` and ``scrap_city_garage.glb`` - the Settler
+  Patchwork buildings (settlers.py, from the kit in settler_kit.py and the settler props), each on its POI's footprint
+  with its markers' ground kept clear. Their colliders are the kit's plain boxes and ramps; walk_probe.py walks them.
 * ``meshes/structures/cargo_crate_colony.glb`` - a framed Colony cargo crate (decoration in the cargo spill).
 * ``meshes/structures/landmark_*.glb`` - the eight landmarks (landmarks.py): set pieces that stand alone in open
   country, placed by the ``pois/landmark_*.json`` prefabs. Their colliders keep what a player climbs walkable: each
@@ -60,9 +64,10 @@ How to run (Blender as a Python module, no Blender UI needed):
     python tools/structures/build_structures.py sv04                  # only the SV-04 wreck, its containers and spills
     python tools/structures/build_structures.py warehouses [warehouse_small ...]   # only the warehouses
     python tools/structures/build_structures.py ruins [ruin ruin_city ...]        # only the Old Stone ruins
+    python tools/structures/build_structures.py settlers [farmer_shack ...]        # only the settler buildings
 
 The outputs are committed; re-run this script after changing it (or kit.py, frame.py, families.py, ship.py, cargo_ship.py, crash_site.py, sv04_layout.py,
-workshop.py, colony_kit.py, warehouses.py, stone_kit.py, ruins.py, ruin_city.py, landmarks.py, props*.py, rock_formations.py, textures.py) and commit the result. The build is deterministic (seeded noise only).
+workshop.py, colony_kit.py, warehouses.py, stone_kit.py, ruins.py, ruin_city.py, settler_kit.py, settlers.py, landmarks.py, props*.py, rock_formations.py, textures.py) and commit the result. The build is deterministic (seeded noise only).
 """
 
 from __future__ import annotations
@@ -110,6 +115,7 @@ import landmarks as LM  # noqa: E402
 import warehouses as WH  # noqa: E402
 import ruins as RU  # noqa: E402
 import ruin_city as RC  # noqa: E402
+import settlers as ST  # noqa: E402
 
 STRUCTURES = K.MESH / "structures"
 WORLD = K.MESH / "world"
@@ -207,9 +213,18 @@ def ruins(only=()):
             report(f"ruin_city_{key}", K.export(root, STRUCTURES / f"ruin_city_{key}.glb"))
 
 
+def settlers(only=()):
+    for name, build in ST.SETTLERS.items():
+        if not only or name in only:
+            single(name, build)
+
+
 def main():
     if sys.argv[1:2] == ["ruins"]:
         ruins(sys.argv[2:])
+        return
+    if sys.argv[1:2] == ["settlers"]:
+        settlers(sys.argv[2:])
         return
     if sys.argv[1:2] == ["warehouses"]:
         warehouses(sys.argv[2:])
@@ -237,6 +252,7 @@ def main():
     single("workshop", lambda: W.workshop())
     warehouses()
     ruins()
+    settlers()
     single("cargo_crate_colony", crate)
     landmarks()
     single("scrap_pile_metal", pile("metal"), WORLD, collider=False)

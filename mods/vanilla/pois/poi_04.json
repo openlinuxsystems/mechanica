@@ -1,20 +1,18 @@
 {
-  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
+  // Built (World Map spec §4): the structure is its model; this file places it and its markers.
   // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
   "id": "poi_04",
   "name": "POI-04 Farmer Shack",
   "radius": 42.0,
-  "size": [12.0, 5.0, 10.0],
+  "size": [12.0, 5.75, 10.0],
   "road": "track",
   "placement": {},
   "terrain": [
     { "op": "flatten", "radius": 22.0, "blend": 20.0 }
   ],
   "flora": "meadow",
-  "pieces": [
-    { "shape": "box", "size": [20.0, 0.3, 18.0], "at": [0.0, 0.15, 0.0], "color": "#a3a093" },
-    { "shape": "box", "size": [12.0, 5.0, 10.0], "at": [0.0, 2.8, 0.0], "color": "#8c5a3c" },
-    { "shape": "box", "size": [5.0, 2.5, 4.0], "at": [10.0, 1.25, 4.0], "color": "#d8b85a" }
+  "models": [
+    { "file": "meshes/structures/farmer_shack.glb", "at": [0.0, 0.0, 0.0] }
   ],
   "markers": [
     { "type": "part", "ref": "wooden_crate", "at": [-8.0, 0.3, 2.0], "loot": "crate", "loot_rolls": [2, 4] },

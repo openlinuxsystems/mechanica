@@ -1,26 +1,18 @@
 {
-  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
+  // Built (World Map spec §4): the structure is its model; this file places it and its markers.
   // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
   "id": "farmbot_scrapyard",
   "name": "Farmbot Scrapyard",
   "radius": 73.0,
-  "size": [60.0, 6.0, 50.0],
+  "size": [60.0, 15.0, 50.0],
   "road": "none",
   "placement": {},
   "terrain": [
     { "op": "flatten", "radius": 53.0, "blend": 20.0 }
   ],
   "ground": [{ "ground": "burnt", "radius": 45.0, "blend": 10.0, "noise": 4.0 }],
-  "pieces": [
-    { "shape": "box", "size": [64.0, 0.3, 54.0], "at": [0.0, 0.15, 0.0], "color": "#3a3430" },
-    { "shape": "box", "size": [10.0, 5.0, 10.0], "at": [-18.0, 2.8, -12.0], "yaw": 9.0, "color": "#6a5a52" },
-    { "shape": "box", "size": [8.0, 4.0, 8.0], "at": [6.0, 2.3, -16.0], "yaw": 42.0, "color": "#6a5a52" },
-    { "shape": "box", "size": [12.0, 6.0, 12.0], "at": [16.0, 3.3, 6.0], "yaw": 22.0, "color": "#6a5a52" },
-    { "shape": "box", "size": [7.0, 3.5, 7.0], "at": [-8.0, 2.05, 10.0], "yaw": 34.0, "color": "#6a5a52" },
-    { "shape": "box", "size": [9.0, 4.5, 9.0], "at": [-22.0, 2.55, 14.0], "yaw": 26.0, "color": "#6a5a52" },
-    { "shape": "box", "size": [6.0, 3.0, 6.0], "at": [24.0, 1.8, -18.0], "yaw": 33.0, "color": "#6a5a52" },
-    { "shape": "box", "size": [60.0, 2.0, 0.4], "at": [0.0, 1.3, -25.0], "color": "#7d858c" },
-    { "shape": "box", "size": [0.4, 2.0, 50.0], "at": [30.0, 1.3, 0.0], "color": "#7d858c" }
+  "models": [
+    { "file": "meshes/structures/farmbot_scrapyard.glb", "at": [0.0, 0.0, 0.0] }
   ],
   "markers": [
     { "type": "part", "ref": "beware_bots_sign", "at": [-3.0, 0.3, 26.0], "yaw": 180.0 },
