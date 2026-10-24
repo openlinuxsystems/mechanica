@@ -351,7 +351,7 @@ add("ruin_city", "Ruin City", [160, 40, 140], "road", [],
      loot_part("wooden_crate", [-40.0, 0.3, -15.0], "crate", [2, 4]), loot_part("metal_crate", [40.0, 0.3, -20.0], "warehouse_crate", [2, 4]),
      loot_part("wooden_crate", [0.0, 0.3, 40.0], "crate", [2, 4]), part("danger_sign", [0.0, 0.3, 70.0], yaw=180.0),
      part("traffic_cone", [-12.0, 0.6, 24.0]), part("traffic_cone", [12.0, 0.6, 28.0]),
-     sign("colony_sign", [7.0, 0.3, 70.0], FACE_FRONT, "OLD STONE TOWN\nBuilt before the colony\nMind the walls")],
+     sign("colony_sign", [7.0, 0.3, 70.0], FACE_FRONT, "OLD STONE TOWN\nOlder than the colony")],
     models=[stone("ruin_city_" + piece) for piece in ("centre", "keep", "west", "east", "northeast", "southwest", "southeast")])
 add("haymaze", "Haymaze", [60, 3, 60], "road",
     [box([64, 0.3, 64], [0, 0.15, 0], "#8a7a5a"),
