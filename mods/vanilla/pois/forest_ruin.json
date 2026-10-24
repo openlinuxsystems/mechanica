@@ -1,5 +1,5 @@
 {
-  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
+  // Built (World Map spec §4): the structure is its model; this file places it and its markers.
   // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
   "id": "forest_ruin",
   "name": "Forest Ruin",
@@ -11,13 +11,8 @@
     { "op": "flatten", "radius": 23.0, "blend": 6.0 }
   ],
   "flora": "forest",
-  "pieces": [
-    { "shape": "box", "size": [7.0, 4.0, 0.6], "at": [-4.0, 2.0, -7.5], "color": "#9c988c" },
-    { "shape": "box", "size": [3.0, 2.0, 0.6], "at": [5.0, 1.0, -7.5], "color": "#9c988c" },
-    { "shape": "box", "size": [0.6, 4.5, 9.0], "at": [-7.5, 2.25, -2.0], "color": "#9c988c" },
-    { "shape": "box", "size": [0.6, 1.5, 5.0], "at": [7.5, 0.75, 3.0], "color": "#9c988c" },
-    { "shape": "box", "size": [2.0, 0.8, 1.5], "at": [2.0, 0.4, 2.0], "yaw": 30.0, "color": "#9c988c" },
-    { "shape": "cylinder", "radius": 0.5, "height": 5.0, "at": [-7.5, 2.5, 7.5], "color": "#9c988c" }
+  "models": [
+    { "file": "meshes/structures/forest_ruin.glb", "at": [0.0, 0.0, 0.0] }
   ],
   "markers": [
     { "type": "part", "ref": "wooden_crate", "at": [-5.0, 0.0, -5.0], "loot": "crate", "loot_rolls": [2, 4] },

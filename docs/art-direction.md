@@ -187,6 +187,8 @@ python tools/structures/build_structures.py
 | `ship.py` | The starting scrap piles' plates and the older Salvager pieces |
 | `workshop.py` | The Workshop (Colony Works) |
 | `landmarks.py` | The eight landmarks (all four families; see [World Generation](world-generation.md#landmarks)), whose stairs, ramps and catwalks collide as walkable ramps (`build_structures.py landmarks` builds only them) |
+| `stone_kit.py` | The Old Stone kit: coursed walls (whole, broken, collapsed) with doors, windows and arches, pillars, columns, arches, stairs, flagstone floors and slabs, rubble, fallen blocks, parapets, a tower with its stair inside, and houses; each piece adds its plain collider boxes and ramps |
+| `ruins.py`, `ruin_city.py` | The Old Stone ruins built from it: Small Ruin, Ruin, Forest Ruin, Mountain Lookout, and Ruin City in seven models (`build_structures.py ruins` builds only them); `walk_probe.py` checks a model's collider can be walked to its markers, `render_ruins.py` renders them for review |
 | `build_structures.py` | Exports every vanilla structure and the starting scrap piles |
 
 The outputs are committed. Re-run the build after changing any of these files and commit the result; it is
