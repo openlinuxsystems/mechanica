@@ -30,12 +30,12 @@ public class VanillaCatalogTests
         "wooden_crate", "metal_crate", "barrel", "fabricator", "portable_fabricator", "refiner", "dispenser", "respawn_bed",
         "radio", "beacon", "headlight", "spotlight", "warehouse_spotlight", "construction_light", "interior_light",
         "warning_light", "shack_light", "fluorescent_light", "packing_lamp", "frame_beam_light", "neon_sign", "protector_sign",
-        "alarm_clock", "cash_register", "fancy_bed", "freezer", "anvil",
+        "alarm_clock", "cash_register", "fancy_bed", "freezer", "anvil", "field_kitchen",
         // Resources, consumables, handheld weapons (produce_crate is left out for now)
         "component_kit", "circuit_board", "glue", "gasoline", "crude_oil", "battery_pack",
         "master_battery", "warehouse_key", "explosive_remnant", "scuttler_head", "carrot_seed", "potato_seed", "tomato_seed",
         "cotton_seed", "carrot", "potato", "tomato", "cotton", "beeswax", "ember", "water_bucket", "chemical_bucket", "glowstick", "popper", "potato_blaster", "potato_scattergun",
-        "potato_launcher", "bloom_tea", "grazer_shake", "fertilizer", "grazer_milk", "grazer_steak",
+        "potato_launcher", "bloom_tea", "grazer_shake", "fertilizer", "grazer_milk", "grazer_steak", "garden_burger", "colony_burger",
         // World / farming parts
         "soil_bag",
         // Decorative props
@@ -624,6 +624,8 @@ public class VanillaCatalogTests
     [InlineData("fancy_bed", 4.5, 7, 0.4, 0.6, false, 5)]
     [InlineData("freezer", 4.5, 7, 0.6, 0.2, false, 5)]
     [InlineData("anvil", 15, 5, 0.8, 0.1, false, 20)]
+    // Consumables batch C4: the wiki gives the Cookbot no stats, so the Field Kitchen takes the Refiner's, stack 1.
+    [InlineData("field_kitchen", 10.5, 7, 0.6, 0.1, false, 1)]
     [InlineData("fabricator", 10.5, 7, 0.6, 0.1, false, -1)]
     [InlineData("refiner", 10.5, 7, 0.6, 0.1, false, -1)]
     public void BedsAndStationsTakeTheWikiStats(string id, double mass, int durability, double friction, double buoyancy,
@@ -643,6 +645,7 @@ public class VanillaCatalogTests
     [InlineData("fancy_bed", 30, "metal_block_2:25", "cotton:20", "paint_ammo:10")]
     [InlineData("freezer", 30, "metal_block_2:20", "component_kit:2", "circuit_board:4", "chemical:20")]
     [InlineData("anvil", 10, "metal_block_2:100")]
+    [InlineData("field_kitchen", 11, "metal_block_2:40", "circuit_board:10", "component_kit:10")]
     [InlineData("refiner", 15, "scrap_metal_block:40", "component_kit:4", "circuit_board:2")]
     public void BedsAndStationsTakeTheWikiRecipes(string id, float time, params string[] inputs) =>
         VehiclePartsTakeTheWikiRecipes(id, time, inputs);
@@ -667,6 +670,7 @@ public class VanillaCatalogTests
     [InlineData("anvil")]
     [InlineData("freezer", "complete", "idle_loop", "start", "work_loop")]
     [InlineData("refiner", "complete", "idle_loop", "start", "work_loop")]
+    [InlineData("field_kitchen", "complete", "idle_loop", "start", "work_loop")]
     public void EachBedAndStationHasItsOwnModelIconAndClips(string id, params string[] clips)
     {
         var part = Part(id);
@@ -818,7 +822,8 @@ public class VanillaCatalogTests
     [InlineData("fabricator", "vanilla:shack_light", "vanilla:glowstick", "vanilla:fluorescent_light", "vanilla:packing_lamp",
         "vanilla:interior_light", "vanilla:headlight", "vanilla:spotlight", "vanilla:construction_light", "vanilla:warning_light",
         "vanilla:beacon", "vanilla:warehouse_spotlight", "vanilla:frame_beam_light", "vanilla:neon_sign", "vanilla:protector_sign")]
-    [InlineData("fabricator", "vanilla:portable_fabricator", "vanilla:refiner", "vanilla:respawn_bed", "vanilla:fancy_bed", "vanilla:freezer")]
+    [InlineData("fabricator", "vanilla:portable_fabricator", "vanilla:refiner", "vanilla:respawn_bed", "vanilla:fancy_bed", "vanilla:freezer", "vanilla:field_kitchen")]
+    [InlineData("field_kitchen", "vanilla:garden_burger", "vanilla:colony_burger")]
     [InlineData("fabricator", "vanilla:bathtub", "vanilla:anvil", "vanilla:cash_register")]
     [InlineData("portable_fabricator", "vanilla:scrap_wood_wedge", "vanilla:scrap_metal_wedge", "vanilla:scrap_seat",
         "vanilla:scrap_drivers_seat", "vanilla:scrap_wheel", "vanilla:scrap_gas_engine", "vanilla:gasoline", "vanilla:bearing_scrap",

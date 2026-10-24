@@ -108,7 +108,9 @@
     // Held by its handle and sprayed while Use is held (held.hold_use): no gesture of its own.
     "fire_extinguisher": { "prop": "item" },
     // Not edible: held flat on its tray.
-    "grazer_steak": { "prop": "item" }
+    "grazer_steak": { "prop": "item" },
+    // Not edible (ammo and a cooking input): it rests on the palm as before, and a click eats nothing.
+    "potato": { "prop": "food" }
   },
   "category_poses": {
     "consumable": { "prop": "food", "gesture": "eat" },

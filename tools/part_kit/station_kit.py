@@ -14,8 +14,13 @@ bevels, round only where the real thing is round):
   base, copper bands and pipes, the Fabricator's port pair (input left, output right) at floor level;
 * **Settler Patchwork** for the Anvil: the camp prop ``anvil_stump`` (tools/structures/props_camp.py) as a part, a
   graphite anvil stapled onto a strapped hardwood stump;
-* **cyan only on powered indicators** (the Freezer's and Refiner's status pips, lit while they work); the frost and
-  refining light is the working parts' pale blue-white, never orange.
+* **Salvager Tech** for the Field Kitchen too (consumables batch C4), the colony's cooking station: a hull-dark case in a
+  gunmetal frame on the screwed base, an oven door with a window (a rack of burgers, a convection fan and two heating
+  rods behind it), a graphite hot plate on top with two burner rings and a skillet, a console splashback with a screen,
+  two burner knobs, a timer dial and the cyan status pip, a copper flue up its back, utensils on its left side and the
+  standard two-way IO port on its right side, level with the Freezer's;
+* **cyan only on powered indicators** (the Freezer's, Refiner's and Field Kitchen's status pips, lit while they work); the
+  frost, refining and cooking light is the working parts' pale blue-white, never orange.
 
 Axes are Blender's: x right, z up and the part's **front along -y** (glTF +z, which faces the builder when it is
 placed, as the Fabricator's): a bed's foot and a station's door face the player who puts it down. Each part stands on
@@ -71,6 +76,11 @@ def materials():
         "frost_glow": pt.plain("s_frost_glow", FROST, 0.3, 0.0, emission=FROST, strength=2.0),
         "heat_glow": pt.plain("s_heat_glow", FROST, 0.3, 0.0, emission=FROST, strength=4.0),
         "needle": pt.plain("s_needle", "#c8423a", 0.4, 0.0),
+        # the Field Kitchen's food: toasted buns and dark patties behind the oven window and in the skillet
+        "bun": pt.plain("s_bun", "#c4945a", 0.6, 0.0),
+        "bun_top": pt.plain("s_bun_top", "#a8703c", 0.45, 0.0),
+        "patty": pt.plain("s_patty", "#4a2c20", 0.7, 0.0),
+        "seed": pt.plain("s_seed", "#efe2bf", 0.6, 0.0),
     })
     return m
 
@@ -391,6 +401,208 @@ def build_refiner(m):
         "complete": (0.8, False, lambda t: at(turn * (t - t * t / 1.6), 1 - K.smooth(t / 0.6), 1 - K.smooth(t / 0.3), 35 - 95 * K.smooth(t / 0.6))),
     }
     rig["states"] = [("IDLE", rig["rest"]), ("REFINING", lambda: at(0.4, 1, 1, 35))]
+    return rig
+
+
+# =====================================================================================================
+# Field Kitchen (3 x 4 x 3): a Salvager cooking station: oven with a window, hot plate, console, a two-way port
+# =====================================================================================================
+
+def burger(g, at, r, squash=1.0, seeds=True):
+    """A little burger (bun, patty, domed top bun) standing at `at`, `r` across its patty, its depth (y) squashed."""
+    k = r / 0.045
+    s = Geo()
+    K.lathe(s, [(0.0, 0.0), (r * 0.9, 0.0), (r * 0.97, 0.005 * k), (r * 0.97, 0.012 * k), (0.0, 0.012 * k)], "bun", steps=28)
+    K.lathe(s, [(0.0, 0.012 * k), (r * 1.03, 0.012 * k), (r * 1.06, 0.019 * k), (r * 1.03, 0.027 * k), (0.0, 0.027 * k)],
+          "patty", steps=28)
+    K.lathe(s, [(0.0, 0.027 * k), (r * 0.98, 0.027 * k), (r, 0.034 * k), (r * 0.9, 0.047 * k), (r * 0.6, 0.058 * k),
+              (r * 0.25, 0.062 * k), (0.0, 0.063 * k)], "bun_top", steps=28)
+    if seeds:
+        for a, rr in ((0.3, 0.45), (1.4, 0.55), (2.5, 0.35), (3.3, 0.6), (4.4, 0.4), (5.4, 0.55), (0.9, 0.15)):
+            x, y = math.cos(a) * r * rr, math.sin(a) * r * rr
+            zz = 0.063 * k - 0.016 * k * rr * rr
+            box(s, (x, y, zz), (0.0035 * k, 0.002 * k, 0.0012 * k), "seed", rot=Matrix.Rotation(a, 3, "Z"))
+    g.extend(s, Matrix.Translation(at) @ Matrix.Diagonal((1.0, squash, 1.0, 1.0)))
+
+
+def build_field_kitchen(m):
+    root = K.make_empty("FieldKitchen")
+    f = W.SAL
+    g = Geo()
+    floor, h = -0.5, 0.375
+    xs = h - SIDE_IN                       # both side walls set in: the port on the right, the utensils on the left
+    top = W.base_plate(g, floor, xs, h - 0.012, f, t=0.014, inset=0.03)
+    c0, c1 = top, 0.2                      # the case; the hot plate sits on it
+    cy0, cy1 = -h + 0.11, h - 0.04         # the case's front (the door stands out of it) and back (the flue behind it)
+    # the case: a hull core in a gunmetal frame of corner posts and rails
+    box(g, (0, (cy0 + cy1) / 2, (c0 + c1) / 2), (xs - 0.004, (cy1 - cy0) / 2, (c1 - c0) / 2), "hull", bevel=0.01)
+    for sx in (-1, 1):
+        for sy in (cy0, cy1):
+            box(g, (sx * (xs - 0.022), sy, (c0 + c1) / 2), (0.022, 0.022, (c1 - c0) / 2), "gun", bevel=0.006)
+        for z in (c0 + 0.02, c1 - 0.02):
+            box(g, (sx * (xs - 0.022), (cy0 + cy1) / 2, z), (0.022, (cy1 - cy0) / 2, 0.02), "gun", bevel=0.006)
+    for sy in (cy0, cy1):
+        for z in (c0 + 0.02, c1 - 0.02):
+            box(g, (0, sy, z), (xs - 0.044, 0.022, 0.02), "gun", bevel=0.006)
+    # the oven door: a gunmetal frame round a window, a copper band round the window, screws, a chrome bar handle
+    dz0, dz1, dx = -0.215, 0.135, 0.27
+    wz0, wz1, wx = -0.17, 0.09, 0.19
+    yb, yf = cy0 - 0.022, cy0 - 0.067      # the door's back (proud of the front rails) and face
+    yc, hy = (yb + yf) / 2, (yb - yf) / 2
+    box(g, (0, (cy0 + yb) / 2, (dz0 + dz1) / 2), (dx - 0.01, (cy0 - yb) / 2, (dz1 - dz0) / 2 - 0.01), "hull")
+    for x0, x1, z0, z1 in ((-dx, dx, wz1, dz1), (-dx, dx, dz0, wz0), (-dx, -wx, wz0, wz1), (wx, dx, wz0, wz1)):
+        box(g, ((x0 + x1) / 2, yc, (z0 + z1) / 2), ((x1 - x0) / 2, hy, (z1 - z0) / 2), "gun_dark", bevel=0.002)
+    t = 0.007
+    for cx, cz, bx, bz in ((0, wz1 + t, wx + 2 * t, t), (0, wz0 - t, wx + 2 * t, t),
+                           (-wx - t, (wz0 + wz1) / 2, t, (wz1 - wz0) / 2), (wx + t, (wz0 + wz1) / 2, t, (wz1 - wz0) / 2)):
+        box(g, (cx, yf - 0.0025, cz), (bx, 0.003, bz), "copper", bevel=0.0015)
+    bolts(g, [(sx * (dx - 0.024), yf - 0.0005, z) for sx in (-1, 1) for z in (dz0 + 0.022, dz1 - 0.022)], (0, -1, 0), "copper", 0.0065)
+    hz = dz1 - 0.024
+    for sx in (-1, 1):
+        box(g, (sx * 0.17, yf - 0.006, hz), (0.012, 0.006, 0.014), "gun", bevel=0.003)
+    K.sweep(g, [Vector((-0.17, yf - 0.008, hz)), Vector((-0.17, yf - 0.034, hz)), Vector((0.17, yf - 0.034, hz)),
+                Vector((0.17, yf - 0.008, hz))], 0.0085, "chrome", segs=10)
+    # inside the window: the dark oven back, a wire rack with two burgers on it, the heating rods top and bottom
+    box(g, (0, yb - 0.0015, (wz0 + wz1) / 2), (wx, 0.0015, (wz1 - wz0) / 2), "hole")
+    zr = -0.112
+    for y in (yb - 0.01, yb - 0.023, yb - 0.036):
+        cylinder(g, (-wx, y, zr), (wx, y, zr), 0.0022, "steel", segs=8)
+    for x in (-0.085, 0.085):
+        burger(g, (x, yc + 0.003, zr + 0.002), 0.05, squash=0.34)
+    rods = (wz1 - 0.016, wz0 + 0.012)
+    for z in rods:
+        cylinder(g, (-wx, yb - 0.012, z), (wx, yb - 0.012, z), 0.0042, "gun_dark", segs=10)
+    # the convection fan's guard on the oven back
+    fz = 0.022
+    gr = Geo()
+    ring(gr, -0.002, 0.002, 0.04, 0.045, "graphite", segs=32)
+    g.extend(gr, L.axis_matrix((0, yb - 0.006, fz), (0, -1, 0)))
+    # under the door: a pantry drawer with louvres and a copper pull
+    rz0, rz1 = c0 + 0.045, dz0 - 0.02
+    rzc = (rz0 + rz1) / 2
+    L.plate(g, (0, cy0 - 0.012, rzc), (dx, 0.012, (rz1 - rz0) / 2), "gun_dark", "copper", n=(0, -1, 0), inset=0.018, r=0.006)
+    box(g, (0, cy0 - 0.03, rz1 - 0.04), (0.09, 0.007, 0.009), "copper", bevel=0.003)
+    for sx in (-1, 1):
+        box(g, (sx * 0.085, cy0 - 0.028, rz1 - 0.04), (0.007, 0.005, 0.011), "gun", bevel=0.002)
+    for k in range(5):
+        box(g, (0, cy0 - 0.0245, rz0 + 0.035 + k * 0.022), (0.2, 0.001, 0.0045), "hole")
+    # the hot plate: a graphite slab with a steel front lip, two burner rings, a skillet with a patty on the right one
+    ct = c1 + 0.022
+    box(g, (0, (cy0 - 0.004 + 0.2) / 2, c1 + 0.011), (xs - 0.004, (0.2 - cy0 + 0.004) / 2, 0.011), "graphite", bevel=0.004)
+    box(g, (0, cy0 - 0.006, c1 + 0.011), (xs - 0.002, 0.004, 0.013), "steel", bevel=0.002)
+    burners = ((-0.15, -0.07), (0.135, -0.06))
+    for bx, by in burners:
+        ring(g, ct - 0.001, ct + 0.003, 0.052, 0.062, "gun_dark", segs=40, center=(bx, by))
+        ring(g, ct - 0.001, ct + 0.0025, 0.026, 0.034, "steel", segs=32, center=(bx, by))
+        cylinder(g, (bx, by, ct - 0.001), (bx, by, ct + 0.002), 0.012, "hole", segs=16)
+        for k in range(4):
+            a = math.pi / 4 + k * math.pi / 2
+            box(g, (bx + math.cos(a) * 0.044, by + math.sin(a) * 0.044, ct + 0.004), (0.012, 0.003, 0.002), "gun",
+                rot=Matrix.Rotation(a, 3, "Z"))
+    sx_, sy_ = burners[1]
+    K.lathe(g, [(0.0, ct + 0.006), (0.06, ct + 0.006), (0.068, ct + 0.012), (0.071, ct + 0.034), (0.066, ct + 0.034),
+              (0.061, ct + 0.014), (0.056, ct + 0.011), (0.0, ct + 0.011)], "gun_dark", steps=40, center=(sx_, sy_))
+    hd = Vector((0.55, -0.83, 0.0)).normalized()
+    p0 = Vector((sx_, sy_, ct + 0.028)) + hd * 0.066
+    K.sweep(g, [p0, p0 + hd * 0.05 + Vector((0, 0, 0.006)), p0 + hd * 0.11 + Vector((0, 0, 0.01))], 0.0065, "steel", segs=10)
+    cylinder(g, p0 + hd * 0.06 + Vector((0, 0, 0.007)), p0 + hd * 0.115 + Vector((0, 0, 0.01)), 0.0085, "rubber", segs=12)
+    burger_patty = Geo()
+    K.lathe(burger_patty, [(0.0, 0.0), (0.036, 0.0), (0.039, 0.006), (0.036, 0.012), (0.0, 0.012)], "patty", steps=28)
+    g.extend(burger_patty, Matrix.Translation((sx_, sy_, ct + 0.011)))
+    # the console splashback: a gunmetal block, a hull face plate with a screen, two burner knobs, the timer dial, the pip
+    yk = 0.2
+    zt = 0.49
+    zc = (ct + zt) / 2
+    box(g, (0, (yk + cy1) / 2, (ct + zt) / 2), (xs - 0.004, (cy1 - yk) / 2, (zt - ct) / 2), "gun", bevel=0.008)
+    L.plate(g, (0, yk - 0.004, zc), (0.29, 0.006, 0.105), "hull", "copper", n=(0, -1, 0), inset=0.016, r=0.006)
+    box(g, (-0.1, yk - 0.0105, zc + 0.022), (0.125, 0.0012, 0.058), "screen", bevel=0.002)
+    for k in range(3):                       # the screen's readout: a progress bar and two lines, in the console's teal
+        box(g, (-0.1 - 0.035 + k * 0.035 * (k < 2), yk - 0.0118, zc + 0.05 - k * 0.028),
+            (0.075 - 0.02 * k, 0.0006, 0.006), "teal_glow")
+    pip = status_pip(m, g, root, "Pip", (-0.19, yk - 0.01, zc - 0.07), (0, -1, 0), r=0.008)
+    for kx in (0.1, 0.19):
+        K.disc(g, (kx, yk - 0.0105, zc + 0.045), (0, -1, 0), 0.024, "dial", segs=24)
+        cylinder(g, (kx, yk - 0.01, zc + 0.045), (kx, yk - 0.03, zc + 0.045), 0.013, "gun_dark", segs=16)
+        box(g, (kx, yk - 0.031, zc + 0.052), (0.0018, 0.001, 0.006), "copper")
+    tx, tz = 0.145, zc - 0.055
+    cylinder(g, (tx, yk - 0.008, tz), (tx, yk - 0.02, tz), 0.034, "copper", segs=28)
+    K.disc(g, (tx, yk - 0.0205, tz), (0, -1, 0), 0.028, "dial", segs=28)
+    for k in range(12):
+        a = 2 * math.pi * k / 12
+        box(g, (tx + math.sin(a) * 0.023, yk - 0.021, tz + math.cos(a) * 0.023), (0.0012, 0.0006, 0.0035), "hull",
+            rot=Matrix.Rotation(-a, 3, "Y"))
+    # on top of the console: copper trim and vent slots
+    box(g, (0, (yk + cy1) / 2, zt - 0.012), (xs - 0.002, (cy1 - yk) / 2 + 0.002, 0.004), "copper", bevel=0.0015)
+    for k in range(6):
+        box(g, (-0.2 + k * 0.08, (yk + cy1) / 2, zt + 0.0005), (0.028, 0.045, 0.001), "hole")
+    # the back: a louvred vent panel and a copper flue from the case up into the console
+    L.plate(g, (0.1, cy1 + 0.006, -0.18), (0.16, 0.006, 0.15), "gun_dark", "copper", n=(0, 1, 0), inset=0.016, r=0.006)
+    for k in range(7):
+        box(g, (0.1, cy1 + 0.0125, -0.29 + k * 0.035), (0.13, 0.0015, 0.006), "hole")
+    fy = h - 0.022
+    K.sweep(g, K.bezier((-0.2, cy1, -0.32), (-0.2, fy, -0.32), (-0.2, fy, -0.2), (-0.2, fy, 0.0)), 0.019, "copper", segs=16)
+    K.sweep(g, [Vector((-0.2, fy, 0.0)), Vector((-0.2, fy, 0.38)), Vector((-0.2, fy - 0.0001, 0.4))], 0.019, "copper", segs=16)
+    K.sweep(g, K.bezier((-0.2, fy, 0.4), (-0.2, fy, 0.44), (-0.2, cy1 + 0.005, 0.44), (-0.2, cy1 - 0.01, 0.44)), 0.019, "copper", segs=16)
+    for z in (-0.32, -0.05, 0.25):
+        box(g, (-0.2, (cy1 + fy) / 2, z if z > -0.3 else -0.25), (0.026, (fy - cy1) / 2 + 0.004, 0.008), "gun", bevel=0.002)
+    # the left side: a steel rail with a spatula and a ladle hanging from it
+    xr_ = -xs - 0.014
+    for y in (-0.16, 0.16):
+        box(g, ((-xs + xr_) / 2, y, 0.08), (0.009, 0.008, 0.008), "gun", bevel=0.002)
+    cylinder(g, (xr_, -0.19, 0.08), (xr_, 0.19, 0.08), 0.0045, "steel", segs=10)
+    cylinder(g, (xr_ + 0.002, -0.06, 0.075), (xr_ + 0.002, -0.06, -0.08), 0.005, "gun_dark", segs=10)
+    box(g, (xr_ + 0.002, -0.06, -0.12), (0.0015, 0.038, 0.045), "steel", bevel=0.002)
+    for k in range(3):
+        box(g, (xr_ + 0.001, -0.075 + k * 0.015, -0.12), (0.0018, 0.003, 0.03), "hole")
+    cylinder(g, (xr_ + 0.002, 0.07, 0.075), (xr_ + 0.002, 0.07, -0.1), 0.004, "steel", segs=10)
+    ladle = Geo()
+    K.lathe(ladle, [(0.0, -0.012), (0.012, -0.011), (0.02, -0.005), (0.021, 0.0), (0.018, 0.0), (0.0, -0.009)], "steel", steps=28)
+    g.extend(ladle, Matrix.Translation((xr_ - 0.002, 0.07, -0.115)) @ Matrix.Rotation(-math.pi / 2, 4, "Y"))
+    # the right side: the standard two-way port (ingredients in, food out), level with the Freezer's
+    port(root, (h, 0.0, floor + 0.375), (1, 0, 0), "both")
+    K.make_object("Body", g, m, root)
+    # moving pieces: the oven fan, the timer needle, the oven's heating rods and the burner rings glowing, the pip
+    fan_g = Geo()
+    cylinder(fan_g, (0, -0.001, 0), (0, 0.004, 0), 0.012, "copper", segs=16)
+    for k in range(6):
+        a = 2 * math.pi * k / 6
+        box(fan_g, (math.cos(a) * 0.022, 0, math.sin(a) * 0.022), (0.016, 0.001, 0.007), "gun", bevel=0.0006,
+            rot=Matrix.Rotation(-a, 3, "Y") @ Matrix.Rotation(math.radians(25), 3, "X"))
+    fan = K.make_object("Fan", fan_g, m, root, (0, yb - 0.004, fz))
+    nd = Geo()
+    box(nd, (0, 0, 0.011), (0.0022, 0.001, 0.014), "needle")
+    K.disc(nd, (0, -0.0015, 0), (0, -1, 0), 0.0045, "hull", segs=12)
+    needle = K.make_object("Needle", nd, m, root, (tx, yk - 0.0225, tz))
+    og = Geo()
+    zo = (wz0 + wz1) / 2
+    for z in rods:
+        cylinder(og, (-wx + 0.004, 0, z - zo), (wx - 0.004, 0, z - zo), 0.0062, "heat_glow", segs=10)
+    oven = K.make_object("OvenGlow", og, m, root, (0, yb - 0.012, zo))
+    glows = []
+    for name, (bx, by) in zip(("BurnerL", "BurnerR"), burners):
+        bg = Geo()
+        ring(bg, 0.0, 0.0035, 0.035, 0.051, "heat_glow", segs=40)
+        glows.append(K.make_object(name, bg, m, root, (bx, by, ct - 0.0005)))
+    rig = {"root": root}
+    W.keep(rig, fan, needle, oven, pip, *glows)
+
+    def at(spin, heat, power, needle_deg):
+        fan.rotation_euler.y = spin
+        for ob in (oven, *glows):
+            W.lit(ob, heat)
+        W.lit(pip, power)
+        needle.rotation_euler.y = math.radians(needle_deg)
+    rig["rest"] = lambda: at(0, 0, 0, -150)
+    turn = 2 * math.pi
+    rig["clips"] = {
+        "idle_loop": (4.0, True, lambda t: at(0, 0, 0, -150 + 1.5 * math.sin(2 * math.pi * t / 4.0))),
+        "start": (0.8, False, lambda t: at(turn * (t / 0.8) ** 2, K.smooth(t / 0.8), K.smooth(t / 0.2), -150 + 240 * K.sink(t, 0.3))),
+        "work_loop": (2.0, True, lambda t: at(turn * 3 * t / 2.0, 0.85 + 0.15 * math.cos(2 * math.pi * t / 2.0), 1,
+                                             90 + 4 * math.sin(2 * math.pi * t / 2.0))),
+        "complete": (0.8, False, lambda t: at(turn * 1.5 * (t - t * t / 1.6), 1 - K.smooth(t / 0.6), 1 - K.smooth(t / 0.3),
+                                              90 - 240 * K.smooth(t / 0.6))),
+    }
+    rig["states"] = [("IDLE", rig["rest"]), ("COOKING", lambda: at(0.4, 1, 1, 90))]
     return rig
 
 

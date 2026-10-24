@@ -1,8 +1,9 @@
 {
   "id": "potato",
   "name": "Potato",
-  "description": "Heals a little when eaten. Potato weapons fire them.",
-  "category": "consumable",
+  "description": "Too starchy to eat raw: potato weapons fire them, and the Field Kitchen cooks them into burgers.",
+  "category": "resource",
+  "tab": "consumable",
   "mass": 3,
   "durability": 2,
   "friction": 0.4,
@@ -14,19 +15,12 @@
   "visual": {
     "color": "#ffffff"
   },
-  "script": "scripts/food.lua",
   "sounds": {
-    "pickup": "pickup_produce",
-    "eat": "eat_soft"
+    "pickup": "pickup_produce"
   },
   "held": {
     "mesh": "meshes/items/potato_held.glb",
     "offset": [-0.04, 0.082, 0],
-    "rotation": [180, 0, 90],
-    "juice": "#d8c898"
-  },
-  "properties": {
-    "health": 8,
-    "eat_seconds": 1.4
+    "rotation": [180, 0, 90]
   }
 }

@@ -37,7 +37,7 @@ public class VanillaTabsTests
     [InlineData(InventoryTab.Parts, "component_kit", "circuit_board", "crude_oil", "wood_log", "stone_chunk",
         "metal_rod", "stop_sign", "small_pipe_short", "wooden_table", "stairs_block")]
     [InlineData(InventoryTab.Consumable, "carrot", "potato_seed", "gasoline", "battery_pack", "chemical", "paint_ammo", "glowstick", "popper",
-        "soil_bag", "water_bucket", "water_bucket_full", "bloom_tea", "grazer_shake", "fertilizer", "grazer_milk", "grazer_steak")]
+        "soil_bag", "water_bucket", "water_bucket_full", "bloom_tea", "grazer_shake", "fertilizer", "grazer_milk", "grazer_steak", "potato", "garden_burger", "colony_burger")]
     public void ItemsAreUnderTheirScrapMechanicTab(InventoryTab tab, params string[] ids)
     {
         foreach (var id in ids)

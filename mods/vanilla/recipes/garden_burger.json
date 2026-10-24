@@ -1,0 +1,28 @@
+{
+  "id": "garden_burger",
+  "stations": [
+    "field_kitchen"
+  ],
+  "inputs": [
+    {
+      "item": "carrot",
+      "count": 4
+    },
+    {
+      "item": "tomato",
+      "count": 2
+    },
+    {
+      "item": "potato",
+      "count": 10
+    }
+  ],
+  "outputs": [
+    {
+      "item": "garden_burger",
+      "count": 1
+    }
+  ],
+  "time": 10,
+  "order": 3220
+}

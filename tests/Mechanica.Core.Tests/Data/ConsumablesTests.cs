@@ -10,6 +10,8 @@ namespace Mechanica.Core.Tests.Data;
 /// bar; durability = bars; friction and buoyancy = bars / 10), the Food page's heals and the wiki's recipes, with Ember for
 /// Glow. Emptying a Chemical Bucket at the Fabricator gives the empty Water Bucket back as the recipe's second output.
 /// Batch C2b adds the drinks (Bloom Tea, Grazer Shake: loot only) and Fertilizer, made from Ember and a full Water Bucket.
+/// Batch C4 adds the Field Kitchen's burgers (heal 30, cooked there: the 3200 recipe group), and the Potato stops being
+/// food (ammo and a cooking input).
 /// </summary>
 public class ConsumablesTests
 {
@@ -33,6 +35,8 @@ public class ConsumablesTests
     [InlineData("grazer_shake", 3, 1, 0.4, 0.7, 10, false)]
     [InlineData("grazer_milk", 3, 1, 0.4, 0.7, 5)]
     [InlineData("grazer_steak", 6, 2, 0.6, 0.3, 5)]
+    [InlineData("garden_burger", 3, 1, 0.4, 0.7, 10)]
+    [InlineData("colony_burger", 3, 1, 0.4, 0.7, 10)]
     public void TakesTheWikiStats(string id, double mass, int durability, double friction, double buoyancy, int stack, bool flammable = true)
     {
         var part = Part(id);
@@ -46,10 +50,11 @@ public class ConsumablesTests
     [Theory]
     [InlineData("carrot", 25)]
     [InlineData("tomato", 20)]
-    [InlineData("potato", 8)]
     [InlineData("bloom_tea", 20)]
     [InlineData("grazer_shake", 100)]
     [InlineData("grazer_milk", 20)]
+    [InlineData("garden_burger", 30)]
+    [InlineData("colony_burger", 30)]
     public void FoodHealsTheFoodPagesHealth(string id, int health)
     {
         var part = Part(id);
@@ -61,7 +66,8 @@ public class ConsumablesTests
     [Theory]
     [InlineData("carrot", false, 1.4f)]
     [InlineData("tomato", false, 1.4f)]
-    [InlineData("potato", false, 1.4f)]
+    [InlineData("garden_burger", false, 1.4f)]
+    [InlineData("colony_burger", false, 1.4f)]
     [InlineData("bloom_tea", true, 0.67f)]
     [InlineData("grazer_shake", true, 0.67f)]
     [InlineData("grazer_milk", true, 0.67f)]
@@ -72,6 +78,69 @@ public class ConsumablesTests
         Assert.Equal(new Mechanica.Core.Survival.FoodUse(drink, seconds), Mechanica.Core.Survival.FoodUse.Of(part));
         if (drink)
             Assert.Equal("drink_gulp", part.Sounds!["drink"]);
+    }
+
+    [Fact]
+    public void ThePotatoIsNoLongerFoodButAmmoAndACookingInput()
+    {
+        var part = Part("potato");
+        var book = RecipeBook.Load(Vanilla.Value);
+
+        Assert.Null(part.Script);
+        Assert.True(part.Properties?["health"] is null, "no heal");
+        Assert.False(part.Sounds?.ContainsKey("eat") ?? false, "no eat sound");
+        Assert.Null(part.Held!.Juice);
+        Assert.Equal(PartCategory.Resource, part.Category);
+        Assert.Equal(InventoryTab.Consumable, InventoryTabs.Of(part, false));
+        // Still the potato guns' ammo, and cooked into both burgers.
+        Assert.Equal("potato", Part("potato_blaster").Properties!["ammo"]!.GetValue<string>());
+        Assert.All(new[] { "garden_burger", "colony_burger" },
+            id => Assert.Contains(book.Find(id)!.Inputs, i => i.Item == "vanilla:potato" && i.Count == 10));
+    }
+
+    [Theory]
+    [InlineData("garden_burger", 10, 3220, "carrot:4", "tomato:2", "potato:10")]
+    [InlineData("colony_burger", 13, 3230, "grazer_steak:1", "tomato:5", "potato:10")]
+    public void TheFieldKitchenCooksTheBurgers(string id, float time, int order, params string[] inputs)
+    {
+        var content = Vanilla.Value;
+        var book = RecipeBook.Load(content);
+        var recipe = book.Find(id)!;
+
+        Assert.Equal(["vanilla:field_kitchen"], recipe.Stations);
+        Assert.Equal(inputs.Select(i => $"vanilla:{i}"), recipe.Inputs.Select(i => $"{i.Item}:{i.Count}"));
+        Assert.Equal(($"vanilla:{id}", 1), (recipe.Outputs.Single().Item, recipe.Outputs.Single().Count));
+        Assert.Equal((time, order), (recipe.Time, recipe.Definition.Order));
+        Assert.DoesNotContain(book.ForStation("fabricator"), r => r.QualifiedId == recipe.QualifiedId);
+
+        // An order queued at a Field Kitchen (its inputs were taken when it was queued) cooks one burger into it.
+        var kitchen = Inventory.For(content, content.FindDefinition("vanilla:field_kitchen")!)!;
+        var queue = new CraftingQueue();
+        queue.Enqueue(new CraftJob(recipe.QualifiedId, 1));
+        Assert.Equal(1, queue.Tick(recipe.Time, 1, book, kitchen));
+        Assert.Equal(1, kitchen.Count($"vanilla:{id}"));
+    }
+
+    [Fact]
+    public void TheFieldKitchenIsAStationWithItsOwnRecipesTheFoodAndCookingGroup()
+    {
+        var book = RecipeBook.Load(Vanilla.Value);
+        var kitchen = Part("field_kitchen");
+
+        Assert.Equal(PartCategory.Station, kitchen.Category);
+        Assert.True(kitchen.Crafting is not null && kitchen.Inventory!.Slots >= 2, "crafts and holds what it makes");
+        Assert.Equal(("field_kitchen_start", "field_kitchen_work", "field_kitchen_complete"),
+            (kitchen.Sounds!["start"], kitchen.Sounds!["work"], kitchen.Sounds!["complete"]));
+        // The standard two-way IO port on its right side, at the floor-level height every machine shares (docs/io-ports.md).
+        var port = Assert.Single(kitchen.IoPorts!);
+        Assert.Equal(Part("freezer").IoPorts!.Single().Position, port.Position);
+        Assert.Equal(Part("freezer").IoPorts!.Single().Normal, port.Normal);
+        // Its list is the 3200 group (Food and cooking), and every recipe in that group is cooked here.
+        Assert.Equal(["vanilla:garden_burger", "vanilla:colony_burger"],
+            RecipeBrowser.Ordered(book.ForStation("field_kitchen")).Select(r => r.QualifiedId));
+        Assert.All(book.All.Where(r => r.Definition.Order / 100 == 32), r => Assert.Equal(["vanilla:field_kitchen"], r.Stations));
+        // It is made at the Fabricator, among the stations (1800).
+        Assert.Equal(1850, book.Find("field_kitchen")!.Definition.Order);
     }
 
     [Fact]
@@ -152,7 +221,8 @@ public class ConsumablesTests
 
         Assert.Equal(["parts/carrot.json", "parts/tomato.json", "parts/potato.json", "parts/carrot_seed.json", "parts/tomato_seed.json",
                 "parts/potato_seed.json", "parts/cotton_seed.json", "parts/chemical.json", "parts/gasoline.json",
-                "parts/bloom_tea.json", "parts/grazer_shake.json", "parts/grazer_milk.json", "parts/grazer_steak.json", "parts/fertilizer.json"],
+                "parts/bloom_tea.json", "parts/grazer_shake.json", "parts/grazer_milk.json", "parts/grazer_steak.json", "parts/fertilizer.json",
+                "parts/garden_burger.json", "parts/colony_burger.json"],
             batch!.Parts!.Select(e => e.File));
         // Moved, not copied: no other batch writes these files.
         foreach (var other in Directory.GetFiles(Path.Combine(Mod, "editor", "batches"), "*.json").Where(f => !f.EndsWith("consumables.json", StringComparison.Ordinal)))

@@ -759,7 +759,7 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 | 1500 | Vehicle body | `bumper_front`, `bumper_rear`, `mud_flap`, `exhaust_pipe`, `license_plate`, `roof_rack`, `antenna`, `windshield`, `windshield_large`, `side_window` (new windshields take 1580-1599) |
 | 1600 | Lights | `shack_light`, `glowstick`, `fluorescent_light`, `packing_lamp`, `interior_light`, `headlight`, `spotlight`, `construction_light`, `warning_light`, `beacon_scrap`, `beacon`, `warehouse_spotlight`, `frame_beam_light`, `neon_sign`, `protector_sign` |
 | 1700 | Storage | `chest` (Scrap Chest), `small_chest`, `large_chest`, `cargo_chest`, `barrel`, `locker`, `tool_cabinet`, `file_cabinet`, `fridge`, `chemical_container`, `water_container`, `potato_ammo_container`, `resource_collector`, `vacuum_pipe`, `vacuum_pipe_corner`, `vacuum_pump`, `dispenser`, `broken_microwave`, `ruin_chest` |
-| 1800 | Stations | `portable_fabricator`, `refiner`, `respawn_bed`, `fancy_bed`, `freezer`, `ice_block_freezer` (the Freezer's one recipe) |
+| 1800 | Stations | `portable_fabricator`, `refiner`, `respawn_bed`, `fancy_bed`, `freezer`, `ice_block_freezer` (the Freezer's one recipe), `field_kitchen` |
 | 1900 | Farming | `soil_bag`, `water_bucket`, `feeding_trough`, `lead`, `growbed`, `fertilizer` |
 | 2000 | Furniture | `stool`, `chair`, `toilet`, `bathtub`, `anvil`, `cash_register`, `wooden_table`, `metal_table`, `office_table`, `table_support`, `office_chair_base`, `cubicle_wall`, `shelf_unit`, `shelf_pillar`, `shelf_support`, `shelf_support_tall`, `pallet`, `stall_door`, `sink`, `mattress`, `pillow`, `mug`, `calendar`, `toilet_paper` |
 | 2100 | Road signs | `stop_sign`, `caution_sign`, `construction_sign`, `falling_objects_sign`, `danger_sign`, `skull_sign`, `beware_bots_sign`, `no_entry_sign`, `speed_limit_sign`, `direction_arrow_left`, `direction_arrow_straight`, `direction_arrow_right`, `exit_sign`, `welcome_sign`, `hard_work_sign`, `sale_sign`, `signboard`, `colony_sign`, `paper_note` (signs that take words) |
@@ -773,6 +773,7 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 | 2900 | Windows and fences | `window_square`, `window_large`, `window_metal`, `net_fence` |
 | 3000 | Farm and shack decor | `produce_box_carrot`, `produce_box_potato`, `produce_box_tomato`, `produce_box_mixed`, `stacked_crates`, `grass_planter`, `plant_container`, `plant_container_open`, `vending_machine`, `grazer_head_topper`, `duck_statuette`, `mannequin_hand`, `mannequin_boot`, `shack_awning` |
 | 3100 | Industrial and site decor | `tank_small`, `tank_medium`, `tank_large`, `juice_drum`, `coil_segment`, `coil_corner`, `fuse_box`, `air_conditioner`, `vent_grid`, `crane_body`, `crane_hook`, `broken_concrete_medium`, `broken_concrete_large`, `hull_door`, `nut`, `screw`, `steel_pallet`, `dish_antenna`, `reflector_dish`, `reflector_antenna` |
+| 3200 | Food and cooking | the Field Kitchen's recipes: `garden_burger` (3220), `colony_burger` (3230); 3210 is kept for the Fabricator's Grazer Shake |
 
 ## The editor source file
 

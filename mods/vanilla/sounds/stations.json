@@ -98,6 +98,29 @@
       "max_distance": 30
     },
     {
+      "id": "field_kitchen_start",
+      "clips": [
+        "sounds/stations/field_kitchen_start.ogg"
+      ],
+      "max_distance": 30
+    },
+    {
+      "id": "field_kitchen_work",
+      "clips": [
+        "sounds/stations/field_kitchen_work.ogg"
+      ],
+      "loop": true,
+      "volume_db": -8,
+      "max_distance": 25
+    },
+    {
+      "id": "field_kitchen_complete",
+      "clips": [
+        "sounds/stations/field_kitchen_complete.ogg"
+      ],
+      "max_distance": 30
+    },
+    {
       "id": "bed_use",
       "clips": [
         "sounds/stations/bed_use.ogg"

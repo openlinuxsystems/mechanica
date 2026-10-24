@@ -184,6 +184,12 @@ public class SurvivalDataTests
         {
             Assert.Equal("scripts/seed.lua", mods.FindDefinition(seed)!.Script);
             var crop = mods.FindDefinition(mods.FindDefinition(seed)!.Seed!.Crop!)!;
+            if (crop.Id == "potato")
+            {
+                // Consumables batch C4: the Potato is not eaten raw (ammo and a Field Kitchen input).
+                Assert.Null(crop.Script);
+                continue;
+            }
             Assert.Equal("scripts/food.lua", crop.Script);
             Assert.True(crop.Properties!["health"]!.GetValue<double>() > 0);
         }

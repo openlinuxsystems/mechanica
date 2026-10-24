@@ -1,0 +1,59 @@
+{
+  "id": "field_kitchen",
+  "name": "Field Kitchen",
+  "description": "The colony's cooking station: cook burgers here from your crops and Grazer Steak. Two-way port on the right.",
+  "category": "station",
+  "mass": 10.5,
+  "durability": 7,
+  "friction": 0.6,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 1,
+  "sound_material": "metal",
+  "size": [3, 4, 3],
+  "mesh": "meshes/parts/field_kitchen.glb",
+  "icon": "textures/items/field_kitchen_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.5, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "sounds": {
+    "start": "field_kitchen_start",
+    "work": "field_kitchen_work",
+    "complete": "field_kitchen_complete",
+    "place": "place_metal"
+  },
+  "inventory": {
+    "slots": 6
+  },
+  "crafting": {
+    "speed": 1,
+    "queue_size": 4,
+    "link_range": 1,
+    "clips": {
+      "start": "start",
+      "work": "work_loop",
+      "complete": "complete"
+    }
+  },
+  "io_ports": [
+    {
+      "id": "port",
+      "position": [0.375, -0.125, 0],
+      "normal": [1, 0, 0]
+    }
+  ],
+  "display": {
+    "clips": {
+      "readout": "station",
+      "idle": "idle_loop"
+    }
+  }
+}
