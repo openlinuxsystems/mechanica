@@ -6,7 +6,8 @@ own: a concrete pad, the building's bounding volume, and a few shapes that make 
 (silos, a smokestack, a tower). Warehouses are built: their models come from the Colony Works kit
 (tools/structures/warehouses.py) on the placeholder shells' layout, and the Old Stone ruins (Small Ruin, Ruin, Forest
 Ruin, Mountain Lookout, Ruin City) come from the stone kit (tools/structures/ruins.py, ruin_city.py) round the
-placeholders' markers; this script writes their markers. Edit the table here and re-run; never edit the written files.
+placeholders' markers, as do the settler sites (shacks, camps, scrapyards, the haymaze, the Scrap City garage:
+tools/structures/settlers.py); this script writes their markers. Edit the table here and re-run; never edit the written files.
 
 Usage: tools/author-poi-placeholders.py [OUT_DIR]   (default: mods/vanilla/pois)
 """
@@ -176,11 +177,12 @@ def stone(name):
 
 add("small_ruin", "Small Ruin", [14, 5, 12], "track", [],
     [loot_part("wooden_crate", [-9.0, 0.3, 2.0], "crate", [2, 4])], flora="meadow", ground=None, models=[stone("small_ruin")])
-add("farmer_shack", "Farmer Shack", [12, 5, 10], "track",
-    placeholder(12, 10, 5, WOOD, [box([5, 2.5, 4], [10, 1.25, 4], HAY)]),
+# Settler sites (tools/structures/settlers.py): the model brings its own yard pad; height is the model's top.
+add("farmer_shack", "Farmer Shack", [12, 5.75, 10], "track", [],
     [loot_part("wooden_crate", [-8.0, 0.3, 2.0], "crate", [2, 4]), part("barrel", [-8.0, 0.3, -2.0]),
      derelict("farm_cart", [8.0, 0.3, -6.0], yaw=20.0),
-     sign("signboard", [3.0, 0.3, 7.5], FACE_FRONT, "FRESH VEG\nat the farm\nWorkshop {distance:%s} {direction:%s}" % (WORKSHOP, WORKSHOP))], flora="meadow", ground=None)
+     sign("signboard", [3.0, 0.3, 7.5], FACE_FRONT, "FRESH VEG\nat the farm\nWorkshop {distance:%s} {direction:%s}" % (WORKSHOP, WORKSHOP))], flora="meadow", ground=None,
+    models=[{"file": "meshes/structures/farmer_shack.glb", "at": [0.0, 0.0, 0.0]}])
 add("packing_station_vegetable", "Packing Station (Vegetable)", [36, 8, 24], "road",
     placeholder(36, 24, 8, METAL, [box([3, 3, 0.4], [0, 10, 12.2], "#5fa83a"), box([20, 1.2, 3], [0, 1.0, 15], ROOF)]),
     [loot_part("wooden_crate", [-15.0, 0.3, 14.5], "crate", [2, 4]), part("stacked_crates", [15.0, 0.3, 14.5]),
@@ -209,27 +211,24 @@ add("ruin", "Ruin", [30, 11, 24], "track", [],
 # A broken watchtower: the stair inside winds up to its top floor, where the crate is.
 add("mountain_lookout", "Mountain Lookout", [10, 20, 10], "track", [],
     [loot_part("wooden_crate", [2.5, 14.75, 2.5], "crate", [2, 4])], flora="mountain", ground=None, models=[stone("mountain_lookout")])
-add("campsite", "Campsite", [20, 3, 20], "track",
-    [box([3, 2.4, 4], [-5, 1.2, -4], "#5f8a4a", 20), box([3, 2.4, 4], [5, 1.2, -3], "#5f8a4a", -15),
-     box([4, 2.8, 5], [0, 1.4, 6], "#8a6a4a"), cylinder(1, 0.4, [0, 0.2, 0], BURNT)],
+add("campsite", "Campsite", [20, 4, 20], "track", [],
     # A crate by the tents, a seat facing the fire pit and a light by the hut.
     [loot_part("wooden_crate", [-7.5, 0.0, 2.0], "crate", [2, 4]), part("scrap_seat", [2.4, 0.0, 0.0], yaw=90.0),
      part("shack_light", [3.0, 0.0, 4.0]),
-     sign("signboard", [-6.0, 0.0, 8.0], FACE_FRONT, "WATER {direction:%s} {distance:%s}\nWORKSHOP {direction:%s} {distance:%s}" % (WATER, WATER, WORKSHOP, WORKSHOP))], flora="meadow", ground=None)
-add("large_camp", "Large Camp", [50, 4, 40], "track",
-    [box([54, 0.3, 44], [0, 0.15, 0], "#8a7a5a"),
-     *[box([4, 3, 5], [x, 1.8, z], "#5f8a4a") for x in (-18, -9, 9, 18) for z in (-12, 12)],
-     volume(12, 8, 4, WOOD, y=0.3), *[box([2, 2, 2], [x, 1.3, 18], HAY) for x in (-20, -16, 16, 20)]],
+     sign("signboard", [-6.0, 0.0, 8.0], FACE_FRONT, "WATER {direction:%s} {distance:%s}\nWORKSHOP {direction:%s} {distance:%s}" % (WATER, WATER, WORKSHOP, WORKSHOP))], flora="meadow", ground=None,
+    models=[{"file": "meshes/structures/campsite.glb", "at": [0.0, 0.0, 0.0]}])
+add("large_camp", "Large Camp", [50, 10, 40], "track", [],
     [loot_part("chest", [0.0, 0.3, -6.0], "crate", [2, 4]), loot_part("wooden_crate", [0.0, 0.3, 8.0], "crate", [2, 4]),
      part("shack_light", [-8.0, 0.3, 0.0]), part("shack_light", [8.0, 0.3, 0.0]), part("scrap_seat", [4.0, 0.3, 6.0], yaw=180.0),
      part("chair", [-4.0, 0.3, 6.0], yaw=180.0), derelict("go_kart", [0.0, 0.3, 14.0], yaw=90.0),
-     sign("signboard", [6.0, 0.3, 20.5], FACE_FRONT, "SETTLERS' CAMP\nTrade, rest, mend\nWorkshop {distance:%s} {direction:%s}" % (WORKSHOP, WORKSHOP))])
+     sign("signboard", [6.0, 0.3, 20.5], FACE_FRONT, "SETTLERS' CAMP\nTrade, rest, mend\nWorkshop {distance:%s} {direction:%s}" % (WORKSHOP, WORKSHOP))],
+    models=[{"file": "meshes/structures/large_camp.glb", "at": [0.0, 0.0, 0.0]}])
 add("growlab", "Growlab", [30, 8, 20], "road",
     placeholder(30, 20, 8, GLASS, [volume(10, 8, 6, METAL, x=-20, y=0.3)]),
     [loot_part("metal_crate", [12.0, 0.3, 12.5], "crate", [2, 4])])
-add("farmers_hideout", "Farmers Hideout", [40, 16, 30], "road",
-    placeholder(40, 30, 16, METAL, [cylinder(2, 28, [14, 14.3, -10], ROOF), box([8, 0.4, 12], [0, 6, 21], METAL)]),
-    [loot_part("metal_crate", [-17.0, 0.3, 17.5], "warehouse_crate", [2, 4]), part("beware_bots_sign", [8.0, 0.3, 18.5], yaw=180.0)])
+add("farmers_hideout", "Farmers Hideout", [40, 15.5, 30], "road", [],
+    [loot_part("metal_crate", [-17.0, 0.3, 17.5], "warehouse_crate", [2, 4]), part("beware_bots_sign", [8.0, 0.3, 18.5], yaw=180.0)],
+    models=[{"file": "meshes/structures/farmers_hideout.glb", "at": [0.0, 0.0, 0.0]}])
 # Chemical pools (Chemical item: an empty bucket dipped in one; standing in one hurts) and oil geysers (Crude Oil by hand).
 add("chemical_lake_facility", "Chemical Lake Facility", [40, 10, 30], "track",
     placeholder(40, 30, 10, RUIN, [box([1, 1, 18], [-10, 0.8, 26], YELLOW), box([1, 1, 18], [10, 0.8, 26], YELLOW)]),
@@ -254,13 +253,11 @@ add("oil_pond", "Oil Pond", [20, 2, 20], "none",
 TENT = "#5f8a4a"
 CANVAS = "#b8a47a"
 CROP = "#6aa84f"
-add("camp", "Camp", [14, 3, 14], "track",
-    [box([3, 2.2, 4], [-4, 1.1, -3], TENT, 20), box([3, 2.0, 3.5], [4, 1.0, -2], CANVAS, -25), cylinder(0.8, 0.3, [0, 0.15, 2], BURNT),
-     box([2.2, 0.4, 0.5], [-1.8, 0.2, 3.6], WOOD, 70)],
+add("camp", "Camp", [14, 3, 14], "track", [],
     [loot_part("wooden_crate", [5.0, 0.0, 4.0], "crate", [2, 4]), loot_part("wooden_crate", [-4.0, 0.0, 0.0], "crate", [2, 4]),
      part("scrap_seat", [2.0, 0.0, 2.0], yaw=90.0), part("shack_light", [1.0, 0.0, -1.5]),
      sign("signboard", [-3.5, 0.0, 5.5], FACE_FRONT, "Gone for parts\nWorkshop {distance:%s} {direction:%s}\nBack by dark" % (WORKSHOP, WORKSHOP))],
-    ground="dirt", margin=12,
+    ground="dirt", margin=12, models=[{"file": "meshes/structures/camp.glb", "at": [0.0, 0.0, 0.0]}],
     spacing={"spacing": [570.0, 820.0], "biomes": ["forest", "autumn_forest", "burned_forest"], "priority": 20, "clearance": 48.0})
 add("forest_ruin", "Forest Ruin", [16, 5, 16], "track", [],
     # Loot crates, and a Ruin Chest against the west wall that fills again 5 days after it is emptied (as Scrap Mechanic's).
@@ -315,11 +312,7 @@ add("abandoned_tractor", "Abandoned Tractor", [10, 2, 8], "none",
     [derelict("old_tractor", [-1.0, 0.0, -1.0], yaw=30.0), derelict("farm_trailer", [2.5, 0.0, 2.5], yaw=30.0)],
     flora="meadow", ground=None, margin=8,
     spacing={"spacing": [1500.0, 2100.0], "biomes": ["field", "meadow"], "priority": 43, "clearance": 24.0})
-add("farmbot_scrapyard", "Farmbot Scrapyard", [60, 6, 50], "none",
-    [box([64, 0.3, 54], [0, 0.15, 0], BURNT),
-     *[box([s, s / 2, s], [x, s / 4 + 0.3, z], "#6a5a52", (x * 7) % 45) for s, x, z in
-       [(10, -18, -12), (8, 6, -16), (12, 16, 6), (7, -8, 10), (9, -22, 14), (6, 24, -18)]],
-     box([60, 2, 0.4], [0, 1.3, -25], METAL), box([0.4, 2, 50], [30, 1.3, 0], METAL)],
+add("farmbot_scrapyard", "Farmbot Scrapyard", [60, 15, 50], "none", [],
     # Warning signs and cones at the open (south) edge, crates and a refilling chest among the heaps, shelves against the
     # back fence, site lights, and loose parts off the dead Farmbots' machines.
     [part("beware_bots_sign", [-3.0, 0.3, 26.0], yaw=180.0), part("danger_sign", [3.0, 0.3, 26.0], yaw=180.0),
@@ -333,18 +326,16 @@ add("farmbot_scrapyard", "Farmbot Scrapyard", [60, 6, 50], "none",
      derelict("old_tractor", [20.0, 0.3, -6.0], yaw=15.0), derelict("flatbed_hauler", [-5.0, 0.3, -10.0], yaw=90.0),
      derelict("scrap_buggy", [5.0, 0.3, -5.0], yaw=-10.0),
      sign("signboard", [10.0, 0.3, 25.5], FACE_FRONT, "SCRAPYARD\nTake what you need\nMind the Farmbots")],
-    ground="burnt")
-add("capsule_scrapyard", "Capsule Scrapyard", [50, 6, 40], "track",
-    [box([54, 0.3, 44], [0, 0.15, 0], PAD),
-     *[cylinder(2.5, 5, [x, 2.8, z], "#c9d2d8") for x in (-16, -8, 0, 8, 16) for z in (-10, 10)],
-     box([50, 2, 0.4], [0, 1.3, -20], METAL)],
+    ground="burnt", models=[{"file": "meshes/structures/farmbot_scrapyard.glb", "at": [0.0, 0.0, 0.0]}])
+add("capsule_scrapyard", "Capsule Scrapyard", [50, 8, 40], "track", [],
     # Signs at the gate, crates at the ends of the aisle, parts salvaged from the capsules on shelves and in the aisle.
     [part("danger_sign", [-3.0, 0.3, 21.0], yaw=180.0), part("beware_bots_sign", [3.0, 0.3, 21.0], yaw=180.0),
      loot_part("metal_crate", [-22.0, 0.3, 0.0], "warehouse_crate", [2, 4]), loot_part("wooden_crate", [22.0, 0.3, 0.0], "crate", [2, 4]),
      part("shelf_unit", [-6.0, 0.3, -19.5], yaw=180.0), part("shelf_unit", [6.0, 0.3, -19.5], yaw=180.0),
      part("construction_light", [-24.0, 0.3, -18.0]), part("construction_light", [24.0, 0.3, -18.0]),
      part("battery", [-4.0, 0.3, 0.0]), part("scrap_wheel", [4.0, 0.3, 0.0]), part("warning_light", [0.0, 0.3, -18.5]),
-     derelict("rover_frame", [12.0, 0.3, 0.0], yaw=90.0)])
+     derelict("rover_frame", [12.0, 0.3, 0.0], yaw=90.0)],
+    models=[{"file": "meshes/structures/capsule_scrapyard.glb", "at": [0.0, 0.0, 0.0]}])
 # Ruin City is built: a walled stone town (tools/structures/ruin_city.py) in seven models sharing the POI's origin.
 add("ruin_city", "Ruin City", [160, 40, 140], "road", [],
     [loot_part("ruin_chest", [0.0, 0.3, -25.0], "ruin_chest", [1, 6], refill_days=5),
@@ -353,21 +344,18 @@ add("ruin_city", "Ruin City", [160, 40, 140], "road", [],
      part("traffic_cone", [-12.0, 0.6, 24.0]), part("traffic_cone", [12.0, 0.6, 28.0]),
      sign("colony_sign", [7.0, 0.3, 70.0], FACE_FRONT, "OLD STONE TOWN\nOlder than the colony")],
     models=[stone("ruin_city_" + piece) for piece in ("centre", "keep", "west", "east", "northeast", "southwest", "southeast")])
-add("haymaze", "Haymaze", [60, 3, 60], "road",
-    [box([64, 0.3, 64], [0, 0.15, 0], "#8a7a5a"),
-     *[box([w, 3, 2], [x, 1.8, z], HAY) for w, x, z in [(60, 0, -29), (60, 0, 29), (40, -10, -15), (40, 10, 0), (40, -10, 15)]],
-     *[box([2, 3, d], [x, 1.8, z], HAY) for d, x, z in [(52, -29, 0), (52, 29, 0), (14, 0, -22), (14, 15, 22)]]],
+add("haymaze", "Haymaze", [60, 7.75, 60], "road", [],
     # The prize at the heart of the maze: a chest that fills again 5 days after it is emptied, and a crate on the way.
-    [loot_part("ruin_chest", [-20.0, 0.3, -7.0], "ruin_chest", [1, 6], refill_days=5), loot_part("wooden_crate", [20.0, 0.3, 8.0], "crate", [2, 4])])
-add("scrap_city_garage", "Scrap City Garage", [60, 12, 40], "road",
-    placeholder(60, 40, 12, METAL, [box([16, 8, 0.4], [-12, 4.3, 20.2], ROOF), box([16, 8, 0.4], [12, 4.3, 20.2], ROOF),
-                                    cylinder(3, 6, [20, 15.3, -10], YELLOW)]),
+    [loot_part("ruin_chest", [-20.0, 0.3, -7.0], "ruin_chest", [1, 6], refill_days=5), loot_part("wooden_crate", [20.0, 0.3, 8.0], "crate", [2, 4])],
+    models=[{"file": "meshes/structures/haymaze.glb", "at": [0.0, 0.0, 0.0]}])
+add("scrap_city_garage", "Scrap City Garage", [60, 16, 40], "road", [],
     # On the forecourt in front of the doors: crates, a sale sign, cones, a light, and wheels and a seat waiting for a car.
     [loot_part("metal_crate", [-26.0, 0.3, 22.5], "warehouse_crate", [2, 4]), part("stacked_crates", [26.0, 0.3, 22.5]),
      part("sale_sign", [0.0, 0.3, 22.0], yaw=180.0), part("construction_light", [-2.5, 0.3, 22.5]),
      part("traffic_cone", [-21.0, 0.3, 23.0]), part("traffic_cone", [21.0, 0.3, 23.0]),
      part("wheel", [32.0, 0.3, 2.0]), part("wheel", [32.0, 0.3, -1.0]), part("scrap_drivers_seat", [32.0, 0.3, -6.0], yaw=-90.0),
-     derelict("colony_runabout", [-12.0, 0.3, 22.2], yaw=90.0), derelict("flatbed_hauler", [32.0, 0.3, 11.0])])
+     derelict("colony_runabout", [-12.0, 0.3, 22.2], yaw=90.0), derelict("flatbed_hauler", [32.0, 0.3, 11.0])],
+    models=[{"file": "meshes/structures/scrap_city_garage.glb", "at": [0.0, 0.0, 0.0]}])
 
 
 def inline(value):

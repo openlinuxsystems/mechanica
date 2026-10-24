@@ -1,5 +1,5 @@
 {
-  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
+  // Built (World Map spec §4): the structure is its model; this file places it and its markers.
   // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
   "id": "camp",
   "name": "Camp",
@@ -11,11 +11,8 @@
     { "op": "flatten", "radius": 22.0, "blend": 6.0 }
   ],
   "ground": [{ "ground": "dirt", "radius": 16.0, "blend": 10.0, "noise": 4.0 }],
-  "pieces": [
-    { "shape": "box", "size": [3.0, 2.2, 4.0], "at": [-4.0, 1.1, -3.0], "yaw": 20.0, "color": "#5f8a4a" },
-    { "shape": "box", "size": [3.0, 2.0, 3.5], "at": [4.0, 1.0, -2.0], "yaw": -25.0, "color": "#b8a47a" },
-    { "shape": "cylinder", "radius": 0.8, "height": 0.3, "at": [0.0, 0.15, 2.0], "color": "#3a3430" },
-    { "shape": "box", "size": [2.2, 0.4, 0.5], "at": [-1.8, 0.2, 3.6], "yaw": 70.0, "color": "#8c5a3c" }
+  "models": [
+    { "file": "meshes/structures/camp.glb", "at": [0.0, 0.0, 0.0] }
   ],
   "markers": [
     { "type": "part", "ref": "wooden_crate", "at": [5.0, 0.0, 4.0], "loot": "crate", "loot_rolls": [2, 4] },

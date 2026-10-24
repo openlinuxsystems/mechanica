@@ -1,21 +1,18 @@
 {
-  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
+  // Built (World Map spec §4): the structure is its model; this file places it and its markers.
   // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
   "id": "poi_20",
   "name": "POI-20 Farmers Hideout",
   "radius": 59.0,
-  "size": [40.0, 16.0, 30.0],
+  "size": [40.0, 15.5, 30.0],
   "road": "road",
   "placement": {},
   "terrain": [
     { "op": "flatten", "radius": 39.0, "blend": 20.0 }
   ],
   "ground": [{ "ground": "lot", "radius": 31.0, "blend": 10.0, "noise": 4.0 }],
-  "pieces": [
-    { "shape": "box", "size": [48.0, 0.3, 38.0], "at": [0.0, 0.15, 0.0], "color": "#a3a093" },
-    { "shape": "box", "size": [40.0, 16.0, 30.0], "at": [0.0, 8.3, 0.0], "color": "#7d858c" },
-    { "shape": "cylinder", "radius": 2.0, "height": 28.0, "at": [14.0, 14.3, -10.0], "color": "#4a4f55" },
-    { "shape": "box", "size": [8.0, 0.4, 12.0], "at": [0.0, 6.0, 21.0], "color": "#7d858c" }
+  "models": [
+    { "file": "meshes/structures/farmers_hideout.glb", "at": [0.0, 0.0, 0.0] }
   ],
   "markers": [
     { "type": "part", "ref": "metal_crate", "at": [-17.0, 0.3, 17.5], "loot": "warehouse_crate", "loot_rolls": [2, 4] },
