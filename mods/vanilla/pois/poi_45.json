@@ -1,20 +1,18 @@
 {
-  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
+  // Built (World Map spec §4): the structure is its model; this file places it and its markers.
   // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
   "id": "poi_45",
   "name": "POI-45 Growlab (Desert)",
   "radius": 52.0,
-  "size": [30.0, 8.0, 20.0],
+  "size": [30.0, 11.75, 20.0],
   "road": "road",
   "placement": {},
   "terrain": [
     { "op": "flatten", "radius": 32.0, "blend": 20.0 }
   ],
   "ground": [{ "ground": "lot", "radius": 24.0, "blend": 10.0, "noise": 4.0 }],
-  "pieces": [
-    { "shape": "box", "size": [38.0, 0.3, 28.0], "at": [0.0, 0.15, 0.0], "color": "#a3a093" },
-    { "shape": "box", "size": [30.0, 8.0, 20.0], "at": [0.0, 4.3, 0.0], "color": "#9fd8c8" },
-    { "shape": "box", "size": [10.0, 6.0, 8.0], "at": [-20.0, 3.3, 0.0], "color": "#7d858c" }
+  "models": [
+    { "file": "meshes/structures/growlab.glb", "at": [0.0, 0.0, 0.0] }
   ],
   "markers": [
     { "type": "part", "ref": "metal_crate", "at": [12.0, 0.3, 12.5], "loot": "crate", "loot_rolls": [2, 4] }

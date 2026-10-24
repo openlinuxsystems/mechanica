@@ -548,7 +548,9 @@ The vanilla layout gives each of the spec's 50 structures its own prefab (`pois/
 its own. The story needs the first Workshop within 350 m of the crash site, so POI-37 sits about 270 m north
 of it with a 50 m jitter (the seed moves a site at most `jitter` along each axis, so up to `jitter` × 1.41 in all), and
 shares its `field` biome: a site's biome reaches about 0.7 × `biome_cell_size` round it and would repaint the start. Until then they are placeholders of the right footprint and height, written by
-`tools/author-poi-placeholders.py` (edit its table and re-run). Six extra large slots draw a warehouse or a
+`tools/author-poi-placeholders.py` (edit its table and re-run); the built ones (the warehouses, the Colony Works sites,
+the settler sites and the Old Stone ruins) carry their structure's model instead (`tools/structures/`, see
+[Art direction](art-direction.md)). Six extra large slots draw a warehouse or a
 Farmbot Scrapyard from the `large_slots` pool.
 
 ### Ponds, marshes and creeks

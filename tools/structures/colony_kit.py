@@ -509,7 +509,7 @@ def roller_door(P, loc, w=6.0, h=3.75, open_h=3.0, yaw=0.0, name="roller_door", 
 def wall(P, name, length, floors, loc=(0, 0, 0), yaw=0.0, bays=None, plan=None, holes=(), seed=1, parapet=True, posts=True):
     """A building wall from x = -length/2 to length/2: the plinth, ribbed bone cladding in storey bands up to the
     parapet, steel-blue posts at the bay lines, floor-line belts, the coping, and what plan(bay, floor) puts in each
-    bay: 'window', 'broken', 'louvre', 'fan', 'door' (a walk-in door) or 'plain'. holes are openings (x0, x1, z0, z1)
+    bay: 'window', 'broken', 'louvre', 'fan', 'porthole', 'door' (a walk-in door, shut) or 'plain'. holes are openings (x0, x1, z0, z1)
     cut through it all (roller doors), which the caller fills. Collides as boxes round the holes."""
     G = group(P, name, loc, yaw)
     rnd = random.Random(seed)
@@ -558,6 +558,9 @@ def wall(P, name, length, floors, loc=(0, 0, 0), yaw=0.0, bays=None, plan=None, 
                 louvre(G, cx, base + 1.5, 2.0, 1.25)
             elif kind == "fan":
                 wall_fan(G, cx, base + 2.4, 0.6)
+            elif kind == "porthole":
+                cut.append((cx - 0.75, cx + 0.75, base + 1.3, base + 2.8))
+                porthole(G, cx, base + 2.05)
             elif kind == "door":
                 cut.append((cx - 0.8, cx + 0.8, base, base + 2.85))
                 personnel_door(G, cx, base, number=f + 1 if f > 0 else None)
@@ -756,18 +759,19 @@ def floor_slab(P, x0, x1, y0, y1, z_top, open_edges=(), name="slab"):
     return G
 
 
-def railing(G, a, b, h=1.1, posts=1.5, kick=True, top_mat=None, collide=True):
+def railing(G, a, b, h=1.1, posts=1.5, kick=True, top_mat=None, collide=True, first=True, lite=False):
     """A safety railing from a to b (its foot): steel posts, a mustard top rail, a mid rail and a toe board; collides
-    as one thin wall so nobody walks off an edge."""
+    as one thin wall so nobody walks off an edge. first=False leaves out the post at a (a run of railings sharing
+    posts); lite draws plain posts and coarser rails (the many short runs round a silo roof)."""
     a, b = Vector(a), Vector(b)
     L = (b - a).length
     n = max(1, round(L / posts))
     top_mat = top_mat or mustard(0.4)
-    for k in range(n + 1):
+    for k in range(0 if first else 1, n + 1):
         p = a + (b - a) * (k / n)
-        quiet(K.box("rail_post", (0.06, 0.06, h), steel(), loc=(p.x, p.y, p.z + h / 2), bev=0.008, parent=G))
-    quiet(rod(G, "rail_top", a + Vector((0, 0, h)), b + Vector((0, 0, h)), 0.035, top_mat, segs=8))
-    quiet(rod(G, "rail_mid", a + Vector((0, 0, h * 0.5)), b + Vector((0, 0, h * 0.5)), 0.02, steel(), segs=6))
+        quiet(K.box("rail_post", (0.06, 0.06, h), steel(), loc=(p.x, p.y, p.z + h / 2), bev=0 if lite else 0.008, parent=G))
+    quiet(rod(G, "rail_top", a + Vector((0, 0, h)), b + Vector((0, 0, h)), 0.035, top_mat, segs=6 if lite else 8))
+    quiet(rod(G, "rail_mid", a + Vector((0, 0, h * 0.5)), b + Vector((0, 0, h * 0.5)), 0.02, steel(), segs=4 if lite else 6))
     if kick and abs(b.z - a.z) < 0.01:
         d = (b - a).normalized()
         yaw = math.degrees(math.atan2(d.y, d.x))
@@ -1237,10 +1241,10 @@ def floodlight_mast(P, loc, h=12.0, yaw=0.0, name="floodlight_mast", lit=True):
     return G
 
 
-def mesh_fence(P, a, b, h=2.25, name="fence", gate=None, panel=2.5):
+def mesh_fence(P, a, b, h=2.25, name="fence", gate=None, panel=2.5, lite=False):
     """A welded-mesh yard fence from a to b (ground points): square steel posts every 2.5 m, a top and bottom rail,
     a wire grid and a strand of barbed wire on raked arms. gate=(t0, t1) leaves a gap between those fractions with
-    a sliding gate pushed back beside it."""
+    a sliding gate pushed back beside it. lite: a coarser grid and unbevelled posts, for long runs (a yard)."""
     G = group(P, name)
     a, b = Vector((a[0], a[1], 0)), Vector((b[0], b[1], 0))
     d = (b - a).normalized()
@@ -1253,7 +1257,7 @@ def mesh_fence(P, a, b, h=2.25, name="fence", gate=None, panel=2.5):
         if gate and gate[0] + 1e-6 < k / n < gate[1] - 1e-6:
             continue
         p = a + d * (L * k / n)
-        quiet(K.box("fence_post", (0.1, 0.1, h + 0.2), steel(), loc=tuple(p + Vector((0, 0, (h + 0.2) / 2))), rot=(0, 0, yaw), bev=0.01, parent=G))
+        quiet(K.box("fence_post", (0.1, 0.1, h + 0.2), steel(), loc=tuple(p + Vector((0, 0, (h + 0.2) / 2))), rot=(0, 0, yaw), bev=0 if lite else 0.01, parent=G))
         quiet(beam(G, "fence_arm", p + Vector((0, 0, h + 0.15)), p + Vector((0, 0, h + 0.55)) - side * 0.3, 0.04, graphite()))
     for k in range(n):
         t0, t1 = k / n, (k + 1) / n
@@ -1261,14 +1265,14 @@ def mesh_fence(P, a, b, h=2.25, name="fence", gate=None, panel=2.5):
             continue
         p0, p1 = a + d * (L * t0), a + d * (L * t1)
         for z in (0.15, h):
-            quiet(rod(G, "fence_rail", p0 + Vector((0, 0, z)), p1 + Vector((0, 0, z)), 0.025, steel(), segs=6))
-        m = 10
+            quiet(rod(G, "fence_rail", p0 + Vector((0, 0, z)), p1 + Vector((0, 0, z)), 0.025, steel(), segs=4 if lite else 6))
+        m, hm = (5, 5) if lite else (10, 9)
         for j in range(1, m):
             q = p0 + (p1 - p0) * (j / m)
             quiet(K.box("fence_wire_v", (0.012, 0.012, h - 0.2), wire, loc=tuple(q + Vector((0, 0, h / 2 + 0.05))), rot=(0, 0, yaw), bev=0, parent=G))
-        for j in range(1, 9):
-            z = 0.15 + (h - 0.15) * j / 9
-            quiet(rod(G, "fence_wire_h", p0 + Vector((0, 0, z)), p1 + Vector((0, 0, z)), 0.007, wire, segs=4))
+        for j in range(1, hm):
+            z = 0.15 + (h - 0.15) * j / hm
+            quiet(rod(G, "fence_wire_h", p0 + Vector((0, 0, z)), p1 + Vector((0, 0, z)), 0.007 if not lite else 0.01, wire, segs=3 if lite else 4))
         quiet(rod(G, "barb", p0 + Vector((0, 0, h + 0.5)) - side * 0.27, p1 + Vector((0, 0, h + 0.5)) - side * 0.27, 0.012, graphite(), segs=4))
         solid(G, "fence", (L / n, 0.1, h), tuple((p0 + p1) / 2 + Vector((0, 0, h / 2))), rot=(0, 0, yaw))
     if gate:
@@ -1293,3 +1297,530 @@ def intake_head(G, x, z, y=0.0):
     framed(G, "intake_meter", (x, y - 0.2, z - 2.2), (0.9, 0.35, 1.2), M(BONE, wear=0.4), graphite(), fw=0.05)
     quiet(K.box("intake_conduit", (0.1, 0.1, 1.6), graphite(), loc=(x, y - 0.15, z - 0.8), bev=0, parent=G))
     quiet(K.box("intake_plate", (0.4, 0.02, 0.3), mustard(0.2), loc=(x, y - 0.385, z - 1.95), bev=0, parent=G))
+
+
+# ================================================================== the colony sites' modules (colony_sites.py)
+def porthole(G, x, z, r=0.5, y=0.0, plate=1.5):
+    """A round window on a flat bone plate let into the cladding (wall frame, facing -y): a steel-blue frame round the
+    plate, a bolted graphite ring, the glass and a small rain hood over it."""
+    quiet(K.box("port_plate", (plate, 0.06, plate), bone(1), loc=(x, y - 0.03, z), bev=0.01, parent=G))
+    for s in (-1, 1):
+        quiet(K.box("port_frame", (0.1, 0.12, plate + 0.1), steel(), loc=(x + s * plate / 2, y - 0.06, z), bev=0, parent=G))
+        quiet(K.box("port_frame", (plate + 0.1, 0.12, 0.1), steel(), loc=(x, y - 0.06, z + s * plate / 2), bev=0, parent=G))
+    quiet(K.torus("port_ring", r, 0.07, graphite(), loc=(x, y - 0.1, z), rot=(90, 0, 0), segs=24, parent=G))
+    quiet(K.cyl("port_glass", r - 0.02, 0.02, glass(), loc=(x, y - 0.07, z), rot=(90, 0, 0), segs=24, bev=0, parent=G))
+    for k in range(8):
+        a = k * math.pi / 4 + math.pi / 8
+        quiet(K.box("port_bolt", (0.06, 0.05, 0.06), zinc(), loc=(x + r * math.cos(a), y - 0.17, z + r * math.sin(a)), bev=0, parent=G))
+    quiet(K.box("port_hood", (2 * r + 0.3, 0.25, 0.06), graphite(), loc=(x, y - 0.18, z + r + 0.18), rot=(-15, 0, 0), bev=0.01, parent=G))
+    return G
+
+
+def door_hole(x, z, w=1.25, h=2.5):
+    """The opening an open doorway (doorway()) needs in a wall: pass it in the wall's holes. A doorway on the ground
+    floor (z at the slab top) is cut through the plinth to the ground."""
+    return (x - w / 2 - 0.15, x + w / 2 + 0.15, 0.0 if z <= SLAB + 1e-3 else z, z + h + 0.15)
+
+
+def doorway(G, x, z, y=0.0, w=1.25, h=2.5, swing=1, lamp=True, name="doorway"):
+    """An open walk-in doorway in a wall (wall frame, outside -y; its opening is door_hole()): graphite jambs and head
+    through the wall, a chequer sill, the steel door swung right back flat against the wall outside (to +x, or -x
+    with swing=-1) and a warm lamp over it."""
+    D = group(G, name)
+    gra = graphite()
+    for sx in (-1, 1):
+        quiet(K.box("dw_jamb", (0.14, 0.5, h + 0.14), gra, loc=(x + sx * (w / 2 + 0.07), y + 0.05, z + h / 2 + 0.07), bev=0.015, parent=D))
+    quiet(K.box("dw_head", (w + 0.42, 0.5, 0.16), gra, loc=(x, y + 0.05, z + h + 0.15), bev=0.015, parent=D))
+    quiet(K.box("dw_sill", (w + 0.2, 0.5, 0.03), gunmetal(), loc=(x, y + 0.05, z + 0.015), bev=0, parent=D))
+    hx = x + swing * (w + 0.16)
+    quiet(K.box("dw_leaf", (w, 0.06, h), steel(), loc=(hx, y - 0.17, z + h / 2), bev=0.02, parent=D))
+    quiet(K.box("dw_kick", (w - 0.1, 0.02, 0.3), zinc(), loc=(hx, y - 0.21, z + 0.2), bev=0, parent=D))
+    quiet(K.box("dw_vision", (0.3, 0.02, 0.5), glass(), loc=(hx + swing * 0.2, y - 0.21, z + 1.6), bev=0, parent=D))
+    quiet(K.box("dw_bar", (0.7, 0.06, 0.06), zinc(), loc=(hx - swing * 0.1, y - 0.23, z + 1.05), bev=0.01, parent=D))
+    if lamp:
+        quiet(K.box("dw_lamp", (0.5, 0.22, 0.14), gra, loc=(x, y - 0.2, z + h + 0.48), bev=0.03, parent=D))
+        quiet(K.box("dw_lens", (0.42, 0.16, 0.02), glow(WARM, 10), loc=(x, y - 0.22, z + h + 0.405), bev=0, parent=D))
+    return D
+
+
+def prop(P, build, loc, yaw=0.0, collide=True, pad=0.0):
+    """Places a world prop (a props*.py builder) in a structure, drawn only. collide=True gives it one collision box,
+    its bounding box less pad on each side; (size, centre) gives that box in the prop's frame; False gives none."""
+    root = build()
+    root.parent = P
+    root.location = loc
+    root.rotation_euler = (0, 0, math.radians(yaw))
+    quiet_all(root)
+    if collide is True:
+        bpy.context.view_layer.update()
+        inv = root.matrix_world.inverted()
+        pts = [inv @ (ob.matrix_world @ Vector(c)) for ob in root.children_recursive if ob.type == "MESH" for c in ob.bound_box]
+        lo = Vector((min(p.x for p in pts) + pad, min(p.y for p in pts) + pad, max(0.0, min(p.z for p in pts))))
+        hi = Vector((max(p.x for p in pts) - pad, max(p.y for p in pts) - pad, max(p.z for p in pts)))
+        solid(root, "prop", tuple(hi - lo), tuple((hi + lo) / 2))
+    elif collide:
+        size, off = collide
+        solid(root, "prop", size, off)
+    return root
+
+
+def face(G, name, pts, mat):
+    """One flat face through 3D points (glass panes on a curve), drawn only."""
+    bm = bmesh.new()
+    bm.faces.new([bm.verts.new(p) for p in pts])
+    ob = K.from_bm(name, bm, mat)
+    ob.parent = G
+    return quiet(ob)
+
+
+# ---------------------------------------------------------------- silos, the stair tower, the gallery
+def silo(P, loc, r=4.0, h=16.0, rise=0.6, code="S-1", seed=1, gap=None, ladder=-90.0, name="silo"):
+    """A colony grain silo standing on loc: a bone drum in welded 2.5 m courses held by steel-blue stiffener posts and ring
+    belts on a concrete ring footing, a low steel-blue cone roof you walk on (rise metres to an inlet collar) inside a
+    railing, a roof hatch and vent, a caged ladder up the side at angle ladder (degrees from +x; None: none), a discharge chute at
+    the foot, rust runs from the belts and a mustard band with its code. gap=(angle, half, d) leaves the railing open
+    towards angle over half degrees each way, for a gallery door, with closure rails from the gap's ends to the plane
+    d metres out that way (the gallery wall)."""
+    G = group(P, name, loc)
+    rnd = random.Random(seed)
+    K.cyl("silo_footing", r + 0.35, 0.5, concrete(), loc=(0, 0, 0.25), segs=32, bev=0.03, parent=G)
+    K.cyl("silo_body", r, h - 0.5, bone(seed), loc=(0, 0, 0.5 + (h - 0.5) / 2), segs=32, bev=0, parent=G)
+    for z in [0.5 + 2.5 * k for k in range(1, int((h - 0.5) / 2.5))]:
+        bm = bmesh.new()      # an open hoop: its ends are never seen
+        bmesh.ops.create_cone(bm, cap_ends=False, segments=32, radius1=r + 0.008, radius2=r + 0.008, depth=0.03)
+        seam = K.from_bm("silo_seam", bm, M("#c7bfa8", wear=0, grime=0.3, scratches=0))
+        seam.parent, seam.location = G, (0, 0, z)
+        quiet(seam)
+    belts = [0.65] + [float(z) for z in range(4, int(h), 4)] + [h - 0.15]
+    for z in belts:
+        quiet(K.cyl("silo_belt", r + 0.06, 0.3, steel(), loc=(0, 0, z), segs=32, bev=0, parent=G))
+    for k in range(12):
+        a = 2 * math.pi * k / 12 + math.pi / 12
+        quiet(K.box("silo_stiffener", (0.14, 0.24, h - 0.5), steel(), loc=((r + 0.05) * math.cos(a), (r + 0.05) * math.sin(a), 0.5 + (h - 0.5) / 2),
+                    rot=(0, 0, math.degrees(a)), bev=0, parent=G))
+    zb = round(h * 0.62)
+    quiet(K.cyl("silo_band", r + 0.03, 1.3, mustard(0.35), loc=(0, 0, zb), segs=32, bev=0, parent=G))
+    import props_industry as PI  # noqa: PLC0415
+    for a0 in (-math.pi / 2, math.pi / 2):
+        PI.ring_text(G, code, r + 0.04, zb, a0, 0.85, graphite(), spacing=0.7, extrude=0.0)
+    for c in [c for c in G.children if c.type == "FONT"]:
+        quiet(c)
+    for k in range(5):
+        a = rnd.uniform(0, 2 * math.pi)
+        S = group(G, "silo_streak", ((r + 0.075) * math.cos(a), (r + 0.075) * math.sin(a), 0), math.degrees(a) + 90)
+        streak(S, 0.0, rnd.choice(belts[1:-1] or [h / 2]) - 0.16, rnd.uniform(0.8, 1.8), 0.0, w=0.12, seed=seed * 7 + k)
+    # the roof: a low cone, an eave rim, the inlet collar where the spout comes in, a hatch and a vent
+    K.cyl("silo_roof", r + 0.12, rise, steel(), loc=(0, 0, h + rise / 2), r2=0.55, segs=32, bev=0, parent=G)
+    quiet(K.cyl("silo_eave", r + 0.16, 0.18, graphite(), loc=(0, 0, h - 0.02), segs=32, bev=0.01, parent=G))
+    K.cyl("silo_collar", 0.55, 0.45, graphite(), loc=(0, 0, h + rise + 0.2), r2=0.45, segs=16, bev=0.01, parent=G)
+    away = math.radians(gap[0] + 180) if gap else 0.0
+
+    def zr(rr):
+        return h + rise * ((r + 0.12) - rr) / ((r + 0.12) - 0.55)
+    hx, hy = 0.45 * r * math.cos(away + 0.6), 0.45 * r * math.sin(away + 0.6)
+    roof_hatch(G, (hx, hy, zr(0.45 * r) - 0.05), yaw=math.degrees(away))
+    solid(G, "hatch", (1.3, 1.3, 0.7), (hx, hy, zr(0.45 * r) + 0.3), rot=(0, 0, math.degrees(away)))
+    vx, vy = 0.5 * r * math.cos(away - 0.9), 0.5 * r * math.sin(away - 0.9)
+    mushroom_vent(G, (vx, vy, zr(0.5 * r) - 0.05), r=0.3, h=0.6)
+    # the railing round the roof's edge, open towards a gallery
+    rr = r - 0.15
+    n = 20
+    ends = []
+    prev = None
+    for k in range(n):
+        a0, a1 = 2 * math.pi * k / n, 2 * math.pi * (k + 1) / n
+        if gap:
+            off = (math.degrees((a0 + a1) / 2) - gap[0] + 180) % 360 - 180
+            if abs(off) < gap[1]:
+                continue
+            for a in (a0, a1):
+                if abs((math.degrees(a) - gap[0] + 180) % 360 - 180) <= gap[1] + 360 / n / 2 + 1e-6:
+                    ends.append(a)
+        railing(G, (rr * math.cos(a0), rr * math.sin(a0), zr(rr)), (rr * math.cos(a1), rr * math.sin(a1), zr(rr)), posts=1.3,
+                first=prev != k - 1, lite=True)
+        prev = k
+    if gap:
+        u = Vector((math.cos(math.radians(gap[0])), math.sin(math.radians(gap[0])), 0))
+        for a in ends:
+            p = Vector((rr * math.cos(a), rr * math.sin(a), zr(rr)))
+            q = p + u * (gap[2] - p.dot(u) - 0.12)
+            if (q - p).length > 0.1:
+                railing(G, p, q, posts=1.0)
+    # a caged ladder up the side (decor: players climb the stair tower), the discharge chute at the foot
+    la = math.radians(ladder if ladder is not None else -90.0)
+    if ladder is not None:
+        ladder_caged(G, ((r + 0.3) * math.cos(la), (r + 0.3) * math.sin(la), 0.5), h - 0.3, yaw=ladder + 90)
+    ca = la + 0.7
+    quiet(rod(G, "chute", ((r - 0.2) * math.cos(ca), (r - 0.2) * math.sin(ca), 1.2), ((r + 1.0) * math.cos(ca), (r + 1.0) * math.sin(ca), 0.7), 0.22, steel(), segs=10))
+    quiet(K.box("chute_gate", (0.6, 0.6, 0.5), graphite(), loc=((r + 0.35) * math.cos(ca), (r + 0.35) * math.sin(ca), 1.0), rot=(0, 0, math.degrees(ca)), bev=0.02, parent=G))
+    return G
+
+
+def stair_tower(P, loc, floors, S=6.0, lane=1.5, yaw=0.0, exits=(), head=3.0, code="E-1", seed=1, name="stair_tower"):
+    """A Colony Works stair tower, the elevator leg's housing: a framed box S square in the kit's walls, a square
+    spiral stair inside it (along each wall a flight of four 0.25 m risers, a landing in each corner: a storey a
+    turn) round the leg's steel-blue casing in the middle, from a walk-in doorway in the left wall up to the deck at
+    the top (its top at 4 * floors + 0.3, the parapet round it) and the leg's head house on the casing. The top three
+    flights rise through an open well (the deck covers the front lane and the right one only up to its exits). exits: ('front' or 'right', along) openings in the walls at the deck for
+    galleries, 'along' metres from the wall's middle (seen from outside). Local frame: the corner at loc, the tower on
+    +x +y of it, its front facing -y. Returns the group, its walls and the deck's height."""
+    G = group(P, name, loc, yaw)
+    H = STOREY * floors + SLAB
+    a, inner = lane, 0.2
+    c0, c1 = a, S - a
+    holes = {"front": [], "right": [], "back": [], "left": [door_hole(0.0, SLAB)]}
+    for side, u in exits:
+        holes[side].append((u - 1.0, u + 1.0, H, H + 2.45))
+    shift = {"front": 0, "right": 1, "back": 1, "left": 0}
+
+    def plan(side):
+        def p(b, f):
+            if side == "left" and f == 0:
+                return "plain"
+            if (f + shift[side]) % 2 == 0:
+                return "window"
+            return "louvre" if f % 3 == 2 else "plain"
+        return p
+    walls = {}
+    for k, (side, wl, wy) in enumerate((("front", (S / 2, 0, 0), 0), ("right", (S, S / 2, 0), 90), ("back", (S / 2, S, 0), 180), ("left", (0, S / 2, 0), -90))):
+        walls[side] = wall(G, f"tower_{side}", S, floors, loc=wl, yaw=wy, bays=[S], plan=plan(side), holes=holes[side], seed=seed + k)
+    doorway(walls["left"], 0.0, SLAB)
+    for x, y in ((0, 0), (S, 0), (S, S), (0, S)):
+        corner_post(G, (x, y, 0), H + PARAPET)
+    downpipe(walls["back"], (S / 2 - 0.9, 0, 0), H + PARAPET)
+    K.box("tower_slab", (S, S, SLAB), concrete(), loc=(S / 2, S / 2, SLAB / 2), bev=0.02, parent=G)
+    # the leg's casing up the middle
+    framed(G, "leg_casing", (S / 2, S / 2, (SLAB + H) / 2), (c1 - c0, c1 - c0, H - SLAB), steel(), graphite(), fw=0.14)
+    solid(G, "leg_casing", (c1 - c0, c1 - c0, H - SLAB), (S / 2, S / 2, (SLAB + H) / 2))
+    for z in range(4, int(H), 4):
+        quiet(K.box("leg_band", (c1 - c0 + 0.06, c1 - c0 + 0.06, 0.25), graphite(), loc=(S / 2, S / 2, z + 0.3), bev=0.01, parent=G))
+    hazard_band(G, (S / 2, c0 - 0.01, SLAB), c1 - c0 - 0.3, 0.5, name="leg_haz")
+    # the spiral: flight j rises a quarter storey along side j % 4 from one corner landing to the next
+    m = (inner + a) / 2
+    corners = [(inner, a, inner, a), (S - a, S - inner, inner, a), (S - a, S - inner, S - a, S - inner), (inner, a, S - a, S - inner)]
+    n = 4 * floors
+    for j in range(n):
+        side, z0 = j % 4, SLAB + j * STOREY / 4
+        A, B = (((c0, m), (c1, m)), ((S - m, c0), (S - m, c1)), ((c1, S - m), (c0, S - m)), ((m, c1), (m, c0)))[side]
+        steel_flight(G, (A[0], A[1], z0), (B[0], B[1], z0 + STOREY / 4), a - inner, name=f"tw_flight{j}", rails=(False, False))
+        if j < n - 1:
+            x0, x1, y0, y1 = corners[(side + 1) % 4]
+            landing(G, x0, x1, y0, y1, z0 + STOREY / 4)
+    # the deck: the front lane, and the right lane as far as its exits (the rest of the right lane, the back and the
+    # left are the well the last three flights rise through; a thin deck keeps 1.95 m over the flight under it)
+    t = 0.15
+    landing(G, inner, S - inner, inner, a, H, t=t)
+    yr = max([S / 2 + u + 1.05 for side, u in exits if side == "right"], default=a)
+    assert 3 * STOREY / 4 - t - max(0.0, yr - c0) / (c1 - c0) * STOREY / 4 >= 1.95, "a right exit too far back over the stair"
+    if yr > a:
+        landing(G, S - a, S - inner, a - 0.1, yr, H, t=t)     # over the front lane's edge: no crack between them
+    railing(G, (S - a + 0.05, yr + 0.06, H), (S - inner - 0.05, yr + 0.06, H))
+    # the head house on the casing: the leg's head, a louvre, its code, a vent and a beacon
+    hs = c1 - c0
+    framed(G, "leg_head", (S / 2, S / 2, H + head / 2), (hs, hs, head), bone(2), steel(), fw=0.14)
+    solid(G, "leg_head", (hs, hs, head), (S / 2, S / 2, H + head / 2))
+    quiet(K.box("leg_head_roof", (hs + 0.3, hs + 0.3, 0.2), graphite(), loc=(S / 2, S / 2, H + head + 0.1), bev=0.02, parent=G))
+    louvre(group(G, "leg_head_front", (S / 2, c0, 0)), 0.0, H + 0.9, 1.5, 1.25, y=-0.02)
+    F = group(G, "leg_head_right", (c1, S / 2, 0), 90)
+    quiet(K.box("code_plate", (2.0, 0.04, 0.8), mustard(0.3), loc=(0, -0.03, H + head - 0.8), bev=0, parent=F))
+    painted(F, code, (0, -0.06, H + head - 0.8), 0.55, graphite())
+    mushroom_vent(G, (S / 2 - 0.5, S / 2 + 0.4, H + head + 0.2), r=0.3, h=0.6)
+    quiet(K.box("tw_mast", (0.08, 0.08, 3.0), graphite(), loc=(S / 2 + 0.8, S / 2 + 0.8, H + head + 1.7), bev=0, parent=G))
+    quiet(K.cyl("tw_beacon", 0.14, 0.22, glow("#ff4a3a", 6), loc=(S / 2 + 0.8, S / 2 + 0.8, H + head + 3.3), segs=10, bev=0, parent=G))
+    return G, walls, H
+
+
+def gallery(P, x0, x1, yc, z, w=2.5, h=3.0, doors=(), ends=(False, True), trestles=(), seed=1, name="gallery"):
+    """An enclosed conveyor gallery along x from x0 to x1 at y = yc, its floor top at z, w wide and h tall: steel-blue
+    posts every 2.5 m or less with bone panels and a window strip between (some panes gone), steel belts, a graphite
+    roof with a ridge vent, a chequer floor, and the belt hung from the roof down the middle (its underside 2.2 m up,
+    so you walk under it). doors: (x, side) walk-out openings 1.25 m wide in the -y (side -1) or +y (+1) wall; ends:
+    whether the x0 and x1 ends are walled (an open end joins the tower); trestles: x of lattice legs to the ground."""
+    G = group(P, name)
+    rnd = random.Random(seed)
+    L, cx, hw = x1 - x0, (x0 + x1) / 2, w / 2
+    quiet(K.box("gal_floor", (L, w + 0.1, 0.25), graphite(), loc=(cx, yc, z - 0.125), bev=0.02, parent=G))
+    quiet(K.box("gal_deck", (L - 0.1, w - 0.3, 0.02), gunmetal(), loc=(cx, yc, z + 0.01), bev=0, parent=G))
+    solid(G, "gal_floor", (L, w, 0.3), (cx, yc, z - 0.15))
+    quiet(K.box("gal_roof", (L + 0.2, w + 0.5, 0.2), graphite(), loc=(cx, yc, z + h + 0.1), bev=0.02, parent=G))
+    quiet(K.box("gal_ridge", (L - 0.4, 0.7, 0.3), zinc(), loc=(cx, yc, z + h + 0.35), bev=0.02, parent=G))
+    solid(G, "gal_roof", (L, w, 0.2), (cx, yc, z + h + 0.1))
+    # the belt down the middle on hangers from the roof
+    zb = z + 2.25
+    quiet(K.box("gal_belt_frame", (L - 0.3, 0.9, 0.18), steel(), loc=(cx, yc, zb + 0.09), bev=0.01, parent=G))
+    quiet(K.box("gal_belt", (L - 0.4, 0.7, 0.03), K.mat("belt", "#232527", rough=0.85, grime=0.3), loc=(cx, yc, zb + 0.2), bev=0, parent=G))
+    k = 0.0
+    while k < L - 0.5:
+        quiet(K.box("gal_hanger", (0.06, 0.95, 0.06), graphite(), loc=(x0 + 0.5 + k, yc, zb + 0.4), bev=0, parent=G))
+        for s in (-1, 1):
+            quiet(K.box("gal_hanger_rod", (0.04, 0.04, h - 2.65), graphite(), loc=(x0 + 0.5 + k, yc + s * 0.45, (zb + 0.4 + z + h) / 2), bev=0, parent=G))
+        k += 3.0
+    for s in (-1, 1):
+        y = yc + s * hw
+        cuts = sorted((dx - 0.75, dx + 0.75) for dx, side in doors if side == s)
+        spans, e = [], x0
+        for c0, c1 in cuts:
+            spans.append((e, c0))
+            e = c1
+        spans.append((e, x1))
+        for a0, a1 in spans:
+            if a1 - a0 < 0.05:
+                continue
+            nb = max(1, math.ceil((a1 - a0) / 2.5))
+            bw = (a1 - a0) / nb
+            for b in range(nb + 1):
+                quiet(K.box("gal_post", (0.18, 0.22, h), steel(), loc=(a0 + b * bw, y, z + h / 2), bev=0, parent=G))
+            for b in range(nb):
+                xm = a0 + b * bw + bw / 2
+                quiet(K.box("gal_panel", (bw - 0.1, 0.08, 1.0), bone(b + s), loc=(xm, y, z + 0.5), bev=0, parent=G))
+                quiet(K.box("gal_panel", (bw - 0.1, 0.08, h - 1.7), bone(b), loc=(xm, y, z + 1.7 + (h - 1.7) / 2), bev=0, parent=G))
+                pane = void() if rnd.random() < 0.15 else glass()
+                quiet(K.box("gal_glass", (bw - 0.1, 0.02, 0.7), pane, loc=(xm, y, z + 1.35), bev=0, parent=G))
+            for zz in (z + 1.0, z + 1.7, z + h - 0.08):
+                quiet(K.box("gal_belt_rail", (a1 - a0, 0.14, 0.12), steel(), loc=((a0 + a1) / 2, y + s * 0.06, zz), bev=0, parent=G))
+        for c0, c1 in cuts:
+            xm = (c0 + c1) / 2
+            quiet(K.box("gal_door_head", (c1 - c0, 0.08, h - 2.55), bone(1), loc=(xm, y, z + 2.55 + (h - 2.55) / 2), bev=0.01, parent=G))
+            for xx in (c0, c1):
+                quiet(K.box("gal_door_jamb", (0.14, 0.3, 2.6), graphite(), loc=(xx, y, z + 1.3), bev=0.01, parent=G))
+            hazard_band(G, (xm, y + s * 0.05, z + 2.4), c1 - c0 - 0.2, 0.16, yaw=0 if s < 0 else 180, name="gal_door_haz")
+        for a0, a1, b0, b1 in holes_cut(x0, x1, z, z + h, [(c0, c1, z, z + 2.55) for c0, c1 in cuts]):
+            solid(G, "gal_wall", (a1 - a0, 0.2, b1 - b0), ((a0 + a1) / 2, y, (b0 + b1) / 2))
+    for end, xe in zip(ends, (x0, x1)):
+        if end:
+            quiet(K.box("gal_end", (0.1, w, h), bone(2), loc=(xe, yc, z + h / 2), bev=0.01, parent=G))
+            louvre(group(G, "gal_end_louvre", (xe, yc, 0), 90 if xe == x1 else -90), 0.0, z + 1.0, 1.25, 1.25, y=-0.06)
+            solid(G, "gal_end", (0.2, w, h), (xe, yc, z + h / 2))
+    for x in trestles:
+        T = group(G, "trestle")
+        quiet(K.box("trestle_footing", (2.2, 2.2, 0.5), concrete(), loc=(x, yc, 0.25), bev=0.03, parent=T))
+        _lattice(T, "trestle", (x, yc, 0.5), (x, yc, z - 0.4), 1.6, 0.16, 0.07, steel(), steel())
+        quiet(K.box("trestle_head", (0.4, w + 0.8, 0.4), graphite(), loc=(x, yc, z - 0.45), bev=0.02, parent=T))
+        solid(T, "trestle", (1.8, 1.8, z - 0.5), (x, yc, z / 2))
+    return G
+
+
+# ---------------------------------------------------------------- the colony's box shed
+def bays_for(length, most=5.0):
+    """Equal bays of at most most metres along a wall."""
+    n = max(1, math.ceil(length / most - 1e-6))
+    return [length / n] * n
+
+
+def shed(P, name, w, d, floors=1, loc=(0, 0, 0), yaw=0.0, plans=None, holes=None, rollers=(), doorways=(), seed=1, gear=True, slab=True):
+    """A Colony Works box building w x d on loc (its middle, on the ground): the kit's walls on its outline in bays of
+    5 m or less, framed corner posts, a concrete ground slab (its top at 0.3), the flat roof inside the parapet,
+    downpipes and, with gear, an air handler and vents on the roof. plans: {side: plan(bay, floor)} for 'front',
+    'right', 'back' and 'left'; holes: {side: [(x0, x1, z0, z1)]}; rollers: (side, x, w, h, open_h) roller doors
+    with their openings cut; doorways: (side, x) open walk-in doors on the ground floor. Each wall's frame is as in
+    warehouses.py (x along it seen from outside). Returns the group, its walls by side and the roof's height."""
+    G = group(P, name, loc, yaw)
+    rnd = random.Random(seed)
+    hw, hd = w / 2, d / 2
+    H = STOREY * floors + SLAB
+    plans = plans or {}
+    holes = {k: list(v) for k, v in (holes or {}).items()}
+    for side, x, dw, dh, _ in rollers:
+        holes.setdefault(side, []).append((x - dw / 2, x + dw / 2, 0.0, SLAB + dh))
+    for side, x in doorways:
+        holes.setdefault(side, []).append(door_hole(x, SLAB))
+    frames = {"front": ((0, -hd, 0), 0, w), "right": ((hw, 0, 0), 90, d), "back": ((0, hd, 0), 180, w), "left": ((-hw, 0, 0), -90, d)}
+    walls = {}
+    for k, (side, (wl, wy, L)) in enumerate(frames.items()):
+        walls[side] = wall(G, f"{name}_{side}", L, floors, loc=wl, yaw=wy, bays=bays_for(L), plan=plans.get(side), holes=holes.get(side, ()), seed=seed + k)
+    for side, x, dw, dh, oh in rollers:
+        roller_door(walls[side], (x, 0, SLAB), dw, dh, oh, lamp=True)
+    for side, x in doorways:
+        doorway(walls[side], x, SLAB)
+    for x, y in ((-hw, -hd), (hw, -hd), (hw, hd), (-hw, hd)):
+        corner_post(G, (x, y, 0), H + PARAPET)
+    if slab:
+        K.box("shed_slab", (w, d, SLAB), concrete(), loc=(0, 0, SLAB / 2), bev=0.02, parent=G)
+    roof_deck(G, -hw + 0.03, hw - 0.03, -hd + 0.03, hd - 0.03, H)
+    for side in ("back", "left"):
+        L = frames[side][2]
+        downpipe(walls[side], (L / 2 - 1.1, 0, 0), H + PARAPET)
+    if gear:
+        ac_unit(G, (rnd.uniform(-hw * 0.4, 0), rnd.uniform(0, hd * 0.4), H), yaw=rnd.choice((0, 90)), w=min(3.0, w * 0.3), d=2.0)
+        for _ in range(max(1, int(w * d / 60))):
+            mushroom_vent(G, (rnd.uniform(-hw + 1.5, hw - 1.5), rnd.uniform(-hd + 1.5, hd - 1.5), H), r=rnd.choice((0.3, 0.35)))
+    return G, walls, H
+
+
+# ---------------------------------------------------------------- the growlab's glass vault
+def glass_vault(P, name, L, span, rise, knee=1.25, loc=(0, 0, 0), yaw=0.0, rib=2.5, doors=(1,), gables=(-1, 1), seed=1, broken=0.06):
+    """A barrel-vault glasshouse (the growlab's signature volume): a segmental arch of glass on steel-blue arched
+    ribs every rib metres, graphite purlins along it, standing on a bone knee wall knee metres high on a concrete
+    slab (its top at 0.3), glazed gable ends with an open doorway in the middle third of the end(s) listed in doors
+    (+1: the +x end, -1: the -x end; gables lists the ends that have one: an end without butts onto another
+    building), a ridge vent, gutters and some panes gone. Runs along x, L long, span wide.
+    Collides as its knee walls, its gables round the doorways and the arc in flat strips. Returns the group and the
+    arch (knee top, rise, radius, centre height)."""
+    G = group(P, name, loc, yaw)
+    rnd = random.Random(seed)
+    s = span / 2
+    R = (s * s + rise * rise) / (2 * rise)
+    zk = SLAB + knee
+    zc = zk + rise - R
+    th = math.asin(s / R)
+    N = 12
+    arc = [(R * math.sin(-th + 2 * th * i / N), zc + R * math.cos(-th + 2 * th * i / N)) for i in range(N + 1)]
+    K.box("vault_slab", (L, span, SLAB), concrete(), loc=(0, 0, SLAB / 2), bev=0.02, parent=G)
+    for sy in (-1, 1):
+        quiet(K.box("knee_wall", (L, 0.3, knee), bone(1 + sy), loc=(0, sy * (s - 0.15), SLAB + knee / 2), bev=0.03, parent=G))
+        quiet(K.box("knee_cap", (L + 0.1, 0.42, 0.12), graphite(), loc=(0, sy * (s - 0.15), zk + 0.06), bev=0.02, parent=G))
+        quiet(K.box("knee_plinth", (L, 0.36, 0.3), concrete(), loc=(0, sy * (s - 0.15), SLAB + 0.15), bev=0.02, parent=G))
+        solid(G, "knee_wall", (L, 0.3, knee), (0, sy * (s - 0.15), SLAB + knee / 2))
+        quiet(K.box("vault_gutter", (L + 0.2, 0.25, 0.18), steel(), loc=(0, sy * (s + 0.05), zk + 0.1), bev=0.01, parent=G))
+    nr = max(2, round(L / rib))
+    xs = [-L / 2 + L * k / nr for k in range(nr + 1)]
+    for x in xs:
+        for (y0, z0), (y1, z1) in zip(arc[:-1], arc[1:]):
+            quiet(beam(G, "vault_rib", (x, y0, z0), (x, y1, z1), 0.14, steel(), d=0.24))
+        for sy in (-1, 1):
+            quiet(K.box("knee_post", (0.2, 0.34, knee + 0.1), steel(), loc=(x, sy * (s - 0.15), SLAB + knee / 2 + 0.05), bev=0.02, parent=G))
+    for y, z in arc[1:-1]:
+        quiet(K.box("vault_purlin", (L, 0.08, 0.08), graphite(), loc=(0, y, z), bev=0, parent=G))
+    glass_m = K.mat("vault_glass", "#9fc6c0", rough=0.05, metal=0.2, ao=0.1)
+    for xa, xb in zip(xs[:-1], xs[1:]):
+        for (y0, z0), (y1, z1) in zip(arc[:-1], arc[1:]):
+            if rnd.random() < broken:
+                continue
+            face(G, "vault_pane", [(xa + 0.07, y0, z0), (xb - 0.07, y0, z0), (xb - 0.07, y1, z1), (xa + 0.07, y1, z1)], glass_m)
+    for (y0, z0), (y1, z1) in zip(arc[:-1], arc[1:]):
+        ang = math.degrees(math.atan2(z1 - z0, y1 - y0))
+        solid(G, "vault_arc", (L, math.hypot(y1 - y0, z1 - z0), 0.1), (0, (y0 + y1) / 2, (z0 + z1) / 2), rot=(ang, 0, 0))
+    quiet(K.box("vault_ridge", (L - 0.6, 0.9, 0.35), zinc(), loc=(0, 0, zk + rise + 0.2), bev=0.02, parent=G))
+    for k in range(int(L / 3)):
+        quiet(K.box("ridge_vent_flap", (1.6, 0.5, 0.04), glass_m, loc=(-L / 2 + 1.5 + k * 3, 0.55, zk + rise + 0.25), rot=(-25, 0, 0), bev=0, parent=G))
+    mul = [-s + span * k / 6 for k in range(7)]
+
+    def height(y):
+        return zc + math.sqrt(max(0.0, R * R - y * y))
+    for ex in gables:
+        x = ex * L / 2
+        door = ex in doors
+        for y in mul[1:-1]:
+            if door and abs(y) < span / 6 + 0.01:
+                continue
+            quiet(K.box("gable_mullion", (0.12, 0.12, height(y) - zk), steel(), loc=(x, y, (zk + height(y)) / 2), bev=0, parent=G))
+        for ya, yb in zip(mul[:-1], mul[1:]):
+            mid = (ya + yb) / 2
+            opening = door and abs(mid) < span / 6
+            zl = SLAB + 2.65 if opening else zk
+            if opening:
+                quiet(K.box("gable_head", (0.14, yb - ya, 0.16), graphite(), loc=(x, mid, zl - 0.08), bev=0.01, parent=G))
+            pts = [(x, ya + 0.06, zl), (x, yb - 0.06, zl), (x, yb - 0.06, height(yb - 0.06) - 0.05), (x, mid, height(mid) - 0.05), (x, ya + 0.06, height(ya + 0.06) - 0.05)]
+            if rnd.random() > broken:
+                face(G, "gable_pane", pts, glass_m)
+            zt = min(height(ya), height(yb))
+            z0 = SLAB + 2.65 if opening else SLAB
+            solid(G, "gable", (0.16, yb - ya, zt - z0), (x, mid, (z0 + zt) / 2))
+            if not opening:
+                quiet(K.box("gable_knee", (0.3, yb - ya, knee), bone(2), loc=(x, mid, SLAB + knee / 2), bev=0.02, parent=G))
+        if door:
+            dw = span / 3
+            for sy in (-1, 1):
+                quiet(K.box("gable_jamb", (0.2, 0.16, 2.65), graphite(), loc=(x, sy * dw / 2, SLAB + 1.325), bev=0.01, parent=G))
+            quiet(K.box("gable_sill", (0.3, dw, 0.03), gunmetal(), loc=(x, 0, SLAB + 0.015), bev=0, parent=G))
+            hazard_band(group(G, "gable_haz", (x + ex * 0.1, 0, 0), 90 * ex), (0, 0, SLAB + 2.42), dw - 0.2, 0.16)
+            quiet(K.box("gable_lamp", (0.22, 0.5, 0.14), graphite(), loc=(x + ex * 0.2, 0, SLAB + 3.0), bev=0.03, parent=G))
+            quiet(K.box("gable_lens", (0.16, 0.42, 0.02), glow(WARM, 10), loc=(x + ex * 0.22, 0, SLAB + 2.925), bev=0, parent=G))
+    return G, (zk, rise, R, zc)
+
+
+# ---------------------------------------------------------------- belts, signs, the yard fence
+def belt_conveyor(P, a, b, w=0.8, name="belt", collide=True):
+    """A working belt conveyor from a to b (points on its belt's top): steel side rails, a dark belt, end drums, a
+    graphite drive box at a, and legs to z = 0 of P every 2 m or less. It collides as one box under it, or with
+    collide="legs" (a belt climbing overhead) as its legs only."""
+    G = group(P, name)
+    a, b = Vector(a), Vector(b)
+    d = b - a
+    u = d.normalized()
+    side = Vector((-u.y, u.x, 0)).normalized()
+    quiet(beam(G, "belt_top", a - Vector((0, 0, 0.02)), b - Vector((0, 0, 0.02)), w - 0.1, K.mat("belt", "#232527", rough=0.85, grime=0.3), d=0.04))
+    for s in (-1, 1):
+        quiet(beam(G, "belt_rail", a + side * s * w / 2 - Vector((0, 0, 0.08)), b + side * s * w / 2 - Vector((0, 0, 0.08)), 0.06, steel(), d=0.22))
+    for p in (a, b):
+        quiet(rod(G, "belt_drum", p - side * (w / 2) - Vector((0, 0, 0.1)), p + side * (w / 2) - Vector((0, 0, 0.1)), 0.11, graphite(), segs=12))
+    quiet(K.box("belt_drive", (0.45, 0.4, 0.4), graphite(), loc=tuple(a - side * (w / 2 + 0.25) - Vector((0, 0, 0.15))), bev=0.02, parent=G))
+    n = max(1, math.ceil(d.length / 2.0))
+    for k in range(n + 1):
+        p = a + d * (k / n) - Vector((0, 0, 0.2))
+        for s in (-1, 1):
+            quiet(beam(G, "belt_leg", p + side * s * (w / 2 - 0.05), Vector((p.x, p.y, 0)) + side * s * (w / 2 + 0.1), 0.06, steel()))
+    if collide == "legs":
+        for k in range(n + 1):
+            p = a + d * (k / n) - Vector((0, 0, 0.2))
+            solid(G, "belt_leg", (0.2, w + 0.3, p.z), (p.x, p.y, p.z / 2), rot=(0, 0, math.degrees(math.atan2(u.y, u.x))))
+    elif collide:
+        c = (a + b) / 2
+        top = max(a.z, b.z)
+        solid(G, "belt", (Vector((d.x, d.y, 0)).length, w + 0.2, top), (c.x, c.y, top / 2), rot=(0, 0, math.degrees(math.atan2(u.y, u.x))))
+    return G
+
+
+def pictogram_board(P, loc, kind, yaw=0.0, size=3.0, legs=1.5, name="pictogram"):
+    """A framed produce board on legs, facing -y: a bone face in a steel-blue frame with the produce painted on it
+    ('vegetable': a leaf-green cabbage head, 'fruit': a signal-red apple with its stalk and leaf), a mustard foot
+    rail and two lamps over it. No words, so it reads in any language."""
+    G = group(P, name, loc, yaw)
+    framed(G, "picto_board", (0, 0, legs + size / 2), (size, 0.2, size), M(BONE, wear=0.3, grime=0.3), steel(), fw=0.14, screws=zinc())
+    quiet(K.box("picto_edge", (size + 0.05, 0.22, 0.12), mustard(0.3), loc=(0, 0, legs + 0.06), bev=0.01, parent=G))
+    for sx in (-1, 1):
+        quiet(K.box("picto_leg", (0.2, 0.2, legs + size * 0.6), steel(), loc=(sx * (size / 2 - 0.3), 0.25, (legs + size * 0.6) / 2), bev=0.02, parent=G))
+        quiet(K.box("picto_lamp_arm", (0.06, 0.6, 0.06), graphite(), loc=(sx * size * 0.3, -0.35, legs + size + 0.25), bev=0, parent=G))
+        quiet(K.box("picto_lamp", (0.5, 0.22, 0.14), graphite(), loc=(sx * size * 0.3, -0.65, legs + size + 0.25), rot=(-25, 0, 0), bev=0.02, parent=G))
+    cz = legs + size / 2
+    y = -0.12
+    leaf = M("#5f8a4a", wear=0.2, grime=0.2, scratches=0)
+    dark = M("#3f6338", wear=0.1, grime=0.1, scratches=0)
+    if kind == "vegetable":
+        for k, (dx, dz, rr) in enumerate(((0.0, -0.1, 0.95), (-0.55, 0.15, 0.6), (0.55, 0.15, 0.6), (0.0, 0.5, 0.55))):
+            quiet(K.cyl("picto_leaf", size * rr / 3, 0.02, leaf if k else M("#7fa85a", wear=0.2, grime=0.2, scratches=0),
+                        loc=(dx * size / 3, y + 0.01 * k, cz + dz * size / 3), rot=(90, 0, 0), segs=20, bev=0, parent=G))
+        for a in (-50, -20, 0, 20, 50):
+            quiet(K.box("picto_vein", (0.05, 0.01, size * 0.28), dark, loc=(math.sin(math.radians(a)) * size * 0.1, y - 0.02, cz - 0.06 * size + math.cos(math.radians(a)) * size * 0.1),
+                        rot=(0, a, 0), bev=0, parent=G))
+    else:
+        red = M(SIGNAL, wear=0.2, grime=0.2, scratches=0)
+        for k, dx in enumerate((-0.22, 0.22)):     # two lobes, one a hair in front (no coplanar faces)
+            quiet(K.cyl("picto_apple", size * 0.27, 0.02, red, loc=(dx * size / 3, y - 0.006 * k, cz - 0.05 * size), rot=(90, 0, 0), segs=24, bev=0, parent=G))
+        quiet(K.box("picto_stalk", (0.08, 0.01, size * 0.16), M(GRAPHITE), loc=(0.02 * size, y - 0.02, cz + 0.27 * size), rot=(0, -12, 0), bev=0, parent=G))
+        quiet(K.cyl("picto_leaf", size * 0.09, 0.01, leaf, loc=(0.13 * size, y - 0.02, cz + 0.3 * size), rot=(90, 40, 0), segs=12, bev=0, parent=G))
+        quiet(K.cyl("picto_shine", size * 0.05, 0.01, M(BONE), loc=(-0.12 * size, y - 0.03, cz + 0.05 * size), rot=(90, 0, 0), segs=10, bev=0, parent=G))
+    solid(G, "picto", (size, 0.3, size), (0, 0, legs + size / 2))
+    return G
+
+
+def fence_ring(P, pts, gates=None, h=2.25, name="yard_fence", lite=True):
+    """A welded-mesh fence round a closed outline of ground points (x, y), its corners in order; gates: {side index:
+    (t0, t1)} leaves that stretch of the side open, its sliding gate pushed back beside it."""
+    G = group(P, name)
+    gates = gates or {}
+    for k in range(len(pts)):
+        mesh_fence(G, pts[k], pts[(k + 1) % len(pts)], h=h, gate=gates.get(k), name=f"{name}_{k}", lite=lite)
+    return G
+
+
+def lamppost(P, loc, h=4.5, yaw=0.0, lit=True, board=None, name="lamppost"):
+    """A square Colony Works lamppost: a steel-blue square post on a framed concrete foot with a hazard band, a
+    graphite arm out towards -y and a square head with a warm lens (lit or long dead). board: a short code painted on
+    a mustard plate strapped to the post."""
+    G = group(P, name, loc, yaw)
+    quiet(K.box("lp_foot", (0.6, 0.6, 0.35), concrete(), loc=(0, 0, 0.175), bev=0.03, parent=G))
+    quiet(K.box("lp_base", (0.36, 0.36, 0.9), steel(), loc=(0, 0, 0.8), bev=0.03, parent=G))
+    quiet(K.box("lp_post", (0.2, 0.2, h - 0.35), steel(), loc=(0, 0, 0.35 + (h - 0.35) / 2), bev=0.02, parent=G))
+    hazard_band(G, (0, -0.19, 0.45), 0.36, 0.6, name="lp_haz")
+    quiet(K.box("lp_arm", (0.12, 1.2, 0.12), graphite(), loc=(0, -0.55, h - 0.1), bev=0.01, parent=G))
+    quiet(beam(G, "lp_brace", (0, -0.05, h - 0.75), (0, -0.7, h - 0.15), 0.06, graphite()))
+    quiet(K.box("lp_head", (0.5, 0.55, 0.22), graphite(), loc=(0, -1.1, h - 0.12), bev=0.03, parent=G))
+    quiet(K.box("lp_lens", (0.42, 0.46, 0.02), glow(WARM, 10) if lit else glass(), loc=(0, -1.1, h - 0.235), bev=0, parent=G))
+    if lit:
+        K.point("lp_light", (0, -1.1, h - 0.6), WARM, 120, 0.2).parent = G
+    if board:
+        quiet(K.box("lp_board", (0.5, 0.04, 0.7), mustard(0.3), loc=(0, -0.13, 2.2), bev=0.01, parent=G))
+        painted(G, board, (0, -0.16, 2.2), 0.16, graphite())
+    solid(G, "lp_post", (0.36, 0.36, h), (0, 0, h / 2))
+    return G

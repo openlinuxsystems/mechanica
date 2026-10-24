@@ -2,7 +2,7 @@
 
 Views: ``kit`` (every module of colony_kit.py laid out on a sheet: the whole sheet, then each row of it close up), and
 for each of warehouse_small, warehouse and warehouse_large ``<name>_34`` (three-quarter view from the front right, its
-yard round it), ``<name>_front`` (eye level from the front), ``<name>_far`` (500 m off: the silhouette),
+yard round it), ``<name>_yard`` (over the yard from a front corner of the fence, a 1.8 m player at the gate, and from the back corner), ``<name>_front`` (eye level from the front), ``<name>_far`` (500 m off: the silhouette),
 ``<name>_roof`` (across the roof) and ``<name>_cut`` (the front wall left out: the floors and the stair); ``scale`` is
 the medium warehouse's door with a 1.8 m player beside it. SAMPLES (default 32) and SCALE (resolution percent, default
 100) control quality; renders are 1600 px wide JPEGs.
@@ -204,9 +204,7 @@ def kit_sheet():
 def warehouse_scene(name, with_yard=True, man=None):
     scene()
     K.ground(1600, color="#7f9a5c")
-    root = W.warehouse(name)
-    if with_yard:
-        W.yard(root, name)
+    root = W.warehouse(name, with_yard=with_yard)
     if man:
         K.import_glb(K.MESH / "characters/scrapper_male.glb", man[0], yaw=man[1])
     return root
@@ -226,8 +224,13 @@ for v in views:
     floors, w, d, _, _ = W.WAREHOUSES[name]
     hw, hd = w / 2, d / 2
     H = 4 * floors + 0.3
-    root = warehouse_scene(name, with_yard=kind != "cut")
-    if kind == "34":
+    x0, x1, y0, y1 = W.YARD[name]
+    man = ((W.GATE + 1.5, y0 - 1.5, 0.0), 160) if kind == "yard" else None
+    root = warehouse_scene(name, with_yard=kind != "cut", man=man)
+    if kind == "yard":
+        shoot(f"{name}_yard", (x1 + 9.0, y0 - 11.0, 13.0), (x0 * 0.3, (y0 + y1) * 0.3, 1.0), 24)
+        shoot(f"{name}_yard_back", (x0 - 4.0, y1 + 6.0, 11.0), (x1 * 0.35, (y0 + y1) * 0.3, 1.0), 22)
+    elif kind == "34":
         dist = max(w, d) * 1.45
         shoot(f"{name}_34", (hw + dist * 0.62, -hd - dist * 0.85, H + dist * 0.38), (0, 0, H * 0.75), 32)
     elif kind == "front":
