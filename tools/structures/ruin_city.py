@@ -258,7 +258,7 @@ def gatehouse(city):
     S.rail(site, (7.93, -54.5, Z0 + 1.4), (7.93, -62.75, zt), h=0.9, t=0.35)
     site.cut.box((3.5, 1.3, zt), (6.25, -63.35, zt / 2), (0, 0, 0), site.s)
     site.col.box((3.5, 1.3, zt), (6.25, -63.35, zt / 2))
-    S.crystals(site, (-6.5, -66.0, zt), n=5, h=1.4, energy=900)
+    S.crystals(site, (-6.5, -66.0, zt), n=5, h=0.7, energy=450)
 
 
 # ---------------------------------------------------------------- the plaza and the temple
