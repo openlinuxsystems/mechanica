@@ -87,7 +87,7 @@ def warehouse(name="warehouse", floors=None, w=None, d=None, code=None, seed=Non
     front = C.wall(P, "front_wall", w, floors, loc=(0, -hd, 0), bays=fb, plan=front_plan,
                    holes=[(-DOOR_W / 2, DOOR_W / 2, 0.0, C.SLAB + DOOR_H)], seed=seed)
     C.roller_door(front, (0, 0, C.SLAB), DOOR_W, DOOR_H, DOOR_OPEN, lamp=False)
-    C.canopy(front, (0, C.CREST - 0.02, C.SLAB + DOOR_H + 1.05), DOOR_W + 3.0, depth=3.0)
+    C.canopy(front, (0, C.CREST - 0.02, C.SLAB + DOOR_H + 1.05), DOOR_W + 3.0, depth=3.0, ties=False)
 
     def back_plan(b, f):
         if b == door_bay:

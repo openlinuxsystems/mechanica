@@ -76,7 +76,7 @@ def rust():
 
 
 def rust_light():
-    return M("#946446", metal=0.1, wear=0.0, grime=0.2, rough=0.9, scratches=0)
+    return M("#7f5d48", metal=0.1, wear=0.0, grime=0.2, rough=0.9, scratches=0)
 
 
 def glass():
@@ -324,7 +324,7 @@ def streak(G, x, z_top, length, y, w=0.14, seed=0):
         L = length * fl * rnd.uniform(0.85, 1.1)
         xx = x + rnd.uniform(-0.02, 0.02)
         hw = w0 * fw / 2
-        quad(G, "rust_streak", [(xx - hw, z_top), (xx + hw, z_top), (xx + hw * 0.4, z_top - L), (xx - hw * 0.4, z_top - L)], mat, y=y - 0.003 - 0.002 * k)
+        quad(G, "rust_streak", [(xx - hw, z_top), (xx + hw, z_top), (xx + hw * 0.7, z_top - L), (xx - hw * 0.7, z_top - L)], mat, y=y - 0.003 - 0.002 * k)
 
 
 # ================================================================== hazard bands, labels, numbers, logo
@@ -503,8 +503,6 @@ def roller_door(P, loc, w=6.0, h=3.75, open_h=3.0, yaw=0.0, name="roller_door", 
     if lamp:
         quiet(K.box("door_lightbar", (w - 1.0, 0.2, 0.12), glow(WARM, 10), loc=(0, -1.0, h + 1.08), bev=0.02, parent=G))
         K.point("door_light", (0, -1.5, h + 0.8), WARM, 220, 0.3).parent = G
-    for k in range(4):
-        streak(G, -w / 2 + 0.6 + k * (w - 1.2) / 3, h - 0.05, 0.7, -0.96, w=0.08, seed=k + 31)
     return G
 
 
@@ -667,10 +665,10 @@ def downpipe(P, loc, top, name="downpipe"):
     return G
 
 
-def canopy(P, loc, w, depth=3.0, yaw=0.0, name="canopy"):
+def canopy(P, loc, w, depth=3.0, yaw=0.0, name="canopy", ties=True):
     """A cantilevered steel canopy over a door (loc: on the wall face at its underside's height, centre): steel-blue
     tapered cantilevers, a ribbed graphite deck, a steel-blue fascia with a mustard edge, light bars under it, and tie
-    rods back to the wall."""
+    rods back to the wall (ties=False under a sign, where the cantilevers carry it alone)."""
     G = group(P, name, loc, yaw)
     n = max(2, round(w / 3.0) + 1)
     for k in range(n):
@@ -678,8 +676,9 @@ def canopy(P, loc, w, depth=3.0, yaw=0.0, name="canopy"):
         quiet(plate_xz("canopy_arm", [(-depth, 0.0), (0.0, 0.0), (0.0, 0.55), (-depth, 0.3)], 0.22, steel(), loc=(x, 0, 0),
                        rot=(0, 0, 90), parent=G, bev=0.02))
         quiet(K.box("canopy_plate", (0.4, 0.12, 0.7), graphite(), loc=(x, -0.06, 0.3), bev=0.01, parent=G))
-        quiet(rod(G, "canopy_tie", (x, -depth + 0.3, 0.45), (x, -0.1, 2.4), 0.03, graphite(), segs=6))
-        quiet(K.box("canopy_tie_plate", (0.25, 0.1, 0.3), graphite(), loc=(x, -0.05, 2.4), bev=0.01, parent=G))
+        if ties:
+            quiet(rod(G, "canopy_tie", (x, -depth + 0.3, 0.45), (x, -0.1, 2.4), 0.03, graphite(), segs=6))
+            quiet(K.box("canopy_tie_plate", (0.25, 0.1, 0.3), graphite(), loc=(x, -0.05, 2.4), bev=0.01, parent=G))
     deck = corrugated(G, "canopy_deck", -w / 2, w / 2, -depth, 0.0, M(GRAPHITE, metal=0.3, wear=0.3), y=0.0, pitch=0.5, depth=0.05)
     deck.rotation_euler = (math.radians(-90), 0, 0)
     deck.location = (0, 0, 0.32)
@@ -688,8 +687,6 @@ def canopy(P, loc, w, depth=3.0, yaw=0.0, name="canopy"):
     for x in (-w / 4, w / 4):
         quiet(K.box("canopy_light", (w / 2 - 1.0, 0.25, 0.08), glow(WARM, 10), loc=(x, -depth * 0.55, -0.02), bev=0.01, parent=G))
     K.point("canopy_lamp", (0, -depth * 0.6, -0.5), WARM, 260, 0.4).parent = G
-    for k in range(3):
-        streak(G, -w / 2 + 1.0 + k * (w - 2.0) / 2, 0.06, 0.6, -depth - 0.15, w=0.1, seed=k + 70)
     solid(G, "canopy", (w, depth, 0.5), (0, -depth / 2, 0.3))
     return G
 
