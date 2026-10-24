@@ -48,7 +48,7 @@ def build(P):
     Wd = S.plank_wall(R, "door_wall", -4.0, 4.0, 0.0, 3.0, loc=(-38.0, 0, 0), seed=12, holes=holes)
     for (x0, x1, _, _), kind in zip(holes, ("hatch", "planks", "sheet")):
         S.door(Wd, (x0 + x1) / 2, 0.05, y=-0.04, kind=kind, ajar=60, seed=13)
-    tag(R, "DOORS: HATCH, PLANKS, SHEET", (-38.0, -3.0, 0.01))
+    tag(R, "DOORS: HATCH, PLANKS, SHEET", (-38.0, -3.0, 0.01), size=0.45)
     S.trade_counter(R, "counter", (-29.0, 0, 0), seed=14)
     tag(R, "TRADE COUNTER", (-29.0, -3.4, 0.01))
     S.trade_counter(R, "bare_counter", (-23.0, 0, 0), seed=15, booth=False)
@@ -57,7 +57,7 @@ def build(P):
     S.window(Wa, -0.8, 1.0, w=1.2, h=0.8, y=-0.04, seed=17)
     S.awning(Wa, 0.0, 2.6, 3.6, 1.4, kind="tin")
     S.porthole(Wa, 1.2, 1.6)
-    tag(R, "WINDOW, PORTHOLE, TIN AWNING", (-16.5, -3.0, 0.01))
+    tag(R, "WINDOW, PORTHOLE, TIN AWNING", (-16.5, -3.0, 0.01), size=0.4)
     S.deck(R, "deck", -11.0, -6.0, -1.0, 2.0, 1.5, rails=("y1", "x0"), seed=18)
     S.stair(R, "stair", (-5.0, -2.2, 0.0), (-5.0, 1.2, 1.5), seed=19)
     S.ladder(R, (-9.0, -1.4, 0.0), 1.6)
@@ -130,7 +130,7 @@ def sheet(scene, shoot):
     P = K.link(bpy.data.objects.new("sheet", None))
     K.box("sheet_pad", (100.0, 64.0, 0.06), M("#b9b6ac", wear=0, grime=0, scratches=0), loc=(0.0, 24.0, 0.03), bev=0, parent=P)
     rows = build(P)
-    shoot("kit_sheet", (0.0, -62.0, 58.0), (0.0, 25.0, 0.0), 30, 1600, 1100)
+    shoot("kit_sheet", (0.0, -40.0, 46.0), (0.0, 23.0, 0.0), 30, 1600, 1100)
     hidden = {ob.name for ob in P.children_recursive if ob.hide_render}
 
     def only(k, x0, x1):
@@ -141,12 +141,12 @@ def sheet(scene, shoot):
                     ob.hide_render = ob.name in hidden or i != k or not (x0 <= x <= x1)
     bpy.context.view_layer.update()
     for k, x0, x1, nm, cam, tgt, lens in (
-            (0, -50, -5, "kit_1a_walls_roofs", (-21.0, -22.0, 7.0), (-21.0, 0.0, 2.0), 32),
-            (0, -5, 50, "kit_1b_shells_capsules", (21.0, -24.0, 8.0), (21.0, 0.0, 2.5), 32),
-            (1, -50, -4, "kit_2a_doors_counters_decks", (-24.0, Y[1] - 22.0, 6.0), (-24.0, Y[1], 1.6), 32),
-            (1, -4, 50, "kit_2b_scaffold_cranes", (19.0, Y[1] - 26.0, 9.0), (19.0, Y[1], 3.5), 32),
-            (2, -50, 0, "kit_3a_fences", (-25.0, Y[2] - 20.0, 6.0), (-25.0, Y[2], 1.2), 32),
-            (2, 0, 50, "kit_3b_gear_junk_bales", (20.0, Y[2] - 22.0, 7.0), (20.0, Y[2], 1.2), 32),
+            (0, -50, -5, "kit_1a_walls_roofs", (-21.0, -22.0, 7.0), (-21.0, 0.0, 2.0), 24),
+            (0, -5, 50, "kit_1b_shells_capsules", (21.0, -24.0, 8.0), (21.0, 0.0, 2.5), 24),
+            (1, -50, -4, "kit_2a_doors_counters_decks", (-24.0, Y[1] - 22.0, 6.0), (-24.0, Y[1], 1.6), 24),
+            (1, -4, 50, "kit_2b_scaffold_cranes", (19.0, Y[1] - 26.0, 9.0), (19.0, Y[1], 3.5), 24),
+            (2, -50, 0, "kit_3a_fences", (-25.0, Y[2] - 20.0, 6.0), (-25.0, Y[2], 1.2), 24),
+            (2, 0, 50, "kit_3b_gear_junk_bales", (20.0, Y[2] - 22.0, 7.0), (20.0, Y[2], 1.2), 24),
             (3, -50, 50, "kit_4_clutter", (-13.5, Y[3] - 14.0, 5.0), (-13.5, Y[3], 0.4), 34)):
         only(k, x0, x1)
         shoot(nm, cam, tgt, lens, 1600, 700)

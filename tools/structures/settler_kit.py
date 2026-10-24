@@ -1620,7 +1620,7 @@ def clad_wall(P, name, x0, x1, z0, z1, loc=(0, 0, 0), yaw=0.0, holes=(), seed=1,
                                 rot=(0, rnd.uniform(-3, 3), 0), bev=0, parent=G))
                     for sx in (-1, 1):
                         bolt(G, (cx + sx * (pw / 2 - 0.07), off - 0.08, cz + sx * (ph / 2 - 0.07)))
-            if rnd.random() < 0.25:
+            if rnd.random() < 0.25 and not any(h[0] - 0.3 < x + w / 2 < h[1] + 0.3 and h[2] < zb - 0.9 for h in holes):
                 streaks(G, rnd, x + w / 2, zb - 0.1, y=off - 0.05)
             x += w
             k += 1
