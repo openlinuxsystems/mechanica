@@ -466,7 +466,7 @@ redraws them).
 | Key | Meaning |
 |-----|---------|
 | `grounds[].id` | Id (lowercase snake_case). |
-| `grounds[].texture` | Tileable square `.png` relative to the mod root (`other_mod:path` for another mod's), drawn at 512 px. |
+| `grounds[].texture` | Tileable square `.png` relative to the mod root (`other_mod:path` for another mod's), drawn at 1024 px. Its alpha is the surface's height (white is high): grounds blend by it where they meet (the higher one wins) and it bumps the light; a texture with no alpha is flat. |
 | `grounds[].tile` | Metres of ground one repeat covers (0.25 to 256). Default 4. A copy 3.7 times larger is mixed in so the repeat doesn't show from afar. |
 | `grounds[].flora` | `false` for ground nothing grows on (burnt earth): flora skips samples it covers by more than 45%. Default `true`. |
 | `grounds[].flora_tint` | `#rrggbb` that plants on or next to it take, fully where it covers 40% of the ground (charred grass at the crash site). |

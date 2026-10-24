@@ -46,7 +46,7 @@
       "weight": 3.0,
       "height": 14.0,
       "relief": 10.0,
-      "color": "#4f8a30",
+      "color": "#4a7a2e",
       "ground": "grass",
       "scatter": [
         { "object": "scene_orchard", "spacing": 300.0, "chance": 0.6, "near": { "objects": ["scene_farmstead", "scene_farmyard", "scene_kitchen_garden"], "within": 200.0 } },
@@ -132,7 +132,7 @@
         { "object": "scene_spooler_marks", "spacing": 360.0, "chance": 0.3, "near": { "objects": ["scene_plant", "scene_container_yard", "scene_workyard", "scene_crane_site"], "pois": ["poi_03", "poi_08", "poi_15", "poi_19", "poi_21", "poi_24", "poi_27", "poi_28", "poi_31", "poi_35", "warehouse", "warehouse_small", "warehouse_large"], "within": 150.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } }
       ],
       "flora": [
-        { "kind": "grass", "density": 2.4, "coverage": 0.85, "patch_size": 16.0, "scale": [0.8, 1.35], "colors": ["#7cc63a", "#8fd043", "#a8d23c", "#6cbd36"] },
+        { "kind": "grass", "density": 2.4, "coverage": 0.85, "patch_size": 16.0, "scale": [0.8, 1.35], "colors": ["#6ea83a", "#7cb442", "#92b840", "#619e36"] },
         { "kind": "ground_cover", "density": 0.35, "coverage": 0.55, "patch_size": 9.0, "scale": [0.8, 1.3], "colors": ["#78c23e", "#8acb45"] },
         { "kind": "bush", "density": 0.012, "coverage": 0.6, "patch_size": 40.0, "scale": [0.75, 1.3],
           "models": ["bush_round", "bush_spiky", "bush_low", "bush_flowering", "bush_lumpy"], "colors": ["#62b03a", "#76c040", "#5fa84c", "#4f9e86"] }
@@ -198,7 +198,7 @@
         { "object": "scene_scuttler_marks", "spacing": 320.0, "chance": 0.3, "near": { "objects": ["scene_junk_pile", "scene_scrap_outpost", "scene_salvager_crash", "scene_harvester_wreck", "scene_escape_pod", "scene_salvager_wreck", "scene_squatter_camp", "scene_rover_wreck", "scene_breakdown"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } }
       ],
       "flora": [
-        { "kind": "grass", "density": 1.2, "coverage": 0.6, "patch_size": 10.0, "scale": [0.8, 1.4], "colors": ["#5fae36", "#6fba3c", "#53a13a"] },
+        { "kind": "grass", "density": 1.2, "coverage": 0.6, "patch_size": 10.0, "scale": [0.8, 1.4], "colors": ["#568f36", "#64983c", "#4d8738"] },
         { "kind": "ground_cover", "density": 0.5, "coverage": 0.65, "patch_size": 8.0, "scale": [0.8, 1.4], "models": ["clover", "sprouts", "flowers_white", "flowers_purple"], "colors": ["#5aaa3a", "#68b444"] },
         { "kind": "bush", "density": 0.03, "coverage": 0.7, "patch_size": 30.0, "scale": [0.8, 1.45],
           "models": ["bush_round", "bush_spiky", "bush_low", "bush_flowering", "bush_lumpy"], "colors": ["#4e9a36", "#5aa83a", "#3f8c4c", "#46907e"] }

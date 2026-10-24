@@ -20,11 +20,11 @@ public class GroundTests
         foreach (var ground in data.Grounds)
         {
             Assert.True(File.Exists(ground.TextureFile), ground.TextureFile);
-            // A square 512 px PNG, so every layer of the texture array matches without resampling.
+            // A square 1024 px PNG, so every layer of the texture array matches without resampling.
             var header = File.ReadAllBytes(ground.TextureFile!)[..24];
             Assert.Equal("PNG", System.Text.Encoding.ASCII.GetString(header, 1, 3));
-            Assert.Equal(512, (header[16] << 24) | (header[17] << 16) | (header[18] << 8) | header[19]);
-            Assert.Equal(512, (header[20] << 24) | (header[21] << 16) | (header[22] << 8) | header[23]);
+            Assert.Equal(1024, (header[16] << 24) | (header[17] << 16) | (header[18] << 8) | header[19]);
+            Assert.Equal(1024, (header[20] << 24) | (header[21] << 16) | (header[22] << 8) | header[23]);
         }
         Assert.All(data.BiomeGrounds, g => Assert.True(g >= 0));
         Assert.True(data.SlopeGround >= 0);
