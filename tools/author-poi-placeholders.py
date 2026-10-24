@@ -3,8 +3,8 @@
 
 The spec's 50 mandatory structures get simple volumes of the right footprint and height until each is designed on its
 own: a concrete pad, the building's bounding volume, and a few shapes that make the type readable from a distance
-(silos, a smokestack, a tower). Warehouses are hollow shells with their floors, stairs and the warehouse markers, so
-their gameplay works while they wait for their design. Edit the table here and re-run; never edit the written files.
+(silos, a smokestack, a tower). Warehouses are built: their models come from the Colony Works kit
+(tools/structures/warehouses.py) on the placeholder shells' layout, and this script writes their markers. Edit the table here and re-run; never edit the written files.
 
 Usage: tools/author-poi-placeholders.py [OUT_DIR]   (default: mods/vanilla/pois)
 """
@@ -51,31 +51,10 @@ def ring(count, radius, fn):
 
 
 def warehouse(floors, w, d):
-    """A hollow shell: floors every 4 m, a door gap in the front (+z) wall, stairs up the side, the warehouse markers."""
+    """The warehouse markers for a model built on the old shell's layout (tools/structures/warehouses.py): slab tops
+    every 4 m from 0.3 m, an 8 m stairwell at the front of each upper floor, a 6 m door in the front (+z) wall."""
     h = 4.0 * floors
     hw, hd = w / 2, d / 2
-    pieces = [box([w, 0.3, d], [0, 0.15, 0], PAD)]
-    for f in range(1, floors):
-        # Each upper floor leaves an 8 m stairwell open at the front.
-        pieces.append(box([w, 0.3, d - 8], [0, 4 * f + 0.15, -4], PAD))
-    pieces.append(box([w + 0.8, 0.3, d + 0.8], [0, h + 0.15, 0], ROOF))
-    pieces += [
-        box([w, h, 0.4], [0, h / 2, -hd], METAL),
-        box([0.4, h, d], [-hw, h / 2, 0], METAL),
-        box([0.4, h, d], [hw, h / 2, 0], METAL),
-        box([hw - 3, h, 0.4], [-(hw + 3) / 2, h / 2, hd], METAL),
-        box([hw - 3, h, 0.4], [(hw + 3) / 2, h / 2, hd], METAL),
-        box([6, h - 4, 0.4], [0, 4 + (h - 4) / 2, hd], METAL),
-    ]
-    # Stairs: a flight of 0.5 m steps per floor, alternating sides of the stairwell.
-    for f in range(floors - 1):
-        side = -1 if f % 2 == 0 else 1
-        for s in range(8):
-            rise = 0.5 * (s + 1)
-            pieces.append(box([1, rise, 3], [side * (hw - 1.5 - s), 4 * f + rise / 2, hd - 3], WOOD))
-    # Roof tanks and pipes make the type readable from the road (spec §6).
-    pieces += [cylinder(3, 4, [-hw / 2, h + 2.3, -hd / 2], YELLOW), cylinder(3, 4, [hw / 2, h + 2.3, -hd / 2], YELLOW),
-               box([hw, 0.8, 0.8], [0, h + 0.8, -hd / 2], "#3f6fa8")]
     bots = ["spooler_blue", "spooler_green", "spooler_yellow", "spooler_blue"]
     markers = [{"type": "door", "ref": "warehouse_key", "at": [0.0, 0.0, hd]}]
     for f in range(floors):
@@ -100,7 +79,7 @@ def warehouse(floors, w, d):
     markers += [part("construction_light", [x, 0.0, hd + 2.0], yaw=180.0) for x in (-8.0, 8.0)]
     markers += [part("traffic_cone", [x, 0.0, hd + 3.0]) for x in (-5.5, 5.5)]
     markers.append(sign("colony_sign", [4.5, 0.0, hd + 1.5], FACE_FRONT, "COLONY STORES\nStaff only\nKeys kept upstairs"))
-    return pieces, markers, h
+    return markers, h
 
 
 def loot_part(part, at, loot, rolls, yaw=None, refill_days=None):
@@ -159,10 +138,12 @@ def placeholder(w, d, h, color, extra=()):
 TYPES = {}
 
 
-def add(poi_id, name, size, road, pieces, markers=None, flora=None, ground="lot", basin=None, spacing=None, pools=None, margin=28):
-    """margin: metres of ground blending round the pad (small spaced POIs blend in over less)."""
+def add(poi_id, name, size, road, pieces, markers=None, flora=None, ground="lot", basin=None, spacing=None, pools=None, margin=28,
+        models=None):
+    """margin: metres of ground blending round the pad (small spaced POIs blend in over less). models: a built POI's
+    structure models, in place of placeholder pieces."""
     TYPES[poi_id] = dict(id=poi_id, name=name, size=size, road=road, pieces=pieces, markers=markers or [], flora=flora,
-                         ground=ground, basin=basin, spacing=spacing, pools=pools or [], margin=margin)
+                         ground=ground, basin=basin, spacing=spacing, pools=pools or [], margin=margin, models=models or [])
 
 
 def pool(liquid, radius, at=(0, 0), level=-1.0):
@@ -179,11 +160,12 @@ def geysers(count, radius, at=(0, 0), turn=0.0):
                     round(at[1] + radius * math.sin(2 * math.pi * k / count + turn), 2)]} for k in range(count)]
 
 
-for floors, poi_id, name, (w, d) in [(2, "warehouse_small", "Warehouse (2 floors)", (40, 30)),
-                                     (3, "warehouse", "Warehouse (3 floors)", (55, 40)),
-                                     (4, "warehouse_large", "Large Warehouse (4 floors)", (70, 50))]:
-    pieces, markers, h = warehouse(floors, w, d)
-    add(poi_id, name, [w, h + 4.3, d], "road", pieces, markers)
+# Height is the model's top: the roof tank, the flue stack, the crane.
+for floors, poi_id, name, (w, d), top in [(2, "warehouse_small", "Warehouse (2 floors)", (40, 30), 20.5),
+                                          (3, "warehouse", "Warehouse (3 floors)", (55, 40), 32.5),
+                                          (4, "warehouse_large", "Large Warehouse (4 floors)", (70, 50), 44.75)]:
+    markers, h = warehouse(floors, w, d)
+    add(poi_id, name, [w, top, d], "road", [], markers, models=[{"file": f"meshes/structures/{poi_id}.glb", "at": [0.0, 0.0, 0.0]}])
 
 add("small_ruin", "Small Ruin", [14, 5, 12], "track", placeholder(14, 12, 5, RUIN),
     [loot_part("wooden_crate", [-9.0, 0.3, 2.0], "crate", [2, 4])], flora="meadow", ground=None)
@@ -413,8 +395,10 @@ def write(poi):
         b = poi["basin"]
         terrain.append({"op": "basin", "at": [float(v) for v in b["at"]], "radius": float(b["radius"]), "blend": 4.0, "depth": b["depth"],
                         **({"wobble": b["wobble"]} if b.get("wobble") else {})})
+    header = ("  // Built (World Map spec §4): the structure is its model; this file places it and its markers." if poi["models"] else
+              "  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.")
     lines = ["{",
-             "  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.",
+             header,
              "  // Written by tools/author-poi-placeholders.py; edit the table there and re-run.",
              f'  "id": {inline(poi["id"])},',
              f'  "name": {inline(poi["name"])},',
@@ -433,9 +417,14 @@ def write(poi):
         lines.append('  "pools": [')
         lines += [f"    {inline(p)}{',' if k < len(poi['pools']) - 1 else ''}" for k, p in enumerate(poi["pools"])]
         lines.append("  ],")
-    lines.append('  "pieces": [')
-    lines += [f"    {inline(p)}{',' if k < len(poi['pieces']) - 1 else ''}" for k, p in enumerate(poi["pieces"])]
-    lines.append("  ]" + ("," if poi["markers"] else ""))
+    if poi["models"]:
+        lines.append('  "models": [')
+        lines += [f"    {inline(m)}{',' if k < len(poi['models']) - 1 else ''}" for k, m in enumerate(poi["models"])]
+        lines.append("  ]" + ("," if poi["pieces"] or poi["markers"] else ""))
+    if poi["pieces"] or not poi["models"]:
+        lines.append('  "pieces": [')
+        lines += [f"    {inline(p)}{',' if k < len(poi['pieces']) - 1 else ''}" for k, p in enumerate(poi["pieces"])]
+        lines.append("  ]" + ("," if poi["markers"] else ""))
     if poi["markers"]:
         lines.append('  "markers": [')
         lines += [f"    {inline(m)}{',' if k < len(poi['markers']) - 1 else ''}" for k, m in enumerate(poi["markers"])]
