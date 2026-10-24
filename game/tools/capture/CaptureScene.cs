@@ -1022,7 +1022,7 @@ public partial class CaptureScene : Node
             float x = float.Parse(parts[1], System.Globalization.CultureInfo.InvariantCulture), z = float.Parse(parts[2], System.Globalization.CultureInfo.InvariantCulture);
             var heading = Vector3.Forward.Rotated(Vector3.Up, -float.Parse(parts[3], System.Globalization.CultureInfo.InvariantCulture) * Mathf.Pi / 180f);
             var at = Ground(new Vector3(x, 0f, z));
-            Shot($"spots_00_{name}_go", 300, () =>
+            Shot($"spots_00_{name}_go", 160, () =>
             {
                 GD.Print($"[capture] {name} at {at}");
                 _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, Ground(at - heading.Rotated(Vector3.Up, 1.6f) * 20f) + Vector3.Up * 2f, 0f);

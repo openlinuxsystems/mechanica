@@ -51,6 +51,12 @@ public sealed record FloraRule
     /// <summary>Steepest ground (rise over run) the plants grow on.</summary>
     public float MaxSlope { get; init; } = 1f;
 
+    /// <summary>
+    /// A patch layer of the biome (<see cref="BiomeDefinition.Patches"/>) the plants keep to: a flower meadow's flowers, a
+    /// hollow's rushes. Omitted: the whole biome.
+    /// </summary>
+    public string? Layer { get; init; }
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }

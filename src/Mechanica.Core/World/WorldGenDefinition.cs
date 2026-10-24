@@ -135,6 +135,9 @@ public sealed record TerrainDefinition
     /// <summary>Cliff terraces: plateaus that step up towards the middle of the island. Omitted: none.</summary>
     public CliffsDefinition? Cliffs { get; init; }
 
+    /// <summary>Mounds, hollows and low banks a few metres high over the hills. Omitted: none.</summary>
+    public BumpsDefinition? Bumps { get; init; }
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -167,6 +170,45 @@ public sealed record HillsDefinition
 
     /// <summary>Metres beyond a fixed pad's rim (a site's <c>pad_height</c>) over which the hills rise to full height.</summary>
     public float PadRamp { get; init; } = 160f;
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// Small relief over the hills, after Scrap Mechanic's rolling ground: mounds, hollows and low banks a few metres high and
+/// tens of metres apart, gentle enough to drive over. Like the hills they lie flat by water and fixed pads, and each
+/// biome scales them (<see cref="BiomeDefinition.Bumps"/>).
+/// </summary>
+public sealed record BumpsDefinition
+{
+    /// <summary>Most the bumps lift or lower the ground, in metres.</summary>
+    public float Height { get; init; }
+
+    /// <summary>Wavelength of the largest bumps in metres.</summary>
+    public float Scale { get; init; } = 60f;
+
+    /// <summary>Noise layers, each at twice the frequency of the last.</summary>
+    public int Octaves { get; init; } = 2;
+
+    /// <summary>Amplitude step between layers.</summary>
+    public float Gain { get; init; } = 0.45f;
+
+    /// <summary>
+    /// 0 to 1: how much of the bumps are banks (folded noise, a long low crest with a soft foot on each side) rather than
+    /// round mounds and hollows.
+    /// </summary>
+    public float Banks { get; init; }
+
+    /// <summary>
+    /// 0 to 1: about the share of the land that is bumpy; slow noise of wavelength <see cref="CoverScale"/> leaves the rest
+    /// gently rolling, so stretches of rough ground alternate with smooth ones (and farmland finds level ground). Default 1.
+    /// </summary>
+    public float Cover { get; init; } = 1f;
+
+    /// <summary>Size in metres of the bumpy and smooth stretches. Default 500.</summary>
+    public float CoverScale { get; init; } = 500f;
 
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
@@ -247,6 +289,15 @@ public sealed record BiomeDefinition
     /// keeps (0 for lakes, which lie flat). Its neighbours ease to it over <see cref="HillsDefinition.ShoreRamp"/>.
     /// </summary>
     public float Hills { get; init; } = 1f;
+
+    /// <summary>Share (0 or more) of the <see cref="TerrainDefinition.Bumps"/> this biome keeps: 0 for flat farmland. Default 1.</summary>
+    public float Bumps { get; init; } = 1f;
+
+    /// <summary>
+    /// Sub-areas inside the biome (rocky knolls, copses, damp hollows, flower meadows): the patches of scatter cluster layers
+    /// given their own ground, height and flora, so the things that gather in a patch stand on ground that shows it.
+    /// </summary>
+    public List<PatchDefinition>? Patches { get; init; }
 
     /// <summary>Ground colour, <c>#rrggbb</c>: the map, and the ground itself where no <see cref="Ground"/> texture is set.</summary>
     public string? Color { get; init; }
@@ -431,6 +482,44 @@ public sealed record ClusterDefinition
 
     /// <summary>Share (0 to 1) of the rule's chance its spots keep outside the patches: 0 leaves them bare.</summary>
     public float Outside { get; init; }
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// A biome's sub-area (<see cref="BiomeDefinition.Patches"/>): the patches of one scatter cluster layer
+/// (<see cref="ClusterDefinition.Layer"/>), drawn on the ground. Wherever that layer's patches lie (the same noise, so give
+/// the same <see cref="Scale"/> and <see cref="Cover"/> as the rules in the layer), the ground takes <see cref="Ground"/>
+/// and rises or sinks by <see cref="Height"/>, and flora rules naming the layer grow (<see cref="FloraRule.Layer"/>).
+/// A layer no scatter rule uses works too: a flower meadow, a damp hollow.
+/// </summary>
+public sealed record PatchDefinition
+{
+    /// <summary>Name of the cluster layer.</summary>
+    public string? Layer { get; init; }
+
+    /// <summary>Size of the patches in metres (the layer's noise wavelength).</summary>
+    public float Scale { get; init; } = 80f;
+
+    /// <summary>Share (0 to 1) of the ground the patches cover.</summary>
+    public float Cover { get; init; } = 0.3f;
+
+    /// <summary>Id of the ground painted over the patches. Omitted: the biome's own.</summary>
+    public string? Ground { get; init; }
+
+    /// <summary>0 to 1: how fully the ground covers the middle of a patch. Default 1.</summary>
+    public float Paint { get; init; } = 1f;
+
+    /// <summary>Metres the middle of a patch rises (a knoll) or, below 0, sinks (a hollow). Default 0.</summary>
+    public float Height { get; init; }
+
+    /// <summary>
+    /// 0 to 0.5: how soft a patch's edge is, as a share of the layer's noise; larger spreads the ground and height further
+    /// past the edge where the scattered objects stop. Default 0.08.
+    /// </summary>
+    public float Soft { get; init; } = 0.08f;
 
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]

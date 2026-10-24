@@ -354,8 +354,41 @@ internal static class WorldGenValidator
                         sink.Error(Code, $"{rulePath}.cluster.outside", $"outside must be 0 to 1 (got {cluster.Outside}).");
                 }
             }
+            var layers = new HashSet<string>(StringComparer.Ordinal);
+            for (var p = 0; p < (b.Patches?.Count ?? 0); p++)
+            {
+                var patch = b.Patches![p];
+                var patchPath = $"{path}.patches[{p}]";
+                KnownKeys.WarnUnknown(patch.Extra, patchPath, sink, typeof(PatchDefinition));
+                if (string.IsNullOrEmpty(patch.Layer))
+                    sink.Error(Code, $"{patchPath}.layer", "layer is required: the cluster layer whose patches this is.");
+                else if (!layers.Add(patch.Layer))
+                    sink.Error(Code, $"{patchPath}.layer", $"layer '{patch.Layer}' has two patches in this biome.");
+                Positive(patch.Scale, $"{patchPath}.scale", sink);
+                if (!(patch.Cover is > 0f and <= 1f))
+                    sink.Error(Code, $"{patchPath}.cover", $"cover must be above 0 and at most 1 (got {patch.Cover}).");
+                if (!(patch.Paint is >= 0f and <= 1f))
+                    sink.Error(Code, $"{patchPath}.paint", $"paint must be 0 to 1 (got {patch.Paint}).");
+                if (!(patch.Height is >= -10f and <= 10f))
+                    sink.Error(Code, $"{patchPath}.height", $"height must be -10 to 10 m (got {patch.Height}).");
+                if (!(patch.Soft is > 0f and <= 0.5f))
+                    sink.Error(Code, $"{patchPath}.soft", $"soft must be above 0 and at most 0.5 (got {patch.Soft}).");
+                if (patch.Ground is not null)
+                    GroundRef(patch.Ground, groundIds, $"{patchPath}.ground", sink, Code);
+                // The patch draws the layer's own noise, so it only lines up with the rules' patches at their size and cover.
+                foreach (var (rule, r) in (b.Scatter ?? []).Select((rule, r) => (rule, r)))
+                {
+                    if (rule.Cluster is { } cluster && cluster.Layer == patch.Layer && (cluster.Scale != patch.Scale || cluster.Cover != patch.Cover))
+                        sink.Warning(Code, $"{path}.scatter[{r}].cluster", $"layer '{patch.Layer}' is a patch of scale {patch.Scale} and cover {patch.Cover}; this rule's own scale and cover put its objects off the patch.");
+                }
+            }
+            NonNegative(b.Bumps, $"{path}.bumps", sink);
             for (var r = 0; r < (b.Flora?.Count ?? 0); r++)
+            {
                 Flora(b.Flora![r], $"{path}.flora[{r}]", sink);
+                if (b.Flora[r].Layer is { } layer && !layers.Contains(layer))
+                    sink.Error(Code, $"{path}.flora[{r}].layer", $"'{layer}' is not one of this biome's patches.");
+            }
         }
         if (biomes.Count > 0 && !biomes.Any(b => b.Weight > 0f && b.Id != definition.CoastBiome))
             sink.Error(Code, "$.biomes", "at least one inland biome needs a weight above 0.");
@@ -370,6 +403,21 @@ internal static class WorldGenValidator
                 sink.Error(Code, $"$.biomes[{i}].hills", $"hills must be 0 to 1 (got {biomes[i].Hills}).");
         }
         NonNegative(t.RegionWarp, "$.terrain.region_warp", sink);
+        if (t.Bumps is { } bumps)
+        {
+            KnownKeys.WarnUnknown(bumps.Extra, "$.terrain.bumps", sink, typeof(BumpsDefinition));
+            NonNegative(bumps.Height, "$.terrain.bumps.height", sink);
+            Positive(bumps.Scale, "$.terrain.bumps.scale", sink);
+            if (bumps.Octaves is < 1 or > 6)
+                sink.Error(Code, "$.terrain.bumps.octaves", $"octaves must be 1 to 6 (got {bumps.Octaves}).");
+            if (!(bumps.Gain is > 0f and <= 1f))
+                sink.Error(Code, "$.terrain.bumps.gain", $"gain must be above 0 and at most 1 (got {bumps.Gain}).");
+            if (!(bumps.Cover is >= 0f and <= 1f))
+                sink.Error(Code, "$.terrain.bumps.cover", $"cover must be 0 to 1 (got {bumps.Cover}).");
+            Positive(bumps.CoverScale, "$.terrain.bumps.cover_scale", sink);
+            if (!(bumps.Banks is >= 0f and <= 1f))
+                sink.Error(Code, "$.terrain.bumps.banks", $"banks must be 0 to 1 (got {bumps.Banks}).");
+        }
         if (t.Hills is { } hills)
         {
             KnownKeys.WarnUnknown(hills.Extra, "$.terrain.hills", sink, typeof(HillsDefinition));
