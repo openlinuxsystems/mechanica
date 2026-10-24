@@ -30,7 +30,7 @@
     "use": "pickup_produce"
   },
   "soil": {
-    "capacity": 300,
+    "capacity": 1260,
     "growth": 1,
     "dry_time": 1440,
     "wet_level": 0.5

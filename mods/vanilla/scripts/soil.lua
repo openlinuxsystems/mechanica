@@ -1,6 +1,6 @@
 -- Soil (chunk 20, D2): grows the crop planted in it and hands it to the player who harvests it (Use).
--- A crop grows only while the soil holds water, using one second of water per second of growth, at the
--- soil's soil.growth speed times its boost (soil.get().boost: 1, or more from Fertilizer until the harvest clears it),
+-- A crop grows only while the soil holds water, using its seed's thirst (seed.thirst, default 1) seconds of water per
+-- second of growth, at the soil's soil.growth speed times its boost (soil.get().boost: 1, or more from Fertilizer until the harvest clears it),
 -- through soil.get().stages stages; it is ripe after its seed's grow_time. With nothing
 -- planted the soil dries out instead, as in Scrap Mechanic: full soil is dry after soil.dry_time seconds. The host
 -- stores the result (seed, grown, water, stage) on the soil, where clients, bots and saves see it, and works out from
@@ -89,15 +89,21 @@ local function grown_by(s, now, power)
   local elapsed = math.max(0, now - (s.updated or now))
   local used = 0
   if elapsed > 0 and water > 0 and grown < grow_time then
-    -- A boost (Fertilizer) multiplies the soil's own speed until the harvest; the water still goes second for second.
+    -- A boost (Fertilizer) multiplies the soil's own speed until the harvest; the water still goes by the clock, the
+    -- seed's thirst seconds of water a second.
     local speed = ((world.item(part.type(), "soil") or {}).growth or 1) * (s.boost or 1)
+    local thirst = seed.thirst or 1
     -- Water (and power) go only on the growing still to do.
-    used = math.min(elapsed, water, power or math.huge)
+    used = math.min(elapsed, water / thirst, power or math.huge)
     if speed > 0 then
       used = math.min(used, (grow_time - grown) / speed)
     end
-    water = water - used
+    water = math.max(0, water - used * thirst)
     grown = math.min(grow_time, grown + used * speed)
+    -- A bucket holds just what a crop drinks: rounding must not leave it a hair short of ripe with the water gone.
+    if grow_time - grown < 0.01 then
+      grown = grow_time
+    end
   end
   return grown, water, math.min(s.stages, math.floor(grown / grow_time * s.stages)), used
 end

@@ -3,8 +3,12 @@
   "name": "Tomato Seed",
   "description": "Plant in watered soil. Grows into tomatoes.",
   "category": "consumable",
-  "mass": 0.05,
-  "stack_size": 50,
+  "mass": 4.5,
+  "durability": 2,
+  "friction": 0.4,
+  "buoyancy": 0.3,
+  "flammable": true,
+  "stack_size": 20,
   "mesh": "meshes/items/tomato_seed.glb",
   "icon": "textures/items/tomato_seed_icon.png",
   "visual": {
@@ -17,12 +21,12 @@
   },
   "seed": {
     "crop": "tomato",
-    "grow_time": 360,
+    "grow_time": 1260,
     "yield": 2,
     "seeds": 1,
-    "seeds_max": 2,
+    "seeds_max": 3,
     "plant": "meshes/crops/tomato_plant.glb",
-    "value": 1.5
+    "value": 1
   },
   "held": {
     "mesh": "meshes/items/tomato_seed.glb",

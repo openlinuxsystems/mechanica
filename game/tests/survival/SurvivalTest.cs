@@ -98,7 +98,7 @@ public partial class SurvivalTest : StagedTest
             (_soil, _soilPart) = (placed.Creation, placed.Part);
             return _client.Main.Creations.Find(_soil) is not null;
         });
-        Stage("the client plants a carrot seed and throws two buckets of water on it", frame =>
+        Stage("the client plants a carrot seed and throws a bucket of water on it, all a crop needs", frame =>
         {
             var soilAt = _soilAt;
             if (frame == 0)
@@ -107,20 +107,20 @@ public partial class SurvivalTest : StagedTest
                 Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Seed), Creation: _soil, Part: _soilPart));
             }
             // Thrown along where the player looks: the water lands on the soil a moment later.
-            if (frame is 10 or 60)
+            if (frame == 10)
             {
                 var aim = (soilAt - Eye(_client)).Normalized();
                 Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Bucket), new Vec3(aim.X, aim.Y, aim.Z)));
             }
-            if (_results.Count < 3 || _client.Main.Survival.Soil.GetValueOrDefault((_soil, _soilPart)) is not { Seed: not null } soil || soil.Water < 250)
+            if (_results.Count < 2 || _client.Main.Survival.Soil.GetValueOrDefault((_soil, _soilPart)) is not { Seed: not null } soil || soil.Water < 1200)
                 return frame < 600 ? false : Check(false, $"the soil was watered ({string.Join("; ", _results)}; {Items()})");
             Check(_results.All(r => r.Ok), $"planting and throwing succeed ({string.Join("; ", _results)})");
             var planted = System.Text.Json.Nodes.JsonNode.Parse(_results[0].Value!.Value.GetRawText())!;
             Check((string?)planted["seed"] == Seed && (string?)planted["crop"] == Carrot, $"the seed's script answers with the soil ({planted.ToJsonString()})");
             var host = HostSurvival.SoilViewOf(_host.Main.Creations.Find(_soil)!, _soilPart);
             // The host's water drains as the crop grows; the client sees it on the next stage.
-            Check(host.Seed == soil.Seed && host.Water <= soil.Water + 0.01f && host.Water > 200, $"the host and client agree on the soil ({host} vs {soil})");
-            Check(Count(Seed) == 3 && Count(Bucket) == 0 && Count(EmptyBucket) == 2, $"a seed is used and both buckets come back empty ({Items()})");
+            Check(host.Seed == soil.Seed && host.Water <= soil.Water + 0.01f && host.Water > 1150, $"the host and client agree on the soil ({host} vs {soil})");
+            Check(Count(Seed) == 3 && Count(Bucket) == 1 && Count(EmptyBucket) == 1, $"a seed is used and the bucket comes back empty ({Items()})");
             Check(!soil.Ripe && _client.Main.Survival.CropNodes.ContainsKey((_soil, _soilPart)), "the client shows a young crop");
             return true;
         });
@@ -144,10 +144,10 @@ public partial class SurvivalTest : StagedTest
         });
         Stage("the crop ripens on the host and the client sees it", frame =>
         {
-            // Skip the host's world clock 300 s ahead: the soil's script catches up on growth from the clock,
-            // as it does for a farm that was parked.
+            // Skip the host's world clock a carrot's whole grow time (1260 s) ahead: the soil's script catches up on growth
+            // from the clock, as it does for a farm that was parked, and the one bucket lasts all of it (crops map K1).
             if (frame == 0)
-                _host.Main.Scripts.Runtime.Time += 300;
+                _host.Main.Scripts.Runtime.Time += 1260;
             if (_client.Main.Survival.Soil.GetValueOrDefault((_soil, _soilPart)) is not { Ripe: true })
                 return false;
             var crop = _client.Main.Survival.CropNodes[(_soil, _soilPart)];
@@ -172,7 +172,7 @@ public partial class SurvivalTest : StagedTest
             }
             if (_results.Count == 0 || Count(Carrot) != 5)
                 return false;
-            Check(_results[0].Ok && Count(Seed) == 4, $"two carrots and the seed back ({_results[0]}; {Items()})");
+            Check(_results[0].Ok && Count(Seed) is >= 4 and <= 6, $"two carrots and one to three seeds back ({_results[0]}; {Items()})");
             var items = System.Text.Json.Nodes.JsonNode.Parse(_results[0].Value!.Value.GetRawText())!["items"]!.AsArray();
             Check(items.Count == 2 && (string?)items[0]!["item"] == Carrot && (int)items[0]!["count"]! == 2, $"on_activate answers with what it gave ({_results[0]})");
             if (_client.Main.Survival.Soil.GetValueOrDefault((_soil, _soilPart)) is { Seed: not null })

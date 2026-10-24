@@ -66,10 +66,10 @@ public partial class CaptureScene
             for (var i = 0; i < mounds.Count; i++)
             {
                 host.PlantSeed(me, mounds[i].Creation.Id, mounds[i].Part, seed);
-                host.WaterSoil(me, mounds[i].Creation.Id, mounds[i].Part, 300);
+                host.WaterSoil(me, mounds[i].Creation.Id, mounds[i].Part, 1260); // a bucket
                 var state = mounds[i].Creation.SoilOf(mounds[i].Part)!;
                 // The same time in the ground; the fertilized one has grown 15 times as far.
-                state.Set(grown: i == 0 ? 60 : 300, stage: i == 0 ? 0 : 3, updated: _main.Scripts.Runtime.Time,
+                state.Set(grown: i == 0 ? 60 : 900, stage: i == 0 ? 0 : 2, updated: _main.Scripts.Runtime.Time,
                     wetAt: SoilState.WetAt(definition));
                 if (i == 1)
                     host.BoostSoil(me, mounds[i].Creation.Id, mounds[i].Part, 15);

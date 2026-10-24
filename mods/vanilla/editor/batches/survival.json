@@ -1,4 +1,6 @@
 {
+  // Crops batch K1: soil holds 1260 s of water and a full Water Bucket gives 1260 s, so one bucket grows one crop
+  // (every vanilla crop grows in 1260 s). Re-run with tools/author-vanilla.sh.
   "format_version": 1,
   "parts": [
     {
@@ -289,7 +291,7 @@
         },
         "script": "scripts/watering.lua",
         "properties": {
-          "seconds": 150,
+          "seconds": 1260,
           "douse": 1,
           "splash": 2.5,
           "range": 14,
@@ -867,7 +869,7 @@
           "metallic": 0
         },
         "soil": {
-          "capacity": 300,
+          "capacity": 1260,
           "growth": 1,
           "dry_time": 1440,
           "wet_level": 0.5

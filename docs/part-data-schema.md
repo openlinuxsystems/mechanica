@@ -373,8 +373,9 @@ in `properties`. The vanilla scripts read these properties:
 | `seed.grow_time` | number > 0 (s) | Seconds of watered growth until ripe. Required. |
 | `seed.yield` | integer ≥ 1 | Crop items a harvest gives. Default 1. |
 | `seed.seeds` | integer ≥ 0 | Seeds a harvest gives back (the least, with `seeds_max`). Default 0. |
-| `seed.seeds_max` | integer ≥ `seeds` | Most seeds a harvest gives back: each harvest rolls from `seeds` to `seeds_max` (vanilla tomato: 1 to 2). Default: exactly `seeds`. |
-| `seed.value` | number ≥ 0 | How much a planted crop draws raids (chunk 21). Default 1. |
+| `seed.seeds_max` | integer ≥ `seeds` | Most seeds a harvest gives back: each harvest rolls from `seeds` to `seeds_max` (vanilla carrot, tomato and potato: 1 to 3). Default: exactly `seeds`. |
+| `seed.value` | number ≥ 0 | How much a planted crop draws raids (chunk 21; vanilla: cotton 0, potato and tomato 1, carrot 2). Default 1. |
+| `seed.thirst` | number > 0 | Seconds of water one second of growth uses (crops map K1). With 1 a full Water Bucket (1260 s) grows a 1260 s crop in a soil mound (`capacity` 1260); 2 drinks the soil dry twice as fast, so the crop needs two waterings. Read by `soil.lua`. Default 1. |
 | `seed.plant` | mesh path | The growing plant's model on the soil (see [Crop plant models](#crop-plant-models)). Default: a plain green shoot with the crop's colour on top once ripe. |
 | `soil.capacity` | number > 0 (s) | Most seconds of water the soil holds. Required. |
 | `soil.growth` | number > 0 | Growth speed multiplier for crops on it. Default 1. |
@@ -387,7 +388,7 @@ in `properties`. The vanilla scripts read these properties:
 | `aim.fire_on_release` | bool | Fire when right click is let go, as well as on left click while aiming. Default false. |
 
 ```json
-"seed": { "crop": "tomato", "grow_time": 360, "yield": 2, "seeds": 1, "seeds_max": 2, "plant": "meshes/crops/tomato_plant.glb" }
+"seed": { "crop": "tomato", "grow_time": 1260, "yield": 2, "seeds": 1, "seeds_max": 3, "value": 1, "plant": "meshes/crops/tomato_plant.glb" }
 ```
 
 The soil's script (vanilla `scripts/soil.lua`) reads these through `world.item(seed, "seed")`, so another

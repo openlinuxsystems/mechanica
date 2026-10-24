@@ -680,6 +680,7 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             if (seed.SeedsMax is { } most && most < Math.Max(0, seed.Seeds ?? 0))
                 sink.Error(Code, "$.seed.seeds_max", "seeds_max must be at least seeds.");
             RequireNonNegative(seed.Value, "$.seed.value", "value", false, "a seed", sink);
+            RequirePositive(seed.Thirst, "$.seed.thirst", "thirst", false, "a seed", sink);
             KnownKeys.WarnUnknown(seed.Extra, "$.seed", sink, typeof(SeedDefinition));
         }
         if (part.Soil is { } soil)

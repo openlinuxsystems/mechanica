@@ -21,15 +21,17 @@ namespace Mechanica.Game.Tests;
 /// Food and crops, host plus client, with vanilla's tomato (the food design). A tomato in hand rests on the open palm on
 /// both machines; eating it plays the two bites (the held model goes from whole to one bite to two, then is gone and back)
 /// on the client's arms and on the body the host draws, heals once, and a second click while chewing eats nothing. A tomato
-/// seed planted in dry soil shows the tomato plant wilting, watered it picks up, ripe it is grown through to the end of its
-/// grow clip, and harvested it gives two tomatoes and one or two seeds while the plant sinks away. The carrot and the
-/// potato have the same bitten models in hand and plant clips.
+/// seed planted in dry soil shows the tomato plant wilting, watered once (one bucket: all a 1260 s crop drinks, crops map
+/// K1) it picks up, grows half way on the host's clock on half the bucket, Fertilizer finishes it, ripe it is grown through
+/// to the end of its grow clip, and harvested it gives two tomatoes and one to three seeds while the plant sinks away. The
+/// carrot and the potato have the same bitten models in hand and plant clips.
 /// </summary>
 public partial class FoodTest : StagedTest
 {
     private const string Tomato = "vanilla:tomato";
     private const string Seed = "vanilla:tomato_seed";
     private const string Bucket = "vanilla:water_bucket_full";
+    private const string Fertilizer = "vanilla:fertilizer";
     private const string Soil = "vanilla:soil";
 
     private readonly List<ActionResult> _results = [];
@@ -44,6 +46,7 @@ public partial class FoodTest : StagedTest
     private readonly HashSet<int> _hostBites = [];
     private float _health;
     private Node3D? _sinking;
+    private int _growStep;
 
     protected override string Tag => "food";
 
@@ -56,6 +59,8 @@ public partial class FoodTest : StagedTest
     private CharacterModel ClientView => (CharacterModel)_client.Main.LocalPlayer!.Arms!;
 
     private SurvivalActions HostSurvival => _host.Main.Survival.Actions!;
+
+    private SoilState HostSoil => _host.Main.Creations.Find(_soil)!.SoilOf(_soilPart)!;
 
     public override void _Ready()
     {
@@ -71,6 +76,7 @@ public partial class FoodTest : StagedTest
                 return false;
             _host.Main.Inventory.Items!.PlayerInventory(Peer).Add(Tomato, 3);
             _host.Main.Inventory.Items!.PlayerInventory(Peer).Add(Seed, 1);
+            _host.Main.Inventory.Items!.PlayerInventory(Peer).Add(Fertilizer, 1);
             return true;
         });
         Add("a tomato rests on the open palm on both machines", frame =>
@@ -161,34 +167,56 @@ public partial class FoodTest : StagedTest
             Check(crop.GrowShown == 0f, $"the plant starts at the beginning of its grow clip ({crop.GrowShown})");
             return Check(crop.WiltShown == 1f, $"dry soil wilts it ({crop.WiltShown})");
         });
-        Add("watered, the plant picks up", frame =>
+        Add("watered once, the plant picks up", frame =>
         {
             if (frame == 0)
             {
                 _results.Clear();
                 Water();
             }
-            if (frame == 60)
-                Water(); // a second bucket: enough for the whole grow time
             var crop = _client.Main.Survival.CropNodes[(_soil, _soilPart)];
-            return frame > 60 && _results.Count == 2 && crop.View?.Wetness != SoilWetness.Dry && crop.WiltShown == 0f;
+            if (_results.Count == 1 && !_results[0].Ok)
+                return Check(false, $"the throw is refused ({_results[0]})");
+            if (_results.Count != 1 || crop.View?.Wetness == SoilWetness.Dry || crop.WiltShown != 0f)
+                return false;
+            return Check(HostSoil.Water > 1200f, $"the bucket fills the soil: 1260 s, a whole crop's water ({HostSoil.Water})");
+        });
+        Add("half way on half the bucket, Fertilizer finishes it", frame =>
+        {
+            if (frame == 0)
+            {
+                _growStep = 0;
+                _host.Main.Scripts.Runtime.Time += 630; // half a tomato's 1260 s
+            }
+            if (_growStep == 0 && HostSoil.Stage >= 2 && _client.Main.Survival.CropNodes[(_soil, _soilPart)].View?.Stage >= 2)
+            {
+                Check(HostSoil.Stage == 2 && HostSoil.Water is > 500f and < 630f, $"half grown on half the water ({HostSoil.Stage}, {HostSoil.Water} s left)");
+                _growStep = 1;
+                _results.Clear();
+                LookAt(_soilAt);
+                Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Fertilizer), Creation: _soil, Part: _soilPart));
+            }
+            if (_growStep == 1 && _results.Count == 1)
+            {
+                if (!_results[0].Ok)
+                    return Check(false, $"the Fertilizer is refused ({_results[0]})");
+                _growStep = 2;
+                _host.Main.Scripts.Runtime.Time += 50; // 15 times as fast: the other 630 s take 42 s
+            }
+            return _growStep == 2;
         });
         Add("ripe, the plant has grown through to the end of its grow clip", frame =>
         {
-            // A tomato drinks more than full soil holds (360 s of growth, 300 s of water): skip ahead, top it up, skip again.
-            if (frame is 0 or 60)
-                _host.Main.Scripts.Runtime.Time += 300;
-            if (frame == 30)
-                HostSurvival.WaterSoil(new ActionCaller(Peer, ActionSource.Player), _soil, _soilPart, 300);
             var crop = _client.Main.Survival.CropNodes[(_soil, _soilPart)];
             if (frame % 100 == 99)
                 GD.Print($"[food] waiting for ripe: {crop.View}, grow shown {crop.GrowShown}");
             if (crop.View is not { Ripe: true } || crop.GrowShown < SoilState.Stages)
                 return false;
+            Check(HostSoil.Water > 400f, $"water is left over: one bucket was enough ({HostSoil.Water} s)");
             var ripe = crop.Plant!.FindChildren("Fruit*_ripe", nameof(Node3D), true, false).OfType<Node3D>().Count(f => f.Scale.X > 0.5f);
             return Check(ripe >= 6, $"the ripe tomatoes show ({ripe})");
         });
-        Add("harvested, it gives two tomatoes and one or two seeds, and the plant sinks away", frame =>
+        Add("harvested, it gives two tomatoes and one to three seeds, and the plant sinks away", frame =>
         {
             if (frame == 0)
             {
@@ -202,7 +230,7 @@ public partial class FoodTest : StagedTest
                 return Check(false, $"the harvest is refused ({_results[0]})");
             if (_client.Main.Survival.CropNodes.ContainsKey((_soil, _soilPart)) || Count(Tomato) != 4)
                 return false;
-            Check(Count(Seed) is 1 or 2, $"one or two seeds back ({Count(Seed)})");
+            Check(Count(Seed) is >= 1 and <= 3, $"one to three seeds back ({Count(Seed)})");
             Check(IsInstanceValid(_sinking) && _sinking!.IsInsideTree() && _sinking.FindChild("DirtPuff", false, false) is not null,
                 "the plant sinks into the soil in a puff of dirt");
             return true;

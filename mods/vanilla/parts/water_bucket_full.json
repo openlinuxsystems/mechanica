@@ -16,7 +16,7 @@
     "splash": "water_splash"
   },
   "properties": {
-    "seconds": 150,
+    "seconds": 1260,
     "douse": 1,
     "splash": 2.5,
     "range": 14,

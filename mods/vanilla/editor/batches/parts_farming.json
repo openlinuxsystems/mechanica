@@ -4,7 +4,8 @@
 // Cable Roll we lack. It is soil (the `soil` section) run by the vanilla soil.lua like the ground mound: soil.yield is
 // its fixed harvest, soil.seeds what it grows, and properties.charge_item a battery from the Battery Containers linked
 // into it (properties.charge_time seconds of growing each). The model and icon are built by
-// tools/growbed/build_growbed.py (tools/part_kit/farming_kit.py). Re-run with tools/author-vanilla.sh.
+// tools/growbed/build_growbed.py (tools/part_kit/farming_kit.py). Crops batch K1: it holds 2160 s of water (SM: a watering
+// lasts 1.5 days in a Growbed), so a full bucket (1260 s) grows one 1260 s crop. Re-run with tools/author-vanilla.sh.
 {
   "format_version": 1,
   "parts": [
@@ -29,7 +30,7 @@
         "script": "scripts/soil.lua",
         "sounds": { "use": "pickup_produce", "place": "place_wood" },
         "soil": {
-          "capacity": 600,
+          "capacity": 2160,
           "growth": 1,
           "dry_time": 2160,
           "wet_level": 0.25,

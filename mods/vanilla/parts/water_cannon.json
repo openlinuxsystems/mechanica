@@ -41,7 +41,7 @@
   "properties": {
     "interval": 0.5,
     "range": 15,
-    "water": 60,
+    "water": 126,
     "impulse": 60,
     "muzzle": -0.4,
     "douse": 0.35,

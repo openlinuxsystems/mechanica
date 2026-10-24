@@ -3,8 +3,12 @@
   "name": "Cotton Seed",
   "description": "Plant in watered soil. Grows into a cotton bush; pick its bolls for Cotton.",
   "category": "consumable",
-  "mass": 0.05,
-  "stack_size": 50,
+  "mass": 4.5,
+  "durability": 2,
+  "friction": 0.4,
+  "buoyancy": 0.3,
+  "flammable": true,
+  "stack_size": 20,
   "mesh": "meshes/items/cotton_seed.glb",
   "icon": "textures/items/cotton_seed_icon.png",
   "visual": {
@@ -17,12 +21,12 @@
   },
   "seed": {
     "crop": "cotton",
-    "grow_time": 300,
+    "grow_time": 1260,
     "yield": 2,
     "seeds": 1,
-    "seeds_max": 2,
+    "seeds_max": 1,
     "plant": "meshes/crops/cotton_plant.glb",
-    "value": 1
+    "value": 0
   },
   "held": {
     "mesh": "meshes/items/cotton_seed.glb",

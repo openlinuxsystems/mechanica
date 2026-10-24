@@ -7,6 +7,7 @@
   // linked containers, and added the Plasma Drill, the Small and Large Explosive Canisters, the Alarm Clock, the Cash
   // Register and the Scuttler Head (a placeable note player, still dropped by Scuttlers), each with a real model.
   // Consumables batch C1 gave the Glowstick the wiki's consumable stats and recipe (Ember stands in for Glow).
+  // Crops batch K1: a Water Cannon jet gives soil 126 s of water, so a bucket's ten jets water as much as throwing it (1260 s).
   // Re-run with tools/author-vanilla.sh.
   "format_version": 1,
   "parts": [
@@ -812,7 +813,7 @@
         "sounds": { "fire": "water_cannon_fire", "dry": "logic_click" },
         "logic": { "inputs": 5, "use": "fire" },
         "display": { "clips": { "readout": "clip" } },
-        "properties": { "interval": 0.5, "range": 15, "water": 60, "impulse": 60, "muzzle": -0.4, "douse": 0.35, "splash": 1, "water_item": "water_bucket_full", "jets": 10 },
+        "properties": { "interval": 0.5, "range": 15, "water": 126, "impulse": 60, "muzzle": -0.4, "douse": 0.35, "splash": 1, "water_item": "water_bucket_full", "jets": 10 },
         "sound_material": "metal"
       },
       "model": [{ "kind": "mesh", "mesh": "meshes/parts/water_cannon.glb" }],

@@ -494,6 +494,12 @@ public sealed record SeedDefinition
     /// <summary>What one ripe crop is worth to raids (chunk 21 scales raids by planted crop value). Omitted means 1.</summary>
     public float? Value { get; init; }
 
+    /// <summary>
+    /// Seconds of water each second of growth uses (more than 0; crops map K1): 2 drinks the soil dry twice as fast, so it
+    /// needs two waterings where 1 needs one. Read by the soil's script. Omitted means 1.
+    /// </summary>
+    public float? Thirst { get; init; }
+
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
