@@ -30,7 +30,7 @@
     "place": "place_wood"
   },
   "soil": {
-    "capacity": 600,
+    "capacity": 2160,
     "growth": 1,
     "dry_time": 2160,
     "wet_level": 0.25,

@@ -69,12 +69,15 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
 - **Farming:** aim a Soil Bag at the ground (no steeper than 17°) to spill out a 3×3 soil mound (with Force build held,
   or aimed anywhere but the terrain, the bag itself is set down; picking a mound up gives the bag back). Plant a seed
   and water it. Soil looks dry, lightly watered, fully wet or drying, and empty soil dries out in about a game day. A crop grows only while its soil holds water,
-  using a second of water per second of growth, through four stages. Harvest it ripe (E) for its crop
-  and usually a seed back. Crops keep growing while nobody is near (the soil catches up from the world
+  using a second of water per second of growth (twice that for a seed with `thirst` 2), through four stages. Every
+  vanilla crop is ripe after 1260 s (0.875 of a game day, as in Scrap Mechanic; Fertilizer makes that 84 s). A mound
+  holds 1260 s of water and a full Water Bucket gives 1260 s, so one bucket grows one crop (a Water Cannon's ten jets a
+  bucket water as much). Harvest it ripe (E): 2 Carrots, 2 Tomatoes, 10 Potatoes or 2 Cotton, and 1 to 3 seeds back
+  (farmed Cotton exactly 1). Crops keep growing while nobody is near (the soil catches up from the world
   clock when it next runs) and are saved with the soil's Creation.
 - **Growbeds:** the Growbed (Fabricator: 2 Component Kits, 2 Circuit Boards and a Soil Bag) is soil you build into a
   Creation, so a farm can be a cart, a boat or a base. It takes carrot, potato, tomato and cotton seeds, and a harvest
-  always gives 5 crops. It runs on batteries: each Battery Pack powers 6 minutes of growth, taken from Battery Containers
+  always gives 5 crops. It holds 2160 s of water, so a bucket is enough for a crop with water to spare. It runs on batteries: each Battery Pack powers 6 minutes of growth, taken from Battery Containers
   wired into it (or any container on its Creation); its cyan light shows while it grows. The crop rides along with the
   Creation wherever it drives, across chunks and while it is parked, and saves with it. Picking a bed (or a soil mound) up
   gives an unripe crop's seed back; a ripe crop must be harvested first. A bed that breaks drops its seed.
@@ -110,7 +113,7 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
   of its size in its colour.
 - **Fire:** see [Fire](#fire).
 - **Raids:** the host checks the planted crops every minute. Once they are worth the first level of the
-  raid table (`raids/raids.json`; vanilla's is 10, a carrot or potato counts 1 and a tomato 1.5), the raid
+  raid table (`raids/raids.json`; vanilla's is 10, a carrot counts 2, a potato or tomato 1 and cotton nothing: each seed's `seed.value`), the raid
   horn sounds and the level's bots arrive round the biggest patch to go for the crops. Bigger farms and
   more players bring bigger raids; after one there is a cooldown before the next.
 - **Guards:** POIs (the warehouse, ruins, outposts) are guarded by the bots their data places. They appear
@@ -179,12 +182,12 @@ their item's properties.
   with their numbers in `properties`; see [Item scripts](lua-api.md#item-scripts). Soil is a part script,
   `soil.lua` (D2): its `on_update` grows the crop and its `can_activate` / `on_activate` harvest it. A seed's
   `seed` section says what it grows into, how fast, how many seeds a harvest gives back (from `seeds` to `seeds_max`,
-  rolled each harvest) and the plant model clients show growing, and the soil's `soil` section how much water it holds
+  rolled each harvest), how much water it drinks (`thirst`) and the plant model clients show growing, and the soil's `soil` section how much water it holds
   and its growth speed; the script reads both with `world.item`. The host keeps only what the script stores
   on the soil (seed, growth, water, stage and when growth was last worked out): that is what is saved, sent
   to clients and read by bots and raids. Vanilla's items and soil are authored by the Part Editor batch
   `mods/vanilla/editor/batches/survival.json`; the produce, the seeds, Chemical, Gasoline, the drinks, Fertilizer, Grazer Milk, Grazer Steak and the burgers by
-  `mods/vanilla/editor/batches/consumables.json` (consumables batches C1, C2b, C3 and C4; the Field Kitchen is in `parts_stations.json`). Soil on a Creation (the Growbed, parts map E9) is the same: its state is
+  `mods/vanilla/editor/batches/consumables.json` (consumables batches C1, C2b, C3 and C4, crops batch K1; the Field Kitchen is in `parts_stations.json`). Soil on a Creation (the Growbed, parts map E9) is the same: its state is
   per part, so it follows the part through splits and welds and saves in the Creation. `soil.yield` and `soil.seeds` fix
   its harvest and the seeds it takes (checked by the host in `CheckPlant`, which `farm.can_plant` asks), and `soil.lua`'s
   `charge_item` / `charge_time` properties power it. The Growbed is in `mods/vanilla/editor/batches/parts_farming.json`.

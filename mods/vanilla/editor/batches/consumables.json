@@ -1,8 +1,7 @@
 // Consumables batch C1 (Scrap Mechanic parity, consumables map): the produce, the four seeds, Chemical and Gasoline,
 // moved here from survival.json. The wiki's stats (1.5 kg per weight bar; durability = bars; friction and buoyancy =
 // bars / 10; flammable and stack size as the wiki) and the Food page's heals (properties.health, read by food.lua).
-// Gasoline keeps 20 kg (a 2x2x2 can). The seeds keep
-// their numbers until the Crops step. Chemical is made by emptying a Chemical Bucket at the Fabricator: the recipe's
+// Gasoline keeps 20 kg (a 2x2x2 can). Chemical is made by emptying a Chemical Bucket at the Fabricator: the recipe's
 // second output gives the empty Water Bucket back.
 // Batch C2b: Bloom Tea and Grazer Shake are drinks (properties.drink: the drink clip and sound, and the player may
 // sprint while drinking), found as loot only. Fertilizer is used on a growing crop: properties.boost multiplies its
@@ -12,6 +11,10 @@
 // Batch C4: the Field Kitchen (parts_stations.json) cooks the Garden Burger (4 Carrot + 2 Tomato + 10 Potato, 10 s) and the
 // Colony Burger (1 Grazer Steak + 5 Tomato + 10 Potato, 13 s), the 3200 recipe group; both heal 30 (perks come later).
 // The Potato is no longer edible: ammo and a cooking input.
+// Crops batch K1 (crops map): the four seeds take the wiki's seed stats (3/2/4/3/Y, stack 20: 4.5 kg) and grow in
+// 1260 s (0.875 of a 1440 s day, as SM). Harvests keep our yields (2 carrots, tomatoes, cotton) except Potato, 10 as SM;
+// 1 to 3 seeds back (farmed Cotton exactly 1). Raid values: Cotton 0, Potato and Tomato 1, Carrot 2. seed.thirst
+// (soil.lua; default 1) is seconds of water one second of growth uses; one Water Bucket (1260 s) grows one crop.
 // Re-run with tools/author-vanilla.sh.
 {
   "format_version": 1,
@@ -88,13 +91,17 @@
         "name": "Carrot Seed",
         "description": "Plant in watered soil. Grows into carrots.",
         "category": "consumable",
-        "mass": 0.05,
-        "stack_size": 50,
+        "mass": 4.5,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.3,
+        "flammable": true,
+        "stack_size": 20,
         "icon": "textures/items/carrot_seed_icon.png",
         "visual": { "color": "#ffffff" },
         "held": { "mesh": "meshes/items/carrot_seed.glb", "offset": [-0.028, 0.062, -0.035], "rotation": [0, 90, 90] },
         "sounds": { "pickup": "seed_pickup", "place": "seed_place" },
-        "seed": { "crop": "carrot", "grow_time": 240, "yield": 2, "seeds": 1, "value": 1, "plant": "meshes/crops/carrot_plant.glb" },
+        "seed": { "crop": "carrot", "grow_time": 1260, "yield": 2, "seeds": 1, "seeds_max": 3, "value": 2, "plant": "meshes/crops/carrot_plant.glb" },
         "script": "scripts/seed.lua"
       },
       "model": [{ "kind": "mesh", "mesh": "meshes/items/carrot_seed.glb" }]
@@ -106,13 +113,17 @@
         "name": "Tomato Seed",
         "description": "Plant in watered soil. Grows into tomatoes.",
         "category": "consumable",
-        "mass": 0.05,
-        "stack_size": 50,
+        "mass": 4.5,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.3,
+        "flammable": true,
+        "stack_size": 20,
         "icon": "textures/items/tomato_seed_icon.png",
         "visual": { "color": "#ffffff" },
         "held": { "mesh": "meshes/items/tomato_seed.glb", "offset": [-0.028, 0.062, -0.035], "rotation": [0, 90, 90] },
         "sounds": { "pickup": "seed_pickup", "place": "seed_place" },
-        "seed": { "crop": "tomato", "grow_time": 360, "yield": 2, "seeds": 1, "seeds_max": 2, "value": 1.5, "plant": "meshes/crops/tomato_plant.glb" },
+        "seed": { "crop": "tomato", "grow_time": 1260, "yield": 2, "seeds": 1, "seeds_max": 3, "value": 1, "plant": "meshes/crops/tomato_plant.glb" },
         "script": "scripts/seed.lua"
       },
       "model": [{ "kind": "mesh", "mesh": "meshes/items/tomato_seed.glb" }]
@@ -124,13 +135,17 @@
         "name": "Potato Seed",
         "description": "Plant in watered soil. Grows into potatoes, which are also blaster ammo.",
         "category": "consumable",
-        "mass": 0.05,
-        "stack_size": 50,
+        "mass": 4.5,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.3,
+        "flammable": true,
+        "stack_size": 20,
         "icon": "textures/items/potato_seed_icon.png",
         "visual": { "color": "#ffffff" },
         "held": { "mesh": "meshes/items/potato_seed.glb", "offset": [-0.028, 0.062, -0.035], "rotation": [0, 90, 90] },
         "sounds": { "pickup": "seed_pickup", "place": "seed_place" },
-        "seed": { "crop": "potato", "grow_time": 300, "yield": 3, "seeds": 1, "value": 1, "plant": "meshes/crops/potato_plant.glb" },
+        "seed": { "crop": "potato", "grow_time": 1260, "yield": 10, "seeds": 1, "seeds_max": 3, "value": 1, "plant": "meshes/crops/potato_plant.glb" },
         "script": "scripts/seed.lua"
       },
       "model": [{ "kind": "mesh", "mesh": "meshes/items/potato_seed.glb" }]
@@ -142,13 +157,17 @@
         "name": "Cotton Seed",
         "description": "Plant in watered soil. Grows into a cotton bush; pick its bolls for Cotton.",
         "category": "consumable",
-        "mass": 0.05,
-        "stack_size": 50,
+        "mass": 4.5,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.3,
+        "flammable": true,
+        "stack_size": 20,
         "icon": "textures/items/cotton_seed_icon.png",
         "visual": { "color": "#ffffff" },
         "held": { "mesh": "meshes/items/cotton_seed.glb", "offset": [-0.028, 0.062, -0.035], "rotation": [0, 90, 90] },
         "sounds": { "pickup": "seed_pickup", "place": "seed_place" },
-        "seed": { "crop": "cotton", "grow_time": 300, "yield": 2, "seeds": 1, "seeds_max": 2, "value": 1, "plant": "meshes/crops/cotton_plant.glb" },
+        "seed": { "crop": "cotton", "grow_time": 1260, "yield": 2, "seeds": 1, "seeds_max": 1, "value": 0, "plant": "meshes/crops/cotton_plant.glb" },
         "script": "scripts/seed.lua"
       },
       "model": [{ "kind": "mesh", "mesh": "meshes/items/cotton_seed.glb" }]

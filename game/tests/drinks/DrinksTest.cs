@@ -229,7 +229,7 @@ public partial class DrinksTest : StagedTest
         {
             if (frame == 0)
             {
-                _host.Main.Scripts.Runtime.Time += 60;
+                _host.Main.Scripts.Runtime.Time += 90; // a 1260 s tomato boosted 15 times is ripe after 84 s
                 return false;
             }
             if (frame == 30)

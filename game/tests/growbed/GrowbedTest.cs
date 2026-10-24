@@ -17,7 +17,8 @@ namespace Mechanica.Game.Tests;
 /// <summary>
 /// Soil on a Creation (parts map E9, batch 17b): the Growbed, host plus a client in Survival on flat ground. The host
 /// builds a cart a few metres short of a chunk border: a deck of blocks with a Growbed and a Battery Container holding
-/// batteries. The client plants a carrot seed in the Growbed and throws water on it; the crop grows on the host's world
+/// batteries. The client plants a carrot seed in the Growbed and throws one bucket of water on it, all the 1260 s crop
+/// needs (crops map K1); the crop grows on the host's world
 /// clock while the batteries power it (one is used, and the bed shows "on"), and the client sees each stage. The host
 /// pushes the cart across the chunk border: the cart and the crop stay whole and the crop stands on the bed on both
 /// machines all the way (the hard rule: a Creation never breaks, unloads or loses parts at a border). The client
@@ -108,28 +109,28 @@ public partial class GrowbedTest : StagedTest
                 return true;
             return ClientSoil() is { Seed: Seed } && _client.Main.Survival.CropNodes.ContainsKey((_cart, _bed));
         });
-        Stage("the client throws both buckets of water on it: it looks wet on the client", frame =>
+        Stage("the client throws a bucket of water on it: it looks wet on the client", frame =>
         {
-            if (frame is 0 or 50)
+            if (frame == 0)
             {
                 var aim = (BedCentre(_client) + new Vector3(0, 0.2f, 0) - Eye(_client)).Normalized();
                 Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Bucket), new Vec3(aim.X, aim.Y, aim.Z)));
             }
-            if (_results.Count < 2 || ClientSoil() is not { Water: >= 250 } soil)
+            if (_results.Count < 1 || ClientSoil() is not { Water: >= 1200 } soil)
                 return frame < 600 ? false : Check(false, $"the bed is watered ({string.Join("; ", _results)}; {ClientSoil()})");
-            Check(_results.All(r => r.Ok), $"both throws land ({string.Join("; ", _results)})");
+            Check(_results.All(r => r.Ok), $"the throw lands ({string.Join("; ", _results)})");
             return Check(soil.Wetness == SoilWetness.Wet, $"fully wet ({soil.Wetness})");
         });
         Stage("the crop grows on batteries and the client sees its stages; the bed shows it is powered", frame =>
         {
-            // Two minutes of the host's clock: half of a carrot's growing, one battery of power.
+            // 630 s of the host's clock: half of a carrot's growing, two batteries of power (360 s each).
             if (frame == 0)
-                _host.Main.Scripts.Runtime.Time += 120;
+                _host.Main.Scripts.Runtime.Time += 630;
             if (ClientSoil() is not { Stage: >= 2 } soil)
                 return false;
             Check(!soil.Ripe, "not ripe yet");
             var batteries = _host.Main.Creations.Find(_cart)!.InventoryOf(_battery)!.Count(Cell);
-            Check(batteries == 2, $"one battery of the three is used ({batteries} left)");
+            Check(batteries == 4, $"two batteries of the six are used ({batteries} left)");
             if (Clip(_client) != "on")
                 return false;
             Check(Clip(_host) == "on", $"the host's bed shows on too ({Clip(_host)})");
@@ -171,7 +172,7 @@ public partial class GrowbedTest : StagedTest
             {
                 var near = BedOnHost + new Vector3(0, 0, 2.6f);
                 _host.Main.PlayerSync.HostTeleport(Peer, new Vector3(near.X, Feet(_client).Y, near.Z));
-                _host.Main.Scripts.Runtime.Time += 300;
+                _host.Main.Scripts.Runtime.Time += 700;
             }
             if (frame == 60)
                 Request(LogicActions.ActivatePart, new LogicPartArgs(_cart, _bed));
@@ -194,9 +195,10 @@ public partial class GrowbedTest : StagedTest
             if (frame == 30)
             {
                 Check(_results.Count == 1 && _results[0].Ok, $"the seed is planted ({string.Join("; ", _results)})");
-                // Its water ran low growing the first crop: a Water Cannon's worth from the host's side.
-                _host.Main.Survival.Actions!.WaterSoil(new ActionCaller(0, ActionSource.Script), _cart, _bed, 150);
-                _host.Main.Scripts.Runtime.Time += 70;
+                // The first crop drank its bucket: a bucket's worth (a Water Cannon's ten jets) from the host's side, and a
+                // quarter of the grow time for the first stage.
+                _host.Main.Survival.Actions!.WaterSoil(new ActionCaller(0, ActionSource.Script), _cart, _bed, 1260);
+                _host.Main.Scripts.Runtime.Time += 400;
             }
             return frame > 30 && ClientSoil() is { Seed: Seed, Stage: >= 1 };
         });
@@ -234,7 +236,7 @@ public partial class GrowbedTest : StagedTest
 
     private const int PartCount = 10 * 6 + 2;
 
-    // A 10 x 6 deck of blocks with the Growbed (5 x 2 x 5) on one end and a Battery Container (4 x 3 x 3) of three
+    // A 10 x 6 deck of blocks with the Growbed (5 x 2 x 5) on one end and a Battery Container (4 x 3 x 3) of six
     // batteries on the other, beside the client.
     private void BuildCart()
     {
@@ -250,7 +252,7 @@ public partial class GrowbedTest : StagedTest
         if (!creation.TryPlacePart(Battery, new GridCell(6, 1, 0), default, out var battery, out why))
             Check(false, $"the Battery Container fits ({why})");
         (_cart, _bed, _battery) = (creation.Id, bed?.Id ?? 0, battery?.Id ?? 0);
-        creation.InventoryOf(_battery)!.Add(Cell, 3);
+        creation.InventoryOf(_battery)!.Add(Cell, 6);
         var feet = _host.Main.PlayerSync.Players[Peer].GlobalPosition;
         creation.SetAllBodyPoses(new Pose((feet + new Vector3(-0.6f, 0.15f, -3.2f)).ToNumerics(), System.Numerics.Quaternion.Identity));
         build.Added(creation);

@@ -246,6 +246,29 @@ public sealed class SoilScriptTests : IDisposable
     }
 
     [Fact]
+    public void AThirstyCropDrinksItsThirstInWaterEverySecondItGrows()
+    {
+        // Crops map K1: seed.thirst is seconds of water a second of growth uses (default 1).
+        const string thirsty = "test:thirsty_seed";
+        F.Catalog.Add(thirsty, new PartDefinition { Id = "thirsty_seed", Name = "Thirsty Seed", Category = PartCategory.Consumable, StackSize = 50,
+            Seed = new SeedDefinition { Crop = Crop, GrowTime = 40, Yield = 1, Thirst = 2 }, Script = "scripts/seed.lua" });
+        var soil = F.Add(Soil, new Vector3(0, 0, 1));
+        _rig.Runtime.Update(1);
+        F.Pockets(Me).SetSlot(0, new ItemStack(thirsty, 1));
+        F.Survival.PlantSeed(Me, soil, 1, thirsty);
+
+        F.Survival.WaterSoil(Me, soil, 1, 20);
+        _rig.Runtime.Update(100); // 20 s of water lasts 10 s: 20 of 40 s of growth at speed 2
+        Assert.Equal((20f, 0f, 2), (State(soil).Grown, View(soil).Water, View(soil).Stage));
+
+        F.Survival.WaterSoil(Me, soil, 1, 60);
+        _rig.Runtime.Update(100); // 10 more s ripens it on 20 s of water
+        Assert.True(View(soil).Ripe);
+        Assert.Equal(40f, View(soil).Water);
+        Assert.DoesNotContain(_rig.Messages, m => m.Kind != ScriptMessageKind.Print);
+    }
+
+    [Fact]
     public void AHarvestNeedsRoom()
     {
         var soil = F.Add(Soil, new Vector3(0, 0, 1));
