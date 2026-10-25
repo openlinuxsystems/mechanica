@@ -178,7 +178,7 @@
       "template": "item",
       "set": {
         "name": "Circuit Board",
-        "description": "A salvaged board of chips, a capacitor and a connector, taken from wrecks and bots. Fabricators use it to craft logic parts, sensors, seats, engines and lights.",
+        "description": "A board of chips, a capacitor and a connector, salvaged from wrecks and bots or made in a Refiner from a Metal Rod and Glass Blocks. Fabricators use it to craft logic parts, sensors, seats, engines and lights.",
         "category": "resource",
         "loose": true,
         "mass": 6,
@@ -193,7 +193,17 @@
         "visual": { "color": "#ffffff", "roughness": 0.6, "metallic": 0 },
         "sounds": { "pickup": "pickup_component", "drop": "drop_component" }
       },
-      "model": [{ "kind": "mesh", "mesh": "meshes/items/circuit_board.glb" }]
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/circuit_board.glb" }],
+      "recipes": [
+        {
+          "id": "circuit_board",
+          "stations": ["refiner"],
+          "inputs": [{ "item": "metal_rod", "count": 1 }, { "item": "glass_block", "count": 2 }],
+          "outputs": [{ "item": "circuit_board", "count": 2 }],
+          "time": 10,
+          "order": 2650
+        }
+      ]
     },
     {
       "file": "parts/water_bucket.json",

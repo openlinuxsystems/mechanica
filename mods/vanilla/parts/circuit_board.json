@@ -1,7 +1,7 @@
 {
   "id": "circuit_board",
   "name": "Circuit Board",
-  "description": "A salvaged board of chips, a capacitor and a connector, taken from wrecks and bots. Fabricators use it to craft logic parts, sensors, seats, engines and lights.",
+  "description": "A board of chips, a capacitor and a connector, salvaged from wrecks and bots or made in a Refiner from a Metal Rod and Glass Blocks. Fabricators use it to craft logic parts, sensors, seats, engines and lights.",
   "category": "resource",
   "mass": 6,
   "durability": 2,
