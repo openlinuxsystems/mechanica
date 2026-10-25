@@ -5,11 +5,11 @@
   ],
   "inputs": [
     {
-      "item": "scrap_metal_block",
-      "count": 16
+      "item": "metal_block",
+      "count": 6
     },
     {
-      "item": "component_kit",
+      "item": "glass_block",
       "count": 2
     },
     {
@@ -23,6 +23,6 @@
       "count": 1
     }
   ],
-  "time": 8,
+  "time": 10,
   "order": 1680
 }

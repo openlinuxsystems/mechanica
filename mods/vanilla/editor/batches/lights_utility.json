@@ -83,7 +83,7 @@
         {
           "id": "spotlight",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 8 }, { "item": "component_kit", "count": 1 }, { "item": "circuit_board", "count": 1 }],
+          "inputs": [{ "item": "metal_block", "count": 2 }, { "item": "glass_block", "count": 1 }, { "item": "circuit_board", "count": 1 }],
           "outputs": [{ "item": "spotlight", "count": 1 }],
           "time": 5,
           "order": 1640
@@ -126,9 +126,9 @@
         {
           "id": "warehouse_spotlight",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 16 }, { "item": "component_kit", "count": 2 }, { "item": "circuit_board", "count": 1 }],
+          "inputs": [{ "item": "metal_block", "count": 6 }, { "item": "glass_block", "count": 2 }, { "item": "circuit_board", "count": 1 }],
           "outputs": [{ "item": "warehouse_spotlight", "count": 1 }],
-          "time": 8,
+          "time": 10,
           "order": 1680
         }
       ]
@@ -170,7 +170,7 @@
         {
           "id": "construction_light",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 12 }, { "item": "component_kit", "count": 1 }],
+          "inputs": [{ "item": "metal_block", "count": 4 }, { "item": "glass_block", "count": 1 }],
           "outputs": [{ "item": "construction_light", "count": 1 }],
           "time": 5,
           "order": 1650
@@ -206,9 +206,9 @@
         {
           "id": "interior_light",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 4 }, { "item": "component_kit", "count": 1 }],
+          "inputs": [{ "item": "metal_block", "count": 2 }, { "item": "glass_block", "count": 1 }],
           "outputs": [{ "item": "interior_light", "count": 1 }],
-          "time": 3,
+          "time": 5,
           "order": 1620
         }
       ]
@@ -242,9 +242,9 @@
         {
           "id": "warning_light",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 4 }, { "item": "component_kit", "count": 1 }],
+          "inputs": [{ "item": "metal_block", "count": 2 }, { "item": "glass_block", "count": 1 }],
           "outputs": [{ "item": "warning_light", "count": 1 }],
-          "time": 3,
+          "time": 5,
           "order": 1660
         }
       ]
@@ -680,8 +680,10 @@
         "description": "A supply locker found at Workshops. Take what it holds; it can be refilled like a chest.",
         "icon": "textures/items/dispenser_icon.png",
         "category": "container",
-        "mass": 40,
-        "durability": 10,
+        "mass": 7.5,
+        "durability": 6,
+        "friction": 0.4,
+        "buoyancy": 0.6,
         "stack_size": 1,
         "size": [3, 6, 2],
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.75, 0], "normal": [0, -1, 0] }],

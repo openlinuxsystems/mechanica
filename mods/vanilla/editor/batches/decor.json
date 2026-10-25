@@ -1,7 +1,8 @@
 {
   // Decorative props (chunk 23): signs, pipes and beams, furniture, nature, vehicle cosmetics and misc. They do
   // nothing but sit there. Nature props have no recipe: they are placed in Creative and come with the world.
-  // The numbers are placeholders until balance tuning. Re-run with tools/author-vanilla.sh.
+  // Stats follow the bars scale (1.5 kg per weight bar, durability = bars, friction and buoyancy = bars / 10; parts
+  // audit A2). Re-run with tools/author-vanilla.sh.
   "format_version": 1,
   "parts": [
     {
@@ -11,7 +12,9 @@
         "name": "Warehouse Key Sign",
         "description": "Marks a door that needs a warehouse key.",
         "mass": 3,
-        "durability": 2,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.2,
         "flammable": false,
         "sound_material": "metal",
         "stack_size": 20,
@@ -41,7 +44,9 @@
         "name": "Workshop Sign",
         "description": "The sign that marks a Workshop.",
         "mass": 3,
-        "durability": 2,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.2,
         "flammable": false,
         "sound_material": "metal",
         "stack_size": 20,
@@ -71,7 +76,9 @@
         "name": "Speed Limit Sign",
         "description": "A white round sign with a red rim.",
         "mass": 3,
-        "durability": 2,
+        "durability": 3,
+        "friction": 0.4,
+        "buoyancy": 0.2,
         "flammable": false,
         "sound_material": "metal",
         "stack_size": 20,
@@ -112,8 +119,10 @@
       "set": {
         "name": "Wooden Table",
         "description": "A sturdy table of planks.",
-        "mass": 18,
-        "durability": 4,
+        "mass": 6,
+        "durability": 3,
+        "friction": 0.5,
+        "buoyancy": 0.6,
         "flammable": true,
         "sound_material": "wood",
         "stack_size": 20,
@@ -144,8 +153,10 @@
       "set": {
         "name": "Chair",
         "description": "A plain wooden chair. It is only for show; seats are for sitting.",
-        "mass": 4,
-        "durability": 2,
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.5,
+        "buoyancy": 0.6,
         "flammable": true,
         "sound_material": "wood",
         "stack_size": 20,
@@ -177,8 +188,10 @@
       "set": {
         "name": "Stool",
         "description": "A round three-legged stool.",
-        "mass": 2,
-        "durability": 2,
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.5,
+        "buoyancy": 0.6,
         "flammable": true,
         "sound_material": "wood",
         "stack_size": 20,
@@ -208,14 +221,15 @@
       "set": {
         "name": "Pallet",
         "description": "A wooden shipping pallet.",
-        "mass": 15,
+        "mass": 6,
         "durability": 3,
+        "friction": 0.5,
         "flammable": true,
         "sound_material": "wood",
         "stack_size": 20,
         "size": [5, 1, 5],
         "visual": { "color": "#b08850", "roughness": 0.7, "metallic": 0.0 },
-        "buoyancy": 0.8
+        "buoyancy": 0.6
       },
       "model": [
         { "kind": "box", "size": [1.25, 0.03, 0.1], "position": [0, 0.095, -0.55] },
@@ -426,8 +440,10 @@
       "set": {
         "name": "Front Bumper",
         "description": "A steel bar for the front of a vehicle.",
-        "mass": 12,
-        "durability": 8,
+        "mass": 7.5,
+        "durability": 5,
+        "friction": 0.4,
+        "buoyancy": 0.2,
         "flammable": false,
         "sound_material": "metal",
         "stack_size": 20,
@@ -456,8 +472,10 @@
       "set": {
         "name": "Rear Bumper",
         "description": "A steel bar for the back of a vehicle.",
-        "mass": 10,
-        "durability": 8,
+        "mass": 7.5,
+        "durability": 5,
+        "friction": 0.4,
+        "buoyancy": 0.2,
         "flammable": false,
         "sound_material": "metal",
         "stack_size": 20,
@@ -485,8 +503,10 @@
       "set": {
         "name": "Exhaust Pipe",
         "description": "A bent chrome tailpipe. Purely for looks.",
-        "mass": 2,
+        "mass": 3,
         "durability": 3,
+        "friction": 0.3,
+        "buoyancy": 0.3,
         "flammable": false,
         "sound_material": "metal",
         "stack_size": 20,
@@ -520,8 +540,10 @@
       "set": {
         "name": "Roof Rack",
         "description": "A rail frame for the roof of a vehicle.",
-        "mass": 8,
+        "mass": 6,
         "durability": 4,
+        "friction": 0.4,
+        "buoyancy": 0.1,
         "flammable": false,
         "sound_material": "metal",
         "stack_size": 20,
@@ -553,9 +575,11 @@
       "set": {
         "name": "Mud Flap",
         "description": "A rubber flap to hang behind a wheel.",
-        "mass": 1,
+        "mass": 1.5,
         "durability": 2,
-        "flammable": false,
+        "friction": 0.7,
+        "buoyancy": 0.3,
+        "flammable": true,
         "sound_material": "plastic",
         "stack_size": 20,
         "size": [2, 2, 1],
@@ -579,8 +603,10 @@
       "set": {
         "name": "License Plate",
         "description": "A plate for the back of a vehicle.",
-        "mass": 0.4,
-        "durability": 1,
+        "mass": 1.5,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.3,
         "flammable": false,
         "sound_material": "metal",
         "stack_size": 20,
@@ -669,8 +695,10 @@
       "set": {
         "name": "Stairs Block",
         "description": "A flight of four steps in one block of 1 m by 1 m.",
-        "mass": 40,
-        "durability": 6,
+        "mass": 6,
+        "durability": 5,
+        "friction": 0.5,
+        "buoyancy": 0.2,
         "flammable": false,
         "sound_material": "concrete",
         "stack_size": 20,
@@ -691,7 +719,7 @@
           "inputs": [{ "item": "scrap_metal_block", "count": 8 }, { "item": "scrap_wood_block", "count": 8 }],
           "outputs": [{ "item": "stairs_block", "count": 1 }],
           "time": 2,
-          "order": 220
+          "order": 211
         }
       ]
     },
@@ -701,8 +729,10 @@
       "set": {
         "name": "Door Frame",
         "description": "A frame for a doorway, 1 m wide and 2 m tall.",
-        "mass": 20,
-        "durability": 6,
+        "mass": 6,
+        "durability": 3,
+        "friction": 0.5,
+        "buoyancy": 0.6,
         "flammable": true,
         "sound_material": "wood",
         "stack_size": 20,
@@ -730,8 +760,10 @@
       "set": {
         "name": "Window Frame",
         "description": "A frame for a window opening, 1 m square.",
-        "mass": 10,
-        "durability": 4,
+        "mass": 4.5,
+        "durability": 3,
+        "friction": 0.5,
+        "buoyancy": 0.6,
         "flammable": true,
         "sound_material": "wood",
         "stack_size": 20,

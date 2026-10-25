@@ -104,12 +104,7 @@
           "stations": [
             "fabricator"
           ],
-          "inputs": [
-            {
-              "item": "scrap_metal_block",
-              "count": 8
-            }
-          ],
+          "inputs": [{ "item": "metal_block", "count": 1 }],
           "outputs": [
             {
               "item": "metal_railing",

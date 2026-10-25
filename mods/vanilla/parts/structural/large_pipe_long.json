@@ -3,7 +3,7 @@
   "name": "Large Pipe (Long)",
   "description": "Bone-painted pipe, 2 blocks across and 4 long, with a mustard band.",
   "category": "decor",
-  "mass": 12,
+  "mass": 6,
   "durability": 5,
   "friction": 0.3,
   "buoyancy": 0.3,

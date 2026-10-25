@@ -23,14 +23,15 @@ public class StructuralPartsTests
 
     private static readonly Row[] All =
     [
-        // Batch 8a: beams, frames and supports. Our I-beams, column and pillar keep their sizes.
+        // Batch 8a: beams, frames and supports. Our I-beams, column and pillar keep their sizes; every length of a family
+        // weighs the same, since weight bars are a density (parts audit A2).
         new("ibeam_stub", new GridSize(1, 1, 1), 6, 4, 0.3, 0.1, false, 20, 2, 301, ["metal_block:1"]),
         new("ibeam_short", new GridSize(1, 1, 4), 6, 4, 0.3, 0.1, false, 20, 2, 302, ["metal_block:3"]),
-        new("ibeam_long", new GridSize(1, 1, 8), 12, 4, 0.3, 0.1, false, 20, 2, 303, ["metal_block:6"]),
+        new("ibeam_long", new GridSize(1, 1, 8), 6, 4, 0.3, 0.1, false, 20, 2, 303, ["metal_block:6"]),
         new("ibeam_corner", new GridSize(1, 1, 1), 6, 4, 0.3, 0.1, false, 20, 2, 304, ["metal_block:1"]),
         new("ibeam_end", new GridSize(1, 1, 1), 6, 4, 0.3, 0.1, false, 20, 2, 305, ["metal_block:1"]),
         new("ibeam_holder", new GridSize(1, 2, 1), 6, 4, 0.3, 0.1, false, 20, 2, 306, ["metal_block:1"]),
-        new("metal_column", new GridSize(1, 8, 1), 9.6, 5, 0.4, 0.1, false, 20, 5, 316, ["metal_block:3"]),
+        new("metal_column", new GridSize(1, 8, 1), 6, 5, 0.4, 0.1, false, 20, 5, 316, ["metal_block:3"]),
         new("support_bracket", new GridSize(1, 2, 2), 4.5, 5, 0.4, 0.2, false, 20, 5, 325, ["metal_block:1"]),
         new("support_pillar", new GridSize(2, 8, 2), 10.5, 6, 0.7, 0.1, false, 20, 5, 335, ["metal_block:4"]),
         new("support_truss_large", new GridSize(8, 8, 1), 6, 6, 0.4, 0.1, false, 20, 5, 342, ["metal_block:8"]),
@@ -47,7 +48,7 @@ public class StructuralPartsTests
         new("tower_pole_top", new GridSize(2, 4, 2), 3, 4, 0.3, 0.3, false, 20, 5, 351, ["metal_block:2"]),
         // Batch 9a: small pipes (Scrap Mechanic's Small Pipe family and the Pipe fittings) and the valve.
         new("small_pipe_short", new GridSize(1, 1, 2), 3, 4, 0.3, 0.3, false, 20, 2, 401, ["metal_block:1"]),
-        new("small_pipe_long", new GridSize(1, 1, 4), 6, 4, 0.3, 0.3, false, 20, 2, 402, ["metal_block:2"]),
+        new("small_pipe_long", new GridSize(1, 1, 4), 3, 4, 0.3, 0.3, false, 20, 2, 402, ["metal_block:2"]),
         new("small_pipe_bend", new GridSize(1, 1, 1), 3, 4, 0.3, 0.3, false, 20, 2, 403, ["metal_block:1"]),
         new("small_pipe_corner", new GridSize(1, 1, 1), 3, 4, 0.3, 0.3, false, 20, 2, 404, ["metal_block:1"]),
         new("small_pipe_tee", new GridSize(1, 1, 1), 3, 4, 0.3, 0.3, false, 20, 2, 405, ["metal_block:1"]),
@@ -58,11 +59,11 @@ public class StructuralPartsTests
         new("valve", new GridSize(1, 1, 1), 7.5, 4, 0.4, 0.1, false, 20, 2, 415, ["metal_block:1"]),
         // Batch 9b: our 2 x 2 Large Pipes (Scrap Mechanic's Pipe family) and the 3 x 3 Main Pipes (its Large Pipes).
         new("large_pipe_short", new GridSize(2, 2, 2), 6, 5, 0.3, 0.3, false, 20, 2, 420, ["metal_block:1"]),
-        new("large_pipe_long", new GridSize(2, 2, 4), 12, 5, 0.3, 0.3, false, 20, 2, 421, ["metal_block:3"]),
+        new("large_pipe_long", new GridSize(2, 2, 4), 6, 5, 0.3, 0.3, false, 20, 2, 421, ["metal_block:3"]),
         new("large_pipe_corner", new GridSize(2, 2, 2), 6, 5, 0.3, 0.3, false, 20, 2, 422, ["metal_block:1"]),
         new("large_pipe_tee", new GridSize(2, 2, 2), 6, 5, 0.3, 0.3, false, 20, 2, 423, ["metal_block:1"]),
         new("main_pipe_short", new GridSize(3, 3, 3), 6, 4, 0.5, 0.3, false, 20, 2, 440, ["metal_block:1"]),
-        new("main_pipe_long", new GridSize(3, 3, 6), 12, 4, 0.5, 0.3, false, 20, 2, 441, ["metal_block:2"]),
+        new("main_pipe_long", new GridSize(3, 3, 6), 6, 4, 0.5, 0.3, false, 20, 2, 441, ["metal_block:2"]),
         new("main_pipe_corner", new GridSize(3, 3, 3), 6, 4, 0.5, 0.3, false, 20, 2, 442, ["metal_block:1"]),
         new("main_pipe_tee", new GridSize(3, 3, 3), 6, 4, 0.5, 0.3, false, 20, 2, 443, ["metal_block:1"]),
         new("main_pipe_extension", new GridSize(3, 3, 3), 7.5, 5, 0.5, 0.2, false, 20, 5, 444, ["metal_block:6"]),

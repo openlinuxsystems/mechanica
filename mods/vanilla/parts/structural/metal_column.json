@@ -3,7 +3,7 @@
   "name": "Metal Column",
   "description": "A square steel box column, 2 m (8 blocks) tall, with bolted end plates.",
   "category": "decor",
-  "mass": 9.6,
+  "mass": 6,
   "durability": 5,
   "friction": 0.4,
   "buoyancy": 0.1,

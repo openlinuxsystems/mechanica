@@ -243,7 +243,7 @@ public class RecipeDataTests : IDisposable
         // Scrap Mechanic's Mini Craftbot list (the scrap tier) plus our gasoline, wedges, Connect Tool and Shack Light. Parts
         // SM makes at both stations have a scrap recipe here (`_scrap`) and a Metal Block one at the Fabricator.
         Assert.Equal(["beacon_scrap", "bearing_scrap", "connect_tool", "gasoline", "scrap_drivers_seat", "scrap_gas_engine",
-            "scrap_metal_wedge", "scrap_seat", "scrap_wheel", "scrap_wood_wedge", "shack_light", "switch_scrap"], made);
+            "scrap_metal_wedge", "scrap_seat", "scrap_stone_wedge", "scrap_wheel", "scrap_wood_wedge", "shack_light", "switch_scrap"], made);
         foreach (var scrap in new[] { "scrap_seat", "scrap_drivers_seat", "scrap_gas_engine", "scrap_wheel" })
             Assert.False(book.Find(scrap)!.RunsAt("fabricator"), $"{scrap} is made only at the Portable Fabricator");
         foreach (var both in new[] { "bearing", "switch", "beacon" })

@@ -521,11 +521,11 @@ public class VanillaCatalogTests
 
     [Theory]
     // Parts map batch 5: the Headlight takes the wiki's Craftbot recipe. SM cannot craft the warehouse and shack lights,
-    // so the Spotlight, Warehouse Spotlight and Interior Light keep ours and the new ones get a cheap recipe.
+    // so they get a cheap Metal Block and Glass Block recipe (the chunk-era ones aligned with them in parts audit A3).
     [InlineData("headlight", 5, "metal_block:1", "glass_block:1", "circuit_board:1", "glue:1")]
-    [InlineData("spotlight", 5, "scrap_metal_block:8", "component_kit:1", "circuit_board:1")]
-    [InlineData("warehouse_spotlight", 8, "scrap_metal_block:16", "component_kit:2", "circuit_board:1")]
-    [InlineData("interior_light", 3, "scrap_metal_block:4", "component_kit:1")]
+    [InlineData("spotlight", 5, "metal_block:2", "glass_block:1", "circuit_board:1")]
+    [InlineData("warehouse_spotlight", 10, "metal_block:6", "glass_block:2", "circuit_board:1")]
+    [InlineData("interior_light", 5, "metal_block:2", "glass_block:1")]
     [InlineData("frame_beam_light", 5, "metal_block:2", "glass_block:1")]
     [InlineData("neon_sign", 5, "metal_block:2", "glass_block:2", "paint_ammo:1")]
     [InlineData("packing_lamp", 5, "metal_block:2", "glass_block:1")]
@@ -829,7 +829,7 @@ public class VanillaCatalogTests
     [InlineData("fabricator", "vanilla:portable_fabricator", "vanilla:refiner", "vanilla:respawn_bed", "vanilla:fancy_bed", "vanilla:freezer", "vanilla:field_kitchen")]
     [InlineData("field_kitchen", "vanilla:garden_burger", "vanilla:colony_burger")]
     [InlineData("fabricator", "vanilla:bathtub", "vanilla:anvil", "vanilla:cash_register")]
-    [InlineData("portable_fabricator", "vanilla:scrap_wood_wedge", "vanilla:scrap_metal_wedge", "vanilla:scrap_seat",
+    [InlineData("portable_fabricator", "vanilla:scrap_wood_wedge", "vanilla:scrap_metal_wedge", "vanilla:scrap_stone_wedge", "vanilla:scrap_seat",
         "vanilla:scrap_drivers_seat", "vanilla:scrap_wheel", "vanilla:scrap_gas_engine", "vanilla:gasoline", "vanilla:bearing_scrap",
         "vanilla:switch_scrap", "vanilla:shack_light", "vanilla:beacon_scrap", "vanilla:connect_tool")]
     public void RelatedRecipesSitTogetherScrapTierFirst(string station, params string[] ids)

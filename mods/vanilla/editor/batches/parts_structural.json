@@ -1,7 +1,8 @@
 {
   // Parts map batches 8 to 10 (beams, frames and supports; pipes and valves; ducts, conduits and cables):
   // Colony Works decor with Scrap Mechanic's stats (1.5 kg per weight bar) and recipes, the uncraftable ones given
-  // cheap Fabricator recipes. Models: tools/structural/build_structural.py. Re-run with tools/author-vanilla.sh.
+  // cheap Fabricator recipes. Weight bars are a density, so every length of a family weighs the same (parts audit
+  // A2). Models: tools/structural/build_structural.py. Re-run with tools/author-vanilla.sh.
   "format_version": 1,
   "parts": [
     {
@@ -118,7 +119,7 @@
       "set": {
         "name": "I-Beam (Long)",
         "description": "A steel I-beam, 2 m (8 blocks) long, stiffened in the middle.",
-        "mass": 12,
+        "mass": 6,
         "durability": 4,
         "friction": 0.3,
         "buoyancy": 0.1,
@@ -442,7 +443,7 @@
       "set": {
         "name": "Metal Column",
         "description": "A square steel box column, 2 m (8 blocks) tall, with bolted end plates.",
-        "mass": 9.6,
+        "mass": 6,
         "durability": 5,
         "friction": 0.4,
         "buoyancy": 0.1,
@@ -1144,7 +1145,7 @@
       "set": {
         "name": "Small Pipe (Long)",
         "description": "Galvanised pipe, 4 blocks long, with a mustard flow band.",
-        "mass": 6,
+        "mass": 3,
         "durability": 4,
         "friction": 0.3,
         "buoyancy": 0.3,
@@ -1684,7 +1685,7 @@
       "set": {
         "name": "Large Pipe (Long)",
         "description": "Bone-painted pipe, 2 blocks across and 4 long, with a mustard band.",
-        "mass": 12,
+        "mass": 6,
         "durability": 5,
         "friction": 0.3,
         "buoyancy": 0.3,
@@ -1900,7 +1901,7 @@
       "set": {
         "name": "Main Pipe (Long)",
         "description": "Main pipe, 3 blocks across and 6 long.",
-        "mass": 12,
+        "mass": 6,
         "durability": 4,
         "friction": 0.5,
         "buoyancy": 0.3,

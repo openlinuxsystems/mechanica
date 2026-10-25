@@ -8,6 +8,7 @@
   "friction": 0.4,
   "buoyancy": 0.6,
   "flammable": false,
+  "stack_size": 5,
   "sound_material": "metal",
   "size": [4, 3, 3],
   "mesh": "meshes/parts/water_container.glb",

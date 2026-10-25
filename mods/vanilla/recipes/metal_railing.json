@@ -5,8 +5,8 @@
   ],
   "inputs": [
     {
-      "item": "scrap_metal_block",
-      "count": 8
+      "item": "metal_block",
+      "count": 1
     }
   ],
   "outputs": [
