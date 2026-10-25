@@ -11,6 +11,7 @@
   "sound_material": "concrete",
   "size": [1, 1, 4],
   "mesh": "meshes/items/stone_rod.glb",
+  "icon": "textures/items/stone_rod_icon.png",
   "visual": {
     "color": "#ffffff",
     "roughness": 0.95,

@@ -12,6 +12,7 @@
   "sound_material": "wood",
   "size": [2, 2, 6],
   "mesh": "meshes/items/wood_log.glb",
+  "icon": "textures/items/wood_log_icon.png",
   "visual": {
     "color": "#ffffff",
     "roughness": 0.9,

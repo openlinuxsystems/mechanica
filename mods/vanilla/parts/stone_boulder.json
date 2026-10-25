@@ -12,6 +12,7 @@
   "sound_material": "concrete",
   "size": [4, 4, 4],
   "mesh": "meshes/items/stone_boulder.glb",
+  "icon": "textures/items/stone_boulder_icon.png",
   "visual": {
     "color": "#ffffff",
     "roughness": 0.95,

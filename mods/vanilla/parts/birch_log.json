@@ -12,6 +12,7 @@
   "sound_material": "wood",
   "size": [1, 1, 6],
   "mesh": "meshes/items/birch_log.glb",
+  "icon": "textures/items/birch_log_icon.png",
   "visual": {
     "color": "#ffffff",
     "roughness": 0.9,

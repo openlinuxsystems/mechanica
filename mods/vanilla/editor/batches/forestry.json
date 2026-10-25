@@ -1,8 +1,8 @@
 {
   // Forestry (Tree Harvesting spec): the log segments a felled tree falls into, the Wood Rods the logs break into
   // (Pine Rods from a Pine, which refine into Wood Blocks: Saw Blade spec), and the rods' refiner recipes. The trees
-  // themselves are world objects in world/worldgen.json. Models: tools/trees/build_trees.py. Re-run
-  // tools/author-vanilla.sh after editing.
+  // themselves are world objects in world/worldgen.json. Models: tools/trees/build_trees.py; icons:
+  // tools/harvest_icons/build_harvest_icons.py. Re-run tools/author-vanilla.sh after editing.
   "format_version": 1,
   "parts": [
     {
@@ -10,6 +10,7 @@
       "template": "item",
       "set": {
         "name": "Log",
+        "icon": "textures/items/wood_log_icon.png",
         "description": "A length of a felled Leafy or Spruce trunk. Break it with the Sledgehammer or a spinning Saw Blade for its Wood Rods.",
         "category": "resource",
         "loose": true,
@@ -34,6 +35,7 @@
       "base": "wood_log",
       "set": {
         "name": "Birch Log",
+        "icon": "textures/items/birch_log_icon.png",
         "description": "A length of a felled Birch, white with black marks. Break it with the Sledgehammer or a spinning Saw Blade for its Wood Rods.",
         "mass": 20,
         "durability": 5,
@@ -47,6 +49,7 @@
       "base": "wood_log",
       "set": {
         "name": "Pine Log",
+        "icon": "textures/items/pine_log_icon.png",
         "description": "A thick length of a felled Pine. Hand tools work on it once the tree is down: break it with the Sledgehammer or a spinning Saw Blade for its Pine Rods.",
         "mass": 110,
         "durability": 12,
@@ -61,6 +64,7 @@
       "template": "item",
       "set": {
         "name": "Wood Rod",
+        "icon": "textures/items/wood_rod_icon.png",
         "description": "A hewn bar of wood. Hold Use on it with the Refine Tool, or put it in a Refiner, for 20 Scrap Wood Blocks.",
         "category": "resource",
         "loose": true,
@@ -92,11 +96,12 @@
       "base": "wood_rod",
       "set": {
         "name": "Pine Rod",
+        "icon": "textures/items/pine_rod_icon.png",
         "description": "A hewn bar of Pine heartwood, from the big trees only a Saw Blade fells. Hold Use on it with the Refine Tool, or put it in a Refiner, for 20 Wood Blocks.",
-        "visual": { "color": "#d6a98a", "roughness": 0.85, "metallic": 0 },
+        "visual": { "color": "#ffffff", "roughness": 0.85, "metallic": 0 },
         "refine": [{ "item": "wood_block", "count": 20 }]
       },
-      "model": [{ "kind": "mesh", "mesh": "meshes/items/wood_rod.glb" }],
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/pine_rod.glb" }],
       "recipes": [
         {
           "id": "pine_rod",
