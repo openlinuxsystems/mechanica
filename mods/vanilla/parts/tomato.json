@@ -1,7 +1,7 @@
 {
   "id": "tomato",
   "name": "Tomato",
-  "description": "Juicy. Eat it to heal. The Fabricator makes Paint Ammo from tomatoes.",
+  "description": "Juicy. Eat it to heal.",
   "category": "consumable",
   "mass": 1.5,
   "durability": 1,

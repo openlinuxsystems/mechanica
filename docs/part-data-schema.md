@@ -374,7 +374,7 @@ in `properties`. The vanilla scripts read these properties:
 | `seed.yield` | integer ≥ 1 | Crop items a harvest gives. Default 1. |
 | `seed.seeds` | integer ≥ 0 | Seeds a harvest gives back (the least, with `seeds_max`). Default 0. |
 | `seed.seeds_max` | integer ≥ `seeds` | Most seeds a harvest gives back: each harvest rolls from `seeds` to `seeds_max` (vanilla carrot, tomato and potato: 1 to 3). Default: exactly `seeds`. |
-| `seed.value` | number ≥ 0 | How much a planted crop draws raids (chunk 21; vanilla: cotton 0, potato and tomato 1, carrot 2). Default 1. |
+| `seed.value` | number ≥ 0 | How much a planted crop draws raids (chunk 21; vanilla: cotton and pigment flower 0, potato and tomato 1, carrot 2). Default 1. |
 | `seed.thirst` | number > 0 | Seconds of water one second of growth uses (crops map K1). With 1 a full Water Bucket (1260 s) grows a 1260 s crop in a soil mound (`capacity` 1260); 2 drinks the soil dry twice as fast, so the crop needs two waterings. Read by `soil.lua`. Default 1. |
 | `seed.plant` | mesh path | The growing plant's model on the soil (see [Crop plant models](#crop-plant-models)). Default: a plain green shoot with the crop's colour on top once ripe. |
 | `soil.capacity` | number > 0 (s) | Most seconds of water the soil holds. Required. |

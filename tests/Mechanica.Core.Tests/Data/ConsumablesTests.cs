@@ -220,7 +220,8 @@ public class ConsumablesTests
         var batch = PartBatch.Read(File.ReadAllText(Path.Combine(Mod, "editor", "batches", "consumables.json")), "consumables.json", []);
 
         Assert.Equal(["parts/carrot.json", "parts/tomato.json", "parts/potato.json", "parts/carrot_seed.json", "parts/tomato_seed.json",
-                "parts/potato_seed.json", "parts/cotton_seed.json", "parts/chemical.json", "parts/gasoline.json",
+                "parts/potato_seed.json", "parts/cotton_seed.json", "parts/pigment_flower.json", "parts/pigment_flower_seed.json",
+                "parts/chemical.json", "parts/gasoline.json",
                 "parts/bloom_tea.json", "parts/grazer_shake.json", "parts/grazer_milk.json", "parts/grazer_steak.json", "parts/fertilizer.json",
                 "parts/garden_burger.json", "parts/colony_burger.json"],
             batch!.Parts!.Select(e => e.File));

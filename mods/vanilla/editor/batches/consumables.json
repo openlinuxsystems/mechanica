@@ -15,6 +15,10 @@
 // 1260 s (0.875 of a 1440 s day, as SM). Harvests keep our yields (2 carrots, tomatoes, cotton) except Potato, 10 as SM;
 // 1 to 3 seeds back (farmed Cotton exactly 1). Raid values: Cotton 0, Potato and Tomato 1, Carrot 2. seed.thirst
 // (soil.lua; default 1) is seconds of water one second of growth uses; one Water Bucket (1260 s) grows one crop.
+// Crops batch K2: the Pigment Flower (tools/food/build_pigment_flower.py), our own flower whose petals are the Paint Tool's
+// colours: not food, 6 kg, stack 20, the Paint Ammo input (survival.json). Its seed grows in 1260 s like the others and
+// gives 2 flowers (our yields) and exactly 1 seed back; raid value 0. Wild ones grow in meadows and forests (worldgen.json
+// wild_pigment_flower: Use to pick 1 flower, a seed 40 % of the time).
 // Re-run with tools/author-vanilla.sh.
 {
   "format_version": 1,
@@ -46,7 +50,7 @@
       "template": "item",
       "set": {
         "name": "Tomato",
-        "description": "Juicy. Eat it to heal. The Fabricator makes Paint Ammo from tomatoes.",
+        "description": "Juicy. Eat it to heal.",
         "category": "consumable",
         "mass": 1.5,
         "durability": 1,
@@ -171,6 +175,48 @@
         "script": "scripts/seed.lua"
       },
       "model": [{ "kind": "mesh", "mesh": "meshes/items/cotton_seed.glb" }]
+    },
+    {
+      "file": "parts/pigment_flower.json",
+      "template": "item",
+      "set": {
+        "name": "Pigment Flower",
+        "description": "A flower whose nine petals come in every colour of the Paint Tool. Not food: the Fabricator makes 10 Paint Ammo from one. It grows wild in meadows and forests (press Use on one to pick it); plant Pigment Flower Seed to farm it. Flammable.",
+        "category": "resource",
+        "mass": 6,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.3,
+        "flammable": true,
+        "stack_size": 20,
+        "icon": "textures/items/pigment_flower_icon.png",
+        "visual": { "color": "#ffffff" },
+        "held": { "mesh": "meshes/items/pigment_flower_held.glb", "offset": [-0.028, 0.062, -0.06], "rotation": [0, -90, -90] },
+        "sounds": { "pickup": "pickup_produce" }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/pigment_flower.glb" }]
+    },
+    {
+      "file": "parts/pigment_flower_seed.json",
+      "template": "item",
+      "set": {
+        "name": "Pigment Flower Seed",
+        "description": "Plant in watered soil. Grows into Pigment Flowers, which the Fabricator makes into Paint Ammo. Picking a wild Pigment Flower sometimes gives one.",
+        "category": "consumable",
+        "mass": 4.5,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.3,
+        "flammable": true,
+        "stack_size": 20,
+        "icon": "textures/items/pigment_flower_seed_icon.png",
+        "visual": { "color": "#ffffff" },
+        "held": { "mesh": "meshes/items/pigment_flower_seed.glb", "offset": [-0.028, 0.062, -0.035], "rotation": [0, 90, 90] },
+        "sounds": { "pickup": "seed_pickup", "place": "seed_place" },
+        "seed": { "crop": "pigment_flower", "grow_time": 1260, "yield": 2, "seeds": 1, "seeds_max": 1, "value": 0, "plant": "meshes/crops/pigment_flower_plant.glb" },
+        "script": "scripts/seed.lua"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/pigment_flower_seed.glb" }]
     },
     {
       "file": "parts/chemical.json",

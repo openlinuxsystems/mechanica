@@ -5,8 +5,8 @@
   ],
   "inputs": [
     {
-      "item": "tomato",
-      "count": 2
+      "item": "pigment_flower",
+      "count": 1
     }
   ],
   "outputs": [
@@ -15,6 +15,6 @@
       "count": 10
     }
   ],
-  "time": 3,
+  "time": 5,
   "order": 2440
 }

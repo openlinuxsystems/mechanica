@@ -1,7 +1,7 @@
 {
   "id": "paint_ammo",
   "name": "Paint Ammo",
-  "description": "A tin of paint for the Paint Tool. Each stroke of paint uses one.",
+  "description": "A tin of paint for the Paint Tool. Each stroke of paint uses one. The Fabricator makes 10 from a Pigment Flower.",
   "category": "resource",
   "tab": "consumable",
   "mass": 3,

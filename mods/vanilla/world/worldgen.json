@@ -126,6 +126,7 @@
         { "object": "lily_pad_cluster", "spacing": 10.0, "chance": 0.6, "water": "surface", "cluster": { "layer": "lilies", "scale": 30.0, "cover": 0.35 } },
         { "object": "reed_bed", "spacing": 9.0, "chance": 0.5, "water": "shallows", "cluster": { "layer": "reeds", "scale": 24.0, "cover": 0.45, "outside": 0.1 } },
         { "object": "cattail_clump", "spacing": 5.0, "chance": 0.45, "water": "shallows", "cluster": { "layer": "reeds", "scale": 24.0, "cover": 0.45, "outside": 0.15 } },
+        { "object": "wild_pigment_flower", "spacing": 18.0, "chance": 0.25 },
         { "object": "colony_cable_pole", "spacing": 40.0, "chance": 1.0, "roadside": { "road": "road", "gap": 3.0, "side": "left", "even": true } },
         { "object": "km_marker", "spacing": 80.0, "chance": 0.08, "roadside": { "road": "road", "gap": 2.0, "side": "right", "even": true } },
         { "object": "road_reflector_post", "spacing": 50.0, "chance": 0.5, "roadside": { "road": "road", "gap": 1.6, "side": "right", "even": true } },
@@ -210,6 +211,7 @@
         { "object": "lily_pad_cluster", "spacing": 10.0, "chance": 0.6, "water": "surface", "cluster": { "layer": "lilies", "scale": 30.0, "cover": 0.35 } },
         { "object": "reed_bed", "spacing": 9.0, "chance": 0.5, "water": "shallows", "cluster": { "layer": "reeds", "scale": 24.0, "cover": 0.45, "outside": 0.1 } },
         { "object": "cattail_clump", "spacing": 5.0, "chance": 0.45, "water": "shallows", "cluster": { "layer": "reeds", "scale": 24.0, "cover": 0.45, "outside": 0.15 } },
+        { "object": "wild_pigment_flower", "spacing": 18.0, "chance": 0.25 },
         { "object": "colony_cable_pole", "spacing": 40.0, "chance": 1.0, "roadside": { "road": "road", "gap": 3.0, "side": "left", "even": true } },
         { "object": "km_marker", "spacing": 80.0, "chance": 0.08, "roadside": { "road": "road", "gap": 2.0, "side": "right", "even": true } },
         { "object": "road_reflector_post", "spacing": 50.0, "chance": 0.5, "roadside": { "road": "road", "gap": 1.6, "side": "right", "even": true } },
@@ -913,6 +915,7 @@
         { "item": "potato", "count": 3, "count_max": 6, "weight": 2.0 },
         { "item": "carrot_seed", "count": 2, "count_max": 4, "weight": 1.0 },
         { "item": "tomato_seed", "count": 2, "count_max": 4, "weight": 1.0 },
+        { "item": "pigment_flower_seed", "count": 1, "count_max": 2, "weight": 0.5 },
         { "item": "glowstick", "count": 1, "count_max": 2, "weight": 1.0 },
         { "item": "paint_ammo", "count": 5, "count_max": 10, "weight": 1.0 },
         { "item": "fire_extinguisher", "count": 2, "count_max": 4, "weight": 1.0 },
@@ -1014,6 +1017,7 @@
         { "item": "battery_pack", "count": 1, "weight": 1.0 },
         { "item": "tomato_seed", "count": 2, "count_max": 4, "weight": 1.0 },
         { "item": "cotton_seed", "count": 2, "count_max": 4, "weight": 1.0 },
+        { "item": "pigment_flower_seed", "count": 1, "count_max": 2, "weight": 0.5 },
         { "item": "fire_extinguisher", "count": 2, "count_max": 4, "weight": 1.0 },
         { "item": "popper", "count": 1, "weight": 1.0 },
         { "item": "bloom_tea", "count": 1, "count_max": 2, "weight": 1.0 },
@@ -1327,6 +1331,22 @@
       "damage_from": [],
       "harvest": true,
       "drops": [{ "item": "cotton", "count": 1, "count_max": 2 }, { "item": "cotton_seed", "count": 1, "chance": 0.4 }],
+      "regrow": 1800.0
+    },
+    {
+      // Wild Pigment Flowers in meadows and forests (crops batch K2, tools/food/build_pigment_flower.py): press Use to pick
+      // a Pigment Flower, and 40 % of the time a Pigment Flower Seed, as wild cotton; they flower again half an hour of
+      // world time later.
+      "id": "wild_pigment_flower",
+      "collider": { "shape": "sphere", "radius": 0.45, "at": [0.0, 0.4, 0.0] },
+      "mesh": { "file": "meshes/world/props/wild_pigment_flower.glb" },
+      "solid": false,
+      "footprint": 0.8,
+      "scale": [0.85, 1.15],
+      "sink": 0.0,
+      "damage_from": [],
+      "harvest": true,
+      "drops": [{ "item": "pigment_flower", "count": 1 }, { "item": "pigment_flower_seed", "count": 1, "chance": 0.4 }],
       "regrow": 1800.0
     },
     {

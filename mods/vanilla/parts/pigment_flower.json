@@ -1,0 +1,25 @@
+{
+  "id": "pigment_flower",
+  "name": "Pigment Flower",
+  "description": "A flower whose nine petals come in every colour of the Paint Tool. Not food: the Fabricator makes 10 Paint Ammo from one. It grows wild in meadows and forests (press Use on one to pick it); plant Pigment Flower Seed to farm it. Flammable.",
+  "category": "resource",
+  "mass": 6,
+  "durability": 2,
+  "friction": 0.4,
+  "buoyancy": 0.3,
+  "flammable": true,
+  "stack_size": 20,
+  "mesh": "meshes/items/pigment_flower.glb",
+  "icon": "textures/items/pigment_flower_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "sounds": {
+    "pickup": "pickup_produce"
+  },
+  "held": {
+    "mesh": "meshes/items/pigment_flower_held.glb",
+    "offset": [-0.028, 0.062, -0.06],
+    "rotation": [0, -90, -90]
+  }
+}

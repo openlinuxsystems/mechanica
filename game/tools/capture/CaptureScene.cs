@@ -68,7 +68,8 @@ namespace Mechanica.Game.Tools;
 /// Given <c>consumables</c> it shows Bloom Tea and a Grazer Shake held and drunk, Fertilizer in hand, and a tomato crop
 /// beside a fertilized one (<c>tools/capture-consumables.sh</c>); given <c>grazer_products</c>, a tame Grazer eating from its
 /// Feeding Trough until its milk is ready, the milk collected and held, and Grazer Steak dropped by a Grazer and held;
-/// given <c>kitchen</c>, a Field Kitchen's station screen and cooking, and both burgers held and eaten.
+/// given <c>kitchen</c>, a Field Kitchen's station screen and cooking, and both burgers held and eaten; given <c>crops</c>,
+/// a wild Pigment Flower, the flower and its seed held, and its crop at every grow stage.
 /// </summary>
 public partial class CaptureScene : Node
 {
@@ -120,7 +121,8 @@ public partial class CaptureScene : Node
         var opening = args.Length > 1 && args[1] == "opening";
         var connectLines = args.Length > 1 && args[1] == "connect_lines";
         var husbandry = args.Length > 1 && args[1] == "husbandry";
-        var consumables = args.Length > 1 && args[1] == "consumables";
+        var crops = args.Length > 1 && args[1] == "crops";
+        var consumables = args.Length > 1 && (args[1] == "consumables" || crops);
         var grazerProducts = args.Length > 1 && args[1] == "grazer_products";
         var kitchen = args.Length > 1 && args[1] == "kitchen";
         var fields = args.Length > 1 && args[1] == "fields";
@@ -254,6 +256,11 @@ public partial class CaptureScene : Node
         if (grazerProducts)
         {
             GrazerProductShots();
+            return;
+        }
+        if (crops)
+        {
+            CropShots();
             return;
         }
         if (consumables)
