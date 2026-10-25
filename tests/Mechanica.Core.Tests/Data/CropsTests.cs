@@ -19,6 +19,9 @@ namespace Mechanica.Core.Tests.Data;
 /// a joke food that hurts 50; their seeds grow like the others (2 crops, 1 to 3 seeds back, raid values 5, 10 and 10) in
 /// soil or a Growbed; Beetroot Seed is common loot, Banana and Chili Seeds epic, the Chili a rare legendary find.
 /// Wild cotton is one light mesh like the wild Pigment Flower.
+/// Batch K4 adds Blueberry, Orange, Broccoli and Pineapple: fruit stats, heals 40, 45, 50 and 55; seeds that grow like the
+/// others (raid values 31, 61, 90 and 161), Broccoli and Pineapple thirsty (two buckets a crop); only in the rare loot tiers;
+/// and the Fabricator's Grazer Shake from 100 Ice Blocks, 3 Oranges and a Grazer Milk (order 3210).
 /// </summary>
 public class CropsTests
 {
@@ -40,6 +43,10 @@ public class CropsTests
     [InlineData("beetroot_seed")]
     [InlineData("banana_seed")]
     [InlineData("chili_seed")]
+    [InlineData("blueberry_seed")]
+    [InlineData("orange_seed")]
+    [InlineData("broccoli_seed")]
+    [InlineData("pineapple_seed")]
     public void SeedsTakeTheWikisSeedStats(string id)
     {
         var part = Part(id);
@@ -70,6 +77,38 @@ public class CropsTests
         Assert.True(Part(crop).StackSize >= yield, $"a {crop} harvest fits one stack");
     }
 
+    [Theory]
+    [InlineData("blueberry_seed", "blueberry", 31, null)]
+    [InlineData("orange_seed", "orange", 61, null)]
+    [InlineData("broccoli_seed", "broccoli", 90, 2f)]
+    [InlineData("pineapple_seed", "pineapple", 161, 2f)]
+    public void TheLateCropsGrowLikeTheOthersWithTheirRaidValueAndThirst(string id, string crop, double value, float? thirst)
+    {
+        var seed = Part(id).Seed!;
+
+        // Raid values (crops map, open question 4): one of each reaches the raid level SM's would; the raid table's levels
+        // start at 10, 31, 61, 101 and 161, so a Blueberry draws a level 2 raid, an Orange or a Broccoli level 3, a Pineapple 5.
+        Assert.Equal((crop, 1260f, 2, 1, 3, (float)value), (seed.Crop, seed.GrowTime, seed.Yield, seed.Seeds, seed.SeedsMax, seed.Value));
+        Assert.Equal(thirst, seed.Thirst);
+        Assert.Equal($"meshes/crops/{crop}_plant.glb", seed.Plant);
+        Assert.Contains(id, Part("growbed").Soil!.Seeds!);
+    }
+
+    [Theory]
+    [InlineData("broccoli_seed")]
+    [InlineData("pineapple_seed")]
+    public void ThirstyCropsNeedTwoBuckets(string id)
+    {
+        var bucket = Part("water_bucket_full").Properties!["seconds"]!.GetValue<double>();
+        var seed = Part(id).Seed!;
+        var drinks = seed.GrowTime!.Value * seed.Thirst!.Value;
+
+        Assert.True(drinks > bucket && drinks > Part("soil").Soil!.Capacity, $"one bucket is not enough ({drinks} s)");
+        Assert.True(drinks <= 2 * bucket, $"two buckets are ({drinks} s)");
+        Assert.True(drinks > Part("growbed").Soil!.Capacity, "a full Growbed is not enough either");
+        Assert.Contains("twice", Part(id).Description);
+    }
+
     [Fact]
     public void OneBucketGrowsOneCrop()
     {
@@ -83,7 +122,8 @@ public class CropsTests
         Assert.Equal(2160f, growbed.Capacity);
         Assert.Equal(bucket, cannon["water"]!.GetValue<double>() * cannon["jets"]!.GetValue<int>(), 3);
         Assert.Equal("water_bucket_full", cannon["water_item"]!.GetValue<string>());
-        foreach (var id in new[] { "carrot_seed", "tomato_seed", "potato_seed", "cotton_seed", "pigment_flower_seed", "beetroot_seed", "banana_seed", "chili_seed" })
+        foreach (var id in new[] { "carrot_seed", "tomato_seed", "potato_seed", "cotton_seed", "pigment_flower_seed", "beetroot_seed", "banana_seed", "chili_seed",
+                     "blueberry_seed", "orange_seed" })
         {
             var drinks = Part(id).Seed!.GrowTime!.Value * (Part(id).Seed!.Thirst ?? 1f);
             Assert.True(drinks <= bucket && drinks <= soil.Capacity, $"a {id} crop drinks one bucket at most ({drinks} s)");
@@ -144,9 +184,10 @@ public class CropsTests
     {
         var growbed = Part("growbed");
 
-        Assert.Equal(["carrot_seed", "potato_seed", "tomato_seed", "cotton_seed", "pigment_flower_seed", "beetroot_seed", "banana_seed", "chili_seed"],
+        Assert.Equal(["carrot_seed", "potato_seed", "tomato_seed", "cotton_seed", "pigment_flower_seed", "beetroot_seed", "banana_seed", "chili_seed",
+                "blueberry_seed", "orange_seed", "broccoli_seed", "pineapple_seed"],
             growbed.Soil!.Seeds);
-        Assert.Contains("pigment flower, beetroot, banana or chili seeds", growbed.Description);
+        Assert.Contains("pigment flower, beetroot, banana, chili, blueberry, orange, broccoli or pineapple seeds", growbed.Description);
     }
 
     [Fact]
@@ -200,6 +241,10 @@ public class CropsTests
     [InlineData("beetroot", 30, "eat_crunch")]
     [InlineData("banana", 35, "eat_soft")]
     [InlineData("chili", -50, "eat_crunch")]
+    [InlineData("blueberry", 40, "eat_soft")]
+    [InlineData("orange", 45, "eat_soft")]
+    [InlineData("broccoli", 50, "eat_crunch")]
+    [InlineData("pineapple", 55, "eat_crunch")]
     public void TheNewProduceIsFoodWithTheFruitStats(string id, int health, string eat)
     {
         var food = Part(id);
@@ -269,5 +314,45 @@ public class CropsTests
 
         Assert.Equal(1, meshes.GetArrayLength());
         Assert.InRange(triangles, 1000, 12000);
+    }
+
+    [Theory]
+    [InlineData("blueberry_seed", "epic")]
+    [InlineData("blueberry_seed", "warehouse_crate")]
+    [InlineData("orange_seed", "legendary")]
+    [InlineData("orange_seed", "warehouse_crate")]
+    [InlineData("broccoli_seed", "legendary")]
+    [InlineData("pineapple_seed", "legendary")]
+    [InlineData("pineapple_seed", "warehouse_crate")]
+    public void TheLateSeedsAreRarerThanTheK3SeedsAndOnlyInTheRareTiers(string item, string table)
+    {
+        var tables = World.Value.LootTables!;
+        var entry = tables[table].Items!.Single(i => i.Item == item);
+
+        Assert.True(entry.Weight < 0.5, $"{item} is rarer in {table} than Banana and Chili Seeds ({entry.Weight})");
+        Assert.Equal((1, (int?)null), (entry.Count, entry.CountMax));
+        // Never in the common tiers: green pods, crates, lockers, ruin chests.
+        foreach (var common in new[] { "common", "crate", "locker", "ruin_chest" })
+            Assert.DoesNotContain(tables[common].Items!, i => i.Item == item);
+        // The later the crop, the rarer its seed in gold pods.
+        var gold = tables["legendary"].Items!;
+        Assert.True(gold.Single(i => i.Item == "orange_seed").Weight >= gold.Single(i => i.Item == "broccoli_seed").Weight);
+        Assert.True(gold.Single(i => i.Item == "broccoli_seed").Weight >= gold.Single(i => i.Item == "pineapple_seed").Weight);
+    }
+
+    [Fact]
+    public void TheFabricatorMakesAGrazerShakeFromIceOrangesAndMilk()
+    {
+        var book = RecipeBook.Load(Vanilla.Value);
+        var recipe = book.Find("grazer_shake")!;
+
+        Assert.Equal(["vanilla:fabricator"], recipe.Stations);
+        Assert.Equal(["vanilla:ice_block:100", "vanilla:orange:3", "vanilla:grazer_milk:1"], recipe.Inputs.Select(i => $"{i.Item}:{i.Count}"));
+        Assert.Equal(("vanilla:grazer_shake", 1), (recipe.Outputs.Single().Item, recipe.Outputs.Single().Count));
+        Assert.Equal((10f, 3210), (recipe.Time, recipe.Definition.Order));
+        // 3210 is kept for it in the Food and cooking group (docs/part-data-schema.md, Recipe order): no other recipe takes it.
+        Assert.Single(book.All, r => r.Definition.Order == 3210);
+        // Still a loot find too.
+        Assert.Contains(World.Value.LootTables!["legendary"].Items!, i => i.Item == "grazer_shake");
     }
 }

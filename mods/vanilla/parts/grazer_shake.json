@@ -1,7 +1,7 @@
 {
   "id": "grazer_shake",
   "name": "Grazer Shake",
-  "description": "A Colony Works protein shake. Drink it to heal fully; you can keep running while you drink.",
+  "description": "A Colony Works protein shake. Drink it to heal fully; you can keep running while you drink. Made at the Fabricator from ice, oranges and Grazer Milk.",
   "category": "consumable",
   "mass": 3,
   "durability": 1,

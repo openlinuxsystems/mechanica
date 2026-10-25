@@ -1,7 +1,7 @@
-"""Build the game files of the crops from crops batch K3 on (crops map): Beetroot, Banana and Chili, as build_roots.py
-does the carrot's and the potato's.
+"""Build the game files of the crops from crops batch K3 on (crops map): Beetroot, Banana and Chili (K3), Blueberry,
+Orange, Broccoli and Pineapple (K4), as build_roots.py does the carrot's and the potato's.
 
-For each crop (``beetroot``, ``banana``, ``chili``) it writes, procedurally (no .blend inputs, no downloads):
+For each crop (``beetroot``, ``banana``, ``chili``, ``blueberry``, ``orange``, ``broccoli``, ``pineapple``) it writes, procedurally (no .blend inputs, no downloads):
 
 * ``mods/vanilla/meshes/items/<crop>.glb`` - the crop on the ground or placed, lying, origin at the middle of its base.
 * ``mods/vanilla/meshes/items/<crop>_held.glb`` - in the hand: ``eat_0`` (whole), ``eat_1`` and ``eat_2`` (after the
@@ -13,7 +13,7 @@ For each crop (``beetroot``, ``banana``, ``chili``) it writes, procedurally (no 
 * the ``held`` entries for <crop>.json and <crop>_seed.json, printed (they go in the consumables batch).
 
     pip install bpy==5.2.2 numpy pillow
-    python tools/food/build_crops.py [beetroot] [banana] [chili]                  # the game files
+    python tools/food/build_crops.py [crop ...]                                   # the game files (every crop when none is named)
     python tools/food/build_crops.py [crop ...] --render OUT_DIR                  # also review sheets: the crop (three-quarter,
                                                                                 # back, icon, bites, in hand, first person),
                                                                                 # its packet and the plant's stages and wilt
@@ -36,23 +36,35 @@ sys.path.insert(0, str(HERE.parent / "consumables"))
 import food_lib as fl  # noqa: E402,I001  (first: it imports bpy, which makes bmesh and mathutils importable)
 import banana  # noqa: E402
 import beetroot  # noqa: E402
+import blueberry  # noqa: E402
+import broccoli  # noqa: E402
 import build_tomato as bt  # noqa: E402
 import chili  # noqa: E402
 import crop_rig  # noqa: E402
+import orange  # noqa: E402
+import pineapple  # noqa: E402
 import seed_packet as sp  # noqa: E402
 from mathutils import Matrix, Vector  # noqa: E402
 
-CROPS = {"beetroot": beetroot, "banana": banana, "chili": chili}
-NAMES = {"beetroot": "Beetroot", "banana": "Banana", "chili": "Chili"}
+CROPS = {"beetroot": beetroot, "banana": banana, "chili": chili,
+         "blueberry": blueberry, "orange": orange, "broccoli": broccoli, "pineapple": pineapple}
+NAMES = {"beetroot": "Beetroot", "banana": "Banana", "chili": "Chili",
+         "blueberry": "Blueberry", "orange": "Orange", "broccoli": "Broccoli", "pineapple": "Pineapple"}
+BATCH = {"beetroot": "K3", "banana": "K3", "chili": "K3", "blueberry": "K4", "orange": "K4", "broccoli": "K4", "pineapple": "K4"}
 
 # How each lies in the right palm (render_roots_design.hold_matrix's frame): the lying model's +X and +Y along these hand
 # axes, its base on the palm, at (along d, along w, off the palm) from the grip point. The mouth meets the palm about
 # (d -0.026, w -0.01, n +0.059) from the grip, so the bitten side or end goes there: the beetroot's bitten side toward the
 # wrist like the potato, the banana and the chili across the palm with their bitten tips past the little finger, like
-# the carrot.
+# the carrot. Batch K4: the blueberry and the orange sit in the palm with their bitten side toward the wrist like the
+# beetroot; the broccoli and the pineapple lie across the palm, the bitten dome or base past the little finger.
 HOLD = {"beetroot": (("-d", "w"), (0.018, -0.02, 0.012)),
         "banana": (("-w", "d"), (0.004, banana.L / 2 - 0.06, 0.012)),
-        "chili": (("-w", "d"), (0.004, chili.L / 2 - 0.045, 0.012))}
+        "chili": (("-w", "d"), (0.004, chili.L / 2 - 0.045, 0.012)),
+        "blueberry": (("-d", "w"), (0.012, -0.012, 0.006)),
+        "orange": (("-d", "w"), (0.014, -0.014, 0.006)),
+        "broccoli": (("-w", "d"), (0.004, 0.0, 0.01)),
+        "pineapple": (("-w", "d"), (0.004, 0.02, 0.01))}
 
 
 def hold_matrix(crop):
@@ -170,7 +182,7 @@ def render_sheet(crop, out):
     W, H = 2900, 1540
     im = Image.new("RGB", (W, H), (245, 245, 246))
     d = ImageDraw.Draw(im)
-    d.text((40, 24), f"{NAMES[crop].upper()}: design review (crops batch K3)", fill=(30, 30, 34), font=_font(44))
+    d.text((40, 24), f"{NAMES[crop].upper()}: design review (crops batch {BATCH[crop]})", fill=(30, 30, 34), font=_font(44))
     d.text((40, 84), f"{crop}.glb: about {size * 100:.1f} cm at most across, {tris} faces; held model {crop}_held.glb (eat_0..2)",
            fill=(30, 30, 34), font=_font(24, False))
     x = 40

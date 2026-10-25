@@ -1,0 +1,28 @@
+{
+  "id": "grazer_shake",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "ice_block",
+      "count": 100
+    },
+    {
+      "item": "orange",
+      "count": 3
+    },
+    {
+      "item": "grazer_milk",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "grazer_shake",
+      "count": 1
+    }
+  ],
+  "time": 10,
+  "order": 3210
+}

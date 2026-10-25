@@ -123,7 +123,8 @@ public partial class CaptureScene : Node
         var husbandry = args.Length > 1 && args[1] == "husbandry";
         var crops = args.Length > 1 && args[1] == "crops";
         var cropsK3 = args.Length > 1 && args[1] == "crops_k3";
-        var consumables = args.Length > 1 && (args[1] == "consumables" || crops || cropsK3);
+        var cropsK4 = args.Length > 1 && args[1] == "crops_k4";
+        var consumables = args.Length > 1 && (args[1] == "consumables" || crops || cropsK3 || cropsK4);
         var grazerProducts = args.Length > 1 && args[1] == "grazer_products";
         var kitchen = args.Length > 1 && args[1] == "kitchen";
         var fields = args.Length > 1 && args[1] == "fields";
@@ -267,6 +268,11 @@ public partial class CaptureScene : Node
         if (cropsK3)
         {
             CropShotsK3();
+            return;
+        }
+        if (cropsK4)
+        {
+            CropShotsK4();
             return;
         }
         if (consumables)

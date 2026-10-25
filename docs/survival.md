@@ -43,14 +43,16 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
   steel Fancy Bed (it does not, and is tougher). You respawn standing on top of the bed: on its collision box when that
   is a box (the sleeping bag's is lower than its block), else on the top of its size.
 - **Food:** left click with food in hand eats it and heals you: a Carrot 25, a Tomato 20, a Beetroot 30, a Banana 35, a
-  Garden Burger or a Colony Burger 30. The Potato is not eaten raw: it is potato-weapon ammo and a cooking input. Carrots,
-  tomatoes, beetroots, bananas, chilies and burgers stack to 10, potatoes to 50. Every player starts with 3 carrots.
+  Blueberry 40, an Orange 45, a Broccoli 50, a Pineapple 55, a Garden Burger or a Colony Burger 30. The Potato is not eaten
+  raw: it is potato-weapon ammo and a cooking input. Carrots, tomatoes, beetroots, bananas, chilies, blueberries, oranges,
+  broccoli, pineapples and burgers stack to 10, potatoes to 50. Every player starts with 3 carrots.
   The heal is the item's `properties.health`, read by `food.lua`. Eating takes about 1.4 s and stops a sprint.
 - **Chili:** a joke food. Eating one burns away 50 health (its `properties.health` is -50: `food.lua` hurts through
   `holder.hurt`, the normal damage path), even at full health, so a second one in a row can kill (knockout bag and
   all). The host decides it and every client sees the health drop. It is grown, or a rare find in gold Bloom Pods.
-- **Drinks:** Bloom Tea heals 20 and a Grazer Shake 100. They are found in loot only (chests, lockers, crates and ruin
-  chests; the Grazer Shake in the better ones). A drink is downed in two gulps in about 0.7 s, and you can keep sprinting
+- **Drinks:** Bloom Tea heals 20 and a Grazer Shake 100. Bloom Tea is found in loot only (chests, lockers, crates and
+  ruin chests); the Grazer Shake in the better loot, and the Fabricator makes one from 100 Ice Blocks, 3 Oranges and a
+  Grazer Milk in 10 s (crops batch K4). A drink is downed in two gulps in about 0.7 s, and you can keep sprinting
   while you drink.
 - **Grazer Milk and Grazer Steak:** a tame Grazer living by a Feeding Trough eats a carrot from it every 30 s; after
   five it has a bottle of Grazer Milk ready, shown by a milk icon bobbing over its back on every peer. Press Use (E) on
@@ -72,11 +74,12 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
 - **Farming:** aim a Soil Bag at the ground (no steeper than 17°) to spill out a 3×3 soil mound (with Force build held,
   or aimed anywhere but the terrain, the bag itself is set down; picking a mound up gives the bag back). Plant a seed
   and water it. Soil looks dry, lightly watered, fully wet or drying, and empty soil dries out in about a game day. A crop grows only while its soil holds water,
-  using a second of water per second of growth (twice that for a seed with `thirst` 2), through four stages. Every
+  using a second of water per second of growth (twice that for a seed with `thirst` 2: Broccoli and Pineapple), through four stages. Every
   vanilla crop is ripe after 1260 s (0.875 of a game day, as in Scrap Mechanic; Fertilizer makes that 84 s). A mound
   holds 1260 s of water and a full Water Bucket gives 1260 s, so one bucket grows one crop (a Water Cannon's ten jets a
-  bucket water as much). Harvest it ripe (E): 2 Carrots, 2 Tomatoes, 10 Potatoes, 2 Cotton, 2 Pigment Flowers, 2
-  Beetroots, 2 Bananas or 2 Chilies, and 1 to 3 seeds back (farmed Cotton and Pigment Flowers exactly 1). Crops keep growing while nobody is near (the soil catches up from the world
+  bucket water as much); a thirsty crop needs a second bucket half way, when its soil has run dry. Harvest it ripe (E):
+  10 Potatoes, or 2 of any other crop (Carrots, Tomatoes, Cotton, Pigment Flowers, Beetroots, Bananas, Chilies,
+  Blueberries, Oranges, Broccoli, Pineapples), and 1 to 3 seeds back (farmed Cotton and Pigment Flowers exactly 1). Crops keep growing while nobody is near (the soil catches up from the world
   clock when it next runs) and are saved with the soil's Creation.
 - **Pigment Flowers:** our own flower, whose nine petals are the Paint Tool's colours. It is not food: the Fabricator
   makes 10 Paint Ammo from one in 5 s. Wild Pigment Flowers grow in meadows and forests (`wild_pigment_flower`): press
@@ -89,9 +92,18 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
   (raid value: Beetroot 5, Banana and Chili 10, against Carrot 2). Beetroot Seed comes from green Bloom Pods, crates, farm
   cargo spills and Seed Scuttlers; Banana and Chili Seeds are rarer, from purple Bloom Pods (Banana Seed also from ruin
   chests). The Fridge keeps all three.
+- **Blueberry, Orange, Broccoli and Pineapple** (crops batch K4), the late crops: the Blueberry grows on a knee-high bush,
+  its bunches pale green, then blue; the Orange on a dwarf orange tree that fits a mound, its fruit green, then orange;
+  Broccoli is a rosette of broad blue-green leaves round a head that swells into a dark dome; the Pineapple a rosette of
+  stiff sword leaves with the fruit rising from its middle, green, then golden. Broccoli and Pineapple are thirsty
+  (`thirst` 2): a crop needs two Water Buckets. They draw raids the most (raid value: Blueberry 31, Orange 61, Broccoli
+  90, Pineapple 161: one planted Pineapple alone draws a level 5 raid). Their seeds are rare finds: Blueberry Seed in
+  purple Bloom Pods and warehouse crates, Orange, Broccoli and Pineapple Seeds in gold Bloom Pods (Orange and Pineapple
+  also in warehouse crates). The Fridge keeps all four, and Oranges go into the Grazer Shake.
 - **Growbeds:** the Growbed (Fabricator: 2 Component Kits, 2 Circuit Boards and a Soil Bag) is soil you build into a
-  Creation, so a farm can be a cart, a boat or a base. It takes carrot, potato, tomato, cotton, pigment flower, beetroot, banana and chili seeds, and a harvest
-  always gives 5 crops. It holds 2160 s of water, so a bucket is enough for a crop with water to spare. It runs on batteries: each Battery Pack powers 6 minutes of growth, taken from Battery Containers
+  Creation, so a farm can be a cart, a boat or a base. It takes carrot, potato, tomato, cotton, pigment flower, beetroot, banana, chili, blueberry, orange,
+  broccoli and pineapple seeds, and a harvest always gives 5 crops. It holds 2160 s of water, so a bucket is enough for a
+  crop with water to spare (a thirsty Broccoli or Pineapple still needs a second one). It runs on batteries: each Battery Pack powers 6 minutes of growth, taken from Battery Containers
   wired into it (or any container on its Creation); its cyan light shows while it grows. The crop rides along with the
   Creation wherever it drives, across chunks and while it is parked, and saves with it. Picking a bed (or a soil mound) up
   gives an unripe crop's seed back; a ripe crop must be harvested first. A bed that breaks drops its seed.

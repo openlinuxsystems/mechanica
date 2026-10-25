@@ -23,6 +23,10 @@ namespace Mechanica.Game.Tests;
 /// yellow) and harvests two bananas and one to three seeds; eating a banana heals 35, and a chili eaten at full health
 /// hurts 50 on the host and the client sees the drop. Beetroot, Banana and Chili each have their bitten models and a plant
 /// that grows, wilts and sways.
+/// Batch K4: in the same mound the client grows a thirsty Broccoli Seed (seed.thirst 2): one bucket carries it only half way
+/// in 1260 s on the host's clock, the soil dry; a second bucket ripens it, and it gives two broccoli and one to three seeds.
+/// Eating an orange heals 45. Blueberry, Orange, Broccoli and Pineapple each have their bitten models and a plant with its
+/// stake that grows, wilts and sways.
 /// </summary>
 public partial class CropsTest : StagedTest
 {
@@ -33,6 +37,9 @@ public partial class CropsTest : StagedTest
     private const string Banana = "vanilla:banana";
     private const string BananaSeed = "vanilla:banana_seed";
     private const string Chili = "vanilla:chili";
+    private const string Broccoli = "vanilla:broccoli";
+    private const string BroccoliSeed = "vanilla:broccoli_seed";
+    private const string Orange = "vanilla:orange";
 
     private readonly List<ActionResult> _results = [];
     private NetTestHarness _harness = null!;
@@ -327,6 +334,139 @@ public partial class CropsTest : StagedTest
             }
             return true;
         });
+        Add("the client plants a thirsty Broccoli Seed in the same mound and waters it once", frame =>
+        {
+            if (frame == 0)
+            {
+                _results.Clear();
+                var pockets = _host.Main.Inventory.Items!.PlayerInventory(Peer);
+                pockets.Add(BroccoliSeed, 1);
+                pockets.Add(Bucket, 1);
+                return false;
+            }
+            if (frame == 20)
+            {
+                LookAt(_soilAt);
+                Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(BroccoliSeed), Creation: _soil, Part: _soilPart));
+            }
+            if (frame < 20 || _results.Count == 0)
+                return false;
+            if (!_results[^1].Ok)
+                return Check(false, $"planting or watering failed ({_results[^1]})");
+            if (_results.Count == 1)
+            {
+                if (HostSoil.Seed != BroccoliSeed)
+                    return false;
+                Throw();
+                return false;
+            }
+            if (HostSoil.Water < 1200f || !_client.Main.Survival.CropNodes.TryGetValue((_soil, _soilPart), out var crop) || crop.View?.Seed != BroccoliSeed
+                || crop.Plant is null)
+                return false;
+            Check(crop.Plant.FindChild("*Stake*", true, false) is not null, "the broccoli has its stake and tag");
+            return Check(_host.Main.Survival.Catalog.FindDefinition(BroccoliSeed)!.Seed!.Thirst == 2f, "the broccoli drinks twice as fast");
+        });
+        Add("after 1260 s on one bucket it is only half grown, and its soil is dry", frame =>
+        {
+            if (frame == 0)
+                _host.Main.Scripts.Runtime.Time += 1270;
+            var crop = _client.Main.Survival.CropNodes[(_soil, _soilPart)];
+            if (HostSoil.Water > 0.5f || HostSoil.Stage < 2 || crop.View?.Stage < 2)
+                return false;
+            Check(HostSoil.Stage == 2 && !HostSoil.Ripe, $"half grown, not ripe ({HostSoil.Stage}, {HostSoil.Grown:0} s)");
+            return Check(crop.View is { Ripe: false, Stage: 2 }, $"the client sees it half grown ({crop.View?.Stage})");
+        });
+        Add("a second bucket ripens it", frame =>
+        {
+            if (frame == 0)
+            {
+                _results.Clear();
+                _host.Main.Inventory.Items!.PlayerInventory(Peer).Add(Bucket, 1);
+                return false;
+            }
+            if (frame == 20)
+                Throw();
+            if (frame < 20 || _results.Count == 0)
+                return false;
+            if (!_results[0].Ok)
+                return Check(false, $"the second throw is refused ({_results[0]})");
+            if (_results.Count == 1 && HostSoil.Water < 600f)
+                return false;
+            if (_results.Count == 1)
+            {
+                _results.Add(_results[0]); // the clock moves once
+                _host.Main.Scripts.Runtime.Time += 640;
+            }
+            var crop = _client.Main.Survival.CropNodes[(_soil, _soilPart)];
+            if (crop.View is not { Ripe: true } || crop.GrowShown < SoilState.Stages)
+                return false;
+            return Check(HostSoil.Ripe, "ripe on the host");
+        });
+        Add("harvested, it gives two broccoli and one to three seeds", frame =>
+        {
+            if (frame == 0)
+            {
+                _results.Clear();
+                Request(LogicActions.ActivatePart, new LogicPartArgs(_soil, _soilPart));
+            }
+            if (_results.Count == 0)
+                return false;
+            if (!_results[0].Ok)
+                return Check(false, $"the harvest is refused ({_results[0]})");
+            if (_client.Main.Survival.CropNodes.ContainsKey((_soil, _soilPart)) || Count(Broccoli) != 2)
+                return false;
+            return Check(Count(BroccoliSeed) is >= 1 and <= 3, $"one to three seeds back ({Count(BroccoliSeed)})");
+        });
+        Add("eating an orange heals 45, on the host and on the client", frame =>
+        {
+            if (frame == 0)
+            {
+                _results.Clear();
+                _host.Main.Survival.Actions!.Heal(Peer, 100);
+                _host.Main.Survival.Actions!.Damage(Peer, 50, "test");
+                _host.Main.Inventory.Items!.PlayerInventory(Peer).Add(Orange, 1);
+                return false;
+            }
+            if (frame == 30)
+            {
+                _health = _client.Main.Survival.Own!.Health;
+                Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Orange)));
+            }
+            if (frame < 30 || _results.Count == 0)
+                return false;
+            if (!_results[0].Ok)
+                return Check(false, $"eating is refused ({_results[0]})");
+            if (_client.Main.Survival.Own!.Health == _health || Count(Orange) != 0)
+                return false;
+            Check(_host.Main.Survival.Actions!.HealthOf(Peer) == 95f, $"the host heals 45 (50 -> {_host.Main.Survival.Actions!.HealthOf(Peer)})");
+            return Check(_client.Main.Survival.Own!.Health == _health + 45, $"the client sees it ({_health} -> {_client.Main.Survival.Own!.Health})");
+        });
+        Add("Blueberry, Orange, Broccoli and Pineapple have their bitten models in hand and plants that grow, wilt and sway", _ =>
+        {
+            var survival = _client.Main.Survival;
+            foreach (var crop in new[] { "blueberry", "orange", "broccoli", "pineapple" })
+            {
+                var food = survival.Catalog.FindDefinition("vanilla:" + crop);
+                var seed = survival.Catalog.FindDefinition("vanilla:" + crop + "_seed");
+                var held = food?.Held?.Mesh is { } mesh ? survival.Assets!.InstantiateScene(mesh, "vanilla") : null;
+                Check(held is not null && Enumerable.Range(0, 3).All(k => held.FindChild($"eat_{k}", true, false) is Node3D),
+                    $"the {crop} in hand has its whole and two bitten versions");
+                var plant = seed?.Seed?.Plant is { } path ? survival.Assets!.SceneOf("vanilla:" + crop + "_seed", path) : null;
+                var player = plant?.FindChildren("*", nameof(AnimationPlayer), true, false).OfType<AnimationPlayer>().FirstOrDefault();
+                Check(player is not null && new[] { "grow", "wilt", "sway" }.All(c => player.HasAnimation(c)),
+                    $"the {crop} plant has its grow, wilt and sway clips");
+                Check(plant?.FindChild("*Stake*", true, false) is not null, $"the {crop} plant has its stake and tag");
+                held?.Free();
+                plant?.Free();
+            }
+            return true;
+        });
+    }
+
+    private void Throw()
+    {
+        var aim = (_soilAt - _client.Main.LocalPlayer!.Head.GlobalPosition).Normalized();
+        Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Bucket), new Vec3(aim.X, aim.Y, aim.Z)));
     }
 
     private void Request<T>(string action, T args) => _client.Main.Actions.Request(action, args, _results.Add);

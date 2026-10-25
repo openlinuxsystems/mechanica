@@ -174,4 +174,81 @@ public partial class CaptureScene
             Shot($"k3_{crops[row]}_wilted_close", 30, () => View(feet + new Vector3(2.7f, 1.3f, z + 0.8f), feet + new Vector3(3f, 0.3f, z)));
         }
     }
+
+    // Crops batch K4 (tools/capture-consumables.sh OUT_DIR crops_k4): Blueberry, Orange, Broccoli and Pineapple held and
+    // bitten, third and first person, and their seed packets held; then four rows of soil mounds (one crop a row, seen from
+    // in front) with each crop at every grow stage, dry and wilted at the end of its row, and the four rows together.
+    private void CropShotsK4()
+    {
+        Engine.TimeScale = 1.0;
+        const string soil = "vanilla:soil";
+        string[] crops = ["blueberry", "orange", "broccoli", "pineapple"];
+        var feet = Vector3.Zero;
+        void View(Vector3 from, Vector3 to)
+        {
+            _follow = null;
+            _camera.MakeCurrent();
+            _camera.GlobalPosition = from;
+            _camera.LookAt(to);
+        }
+        void HoldAs(CharacterProp prop, string item)
+        {
+            Hold(prop);
+            Player.HeldItem = _main.HeldItems.IndexOf(item);
+        }
+        Shot("k4_00_wait", 60, () => { });
+        foreach (var crop in crops)
+        {
+            var food = "vanilla:" + crop;
+            Shot($"k4_{crop}_held", 30, () => { HoldAs(CharacterProp.Food, food); Look(new Vector3(-0.8f, 1.45f, -1.2f), 1.2f); });
+            Shot($"k4_{crop}_bite", 24, () => Player.Gesture(CharacterGesture.Eat));
+            Shot($"k4_{crop}_first_person", 40, () => { Input(); Player.MakeCameraCurrent(); });
+            Shot($"k4_{crop}_first_person_bite", 40, () => Player.Gesture(CharacterGesture.Eat));
+            Shot($"k4_{crop}_seed_held", 30, () => { HoldAs(CharacterProp.Item, food + "_seed"); Look(new Vector3(-0.8f, 1.45f, -1.2f), 1.2f); });
+        }
+        Shot("k4_00_place", 40, () =>
+        {
+            Hold(CharacterProp.None);
+            feet = Player.GlobalPosition;
+            for (var row = 0; row < crops.Length; row++)
+                for (var i = 0; i < 5; i++)
+                {
+                    // Packed so the far row is still within build reach (7.5 m).
+                    var at = Ground(feet + new Vector3(-2.4f + 1.2f * i, 0f, 1.6f + 1.4f * row)) + Vector3.Up * 0.125f;
+                    _main.Actions.Request(Core.Building.BuildActions.PlacePart,
+                        new Core.Building.PlacePartArgs(soil, Core.Creations.GridCell.Zero, Position: Core.Creations.Vec3Numerics.ToVec3(at.ToNumerics())),
+                        r => GD.Print($"[capture] mound: {r.Ok} {r.Message}"));
+                }
+        });
+        Shot("k4_stages", 240, () =>
+        {
+            var host = _main.Survival.Actions!;
+            var me = new ActionCaller(_main.Session.LocalPeer, ActionSource.Player);
+            var mounds = _main.Creations.All.Where(c => c.Parts.Count == 1 && c.Parts.First().Part == soil)
+                .Select(c => (Creation: c, Part: c.Parts.First().Id, At: c.BodyPose(0).Position))
+                .OrderBy(m => MathF.Round((m.At.Z - feet.Z - 1.6f) / 1.4f)).ThenBy(m => m.At.X).ToList();
+            GD.Print($"[capture] {mounds.Count} mounds");
+            var definition = _main.Build.Catalog.FindDefinition(soil)!.Soil!;
+            // Just planted, a third and two thirds grown, ripe; the last ripe and dry, so it wilts.
+            var stages = new[] { (0f, 0), (420f, 1), (840f, 2), (1260f, 4), (1260f, 4) };
+            for (var i = 0; i < mounds.Count && i < 5 * crops.Length; i++)
+            {
+                var (grown, stage) = stages[i % 5];
+                host.PlantSeed(me, mounds[i].Creation.Id, mounds[i].Part, $"vanilla:{crops[i / 5]}_seed");
+                if (i % 5 < 4)
+                    host.WaterSoil(me, mounds[i].Creation.Id, mounds[i].Part, 1260); // a bucket
+                mounds[i].Creation.SoilOf(mounds[i].Part)!.Set(grown: grown, stage: stage,
+                    updated: _main.Scripts.Runtime.Time, wetAt: SoilState.WetAt(definition));
+            }
+            View(feet + new Vector3(0f, 4.6f, 11f), feet + new Vector3(0f, 0.2f, 3.7f));
+        });
+        for (var row = 0; row < crops.Length; row++)
+        {
+            var z = 1.6f + 1.4f * row;
+            // From above, between this row and the next, so the next row (behind the camera) is not in the way.
+            Shot($"k4_{crops[row]}_row", 30, () => View(feet + new Vector3(0f, 4.2f, z + 1.0f), feet + new Vector3(0f, 0.2f, z - 0.3f)));
+            Shot($"k4_{crops[row]}_ripe_close", 30, () => View(feet + new Vector3(1.0f, 1.3f, z + 0.8f), feet + new Vector3(1.2f, 0.35f, z)));
+            Shot($"k4_{crops[row]}_wilted_close", 30, () => View(feet + new Vector3(2.2f, 1.3f, z + 0.8f), feet + new Vector3(2.4f, 0.3f, z)));
+        }
+    }
 }
