@@ -10,11 +10,14 @@
   "flammable": true,
   "stack_size": 20,
   "sound_material": "wood",
-  "size": [3, 8, 3],
-  "mesh": "meshes/decor/tree_trunk.glb",
+  "size": [5, 8, 5],
+  "mesh": "meshes/parts/tree_trunk.glb",
+  "icon": "textures/items/tree_trunk_icon.png",
   "visual": {
-    "color": "#6a4a2a",
-    "roughness": 0.9,
-    "metallic": 0
+    "color": "#ffffff"
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/parts/tree_trunk.glb"
   }
 }

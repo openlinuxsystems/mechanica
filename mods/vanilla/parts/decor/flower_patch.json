@@ -11,10 +11,9 @@
   "stack_size": 20,
   "sound_material": "fabric",
   "size": [2, 1, 2],
-  "mesh": "meshes/decor/flower_patch.glb",
+  "mesh": "meshes/parts/flower_patch.glb",
+  "icon": "textures/items/flower_patch_icon.png",
   "visual": {
-    "color": "#d84a8a",
-    "roughness": 1,
-    "metallic": 0
+    "color": "#ffffff"
   }
 }

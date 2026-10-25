@@ -10,11 +10,10 @@
   "flammable": true,
   "stack_size": 20,
   "sound_material": "wood",
-  "size": [3, 3, 3],
-  "mesh": "meshes/decor/bush.glb",
+  "size": [5, 4, 5],
+  "mesh": "meshes/parts/bush.glb",
+  "icon": "textures/items/bush_icon.png",
   "visual": {
-    "color": "#3a7a30",
-    "roughness": 0.9,
-    "metallic": 0
+    "color": "#ffffff"
   }
 }

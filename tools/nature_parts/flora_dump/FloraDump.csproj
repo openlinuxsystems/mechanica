@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Writes the built-in flora models (Mechanica.Core FloraModels) as JSON for tools/nature_parts/build_nature_parts.py. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Mechanica.Tools.FloraDump</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../src/Mechanica.Core/Mechanica.Core.csproj" />
+  </ItemGroup>
+</Project>
