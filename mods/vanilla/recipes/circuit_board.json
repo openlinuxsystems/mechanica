@@ -1,0 +1,24 @@
+{
+  "id": "circuit_board",
+  "stations": [
+    "refiner"
+  ],
+  "inputs": [
+    {
+      "item": "metal_rod",
+      "count": 1
+    },
+    {
+      "item": "glass_block",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "circuit_board",
+      "count": 2
+    }
+  ],
+  "time": 10,
+  "order": 2650
+}

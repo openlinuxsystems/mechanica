@@ -768,7 +768,7 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 | 2300 | Nature | `fallen_log`, `tree_trunk` |
 | 2400 | Tools | `connect_tool`, `weld_tool`, `paint_tool`, `paint_ammo`, `fire_extinguisher` |
 | 2500 | Weapons | `potato_blaster`, `potato_scattergun`, `potato_launcher`, `popper` (2540: 2 Tomatoes and a Gasoline), `popper_corn` (2541: 5 Corn and a Gasoline) |
-| 2600 | Refined materials | `wood_rod`, `pine_rod`, `stone_rod`, `metal_rod` |
+| 2600 | Refined materials | `wood_rod`, `pine_rod`, `stone_rod`, `metal_rod`, `circuit_board` (2650: a Metal Rod and 2 Glass Blocks make 2) |
 | 2700 | Crafting materials | `glue` |
 | 2800 | Ducts, conduits and cables | `duct_short`, `duct_long`, `duct_corner`, `duct_tee`, `duct_end`, `duct_holder`, `metal_tube`, `tubes_short`, `tubes_long`, `tubes_corner`, `tubes_tee`, `wires_short`, `wires_long`, `wires_bend`, `wires_concave_bend`, `wires_convex_bend` |
 | 2900 | Windows and fences | `window_square`, `window_large`, `window_metal`, `net_fence` |
