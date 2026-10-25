@@ -2,19 +2,8 @@
   "format_version": 1,
   "model": [
     {
-      "kind": "sphere",
-      "radius": 0.3,
-      "position": [0, -0.05, 0]
-    },
-    {
-      "kind": "sphere",
-      "radius": 0.2,
-      "position": [0.15, 0.1, 0.1]
-    },
-    {
-      "kind": "sphere",
-      "radius": 0.2,
-      "position": [-0.15, 0.1, -0.1]
+      "kind": "mesh",
+      "mesh": "meshes/parts/bush.glb"
     }
   ]
 }

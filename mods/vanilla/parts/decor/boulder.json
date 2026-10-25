@@ -11,14 +11,13 @@
   "stack_size": 20,
   "sound_material": "concrete",
   "size": [6, 5, 6],
-  "mesh": "meshes/decor/boulder.glb",
+  "mesh": "meshes/parts/boulder.glb",
+  "icon": "textures/items/boulder_icon.png",
   "visual": {
-    "color": "#6a6a64",
-    "roughness": 0.95,
-    "metallic": 0
+    "color": "#ffffff"
   },
   "collision": {
     "shape": "convex",
-    "mesh": "meshes/decor/boulder.glb"
+    "mesh": "meshes/parts/boulder.glb"
   }
 }

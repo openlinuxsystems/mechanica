@@ -11,10 +11,13 @@
   "stack_size": 20,
   "sound_material": "wood",
   "size": [3, 3, 8],
-  "mesh": "meshes/decor/fallen_log.glb",
+  "mesh": "meshes/parts/fallen_log.glb",
+  "icon": "textures/items/fallen_log_icon.png",
   "visual": {
-    "color": "#6a4a2a",
-    "roughness": 0.9,
-    "metallic": 0
+    "color": "#ffffff"
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/parts/fallen_log.glb"
   }
 }

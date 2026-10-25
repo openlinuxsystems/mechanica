@@ -11,14 +11,13 @@
   "stack_size": 20,
   "sound_material": "concrete",
   "size": [3, 3, 3],
-  "mesh": "meshes/decor/large_rock.glb",
+  "mesh": "meshes/parts/large_rock.glb",
+  "icon": "textures/items/large_rock_icon.png",
   "visual": {
-    "color": "#7a7a72",
-    "roughness": 0.95,
-    "metallic": 0
+    "color": "#ffffff"
   },
   "collision": {
     "shape": "convex",
-    "mesh": "meshes/decor/large_rock.glb"
+    "mesh": "meshes/parts/large_rock.glb"
   }
 }

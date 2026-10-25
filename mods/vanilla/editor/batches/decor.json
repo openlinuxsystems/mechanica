@@ -218,16 +218,17 @@
       "set": {
         "name": "Small Rock",
         "description": "A fist-sized stone.",
+        "icon": "textures/items/small_rock_icon.png",
         "mass": 6,
         "durability": 6,
         "flammable": false,
         "sound_material": "concrete",
         "stack_size": 20,
         "size": [1, 1, 1],
-        "visual": { "color": "#8a8a82", "roughness": 0.95, "metallic": 0.0 },
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "buoyancy": 0.0
       },
-      "model": [{ "kind": "sphere", "radius": 0.11, "position": [0, -0.01, 0] }]
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/small_rock.glb" }]
     },
     {
       "file": "parts/decor/large_rock.json",
@@ -235,20 +236,18 @@
       "set": {
         "name": "Large Rock",
         "description": "A rock about as big as a crate.",
+        "icon": "textures/items/large_rock_icon.png",
         "mass": 150,
         "durability": 15,
         "flammable": false,
         "sound_material": "concrete",
         "stack_size": 20,
         "size": [3, 3, 3],
-        "visual": { "color": "#7a7a72", "roughness": 0.95, "metallic": 0.0 },
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "collision": { "shape": "convex", "mesh": "meshes/parts/large_rock.glb" },
         "buoyancy": 0.0
       },
-      "model": [
-        { "kind": "sphere", "radius": 0.36, "position": [0, -0.02, 0] },
-        { "kind": "sphere", "radius": 0.22, "position": [0.15, 0.12, 0.1] }
-      ],
-      "collision_from_model": true
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/large_rock.glb" }]
     },
     {
       "file": "parts/decor/boulder.json",
@@ -256,21 +255,18 @@
       "set": {
         "name": "Boulder",
         "description": "A huge stone. It takes a lot of hammering to break.",
+        "icon": "textures/items/boulder_icon.png",
         "mass": 900,
         "durability": 30,
         "flammable": false,
         "sound_material": "concrete",
         "stack_size": 20,
         "size": [6, 5, 6],
-        "visual": { "color": "#6a6a64", "roughness": 0.95, "metallic": 0.0 },
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "collision": { "shape": "convex", "mesh": "meshes/parts/boulder.glb" },
         "buoyancy": 0.0
       },
-      "model": [
-        { "kind": "sphere", "radius": 0.62, "position": [0, -0.02, 0] },
-        { "kind": "sphere", "radius": 0.42, "position": [0.3, 0.2, -0.2] },
-        { "kind": "sphere", "radius": 0.38, "position": [-0.3, 0.15, 0.25] }
-      ],
-      "collision_from_model": true
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/boulder.glb" }]
     },
     {
       "file": "parts/decor/bush.json",
@@ -278,20 +274,17 @@
       "set": {
         "name": "Bush",
         "description": "A leafy shrub.",
+        "icon": "textures/items/bush_icon.png",
         "mass": 4,
         "durability": 1,
         "flammable": true,
         "sound_material": "wood",
         "stack_size": 20,
-        "size": [3, 3, 3],
-        "visual": { "color": "#3a7a30", "roughness": 0.9, "metallic": 0.0 },
+        "size": [5, 4, 5],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "buoyancy": 0.6
       },
-      "model": [
-        { "kind": "sphere", "radius": 0.3, "position": [0, -0.05, 0] },
-        { "kind": "sphere", "radius": 0.2, "position": [0.15, 0.1, 0.1] },
-        { "kind": "sphere", "radius": 0.2, "position": [-0.15, 0.1, -0.1] }
-      ]
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/bush.glb" }]
     },
     {
       "file": "parts/decor/tree_trunk.json",
@@ -299,19 +292,18 @@
       "set": {
         "name": "Tree Trunk",
         "description": "A sawn-off trunk, 2 m tall.",
+        "icon": "textures/items/tree_trunk_icon.png",
         "mass": 200,
         "durability": 12,
         "flammable": true,
         "sound_material": "wood",
         "stack_size": 20,
-        "size": [3, 8, 3],
-        "visual": { "color": "#6a4a2a", "roughness": 0.9, "metallic": 0.0 },
+        "size": [5, 8, 5],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "collision": { "shape": "convex", "mesh": "meshes/parts/tree_trunk.glb" },
         "buoyancy": 0.7
       },
-      "model": [
-        { "kind": "cylinder", "radius": 0.32, "height": 2 },
-        { "kind": "cylinder", "radius": 0.36, "height": 0.1, "position": [0, -0.95, 0] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/tree_trunk.glb" }],
       "recipes": [
         {
           "id": "tree_trunk",
@@ -329,16 +321,18 @@
       "set": {
         "name": "Fallen Log",
         "description": "A log lying on its side.",
+        "icon": "textures/items/fallen_log_icon.png",
         "mass": 160,
         "durability": 10,
         "flammable": true,
         "sound_material": "wood",
         "stack_size": 20,
         "size": [3, 3, 8],
-        "visual": { "color": "#6a4a2a", "roughness": 0.9, "metallic": 0.0 },
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "collision": { "shape": "convex", "mesh": "meshes/parts/fallen_log.glb" },
         "buoyancy": 0.7
       },
-      "model": [{ "kind": "cylinder", "radius": 0.3, "height": 1.95, "rotation": [90, 0, 0] }],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/fallen_log.glb" }],
       "recipes": [
         {
           "id": "fallen_log",
@@ -356,20 +350,17 @@
       "set": {
         "name": "Grass Tuft",
         "description": "A clump of tall grass.",
+        "icon": "textures/items/grass_tuft_icon.png",
         "mass": 0.2,
         "durability": 1,
         "flammable": true,
         "sound_material": "fabric",
         "stack_size": 20,
-        "size": [1, 1, 1],
-        "visual": { "color": "#5a9a3a", "roughness": 1.0, "metallic": 0.0 },
+        "size": [2, 3, 2],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "buoyancy": 0.6
       },
-      "model": [
-        { "kind": "box", "size": [0.02, 0.22, 0.12], "rotation": [0, 0, 10] },
-        { "kind": "box", "size": [0.12, 0.2, 0.02], "position": [0, -0.01, 0], "rotation": [10, 0, 0] },
-        { "kind": "box", "size": [0.02, 0.18, 0.12], "position": [0.04, -0.02, 0], "rotation": [0, 45, -12] }
-      ]
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/grass_tuft.glb" }]
     },
     {
       "file": "parts/decor/flower_patch.json",
@@ -377,22 +368,17 @@
       "set": {
         "name": "Flower Patch",
         "description": "A few wildflowers.",
+        "icon": "textures/items/flower_patch_icon.png",
         "mass": 0.3,
         "durability": 1,
         "flammable": true,
         "sound_material": "fabric",
         "stack_size": 20,
         "size": [2, 1, 2],
-        "visual": { "color": "#d84a8a", "roughness": 1.0, "metallic": 0.0 },
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "buoyancy": 0.6
       },
-      "model": [
-        { "kind": "cylinder", "radius": 0.24, "height": 0.03, "position": [0, -0.11, 0] },
-        { "kind": "sphere", "radius": 0.04, "position": [0.1, 0.04, 0.05] },
-        { "kind": "sphere", "radius": 0.04, "position": [-0.08, 0.04, 0.1] },
-        { "kind": "sphere", "radius": 0.04, "position": [0, 0.04, -0.12] },
-        { "kind": "sphere", "radius": 0.04, "position": [-0.12, 0.04, -0.04] }
-      ]
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/flower_patch.glb" }]
     },
     {
       "file": "parts/decor/bumper_front.json",

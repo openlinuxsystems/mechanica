@@ -11,10 +11,9 @@
   "stack_size": 20,
   "sound_material": "concrete",
   "size": [1, 1, 1],
-  "mesh": "meshes/decor/small_rock.glb",
+  "mesh": "meshes/parts/small_rock.glb",
+  "icon": "textures/items/small_rock_icon.png",
   "visual": {
-    "color": "#8a8a82",
-    "roughness": 0.95,
-    "metallic": 0
+    "color": "#ffffff"
   }
 }

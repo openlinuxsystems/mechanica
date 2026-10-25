@@ -10,11 +10,10 @@
   "flammable": true,
   "stack_size": 20,
   "sound_material": "fabric",
-  "size": [1, 1, 1],
-  "mesh": "meshes/decor/grass_tuft.glb",
+  "size": [2, 3, 2],
+  "mesh": "meshes/parts/grass_tuft.glb",
+  "icon": "textures/items/grass_tuft_icon.png",
   "visual": {
-    "color": "#5a9a3a",
-    "roughness": 1,
-    "metallic": 0
+    "color": "#ffffff"
   }
 }
