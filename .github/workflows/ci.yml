@@ -67,10 +67,9 @@ jobs:
       - name: AI bridge tests
         run: node --test tools/ai/bridge/test/*.test.mjs
 
-      - uses: actions/setup-dotnet@v5
+      - name: Install .NET
         if: needs.scope.outputs.build == 'true'
-        with:
-          global-json-file: global.json
+        run: tools/ci/install-dotnet.sh
 
       - uses: actions/cache@v4
         if: needs.scope.outputs.build == 'true'
@@ -110,9 +109,8 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-dotnet@v5
-        with:
-          global-json-file: global.json
+      - name: Install .NET
+        run: tools/ci/install-dotnet.sh
 
       - uses: actions/setup-node@v5
         with:
