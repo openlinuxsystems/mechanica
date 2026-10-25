@@ -10,6 +10,7 @@
       "file": "parts/decor/warehouse_key_sign.json",
       "template": "decor",
       "set": {
+        // Parts audit D5: model and icon by tools/decor/build_site_signs.py (site_signs.py, on the batch 12a sign kit).
         "name": "Warehouse Key Sign",
         "description": "Marks a door that needs a warehouse key.",
         "mass": 3,
@@ -20,13 +21,10 @@
         "sound_material": "metal",
         "stack_size": 20,
         "size": [3, 6, 1],
-        "visual": { "color": "#3060a0", "roughness": 0.5, "metallic": 0.5 }
+        "icon": "textures/items/warehouse_key_sign_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
       },
-      "model": [
-        { "kind": "cylinder", "radius": 0.03, "height": 1.1, "position": [0, -0.2, 0] },
-        { "kind": "box", "size": [0.56, 0.56, 0.03], "position": [0, 0.45, -0.05] },
-        { "kind": "box", "size": [0.2, 0.08, 0.01], "position": [0, 0.45, -0.07] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/warehouse_key_sign.glb" }],
       "recipes": [
         {
           "id": "warehouse_key_sign",
@@ -42,6 +40,7 @@
       "file": "parts/decor/outpost_sign.json",
       "template": "decor",
       "set": {
+        // Parts audit D5: model and icon by tools/decor/build_site_signs.py (site_signs.py, on the batch 12a sign kit).
         "name": "Workshop Sign",
         "description": "The sign that marks a Workshop.",
         "mass": 3,
@@ -52,13 +51,10 @@
         "sound_material": "metal",
         "stack_size": 20,
         "size": [3, 6, 1],
-        "visual": { "color": "#e08020", "roughness": 0.5, "metallic": 0.5 }
+        "icon": "textures/items/outpost_sign_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
       },
-      "model": [
-        { "kind": "cylinder", "radius": 0.03, "height": 1.1, "position": [0, -0.2, 0] },
-        { "kind": "box", "size": [0.72, 0.4, 0.03], "position": [0, 0.45, -0.05] },
-        { "kind": "box", "size": [0.6, 0.1, 0.01], "position": [0, 0.5, -0.07] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/outpost_sign.glb" }],
       "recipes": [
         {
           "id": "outpost_sign",
@@ -74,6 +70,7 @@
       "file": "parts/decor/speed_limit_sign.json",
       "template": "decor",
       "set": {
+        // Parts audit D5: model and icon by tools/decor/build_site_signs.py (site_signs.py, on the batch 12a sign kit).
         "name": "Speed Limit Sign",
         "description": "A white round sign with a red rim.",
         "mass": 3,
@@ -84,25 +81,10 @@
         "sound_material": "metal",
         "stack_size": 20,
         "size": [3, 6, 1],
-        "visual": { "color": "#f0f0f0", "roughness": 0.5, "metallic": 0.5 }
+        "icon": "textures/items/speed_limit_sign_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
       },
-      "model": [
-        { "kind": "cylinder", "radius": 0.03, "height": 1.1, "position": [0, -0.2, 0] },
-        {
-          "kind": "cylinder",
-          "radius": 0.3,
-          "height": 0.03,
-          "position": [0, 0.45, -0.05],
-          "rotation": [90, 0, 0]
-        },
-        {
-          "kind": "cylinder",
-          "radius": 0.24,
-          "height": 0.01,
-          "position": [0, 0.45, -0.07],
-          "rotation": [90, 0, 0]
-        }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/speed_limit_sign.glb" }],
       "recipes": [
         {
           "id": "speed_limit_sign",
@@ -590,6 +572,7 @@
       "file": "parts/decor/barrier_tape.json",
       "template": "decor",
       "set": {
+        // Parts audit D5: model and icon by tools/decor/build_site_signs.py (site_signs.py, on the batch 12a sign kit).
         "name": "Barrier Tape",
         "description": "A striped tape strung between two posts.",
         "mass": 3,
@@ -598,13 +581,10 @@
         "sound_material": "plastic",
         "stack_size": 20,
         "size": [8, 4, 1],
-        "visual": { "color": "#f0d020", "roughness": 0.6, "metallic": 0.0 }
+        "icon": "textures/items/barrier_tape_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
       },
-      "model": [
-        { "kind": "cylinder", "radius": 0.025, "height": 1, "position": [-0.95, 0, 0] },
-        { "kind": "cylinder", "radius": 0.025, "height": 1, "position": [0.95, 0, 0] },
-        { "kind": "box", "size": [1.9, 0.06, 0.005], "position": [0, 0.35, 0] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/barrier_tape.glb" }],
       "recipes": [
         {
           "id": "barrier_tape",

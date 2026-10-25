@@ -137,6 +137,7 @@ public partial class CaptureScene : Node
         var garden = args.Length > 1 && args[1] == "garden";
         var fields = args.Length > 1 && args[1] == "fields";
         var building = args.Length > 1 && args[1] == "parts_building";
+        var siteSigns = args.Length > 1 && args[1] == "site_signs";
         var formations = args.Length > 1 && args[1] == "formations";
         var factions = args.Length > 1 && args[1] == "factions";
         var gauges = args.Length > 1 && args[1] == "gauges";
@@ -151,14 +152,14 @@ public partial class CaptureScene : Node
         var botClips = args.Length > 1 && args[1] == "bot_clips";
         var hands = args.Length > 1 && args[1] == "hands";
         var driving = args.Length > 1 && args[1] == "driving";
-        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !factions && !ladder && !beds && !extinguisher && !drops && !derelicts && !signs && !botClips && !hands && !driving && !connectLines && !husbandry && !consumables && !grazerProducts && !kitchen && !garden && !fields && !gauges && !flight && !logicParts && !vehicleBody && !furniture && !building && args[1] != "survey" && args[1] != "spots" && args[1] != "daynight" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !factions && !ladder && !beds && !extinguisher && !drops && !derelicts && !signs && !botClips && !hands && !driving && !connectLines && !husbandry && !consumables && !grazerProducts && !kitchen && !garden && !fields && !gauges && !flight && !logicParts && !vehicleBody && !furniture && !siteSigns && !building && args[1] != "survey" && args[1] != "spots" && args[1] != "daynight" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         // Captures hold the sky at mid-morning so shots compare across runs; `daynight` walks it through the day.
         World.DayNight.HoldHour = 10.5;
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         // Building the block wall needs Creative: free parts and no build reach.
-        _main.Options = LaunchOptions.Offline with { Seed = args.Length > 1 && args[1] is "survey" or "spots" ? 1 : 7, GameMode = blocks || building || signs || soil || wheels || portable || liftCapture || connectLines || husbandry || consumables ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
+        _main.Options = LaunchOptions.Offline with { Seed = args.Length > 1 && args[1] is "survey" or "spots" ? 1 : 7, GameMode = blocks || building || siteSigns || signs || soil || wheels || portable || liftCapture || connectLines || husbandry || consumables ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
         // The button shots show the HUD (the creation hotbar), which only a main reading the devices builds.
         _main.ReadDeviceInput = icons || wheels || button || engineMenu || connectLines || gauges || drops || kitchen || garden;
         _main.DebugCar = debugCar;
@@ -373,6 +374,11 @@ public partial class CaptureScene : Node
         if (building)
         {
             BuildingPartShots(args.Length > 2 ? args[2] : null);
+            return;
+        }
+        if (siteSigns)
+        {
+            SiteSignShots();
             return;
         }
         if (fields)

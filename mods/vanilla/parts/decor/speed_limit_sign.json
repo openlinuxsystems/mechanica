@@ -11,10 +11,9 @@
   "stack_size": 20,
   "sound_material": "metal",
   "size": [3, 6, 1],
-  "mesh": "meshes/decor/speed_limit_sign.glb",
+  "mesh": "meshes/parts/speed_limit_sign.glb",
+  "icon": "textures/items/speed_limit_sign_icon.png",
   "visual": {
-    "color": "#f0f0f0",
-    "roughness": 0.5,
-    "metallic": 0.5
+    "color": "#ffffff"
   }
 }

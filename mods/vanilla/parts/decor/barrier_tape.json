@@ -11,10 +11,9 @@
   "stack_size": 20,
   "sound_material": "plastic",
   "size": [8, 4, 1],
-  "mesh": "meshes/decor/barrier_tape.glb",
+  "mesh": "meshes/parts/barrier_tape.glb",
+  "icon": "textures/items/barrier_tape_icon.png",
   "visual": {
-    "color": "#f0d020",
-    "roughness": 0.6,
-    "metallic": 0
+    "color": "#ffffff"
   }
 }
