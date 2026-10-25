@@ -251,4 +251,45 @@ public partial class CaptureScene
             Shot($"k4_{crops[row]}_wilted_close", 30, () => View(feet + new Vector3(2.2f, 1.3f, z + 0.8f), feet + new Vector3(2.4f, 0.3f, z)));
         }
     }
+
+    // Crops batch K5 (tools/capture-consumables.sh OUT_DIR crops_k5): the nearest wild corn to the spawn, close and among
+    // the field or meadow round it; broken (the host strikes it as two sledge blows would), its Corn on the ground; and an
+    // ear of Corn held and bitten, third and first person.
+    private void CropShotsK5()
+    {
+        Engine.TimeScale = 1.0;
+        var wild = Vector3.Zero;
+        string? id = null;
+        void View(Vector3 from, Vector3 to)
+        {
+            _follow = null;
+            _camera.MakeCurrent();
+            _camera.GlobalPosition = from;
+            _camera.LookAt(to);
+        }
+        Shot("k5_00_wait", 60, () => { });
+        Shot("k5_00_go", 900, () =>
+        {
+            var gen = _main.Streamer.Generator;
+            var home = Player.GlobalPosition.ToNumerics();
+            var corn = gen.ObjectsIn(home.X - 2000, home.Z - 2000, home.X + 2000, home.Z + 2000)
+                .Where(o => o.Definition.Id == "wild_corn" && gen.SlopeAt(o.Position.X, o.Position.Z) < 0.2f)
+                .OrderBy(o => (o.Position - home).Length()).First();
+            wild = corn.Position.ToGodot();
+            id = corn.Id.ToString();
+            GD.Print($"[capture] wild corn {corn.Id} at {wild} in {gen.BiomeAt(wild.X, wild.Z).Id}");
+            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, Ground(wild + new Vector3(0f, 0f, 3f)) + Vector3.Up * 0.3f, 0f);
+        });
+        Shot("k5_wild_close", 120, () => View(wild + new Vector3(2.2f, 1.7f, 2.6f), wild + new Vector3(0f, 1.0f, 0f)));
+        Shot("k5_wild_wide", 30, () => View(wild + new Vector3(7f, 3.2f, 9f), wild + new Vector3(0f, 0.9f, 0f)));
+        Shot("k5_broken", 60, () =>
+        {
+            _main.Survival.Actions!.StrikeObject(id!, 1000f, Core.World.DamageKinds.Sledge);
+            View(wild + new Vector3(1.4f, 1.2f, 1.8f), wild + new Vector3(0f, 0.2f, 0f));
+        });
+        Shot("k5_corn_held", 30, () => { Hold(CharacterProp.Food); Player.HeldItem = _main.HeldItems.IndexOf("vanilla:corn"); Look(new Vector3(-0.8f, 1.45f, -1.2f), 1.2f); });
+        Shot("k5_corn_bite", 24, () => Player.Gesture(CharacterGesture.Eat));
+        Shot("k5_corn_first_person", 40, () => { Input(); Player.MakeCameraCurrent(); });
+        Shot("k5_corn_first_person_bite", 40, () => Player.Gesture(CharacterGesture.Eat));
+    }
 }

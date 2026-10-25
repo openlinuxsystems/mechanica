@@ -6,7 +6,7 @@
 // Batch C2b: Bloom Tea and Grazer Shake are drinks (properties.drink: the drink clip and sound, and the player may
 // sprint while drinking), found as loot only. Fertilizer is used on a growing crop: properties.boost multiplies its
 // growth until harvest (soil.lua; it still needs water). properties.eat_seconds is how long one eat or drink takes.
-// Batch C3: Grazer Milk is a drink a tame Grazer gives (bots/grazer.json tame.produce: 5 carrots from its Feeding Trough,
+// Batch C3: Grazer Milk is a drink a tame Grazer gives (bots/grazer.json tame.produce: 5 carrots (or corn, K5) from its Feeding Trough,
 // then Use on it); Grazer Steak is not edible, a cooking input that Grazers drop (bots/grazer.json drops).
 // Batch C4: the Field Kitchen (parts_stations.json) cooks the Garden Burger (4 Carrot + 2 Tomato + 10 Potato, 10 s) and the
 // Colony Burger (1 Grazer Steak + 5 Tomato + 10 Potato, 13 s), the 3200 recipe group; both heal 30 (perks come later).
@@ -26,6 +26,10 @@
 // stats and a seed each (seed stats, 1260 s, 2 crops and 1 to 3 seeds back; raid values Blueberry 31, Orange 61, Broccoli
 // 90, Pineapple 161: one of each reaches the raid level SM's would). Broccoli and Pineapple are thirsty (seed.thirst 2:
 // two Water Buckets a crop). The Fabricator makes a Grazer Shake from 100 Ice Blocks, 3 Oranges and 1 Grazer Milk (3210).
+// Crops batch K5 (tools/food/build_corn.py): Corn, not farmed (no seed): 6 kg, stack 10 (the wiki's 4/2/4/3/Y), heals 4. It
+// grows wild in fields and meadows (worldgen.json wild_corn: break it with the Sledgehammer or a creation's saw for 3 to
+// 4, it regrows). Tame Grazers eat it as well as carrots (bots.json tame.foods, the Feeding Trough), and the Fabricator
+// makes 2 Poppers from 5 Corn and 1 Gasoline (survival.json, order 2541).
 // Re-run with tools/author-vanilla.sh.
 {
   "format_version": 1,
@@ -35,7 +39,7 @@
       "template": "item",
       "set": {
         "name": "Carrot",
-        "description": "Crunchy. Eat it to heal. Tame Grazers eat carrots from their Feeding Trough.",
+        "description": "Crunchy. Eat it to heal. Tame Grazers eat carrots (and corn) from their Feeding Trough.",
         "category": "consumable",
         "mass": 1.5,
         "durability": 1,
@@ -534,6 +538,28 @@
       "model": [{ "kind": "mesh", "mesh": "meshes/items/pineapple_seed.glb" }]
     },
     {
+      "file": "parts/corn.json",
+      "template": "item",
+      "set": {
+        "name": "Corn",
+        "description": "A fat ear of golden corn, its husk pulled back. Eat it for a little health. Tame Grazers eat it from their Feeding Trough like carrots, and the Fabricator makes Poppers from it. It grows wild in fields and meadows: break a corn plant with the Sledgehammer (or a creation's saw) for 3 or 4 ears; it grows back. Flammable.",
+        "category": "consumable",
+        "mass": 6,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.3,
+        "flammable": true,
+        "stack_size": 10,
+        "icon": "textures/items/corn_icon.png",
+        "visual": { "color": "#ffffff" },
+        "held": { "mesh": "meshes/items/corn_held.glb", "offset": [-0.04, 0.066, 0.02], "rotation": [-90, 0, 90], "juice": "#f2cf4a" },
+        "sounds": { "pickup": "pickup_produce", "eat": "eat_crunch" },
+        "script": "scripts/food.lua",
+        "properties": { "health": 4, "eat_seconds": 1.4 }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/corn.glb" }]
+    },
+    {
       "file": "parts/chemical.json",
       "template": "item",
       "set": {
@@ -655,7 +681,7 @@
       "template": "item",
       "set": {
         "name": "Grazer Milk",
-        "description": "Fresh milk in a Colony Works bottle. Drink it to heal a little; you can keep running while you drink. A tame Grazer gives a bottle once it has eaten 5 carrots from its Feeding Trough: press Use on it. Flammable.",
+        "description": "Fresh milk in a Colony Works bottle. Drink it to heal a little; you can keep running while you drink. A tame Grazer gives a bottle once it has eaten 5 carrots or corn from its Feeding Trough: press Use on it. Flammable.",
         "category": "consumable",
         "mass": 3,
         "durability": 1,

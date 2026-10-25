@@ -226,7 +226,7 @@ public class ConsumablesTests
                 "parts/potato_seed.json", "parts/cotton_seed.json", "parts/pigment_flower.json", "parts/pigment_flower_seed.json",
                 "parts/beetroot.json", "parts/banana.json", "parts/chili.json", "parts/beetroot_seed.json", "parts/banana_seed.json",
                 "parts/chili_seed.json", "parts/blueberry.json", "parts/orange.json", "parts/broccoli.json", "parts/pineapple.json",
-                "parts/blueberry_seed.json", "parts/orange_seed.json", "parts/broccoli_seed.json", "parts/pineapple_seed.json",
+                "parts/blueberry_seed.json", "parts/orange_seed.json", "parts/broccoli_seed.json", "parts/pineapple_seed.json", "parts/corn.json",
                 "parts/chemical.json", "parts/gasoline.json",
                 "parts/bloom_tea.json", "parts/grazer_shake.json", "parts/grazer_milk.json", "parts/grazer_steak.json", "parts/fertilizer.json",
                 "parts/garden_burger.json", "parts/colony_burger.json"],

@@ -207,7 +207,7 @@
       "template": "interactive",
       "set": {
         "name": "Feeding Trough",
-        "description": "Holds carrots for tame animals. Tame Grazers within 20 m make it their home, wander round it and eat its carrots; after 5 a Grazer has milk for you. The hay inside shows how full it is.",
+        "description": "Holds carrots and corn for tame animals. Tame Grazers within 20 m make it their home, wander round it and eat from it; after 5 meals a Grazer has milk for you. The hay inside shows how full it is.",
         "category": "container",
         "mass": 30,
         "durability": 6,
@@ -220,10 +220,10 @@
         "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.25, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "chest_open", "close": "chest_close", "place": "chest_place" },
-        "inventory": { "slots": 4, "accepts": ["carrot"] },
+        "inventory": { "slots": 4, "accepts": ["carrot", "corn"] },
         "script": "scripts/feeding_trough.lua",
         "display": { "clips": { "readout": "clip", "scrub": [{ "readout": "fill", "clip": "fill" }] } },
-        "properties": { "food": "carrot", "ease": 0.3 }
+        "properties": { "foods": ["carrot", "corn"], "ease": 0.3 }
       },
       "model": [{ "kind": "mesh", "mesh": "meshes/parts/feeding_trough.glb" }],
       "recipes": [
@@ -356,7 +356,7 @@
         "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.875, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
-        "inventory": { "slots": 20, "accepts": ["carrot", "potato", "tomato", "beetroot", "banana", "chili", "blueberry", "orange", "broccoli", "pineapple"] }
+        "inventory": { "slots": 20, "accepts": ["carrot", "potato", "tomato", "beetroot", "banana", "chili", "blueberry", "orange", "broccoli", "pineapple", "corn"] }
       },
       "model": [{ "kind": "mesh", "mesh": "meshes/parts/fridge.glb" }],
       "recipes": [

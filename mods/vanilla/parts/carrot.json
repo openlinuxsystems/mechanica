@@ -1,7 +1,7 @@
 {
   "id": "carrot",
   "name": "Carrot",
-  "description": "Crunchy. Eat it to heal. Tame Grazers eat carrots from their Feeding Trough.",
+  "description": "Crunchy. Eat it to heal. Tame Grazers eat carrots (and corn) from their Feeding Trough.",
   "category": "consumable",
   "mass": 1.5,
   "durability": 1,

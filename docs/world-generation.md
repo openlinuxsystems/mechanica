@@ -428,9 +428,9 @@ Scuttler burrow, up onto the shrine's plinth, and into the gaps of the bunker an
 bots' wild `near` lists (`editor/batches/bots.json`) name the sites, so Scuttlers, Rakehands and Blue Spoolers are met
 round them. `WorldGenTests.FactionSitesStandOnTheirFactionsGround` keeps the counts and the Workshop clearance.
 
-### Wild cotton, pigment flowers, beehives and embers
+### Wild cotton, pigment flowers, corn, beehives and embers
 
-Four crafting resources the recipes need come from the vanilla world:
+Five crafting resources the recipes need come from the vanilla world:
 
 - **Cotton:** `wild_cotton` clumps (`tools/food/build_cotton.py`) stand in the Autumn Forest. Press Use on one to pick
   1 or 2 Cotton and, now and then, a Cotton Seed; the bolls grow back after `regrow` seconds. Cotton Seed grows into a
@@ -438,6 +438,11 @@ Four crafting resources the recipes need come from the vanilla world:
 - **Pigment Flower:** `wild_pigment_flower` clumps (`tools/food/build_pigment_flower.py`) grow in meadows and forests,
   as thinly as wild cotton. Press Use on one to pick a Pigment Flower (the Paint Ammo input) and, 40 % of the time, a
   Pigment Flower Seed; the clump flowers again after `regrow` seconds.
+- **Corn:** `wild_corn` clumps (`tools/food/build_corn.py`; one merged mesh, as every scattered prop) stand in the
+  farmland (one every 16 m at a 25 % chance) and more thinly in meadows (24 m, 20 %), and along the edges of the corn
+  layouts of `scene_corn_field`. A clump is solid, like a sapling: its `health` (20) takes two Sledgehammer blows, and a
+  creation's saw, drill or gun or a blast breaks it too (`damage_from`). It leaves 3 or 4 Corn on the ground and stands
+  again after `regrow` seconds. Corn is Grazer feed and a Popper input; it has no seed.
 - **Beeswax:** the `scene_rock_hive` scene sets a `rock_beehive` (`tools/beeswax/build_beeswax.py`) against the side of
   a `hive_rock`, a large rock at one fixed size, in the Forest and the Autumn Forest. Breaking the hive drops 1 or 2
   Beeswax and leaves the rock.

@@ -1,0 +1,24 @@
+{
+  "id": "popper_corn",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "corn",
+      "count": 5
+    },
+    {
+      "item": "gasoline",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "popper",
+      "count": 2
+    }
+  ],
+  "time": 6,
+  "order": 2541
+}

@@ -1,16 +1,31 @@
--- Feeding Trough: holds properties.food (carrots) for tame animals; tame Grazers make it their home (bots/grazer.json,
--- tame.homes). This script only shows how full it is, for its model:
+-- Feeding Trough: holds properties.foods (carrots and corn) for tame animals; tame Grazers make it their home
+-- (bots/grazer.json, tame.homes) and eat any of their tame.foods from it. This script only shows how full it is, for its
+-- model:
 --   "fill"   how full it is, 0 to 1 (what it holds of what it can hold), easing over properties.ease seconds
 --            when the amount changes; the hay in the tub follows it.
 
 local CHECK_EVERY = 5
 
+-- What it holds food in: properties.foods, or the single properties.food of older data.
+local function foods()
+  return properties.foods or { properties.food }
+end
+
+-- What it holds plus the most more of one food it has room for (the foods share its slots).
 local function capacity(held)
-  return math.max(1, held + creation.space(properties.food, { part.id() }))
+  local room = 0
+  for _, food in ipairs(foods()) do
+    room = math.max(room, creation.space(food, { part.id() }))
+  end
+  return math.max(1, held + room)
 end
 
 local function held()
-  return creation.count(properties.food, { part.id() })
+  local total = 0
+  for _, food in ipairs(foods()) do
+    total = total + creation.count(food, { part.id() })
+  end
+  return total
 end
 
 function on_create()
