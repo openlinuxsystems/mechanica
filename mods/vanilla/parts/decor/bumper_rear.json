@@ -1,7 +1,7 @@
 {
   "id": "bumper_rear",
   "name": "Rear Bumper",
-  "description": "A steel bar for the back of a vehicle.",
+  "description": "A steel bar for the back of a vehicle, with a tow hitch.",
   "category": "decor",
   "mass": 7.5,
   "durability": 5,
@@ -11,10 +11,9 @@
   "stack_size": 20,
   "sound_material": "metal",
   "size": [8, 1, 1],
-  "mesh": "meshes/decor/bumper_rear.glb",
+  "mesh": "meshes/parts/bumper_rear.glb",
+  "icon": "textures/items/bumper_rear_icon.png",
   "visual": {
-    "color": "#4a4a4a",
-    "roughness": 0.4,
-    "metallic": 0.7
+    "color": "#ffffff"
   }
 }

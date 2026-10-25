@@ -11,10 +11,9 @@
   "stack_size": 20,
   "sound_material": "plastic",
   "size": [2, 2, 1],
-  "mesh": "meshes/decor/mud_flap.glb",
+  "mesh": "meshes/parts/mud_flap.glb",
+  "icon": "textures/items/mud_flap_icon.png",
   "visual": {
-    "color": "#1a1a1a",
-    "roughness": 0.9,
-    "metallic": 0
+    "color": "#ffffff"
   }
 }

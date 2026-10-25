@@ -2,7 +2,8 @@
   // Decorative props (chunk 23): signs, pipes and beams, furniture, nature, vehicle cosmetics and misc. They do
   // nothing but sit there. Nature props have no recipe: they are placed in Creative and come with the world.
   // Stats follow the bars scale (1.5 kg per weight bar, durability = bars, friction and buoyancy = bars / 10; parts
-  // audit A2). Re-run with tools/author-vanilla.sh.
+  // audit A2). Re-run with tools/author-vanilla.sh. The vehicle body parts' models and icons (bumpers, mud flap, exhaust
+  // pipe, license plate, roof rack; audit D3) are built by tools/vehicle_body/build_vehicle_body.py.
   "format_version": 1,
   "parts": [
     {
@@ -440,6 +441,7 @@
       "set": {
         "name": "Front Bumper",
         "description": "A steel bar for the front of a vehicle.",
+        "icon": "textures/items/bumper_front_icon.png",
         "mass": 7.5,
         "durability": 5,
         "friction": 0.4,
@@ -448,13 +450,9 @@
         "sound_material": "metal",
         "stack_size": 20,
         "size": [8, 1, 1],
-        "visual": { "color": "#4a4a4a", "roughness": 0.4, "metallic": 0.7 }
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
       },
-      "model": [
-        { "kind": "box", "size": [2, 0.16, 0.12], "position": [0, 0, -0.06] },
-        { "kind": "box", "size": [0.2, 0.1, 0.12], "position": [0.7, 0, 0.06] },
-        { "kind": "box", "size": [0.2, 0.1, 0.12], "position": [-0.7, 0, 0.06] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/bumper_front.glb" }],
       "recipes": [
         {
           "id": "bumper_front",
@@ -471,7 +469,8 @@
       "template": "decor",
       "set": {
         "name": "Rear Bumper",
-        "description": "A steel bar for the back of a vehicle.",
+        "description": "A steel bar for the back of a vehicle, with a tow hitch.",
+        "icon": "textures/items/bumper_rear_icon.png",
         "mass": 7.5,
         "durability": 5,
         "friction": 0.4,
@@ -480,12 +479,9 @@
         "sound_material": "metal",
         "stack_size": 20,
         "size": [8, 1, 1],
-        "visual": { "color": "#4a4a4a", "roughness": 0.4, "metallic": 0.7 }
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
       },
-      "model": [
-        { "kind": "box", "size": [2, 0.14, 0.12], "position": [0, 0, 0.06] },
-        { "kind": "box", "size": [1.8, 0.03, 0.12], "position": [0, 0.09, 0.06] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/bumper_rear.glb" }],
       "recipes": [
         {
           "id": "bumper_rear",
@@ -502,7 +498,8 @@
       "template": "decor",
       "set": {
         "name": "Exhaust Pipe",
-        "description": "A bent chrome tailpipe. Purely for looks.",
+        "description": "A bent tailpipe with a heat-blued tip. Purely for looks.",
+        "icon": "textures/items/exhaust_pipe_icon.png",
         "mass": 3,
         "durability": 3,
         "friction": 0.3,
@@ -511,18 +508,9 @@
         "sound_material": "metal",
         "stack_size": 20,
         "size": [1, 3, 1],
-        "visual": { "color": "#b0b4b8", "roughness": 0.2, "metallic": 0.95 }
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
       },
-      "model": [
-        { "kind": "cylinder", "radius": 0.05, "height": 0.6, "position": [0, -0.05, 0] },
-        {
-          "kind": "cylinder",
-          "radius": 0.06,
-          "height": 0.12,
-          "position": [0, 0.3, -0.04],
-          "rotation": [40, 0, 0]
-        }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/exhaust_pipe.glb" }],
       "recipes": [
         {
           "id": "exhaust_pipe",
@@ -540,6 +528,7 @@
       "set": {
         "name": "Roof Rack",
         "description": "A rail frame for the roof of a vehicle.",
+        "icon": "textures/items/roof_rack_icon.png",
         "mass": 6,
         "durability": 4,
         "friction": 0.4,
@@ -548,16 +537,9 @@
         "sound_material": "metal",
         "stack_size": 20,
         "size": [6, 1, 8],
-        "visual": { "color": "#303030", "roughness": 0.4, "metallic": 0.7 }
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
       },
-      "model": [
-        { "kind": "box", "size": [0.04, 0.06, 2], "position": [-0.7, -0.06, 0] },
-        { "kind": "box", "size": [0.04, 0.06, 2], "position": [0.7, -0.06, 0] },
-        { "kind": "box", "size": [1.44, 0.03, 0.04], "position": [0, -0.03, -0.9] },
-        { "kind": "box", "size": [1.44, 0.03, 0.04], "position": [0, -0.03, -0.3] },
-        { "kind": "box", "size": [1.44, 0.03, 0.04], "position": [0, -0.03, 0.3] },
-        { "kind": "box", "size": [1.44, 0.03, 0.04], "position": [0, -0.03, 0.9] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/roof_rack.glb" }],
       "recipes": [
         {
           "id": "roof_rack",
@@ -575,6 +557,7 @@
       "set": {
         "name": "Mud Flap",
         "description": "A rubber flap to hang behind a wheel.",
+        "icon": "textures/items/mud_flap_icon.png",
         "mass": 1.5,
         "durability": 2,
         "friction": 0.7,
@@ -583,9 +566,9 @@
         "sound_material": "plastic",
         "stack_size": 20,
         "size": [2, 2, 1],
-        "visual": { "color": "#1a1a1a", "roughness": 0.9, "metallic": 0.0 }
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
       },
-      "model": [{ "kind": "box", "size": [0.44, 0.48, 0.02] }],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/mud_flap.glb" }],
       "recipes": [
         {
           "id": "mud_flap",
@@ -603,6 +586,7 @@
       "set": {
         "name": "License Plate",
         "description": "A plate for the back of a vehicle.",
+        "icon": "textures/items/license_plate_icon.png",
         "mass": 1.5,
         "durability": 2,
         "friction": 0.4,
@@ -611,12 +595,9 @@
         "sound_material": "metal",
         "stack_size": 20,
         "size": [2, 1, 1],
-        "visual": { "color": "#f0f0e0", "roughness": 0.5, "metallic": 0.4 }
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
       },
-      "model": [
-        { "kind": "box", "size": [0.46, 0.18, 0.01], "position": [0, 0, 0.115] },
-        { "kind": "box", "size": [0.36, 0.06, 0.01], "position": [0, 0, 0.11] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/license_plate.glb" }],
       "recipes": [
         {
           "id": "license_plate",

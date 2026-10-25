@@ -11,10 +11,9 @@
   "stack_size": 20,
   "sound_material": "metal",
   "size": [2, 1, 1],
-  "mesh": "meshes/decor/license_plate.glb",
+  "mesh": "meshes/parts/license_plate.glb",
+  "icon": "textures/items/license_plate_icon.png",
   "visual": {
-    "color": "#f0f0e0",
-    "roughness": 0.5,
-    "metallic": 0.4
+    "color": "#ffffff"
   }
 }

@@ -72,6 +72,8 @@ namespace Mechanica.Game.Tools;
 /// Feeding Trough until its milk is ready, the milk collected and held, and Grazer Steak dropped by a Grazer and held;
 /// given <c>garden</c>, the potted plants in a yard and a piped Beehive with its screen and bees; given <c>kitchen</c>, a Field Kitchen's station screen and cooking, and both burgers held and eaten; given <c>crops</c>,
 /// a wild Pigment Flower, the flower and its seed held, and its crop at every grow stage.
+/// Given <c>vehicle_body</c> it sets the debug car down with a cab roof and the vehicle body parts on it (bumpers, License
+/// Plate, Exhaust Pipe, Mud Flaps, Roof Rack) and shoots it round about and close up (<c>tools/capture-vehicle-body.sh</c>).
 /// </summary>
 public partial class CaptureScene : Node
 {
@@ -108,6 +110,7 @@ public partial class CaptureScene : Node
         var button = args.Length > 1 && args[1] == "button";
         var toggle = args.Length > 1 && args[1] == "switch";
         var logicParts = args.Length > 1 && args[1] == "logic_parts";
+        var vehicleBody = args.Length > 1 && args[1] == "vehicle_body";
         var fabricator = args.Length > 1 && args[1] == "fabricator";
         var oil = args.Length > 1 && args[1] == "oil";
         var small = args.Length > 1 && args[1] == "small_pois";
@@ -147,7 +150,7 @@ public partial class CaptureScene : Node
         var botClips = args.Length > 1 && args[1] == "bot_clips";
         var hands = args.Length > 1 && args[1] == "hands";
         var driving = args.Length > 1 && args[1] == "driving";
-        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !factions && !ladder && !beds && !extinguisher && !drops && !derelicts && !signs && !botClips && !hands && !driving && !connectLines && !husbandry && !consumables && !grazerProducts && !kitchen && !garden && !fields && !gauges && !flight && !logicParts && !building && args[1] != "survey" && args[1] != "spots" && args[1] != "daynight" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !factions && !ladder && !beds && !extinguisher && !drops && !derelicts && !signs && !botClips && !hands && !driving && !connectLines && !husbandry && !consumables && !grazerProducts && !kitchen && !garden && !fields && !gauges && !flight && !logicParts && !vehicleBody && !building && args[1] != "survey" && args[1] != "spots" && args[1] != "daynight" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         // Captures hold the sky at mid-morning so shots compare across runs; `daynight` walks it through the day.
@@ -324,6 +327,11 @@ public partial class CaptureScene : Node
         if (debugCar)
         {
             DebugCarShots();
+            return;
+        }
+        if (vehicleBody)
+        {
+            VehicleBodyShots();
             return;
         }
         if (toggle)
