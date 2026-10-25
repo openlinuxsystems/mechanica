@@ -1,0 +1,32 @@
+{
+  "id": "broccoli",
+  "name": "Broccoli",
+  "description": "A crunchy green head. Eat it to heal.",
+  "category": "consumable",
+  "mass": 1.5,
+  "durability": 1,
+  "friction": 0.4,
+  "buoyancy": 0.4,
+  "flammable": true,
+  "stack_size": 10,
+  "mesh": "meshes/items/broccoli.glb",
+  "icon": "textures/items/broccoli_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "script": "scripts/food.lua",
+  "sounds": {
+    "pickup": "pickup_produce",
+    "eat": "eat_crunch"
+  },
+  "held": {
+    "mesh": "meshes/items/broccoli_held.glb",
+    "offset": [-0.038, 0.066, 0],
+    "rotation": [-90, 0, 90],
+    "juice": "#a6c070"
+  },
+  "properties": {
+    "health": 50,
+    "eat_seconds": 1.4
+  }
+}

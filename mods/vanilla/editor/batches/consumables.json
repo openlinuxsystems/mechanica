@@ -22,6 +22,10 @@
 // Crops batch K3 (tools/food/build_crops.py): Beetroot (heals 30), Banana (35) and Chili, the fruit stats and a seed each
 // (seed stats, 1260 s, 2 crops and 1 to 3 seeds back; raid values Beetroot 5, Banana and Chili 10). The Chili is a joke
 // food: its negative health hurts the eater 50 (food.lua through holder.hurt), even at full health.
+// Crops batch K4 (tools/food/build_crops.py): Blueberry (heals 40), Orange (45), Broccoli (50) and Pineapple (55), the fruit
+// stats and a seed each (seed stats, 1260 s, 2 crops and 1 to 3 seeds back; raid values Blueberry 31, Orange 61, Broccoli
+// 90, Pineapple 161: one of each reaches the raid level SM's would). Broccoli and Pineapple are thirsty (seed.thirst 2:
+// two Water Buckets a crop). The Fabricator makes a Grazer Shake from 100 Ice Blocks, 3 Oranges and 1 Grazer Milk (3210).
 // Re-run with tools/author-vanilla.sh.
 {
   "format_version": 1,
@@ -354,6 +358,182 @@
       "model": [{ "kind": "mesh", "mesh": "meshes/items/chili_seed.glb" }]
     },
     {
+      "file": "parts/blueberry.json",
+      "template": "item",
+      "set": {
+        "name": "Blueberry",
+        "description": "A big, sweet berry. Eat it to heal.",
+        "category": "consumable",
+        "mass": 1.5,
+        "durability": 1,
+        "friction": 0.4,
+        "buoyancy": 0.4,
+        "flammable": true,
+        "stack_size": 10,
+        "icon": "textures/items/blueberry_icon.png",
+        "visual": { "color": "#ffffff" },
+        "held": { "mesh": "meshes/items/blueberry_held.glb", "offset": [-0.034, 0.074, -0.012], "rotation": [180, 0, 90], "juice": "#5e2e78" },
+        "sounds": { "pickup": "pickup_produce", "eat": "eat_soft" },
+        "script": "scripts/food.lua",
+        "properties": { "health": 40, "eat_seconds": 1.4 }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/blueberry.glb" }]
+    },
+    {
+      "file": "parts/orange.json",
+      "template": "item",
+      "set": {
+        "name": "Orange",
+        "description": "Sweet and juicy, peel and all. Eat it to heal.",
+        "category": "consumable",
+        "mass": 1.5,
+        "durability": 1,
+        "friction": 0.4,
+        "buoyancy": 0.4,
+        "flammable": true,
+        "stack_size": 10,
+        "icon": "textures/items/orange_icon.png",
+        "visual": { "color": "#ffffff" },
+        "held": { "mesh": "meshes/items/orange_held.glb", "offset": [-0.034, 0.076, -0.014], "rotation": [180, 0, 90], "juice": "#f49a2c" },
+        "sounds": { "pickup": "pickup_produce", "eat": "eat_soft" },
+        "script": "scripts/food.lua",
+        "properties": { "health": 45, "eat_seconds": 1.4 }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/orange.glb" }]
+    },
+    {
+      "file": "parts/broccoli.json",
+      "template": "item",
+      "set": {
+        "name": "Broccoli",
+        "description": "A crunchy green head. Eat it to heal.",
+        "category": "consumable",
+        "mass": 1.5,
+        "durability": 1,
+        "friction": 0.4,
+        "buoyancy": 0.4,
+        "flammable": true,
+        "stack_size": 10,
+        "icon": "textures/items/broccoli_icon.png",
+        "visual": { "color": "#ffffff" },
+        "held": { "mesh": "meshes/items/broccoli_held.glb", "offset": [-0.038, 0.066, 0], "rotation": [-90, 0, 90], "juice": "#a6c070" },
+        "sounds": { "pickup": "pickup_produce", "eat": "eat_crunch" },
+        "script": "scripts/food.lua",
+        "properties": { "health": 50, "eat_seconds": 1.4 }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/broccoli.glb" }]
+    },
+    {
+      "file": "parts/pineapple.json",
+      "template": "item",
+      "set": {
+        "name": "Pineapple",
+        "description": "Tangy and juicy, a prize of the farm. Eat it to heal.",
+        "category": "consumable",
+        "mass": 1.5,
+        "durability": 1,
+        "friction": 0.4,
+        "buoyancy": 0.4,
+        "flammable": true,
+        "stack_size": 10,
+        "icon": "textures/items/pineapple_icon.png",
+        "visual": { "color": "#ffffff" },
+        "held": { "mesh": "meshes/items/pineapple_held.glb", "offset": [-0.038, 0.066, 0.02], "rotation": [-90, 0, 90], "juice": "#f4d452" },
+        "sounds": { "pickup": "pickup_produce", "eat": "eat_crunch" },
+        "script": "scripts/food.lua",
+        "properties": { "health": 55, "eat_seconds": 1.4 }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/pineapple.glb" }]
+    },
+    {
+      "file": "parts/blueberry_seed.json",
+      "template": "item",
+      "set": {
+        "name": "Blueberry Seed",
+        "description": "Plant in watered soil. Grows into a blueberry bush. A rare find.",
+        "category": "consumable",
+        "mass": 4.5,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.3,
+        "flammable": true,
+        "stack_size": 20,
+        "icon": "textures/items/blueberry_seed_icon.png",
+        "visual": { "color": "#ffffff" },
+        "held": { "mesh": "meshes/items/blueberry_seed.glb", "offset": [-0.028, 0.062, -0.035], "rotation": [0, 90, 90] },
+        "sounds": { "pickup": "seed_pickup", "place": "seed_place" },
+        "seed": { "crop": "blueberry", "grow_time": 1260, "yield": 2, "seeds": 1, "seeds_max": 3, "value": 31, "plant": "meshes/crops/blueberry_plant.glb" },
+        "script": "scripts/seed.lua"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/blueberry_seed.glb" }]
+    },
+    {
+      "file": "parts/orange_seed.json",
+      "template": "item",
+      "set": {
+        "name": "Orange Seed",
+        "description": "Plant in watered soil. Grows into a dwarf orange tree. A rare find.",
+        "category": "consumable",
+        "mass": 4.5,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.3,
+        "flammable": true,
+        "stack_size": 20,
+        "icon": "textures/items/orange_seed_icon.png",
+        "visual": { "color": "#ffffff" },
+        "held": { "mesh": "meshes/items/orange_seed.glb", "offset": [-0.028, 0.062, -0.035], "rotation": [0, 90, 90] },
+        "sounds": { "pickup": "seed_pickup", "place": "seed_place" },
+        "seed": { "crop": "orange", "grow_time": 1260, "yield": 2, "seeds": 1, "seeds_max": 3, "value": 61, "plant": "meshes/crops/orange_plant.glb" },
+        "script": "scripts/seed.lua"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/orange_seed.glb" }]
+    },
+    {
+      "file": "parts/broccoli_seed.json",
+      "template": "item",
+      "set": {
+        "name": "Broccoli Seed",
+        "description": "Plant in watered soil. Grows into broccoli. Thirsty: it needs watering twice. A rare find.",
+        "category": "consumable",
+        "mass": 4.5,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.3,
+        "flammable": true,
+        "stack_size": 20,
+        "icon": "textures/items/broccoli_seed_icon.png",
+        "visual": { "color": "#ffffff" },
+        "held": { "mesh": "meshes/items/broccoli_seed.glb", "offset": [-0.028, 0.062, -0.035], "rotation": [0, 90, 90] },
+        "sounds": { "pickup": "seed_pickup", "place": "seed_place" },
+        "seed": { "crop": "broccoli", "grow_time": 1260, "yield": 2, "seeds": 1, "seeds_max": 3, "value": 90, "thirst": 2, "plant": "meshes/crops/broccoli_plant.glb" },
+        "script": "scripts/seed.lua"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/broccoli_seed.glb" }]
+    },
+    {
+      "file": "parts/pineapple_seed.json",
+      "template": "item",
+      "set": {
+        "name": "Pineapple Seed",
+        "description": "Plant in watered soil. Grows into a pineapple. Thirsty: it needs watering twice. A very rare find.",
+        "category": "consumable",
+        "mass": 4.5,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.3,
+        "flammable": true,
+        "stack_size": 20,
+        "icon": "textures/items/pineapple_seed_icon.png",
+        "visual": { "color": "#ffffff" },
+        "held": { "mesh": "meshes/items/pineapple_seed.glb", "offset": [-0.028, 0.062, -0.035], "rotation": [0, 90, 90] },
+        "sounds": { "pickup": "seed_pickup", "place": "seed_place" },
+        "seed": { "crop": "pineapple", "grow_time": 1260, "yield": 2, "seeds": 1, "seeds_max": 3, "value": 161, "thirst": 2, "plant": "meshes/crops/pineapple_plant.glb" },
+        "script": "scripts/seed.lua"
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/pineapple_seed.glb" }]
+    },
+    {
       "file": "parts/chemical.json",
       "template": "item",
       "set": {
@@ -443,7 +623,7 @@
       "template": "item",
       "set": {
         "name": "Grazer Shake",
-        "description": "A Colony Works protein shake. Drink it to heal fully; you can keep running while you drink.",
+        "description": "A Colony Works protein shake. Drink it to heal fully; you can keep running while you drink. Made at the Fabricator from ice, oranges and Grazer Milk.",
         "category": "consumable",
         "mass": 3,
         "durability": 1,
@@ -458,7 +638,17 @@
         "script": "scripts/food.lua",
         "properties": { "health": 100, "drink": true, "eat_seconds": 0.67 }
       },
-      "model": [{ "kind": "mesh", "mesh": "meshes/items/grazer_shake.glb" }]
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/grazer_shake.glb" }],
+      "recipes": [
+        {
+          "id": "grazer_shake",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "ice_block", "count": 100 }, { "item": "orange", "count": 3 }, { "item": "grazer_milk", "count": 1 }],
+          "outputs": [{ "item": "grazer_shake", "count": 1 }],
+          "time": 10,
+          "order": 3210
+        }
+      ]
     },
     {
       "file": "parts/grazer_milk.json",

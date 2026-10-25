@@ -107,6 +107,10 @@
     "beetroot_seed": { "prop": "item", "gesture": "plant" },
     "banana_seed": { "prop": "item", "gesture": "plant" },
     "chili_seed": { "prop": "item", "gesture": "plant" },
+    "blueberry_seed": { "prop": "item", "gesture": "plant" },
+    "orange_seed": { "prop": "item", "gesture": "plant" },
+    "broccoli_seed": { "prop": "item", "gesture": "plant" },
+    "pineapple_seed": { "prop": "item", "gesture": "plant" },
     "fertilizer": { "prop": "item", "gesture": "plant" },
     "soil_bag": { "prop": "soil_bag", "gesture": "bag_spill" },
     // Held by its handle and sprayed while Use is held (held.hold_use): no gesture of its own.

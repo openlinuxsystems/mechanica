@@ -9,7 +9,7 @@ namespace Mechanica.Core.Tests.Data;
 /// <c>mods/vanilla/editor/batches/consumables.json</c>, and the consumables we have take the wiki's stats (1.5 kg per weight
 /// bar; durability = bars; friction and buoyancy = bars / 10), the Food page's heals and the wiki's recipes, with Ember for
 /// Glow. Emptying a Chemical Bucket at the Fabricator gives the empty Water Bucket back as the recipe's second output.
-/// Batch C2b adds the drinks (Bloom Tea, Grazer Shake: loot only) and Fertilizer, made from Ember and a full Water Bucket.
+/// Batch C2b adds the drinks (Bloom Tea, Grazer Shake: loot; the shake is also made at the Fabricator since crops batch K4) and Fertilizer, made from Ember and a full Water Bucket.
 /// Batch C4 adds the Field Kitchen's burgers (heal 30, cooked there: the 3200 recipe group), and the Potato stops being
 /// food (ammo and a cooking input).
 /// </summary>
@@ -138,16 +138,19 @@ public class ConsumablesTests
         // Its list is the 3200 group (Food and cooking), and every recipe in that group is cooked here.
         Assert.Equal(["vanilla:garden_burger", "vanilla:colony_burger"],
             RecipeBrowser.Ordered(book.ForStation("field_kitchen")).Select(r => r.QualifiedId));
-        Assert.All(book.All.Where(r => r.Definition.Order / 100 == 32), r => Assert.Equal(["vanilla:field_kitchen"], r.Stations));
+        // (3210 is the Fabricator's Grazer Shake, crops batch K4.)
+        Assert.All(book.All.Where(r => r.Definition.Order / 100 == 32 && r.Definition.Order != 3210), r => Assert.Equal(["vanilla:field_kitchen"], r.Stations));
         // It is made at the Fabricator, among the stations (1800).
         Assert.Equal(1850, book.Find("field_kitchen")!.Definition.Order);
     }
 
     [Fact]
-    public void TheDrinksAreLootOnly()
+    public void TheDrinksAreLoot()
     {
+        // Bloom Tea is loot only; the Grazer Shake is loot and, since crops batch K4, made at the Fabricator (CropsTests).
         var book = RecipeBook.Load(Vanilla.Value);
-        Assert.DoesNotContain(book.All, r => r.Outputs.Any(o => o.Item is "vanilla:bloom_tea" or "vanilla:grazer_shake"));
+        Assert.DoesNotContain(book.All, r => r.Outputs.Any(o => o.Item is "vanilla:bloom_tea"));
+        Assert.Equal(["vanilla:fabricator"], book.All.Where(r => r.Outputs.Any(o => o.Item == "vanilla:grazer_shake")).SelectMany(r => r.Stations));
         var worldgen = File.ReadAllText(Path.Combine(Mod, "world", "worldgen.json"));
         Assert.Contains("\"bloom_tea\"", worldgen);
         Assert.Contains("\"grazer_shake\"", worldgen);
@@ -222,7 +225,8 @@ public class ConsumablesTests
         Assert.Equal(["parts/carrot.json", "parts/tomato.json", "parts/potato.json", "parts/carrot_seed.json", "parts/tomato_seed.json",
                 "parts/potato_seed.json", "parts/cotton_seed.json", "parts/pigment_flower.json", "parts/pigment_flower_seed.json",
                 "parts/beetroot.json", "parts/banana.json", "parts/chili.json", "parts/beetroot_seed.json", "parts/banana_seed.json",
-                "parts/chili_seed.json",
+                "parts/chili_seed.json", "parts/blueberry.json", "parts/orange.json", "parts/broccoli.json", "parts/pineapple.json",
+                "parts/blueberry_seed.json", "parts/orange_seed.json", "parts/broccoli_seed.json", "parts/pineapple_seed.json",
                 "parts/chemical.json", "parts/gasoline.json",
                 "parts/bloom_tea.json", "parts/grazer_shake.json", "parts/grazer_milk.json", "parts/grazer_steak.json", "parts/fertilizer.json",
                 "parts/garden_burger.json", "parts/colony_burger.json"],

@@ -1,0 +1,32 @@
+{
+  "id": "orange",
+  "name": "Orange",
+  "description": "Sweet and juicy, peel and all. Eat it to heal.",
+  "category": "consumable",
+  "mass": 1.5,
+  "durability": 1,
+  "friction": 0.4,
+  "buoyancy": 0.4,
+  "flammable": true,
+  "stack_size": 10,
+  "mesh": "meshes/items/orange.glb",
+  "icon": "textures/items/orange_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "script": "scripts/food.lua",
+  "sounds": {
+    "pickup": "pickup_produce",
+    "eat": "eat_soft"
+  },
+  "held": {
+    "mesh": "meshes/items/orange_held.glb",
+    "offset": [-0.034, 0.076, -0.014],
+    "rotation": [180, 0, 90],
+    "juice": "#f49a2c"
+  },
+  "properties": {
+    "health": 45,
+    "eat_seconds": 1.4
+  }
+}

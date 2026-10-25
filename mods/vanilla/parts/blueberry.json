@@ -1,0 +1,32 @@
+{
+  "id": "blueberry",
+  "name": "Blueberry",
+  "description": "A big, sweet berry. Eat it to heal.",
+  "category": "consumable",
+  "mass": 1.5,
+  "durability": 1,
+  "friction": 0.4,
+  "buoyancy": 0.4,
+  "flammable": true,
+  "stack_size": 10,
+  "mesh": "meshes/items/blueberry.glb",
+  "icon": "textures/items/blueberry_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "script": "scripts/food.lua",
+  "sounds": {
+    "pickup": "pickup_produce",
+    "eat": "eat_soft"
+  },
+  "held": {
+    "mesh": "meshes/items/blueberry_held.glb",
+    "offset": [-0.034, 0.074, -0.012],
+    "rotation": [180, 0, 90],
+    "juice": "#5e2e78"
+  },
+  "properties": {
+    "health": 40,
+    "eat_seconds": 1.4
+  }
+}

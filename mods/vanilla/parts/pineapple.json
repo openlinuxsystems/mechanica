@@ -1,0 +1,32 @@
+{
+  "id": "pineapple",
+  "name": "Pineapple",
+  "description": "Tangy and juicy, a prize of the farm. Eat it to heal.",
+  "category": "consumable",
+  "mass": 1.5,
+  "durability": 1,
+  "friction": 0.4,
+  "buoyancy": 0.4,
+  "flammable": true,
+  "stack_size": 10,
+  "mesh": "meshes/items/pineapple.glb",
+  "icon": "textures/items/pineapple_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "script": "scripts/food.lua",
+  "sounds": {
+    "pickup": "pickup_produce",
+    "eat": "eat_crunch"
+  },
+  "held": {
+    "mesh": "meshes/items/pineapple_held.glb",
+    "offset": [-0.038, 0.066, 0.02],
+    "rotation": [-90, 0, 90],
+    "juice": "#f4d452"
+  },
+  "properties": {
+    "health": 55,
+    "eat_seconds": 1.4
+  }
+}

@@ -374,8 +374,8 @@ in `properties`. The vanilla scripts read these properties:
 | `seed.yield` | integer ≥ 1 | Crop items a harvest gives. Default 1. |
 | `seed.seeds` | integer ≥ 0 | Seeds a harvest gives back (the least, with `seeds_max`). Default 0. |
 | `seed.seeds_max` | integer ≥ `seeds` | Most seeds a harvest gives back: each harvest rolls from `seeds` to `seeds_max` (vanilla carrot, tomato and potato: 1 to 3). Default: exactly `seeds`. |
-| `seed.value` | number ≥ 0 | How much a planted crop draws raids (chunk 21; vanilla: cotton and pigment flower 0, potato and tomato 1, carrot 2, beetroot 5, banana and chili 10). Default 1. |
-| `seed.thirst` | number > 0 | Seconds of water one second of growth uses (crops map K1). With 1 a full Water Bucket (1260 s) grows a 1260 s crop in a soil mound (`capacity` 1260); 2 drinks the soil dry twice as fast, so the crop needs two waterings. Read by `soil.lua`. Default 1. |
+| `seed.value` | number ≥ 0 | How much a planted crop draws raids (chunk 21; vanilla: cotton and pigment flower 0, potato and tomato 1, carrot 2, beetroot 5, banana and chili 10, blueberry 31, orange 61, broccoli 90, pineapple 161). Default 1. |
+| `seed.thirst` | number > 0 | Seconds of water one second of growth uses (crops map K1). With 1 a full Water Bucket (1260 s) grows a 1260 s crop in a soil mound (`capacity` 1260); 2 drinks the soil dry twice as fast, so the crop needs two waterings (vanilla broccoli and pineapple). Read by `soil.lua`. Default 1. |
 | `seed.plant` | mesh path | The growing plant's model on the soil (see [Crop plant models](#crop-plant-models)). Default: a plain green shoot with the crop's colour on top once ripe. |
 | `soil.capacity` | number > 0 (s) | Most seconds of water the soil holds. Required. |
 | `soil.growth` | number > 0 | Growth speed multiplier for crops on it. Default 1. |
@@ -774,7 +774,7 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 | 2900 | Windows and fences | `window_square`, `window_large`, `window_metal`, `net_fence` |
 | 3000 | Farm and shack decor | `produce_box_carrot`, `produce_box_potato`, `produce_box_tomato`, `produce_box_mixed`, `stacked_crates`, `grass_planter`, `plant_container`, `plant_container_open`, `vending_machine`, `grazer_head_topper`, `duck_statuette`, `mannequin_hand`, `mannequin_boot`, `shack_awning` |
 | 3100 | Industrial and site decor | `tank_small`, `tank_medium`, `tank_large`, `juice_drum`, `coil_segment`, `coil_corner`, `fuse_box`, `air_conditioner`, `vent_grid`, `crane_body`, `crane_hook`, `broken_concrete_medium`, `broken_concrete_large`, `hull_door`, `nut`, `screw`, `steel_pallet`, `dish_antenna`, `reflector_dish`, `reflector_antenna` |
-| 3200 | Food and cooking | the Field Kitchen's recipes: `garden_burger` (3220), `colony_burger` (3230); 3210 is kept for the Fabricator's Grazer Shake |
+| 3200 | Food and cooking | `grazer_shake` (3210, the Fabricator's: 100 Ice Blocks, 3 Oranges, 1 Grazer Milk), then the Field Kitchen's recipes: `garden_burger` (3220), `colony_burger` (3230) |
 
 ## The editor source file
 

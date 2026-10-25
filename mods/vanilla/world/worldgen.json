@@ -943,6 +943,9 @@
         { "item": "banana_seed", "count": 1, "count_max": 2, "weight": 0.5 },
         { "item": "chili_seed", "count": 1, "count_max": 2, "weight": 0.5 },
         { "item": "banana", "count": 1, "count_max": 3, "weight": 1.0 },
+        { "item": "blueberry_seed", "count": 1, "weight": 0.4 },
+        { "item": "blueberry", "count": 1, "count_max": 2, "weight": 0.75 },
+        { "item": "orange", "count": 1, "count_max": 2, "weight": 0.5 },
         { "item": "wheel", "count": 2, "count_max": 4, "weight": 2.0 },
         { "item": "sport_suspension", "count": 1, "count_max": 2, "weight": 1.0 },
         { "item": "scrap_gas_engine", "count": 1, "weight": 1.5 },
@@ -960,6 +963,10 @@
         { "item": "potato_blaster", "count": 1, "weight": 1.0 },
         { "item": "grazer_shake", "count": 1, "count_max": 2, "weight": 2.0 },
         { "item": "chili", "count": 1, "count_max": 2, "weight": 0.5 },
+        { "item": "orange_seed", "count": 1, "weight": 0.4 },
+        { "item": "broccoli_seed", "count": 1, "weight": 0.3 },
+        { "item": "pineapple_seed", "count": 1, "weight": 0.25 },
+        { "item": "broccoli", "count": 1, "count_max": 2, "weight": 0.5 },
         { "item": "electric_engine", "count": 1, "weight": 1.5 },
         { "item": "gas_engine", "count": 1, "weight": 2.0 },
         { "item": "thruster", "count": 1, "weight": 1.0 },
@@ -974,6 +981,8 @@
     // full-heal shake rarer (lockers, purple and gold pods); Fertilizer in pods, crates and ruin chests. Crops batch K3: Beetroot
     // and its seed are common (green pods, crates, lockers, ruin chests); Banana and Chili seeds epic (purple pods, Banana Seed
     // also in ruin chests), and the Chili itself a rare gold pod find, the order Scrap Mechanic unlocks them in.
+    // Crops batch K4, rarer still: Blueberry Seed in purple pods and warehouse crates; Orange, Broccoli and Pineapple Seeds in
+    // gold pods (Orange and Pineapple also in warehouse crates); the fruit itself in the same tiers (Pineapple in warehouse crates).
     // The Warehouse Key: one locker on each warehouse's top floor holds it (the only place the world gives one).
     "warehouse_office": {
       "items": [
@@ -1085,7 +1094,11 @@
         { "item": "controller", "count": 1, "weight": 1.0 },
         { "item": "sensor", "count": 1, "weight": 1.0 },
         { "item": "sport_suspension", "count": 1, "count_max": 2, "weight": 1.0 },
-        { "item": "warehouse_spotlight", "count": 1, "weight": 0.5 }
+        { "item": "warehouse_spotlight", "count": 1, "weight": 0.5 },
+        { "item": "blueberry_seed", "count": 1, "weight": 0.3 },
+        { "item": "orange_seed", "count": 1, "weight": 0.25 },
+        { "item": "pineapple_seed", "count": 1, "weight": 0.2 },
+        { "item": "pineapple", "count": 1, "weight": 0.5 }
       ]
     }
   },
