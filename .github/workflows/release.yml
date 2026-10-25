@@ -34,9 +34,8 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-dotnet@v5
-        with:
-          global-json-file: global.json
+      - name: Install .NET
+        run: tools/ci/install-dotnet.sh
 
       - name: Read pinned versions
         run: grep -E '^[A-Z_]+=' tools/versions.env >> "$GITHUB_ENV"

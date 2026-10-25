@@ -2,24 +2,8 @@
   "format_version": 1,
   "model": [
     {
-      "kind": "cylinder",
-      "radius": 0.03,
-      "height": 1.1,
-      "position": [0, -0.2, 0]
-    },
-    {
-      "kind": "cylinder",
-      "radius": 0.3,
-      "height": 0.03,
-      "position": [0, 0.45, -0.05],
-      "rotation": [90, 0, 0]
-    },
-    {
-      "kind": "cylinder",
-      "radius": 0.24,
-      "height": 0.01,
-      "position": [0, 0.45, -0.07],
-      "rotation": [90, 0, 0]
+      "kind": "mesh",
+      "mesh": "meshes/parts/speed_limit_sign.glb"
     }
   ]
 }

@@ -11,10 +11,9 @@
   "stack_size": 20,
   "sound_material": "metal",
   "size": [3, 6, 1],
-  "mesh": "meshes/decor/outpost_sign.glb",
+  "mesh": "meshes/parts/outpost_sign.glb",
+  "icon": "textures/items/outpost_sign_icon.png",
   "visual": {
-    "color": "#e08020",
-    "roughness": 0.5,
-    "metallic": 0.5
+    "color": "#ffffff"
   }
 }

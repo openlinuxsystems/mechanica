@@ -11,10 +11,9 @@
   "stack_size": 20,
   "sound_material": "metal",
   "size": [3, 6, 1],
-  "mesh": "meshes/decor/warehouse_key_sign.glb",
+  "mesh": "meshes/parts/warehouse_key_sign.glb",
+  "icon": "textures/items/warehouse_key_sign_icon.png",
   "visual": {
-    "color": "#3060a0",
-    "roughness": 0.5,
-    "metallic": 0.5
+    "color": "#ffffff"
   }
 }

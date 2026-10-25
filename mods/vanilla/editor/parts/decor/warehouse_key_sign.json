@@ -2,20 +2,8 @@
   "format_version": 1,
   "model": [
     {
-      "kind": "cylinder",
-      "radius": 0.03,
-      "height": 1.1,
-      "position": [0, -0.2, 0]
-    },
-    {
-      "kind": "box",
-      "size": [0.56, 0.56, 0.03],
-      "position": [0, 0.45, -0.05]
-    },
-    {
-      "kind": "box",
-      "size": [0.2, 0.08, 0.01],
-      "position": [0, 0.45, -0.07]
+      "kind": "mesh",
+      "mesh": "meshes/parts/warehouse_key_sign.glb"
     }
   ]
 }
