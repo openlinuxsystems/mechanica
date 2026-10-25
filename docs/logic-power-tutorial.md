@@ -102,8 +102,8 @@ into your inventory with it.
 
 The other supply containers link the same way. A Water Cannon fires only the full water buckets of the Water
 Containers linked into it and a Mounted Potato Blaster only the potatoes of its Potato Ammo Containers (with none
-linked they just click); a Sticky Wheel burns the chemicals of its Chemical Containers and a Plasma Drill the
-batteries of its Battery Containers, or those of any container in the creation when none is linked.
+linked they just click); a Sticky Wheel burns the chemicals of its Chemical Containers, and a Plasma Drill, a Rotor and a Hover Jet the
+batteries of their Battery Containers, or those of any container in the creation when none is linked.
 
 ## A switch and a piston
 

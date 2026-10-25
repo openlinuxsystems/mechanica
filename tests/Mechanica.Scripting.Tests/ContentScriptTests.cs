@@ -331,6 +331,8 @@ public sealed class ContentScriptTests : IDisposable
     [Fact]
     public void ARotorsModelSpinsWithItsSpeedAndAFlapTiltsWithItsCommand()
     {
+        // In Creative, so the rotor needs no batteries (AeroScriptTests covers what it burns).
+        _runtime.Creative = true;
         var creation = Board();
         var rotor = Place(creation, "vanilla:rotor", new GridCell(-1, 1, -1));
         var flap = Place(creation, "vanilla:control_surface", new GridCell(-4, 1, 3));

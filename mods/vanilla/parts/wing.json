@@ -11,11 +11,10 @@
   "stack_size": 20,
   "sound_material": "metal",
   "size": [4, 1, 4],
-  "mesh": "meshes/wing.glb",
+  "mesh": "meshes/parts/wing.glb",
+  "icon": "textures/items/wing_icon.png",
   "visual": {
-    "color": "#c8ccd2",
-    "roughness": 0.5,
-    "metallic": 0.5
+    "color": "#ffffff"
   },
   "collision": {
     "shape": "box",

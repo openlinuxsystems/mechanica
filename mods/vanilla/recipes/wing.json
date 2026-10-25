@@ -5,11 +5,11 @@
   ],
   "inputs": [
     {
-      "item": "scrap_metal_block",
-      "count": 8
+      "item": "aluminum_block",
+      "count": 10
     },
     {
-      "item": "component_kit",
+      "item": "glue",
       "count": 1
     }
   ],
@@ -19,6 +19,6 @@
       "count": 1
     }
   ],
-  "time": 4,
+  "time": 10,
   "order": 1140
 }

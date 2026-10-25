@@ -30,8 +30,9 @@ public partial class VanillaAeroTest : StagedTest
     private const int PlaneId = 1, HeliId = 2;
     private static readonly string[] Outputs = ["thruster", "wing", "control_surface", "rotor", "hover_jet"];
 
-    // Parts whose model is a file made elsewhere (the Thruster's five levels: tools/thruster, parts map batch 6).
-    private static readonly string[] Authored = ["thruster"];
+    // Parts whose model is a file made elsewhere (the Thruster's five levels: tools/thruster, parts map batch 6; the
+    // wing, control surface, rotor and hover jet: tools/aero, parts audit batch D1).
+    private static readonly string[] Authored = ["thruster", "wing", "control_surface", "rotor", "hover_jet"];
 
     // The plane takes off along the diagonal of one 64 m ground chunk, toward its corner at the origin.
     private static readonly Vector3 PlaneAt = new(58, 1.2f, 58);
