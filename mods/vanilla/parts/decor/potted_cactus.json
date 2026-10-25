@@ -1,0 +1,19 @@
+{
+  "id": "potted_cactus",
+  "name": "Potted Cactus",
+  "description": "A ribbed cactus with two arms in a small settler clay pot. Mind the spines.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 2,
+  "friction": 0.6,
+  "buoyancy": 0.1,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "concrete",
+  "size": [1, 2, 1],
+  "mesh": "meshes/parts/potted_cactus.glb",
+  "icon": "textures/items/potted_cactus_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

@@ -761,7 +761,11 @@ public partial class InventoryScreen
             _queueRow.AddChild(cell);
             _emptyCells.Add(cell);
         }
-        // Time order: finished stacks, the order in progress, waiting orders, then empty cells up to the queue size.
+        // Time order: finished stacks, the order in progress, waiting orders, then empty cells up to the queue size. A
+        // station that takes its inputs into its own slots (crafting.auto) shows those stacks as inputs, not as ready.
+        var atStation = view?.Part is { } stationPart ? Inventory.Recipes.ForStation(stationPart).ToList() : [];
+        var made = atStation.SelectMany(r => r.Outputs.Select(o => o.Item)).ToHashSet();
+        var used = atStation.SelectMany(r => r.Inputs.Select(o => o.Item)).Where(i => !made.Contains(i)).ToHashSet();
         var at = 0;
         for (var i = 0; i < _readyCells.Count; i++)
         {
@@ -773,6 +777,9 @@ public partial class InventoryScreen
             cell.Stack = stack;
             cell.Slot.Show(stack.Item, Icons?.For(stack.Item), ItemName(stack.Item), null);
             cell.Count.Text = $"×{stack.Count}";
+            var input = used.Contains(stack.Item);
+            cell.Note.Text = input ? Loc.T("Input") : Loc.T("Ready");
+            cell.Fill = input ? UiTokens.Tile : UiTokens.SuccessFill;
             _queueRow.MoveChild(cell, at++);
         }
         for (var i = 0; i < _jobCells.Count; i++)
@@ -1020,11 +1027,14 @@ public partial class InventoryScreen
             var text = new VBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, MouseFilter = MouseFilterEnum.Ignore };
             text.AddThemeConstantOverride("separation", 0);
             text.AddChild(Count);
-            text.AddChild(new Label { Text = "Ready", ThemeTypeVariation = "InkLabel", MouseFilter = MouseFilterEnum.Ignore });
+            text.AddChild(Note);
             row.AddChild(text);
         }
 
         public ItemSlot Slot { get; } = new();
+
+        /// <summary>Ready for a finished stack; Input for a stack the station will use (one that works on its own).</summary>
+        public Label Note { get; } = Loc.Verbatim(new Label { ThemeTypeVariation = "InkLabel", MouseFilter = MouseFilterEnum.Ignore });
 
         public Label Count { get; } = Loc.Verbatim(new Label { ThemeTypeVariation = "InkNumericLabel", MouseFilter = MouseFilterEnum.Ignore });
 

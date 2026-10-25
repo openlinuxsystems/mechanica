@@ -37,7 +37,7 @@ Machines connect to each other and to tubes, so every machine puts its ports in 
 A face must be at least 3 blocks wide and 3 blocks tall from the floor to carry a port.
 
 The stations do too: the Fabricator and the Refiner have an input port on the left and an output port on the right, and
-the Freezer and the Field Kitchen a two-way port on their right side.
+the Freezer, the Field Kitchen and the Beehive a two-way port on their right side.
 
 Containers follow the same rule. The Small Chest (one port), Large Chest (three) and Cargo Chest (ten: three on the
 front, three on the back, two on each end) carry ports, as do the Gas, Battery, Water, Chemical and Potato Ammo
@@ -76,10 +76,11 @@ from the Creation's parts (`Mechanica.Core.Items.TransportNetwork`) and follows 
 pipe away cuts it at once. Nothing about it is saved: a save keeps the parts and what the containers hold, and the
 network is worked out again when it loads.
 
-- A **station** (the Refiner, the Fabricator, the Freezer, the Field Kitchen) takes a craft's inputs from the containers piped to its
+- A **station** (the Refiner, the Fabricator, the Freezer, the Field Kitchen, the Beehive) takes a craft's inputs from the containers piped to its
   input port, as well as from the player and the containers next to it, and puts what it makes into the containers
   piped to its output port, then into itself. A Refiner piped from a Resource Collector refines what the collector
-  gathers.
+  gathers. A station that works on its own (`crafting.auto`, the Beehive) needs no order: a chest piped to its port keeps
+  it fed with Pigment Flowers and takes the Beeswax it makes.
 - The **Vacuum Pump** (on a logic signal) sucks the nearest thing in reach of its mouth into the containers its back
   port sends to: a pile on the ground, a loose resource piece (a log, a rod, a chunk), a ripe crop (its soil's script
   harvests it, `on_collect`) or water (only into containers that accept full Water Buckets, so a Water Container). Set

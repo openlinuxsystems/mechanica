@@ -262,6 +262,7 @@ rather than in Lua.
 | `crafting.speed` | number > 0 | Multiplier on recipe times: 2 crafts twice as fast. Default 1. |
 | `crafting.queue_size` | integer 1–64 | Most orders waiting at once. Default 1. |
 | `crafting.link_range` | number 0–8 (m) | Containers on the same Creation within this distance of the station (surface to surface) are its linked storage. Omitted or 0 links none. |
+| `crafting.auto` | boolean | `true` makes the station work on its own (the Beehive): whenever its queue is empty the host starts one craft of the first of its recipes, by `order`, whose inputs are in its own slots, its linked storage or the containers piped to its input ports, and takes them. Players can still queue orders. Default `false`: it waits for an order. |
 | `crafting.clips` | `{start, work, complete}` | Model clips that follow the station's work. The host writes them to the text readout `station`, so the part needs `display.clips` with `"readout": "station"`: `start` then `work` (name it `…_loop`) when it begins working, `complete` when its queue is done or its output is full. Each is optional. |
 
 Each slot holds one stack of one item, up to that item's `stack_size`. A station runs every recipe that
@@ -761,7 +762,7 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 | 1600 | Lights | `shack_light`, `glowstick`, `fluorescent_light`, `packing_lamp`, `interior_light`, `headlight`, `spotlight`, `construction_light`, `warning_light`, `beacon_scrap`, `beacon`, `warehouse_spotlight`, `frame_beam_light`, `neon_sign`, `protector_sign` |
 | 1700 | Storage | `chest` (Scrap Chest), `small_chest`, `large_chest`, `cargo_chest`, `barrel`, `locker`, `tool_cabinet`, `file_cabinet`, `fridge`, `chemical_container`, `water_container`, `potato_ammo_container`, `resource_collector`, `vacuum_pipe`, `vacuum_pipe_corner`, `vacuum_pump`, `dispenser`, `broken_microwave`, `ruin_chest` |
 | 1800 | Stations | `portable_fabricator`, `refiner`, `respawn_bed`, `fancy_bed`, `freezer`, `ice_block_freezer` (the Freezer's one recipe), `field_kitchen` |
-| 1900 | Farming | `soil_bag`, `water_bucket`, `feeding_trough`, `lead`, `growbed`, `fertilizer` |
+| 1900 | Farming | `soil_bag`, `water_bucket`, `feeding_trough`, `lead`, `beehive` (1950), `beeswax_beehive` (1951, the Beehive's one recipe), `growbed`, `fertilizer` |
 | 2000 | Furniture | `stool`, `chair`, `toilet`, `bathtub`, `anvil`, `cash_register`, `wooden_table`, `metal_table`, `office_table`, `table_support`, `office_chair_base`, `cubicle_wall`, `shelf_unit`, `shelf_pillar`, `shelf_support`, `shelf_support_tall`, `pallet`, `stall_door`, `sink`, `mattress`, `pillow`, `mug`, `calendar`, `toilet_paper` |
 | 2100 | Road signs | `stop_sign`, `caution_sign`, `construction_sign`, `falling_objects_sign`, `danger_sign`, `skull_sign`, `beware_bots_sign`, `no_entry_sign`, `speed_limit_sign`, `direction_arrow_left`, `direction_arrow_straight`, `direction_arrow_right`, `exit_sign`, `welcome_sign`, `hard_work_sign`, `sale_sign`, `signboard`, `colony_sign`, `paper_note` (signs that take words) |
 | 2200 | Road and site | `traffic_cone`, `barrier_tape`, `outpost_sign`, `warehouse_key_sign`, `banner_holder`, `billboard` |
@@ -772,7 +773,7 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 | 2700 | Crafting materials | `glue` |
 | 2800 | Ducts, conduits and cables | `duct_short`, `duct_long`, `duct_corner`, `duct_tee`, `duct_end`, `duct_holder`, `metal_tube`, `tubes_short`, `tubes_long`, `tubes_corner`, `tubes_tee`, `wires_short`, `wires_long`, `wires_bend`, `wires_concave_bend`, `wires_convex_bend` |
 | 2900 | Windows and fences | `window_square`, `window_large`, `window_metal`, `net_fence` |
-| 3000 | Farm and shack decor | `produce_box_carrot`, `produce_box_potato`, `produce_box_tomato`, `produce_box_mixed`, `stacked_crates`, `grass_planter`, `plant_container`, `plant_container_open`, `vending_machine`, `grazer_head_topper`, `duck_statuette`, `mannequin_hand`, `mannequin_boot`, `shack_awning` |
+| 3000 | Farm and shack decor | `produce_box_carrot`, `produce_box_potato`, `produce_box_tomato`, `produce_box_mixed`, `stacked_crates`, `grass_planter`, `plant_container`, `plant_container_open`, `vending_machine`, `grazer_head_topper`, `duck_statuette`, `mannequin_hand`, `mannequin_boot`, `shack_awning`, then the pots (3060-3067): `big_pot`, `potted_plant`, `potted_plant_small`, `potted_seedling`, `potted_vine`, `potted_cactus_bloom`, `potted_blue_flower`, `potted_cactus` |
 | 3100 | Industrial and site decor | `tank_small`, `tank_medium`, `tank_large`, `juice_drum`, `coil_segment`, `coil_corner`, `fuse_box`, `air_conditioner`, `vent_grid`, `crane_body`, `crane_hook`, `broken_concrete_medium`, `broken_concrete_large`, `hull_door`, `nut`, `screw`, `steel_pallet`, `dish_antenna`, `reflector_dish`, `reflector_antenna` |
 | 3200 | Food and cooking | `grazer_shake` (3210, the Fabricator's: 100 Ice Blocks, 3 Oranges, 1 Grazer Milk), then the Field Kitchen's recipes: `garden_burger` (3220), `colony_burger` (3230) |
 

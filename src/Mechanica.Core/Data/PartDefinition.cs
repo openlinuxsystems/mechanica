@@ -404,6 +404,13 @@ public sealed record CraftingDefinition
     public float? LinkRange { get; init; }
 
     /// <summary>
+    /// True makes the station work on its own: whenever its queue is empty, the host starts one craft of the first of its
+    /// recipes (by order) whose inputs are in its own slots, its linked storage or the containers piped to its input ports
+    /// (the Beehive turning Pigment Flowers into Beeswax). Players can still queue orders. Omitted or false waits for an order.
+    /// </summary>
+    public bool? Auto { get; init; }
+
+    /// <summary>
     /// The model's clips that follow the station's work, written to its <see cref="ClipReadout"/> readout (which its
     /// <c>display.clips</c> plays): <c>start</c> then <c>work</c> when it begins working, <c>complete</c> when it stops.
     /// </summary>

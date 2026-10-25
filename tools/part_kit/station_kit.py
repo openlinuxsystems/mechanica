@@ -19,6 +19,11 @@ bevels, round only where the real thing is round):
   rods behind it), a graphite hot plate on top with two burner rings and a skillet, a console splashback with a screen,
   two burner knobs, a timer dial and the cyan status pip, a copper flue up its back, utensils on its left side and the
   standard two-way IO port on its right side, level with the Freezer's;
+* **Settler Patchwork** for the Beehive (parts batch 16): three mismatched painted hive boxes (faded sea teal, bone and
+  mustard) on a scrap-plank stand with a feeder hatch, a corrugated zinc roof, a landing board, a comb pictogram and the
+  standard two-way IO port on the stand's right side, level with the Freezer's; a handful of bees crawl on the landing
+  board while it idles and fly loops in front of it while it works (they are the "working" light: it has no power, so no
+  cyan);
 * **cyan only on powered indicators** (the Freezer's, Refiner's and Field Kitchen's status pips, lit while they work); the
   frost, refining and cooking light is the working parts' pale blue-white, never orange.
 
@@ -42,6 +47,7 @@ from mathutils import Matrix, Vector
 import part_kit as K
 import light_kit as L
 import working_kit as W
+import building_kit as B
 from part_kit import Geo, box, cylinder, ring
 
 lt = K.lt
@@ -81,6 +87,15 @@ def materials():
         "bun_top": pt.plain("s_bun_top", "#a8703c", 0.45, 0.0),
         "patty": pt.plain("s_patty", "#4a2c20", 0.7, 0.0),
         "seed": pt.plain("s_seed", "#efe2bf", 0.6, 0.0),
+        # the Beehive (parts batch 16): settler paint over scrap wood, the bees and their comb
+        "hive_sea": tex("s_hive_sea", K.half_res(lt.paint_surface(631, "#4f9a93", "#9c7650")), normal_strength=1.0),
+        "hive_bone": tex("s_hive_bone", K.half_res(lt.paint_surface(633, "#d9d1bc", "#9c7650")), normal_strength=1.0),
+        "hive_mustard": tex("s_hive_mustard", K.half_res(lt.paint_surface(635, "#d4ab34", "#9c7650")), normal_strength=1.0),
+        "hive_brick": tex("s_hive_brick", K.half_res(lt.paint_surface(637, "#a8473b", "#9c7650")), normal_strength=1.0),
+        "bee_yellow": pt.plain("s_bee_yellow", "#e8b830", 0.55, 0.0),
+        "bee_black": pt.plain("s_bee_black", "#1c1b19", 0.5, 0.0),
+        "wing": pt.plain("s_wing", "#e6eef0", 0.15, 0.0),
+        "wax": pt.plain("s_wax", "#d9b048", 0.35, 0.0),
     })
     return m
 
@@ -662,6 +677,194 @@ def build_anvil(m):
 
 
 # =====================================================================================================
+# Beehive (3 x 4 x 3): settler hive boxes on a plank stand, bees that fly while it works
+# =====================================================================================================
+
+def bee(m, root, name):
+    """One bee, about three times life size so it reads at play distance: a striped body along +x, a black head, two wings."""
+    g = Geo()
+    bands = [(-0.012, -0.007, "bee_black"), (-0.007, -0.003, "bee_yellow"), (-0.003, 0.001, "bee_black"), (0.001, 0.006, "bee_yellow")]
+
+    def rad(x):
+        return 0.0058 * math.sqrt(max(0.0, 1 - ((x + 0.003) / 0.0095) ** 2)) + 0.0003
+    for x0, x1, mat in bands:
+        steps = 3
+        prof = [(0.0, x0)] + [(rad(x0 + (x1 - x0) * k / steps), x0 + (x1 - x0) * k / steps) for k in range(steps + 1)] + [(0.0, x1)]
+        K.lathe(g, prof, mat, steps=10)
+    K.lathe(g, [(0.0, 0.006), (0.0035, 0.0065), (0.0042, 0.009), (0.0035, 0.0115), (0.0, 0.012)], "bee_black", steps=10)
+    for s in (-1, 1):
+        g.add([(0.0, 0.004, 0.003), (s * 0.002, 0.0055, -0.002), (s * 0.011, 0.007, -0.009), (s * 0.009, 0.0065, -0.001)],
+              [(0, 1, 2, 3), (3, 2, 1, 0)], "wing")
+    body = Geo()
+    # lying along +x (the lathe's z), wings up; 1.4 times over so the bee reads from a few metres
+    body.extend(g, Matrix.Scale(1.4, 4) @ Matrix.Rotation(math.pi / 2, 4, "Y"))
+    return K.make_object(name, body, m, root)
+
+
+def build_beehive(m):
+    root = K.make_empty("Beehive")
+    g = Geo()
+    floor, h = -0.5, 0.375
+    xr = h - SIDE_IN                    # the stand's right wall, set in behind the port
+    top = 0.13                          # the stand's deck, above the port's plate: the hive sits on it
+    post = 0.032
+    px, py = h - post - 0.012, h - post - 0.012
+    # the stand: four scrap posts, plank walls (three boards a side, out of true), a plank deck
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            box(g, (sx * px, sy * py, (floor + top) / 2), (post, post, (top - floor) / 2), "plank_dark", bevel=0.005)
+    bh = (top - 0.03 - floor - 0.02) / 3
+    for k in range(3):
+        z = floor + 0.02 + bh * k
+        tilt = Matrix.Rotation(0.01 * (k - 1), 3, "Y")
+        hb = bh / 2 - 0.004
+        box(g, (0, -py + 0.006, z + bh / 2), (px - post, 0.012, hb), ("plank", "plank_dark")[k % 2], bevel=0.004, rot=tilt)
+        box(g, (0, py - 0.006, z + bh / 2), (px - post, 0.012, hb), ("plank_dark", "plank")[k % 2], bevel=0.004, rot=tilt)
+        box(g, (-px + 0.006, 0, z + bh / 2), (0.012, py - post, hb), ("plank", "plank_dark")[k % 2], bevel=0.004)
+        box(g, (xr - 0.012, 0, z + bh / 2), (0.012, py - post, hb), ("plank_dark", "plank")[k % 2], bevel=0.004)
+    box(g, (0, 0, top - 0.016), (h - 0.006, h - 0.006, 0.016), "plank", bevel=0.005)
+    # zinc straps round the stand's corners, nailed
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            for z in (floor + 0.08, top - 0.08):
+                box(g, (sx * (px + post + 0.0015), sy * (py - 0.01), z), (0.0015, 0.035, 0.02), "zinc", bevel=0.001)
+                box(g, (sx * (px - 0.01), sy * (py + post + 0.0015), z), (0.035, 0.0015, 0.02), "zinc", bevel=0.001)
+    # the feeder hatch on the stand's front: a brick-red flap on zinc hinges with a turn button and a flower painted on it
+    fy = -py - 0.008
+    hz = floor + 0.3
+    box(g, (0, fy - 0.004, hz), (0.15, 0.008, 0.11), "hive_brick", bevel=0.004)
+    for x in (-0.1, 0.1):
+        box(g, (x, fy - 0.013, hz + 0.105), (0.025, 0.002, 0.01), "zinc", bevel=0.001)
+        cylinder(g, (x - 0.026, fy - 0.014, hz + 0.111), (x + 0.026, fy - 0.014, hz + 0.111), 0.004, "zinc", segs=8)
+    cylinder(g, (0, fy - 0.012, hz - 0.08), (0, fy - 0.024, hz - 0.08), 0.009, "plank_dark", segs=10)
+    for k in range(6):
+        a = 2 * math.pi * k / 6
+        cylinder(g, (0.018 * math.cos(a), fy - 0.012, hz + 0.01 + 0.018 * math.sin(a)),
+                 (0.018 * math.cos(a), fy - 0.0135, hz + 0.01 + 0.018 * math.sin(a)), 0.011, "hive_bone", segs=10)
+    cylinder(g, (0, fy - 0.012, hz + 0.01), (0, fy - 0.0145, hz + 0.01), 0.009, "hive_mustard", segs=10)
+    box(g, (0, fy - 0.0125, hz - 0.035), (0.003, 0.0012, 0.03), "hive_sea")
+    # the right side: the two-way port (flowers in, wax out), its plate just proud of the set-in wall
+    port(root, (h, 0.0, floor + 0.375), (1, 0, 0), "both")
+
+    # the hive: a bottom board with a landing board, three mismatched boxes, a zinc roof
+    hx = 0.26
+    z = top
+    box(g, (0, 0.01, z + 0.012), (hx + 0.01, hx, 0.012), "plank_dark", bevel=0.003)
+    box(g, (0, -hx - 0.035, z + 0.008), (0.16, 0.05, 0.008), "plank", bevel=0.003, rot=Matrix.Rotation(-0.08, 3, "X"))
+    z += 0.024
+    boxes = [(0.1, "hive_sea", 0.004), (0.085, "hive_bone", -0.005), (0.05, "hive_mustard", 0.003)]
+    tops = []
+    for k, (tall, mat, shift) in enumerate(boxes):
+        c = (shift, shift * 0.6, z + tall / 2)
+        box(g, c, (hx, hx, tall / 2 - 0.002), mat, bevel=0.006)
+        # hand-hold cleats on the sides, zinc corner straps
+        for sx in (-1, 1):
+            box(g, (shift + sx * (hx + 0.008), shift * 0.6, z + tall * 0.6), (0.008, 0.07, 0.012), "plank_dark", bevel=0.003)
+        for sx in (-1, 1):
+            for sy in (-1, 1):
+                box(g, (shift + sx * (hx + 0.0012), shift * 0.6 + sy * (hx - 0.02), z + tall / 2), (0.0012, 0.02, tall / 2 - 0.012), "zinc", bevel=0.0008)
+        tops.append(z + tall)
+        z += tall + 0.003
+    # the entrance slot along the bottom of the first box, and the comb pictogram on the bone box
+    box(g, (0.004, -hx - 0.0015, top + 0.024 + 0.018), (0.12, 0.002, 0.009), "hole")
+    cz = tops[0] + 0.043
+    for i, (dx, dz) in enumerate([(0, 0), (0.021, 0.012), (-0.021, 0.012), (0, 0.024), (0.021, -0.012), (-0.021, -0.012), (0, -0.024)]):
+        cylinder(g, (-0.005 + dx, -hx - 0.0055, cz + dz), (-0.005 + dx, -hx - 0.0075, cz + dz), 0.0125, "hive_mustard" if i else "wax", segs=6,
+                 phase=math.pi / 6)
+    # wax squeezed out between the boxes here and there
+    for x, zz in ((-0.18, tops[0]), (0.12, tops[1]), (0.2, tops[0])):
+        box(g, (x, -hx - 0.004, zz + 0.0015), (0.03, 0.004, 0.003), "wax", bevel=0.002)
+    # the roof: a plank inner cover, then a gable of corrugated zinc overhanging the boxes, rust along its eaves
+    rz = z + 0.004
+    box(g, (0, 0, rz + 0.008), (hx + 0.012, hx + 0.012, 0.008), "plank", bevel=0.003)
+    ridge = 0.495
+    eave = rz + 0.016
+    half_w = 0.33
+    slope = math.atan2(ridge - eave, half_w)
+    # the gable: a plank attic under the zinc, closing the roof's ends
+    gx = hx + 0.012
+    B.prism(g, [(-gx, eave), (gx, eave), (0, ridge - 0.016)], -gx, gx, "plank_dark")
+    for sx in (-1, 1):
+        L_ = math.hypot(half_w, ridge - eave) / 2
+        cx = sx * half_w / 2
+        cz2 = (ridge + eave) / 2 - 0.006
+        rot = Matrix.Rotation(sx * slope, 3, "Y")
+        box(g, (cx, 0, cz2), (L_, 0.33, 0.0035), "zinc", bevel=0.001, rot=rot)
+        for k in range(9):
+            y = -0.3 + 0.075 * k
+            box(g, (cx, y, cz2 + 0.004), (L_ - 0.004, 0.006, 0.0035), "zinc", bevel=0.002, rot=rot)
+        box(g, (sx * (half_w - 0.01), 0, eave - 0.003), (0.01, 0.331, 0.004), "rust", bevel=0.002)
+    box(g, (0, 0, ridge - 0.004), (0.016, 0.334, 0.006), "zinc", bevel=0.003)
+    K.make_object("Body", g, m, root)
+
+    # the bees
+    bees = [bee(m, root, f"Bee{k}") for k in range(7)]
+    rig = {"root": root}
+    W.keep(rig, *bees)
+    door = Vector((0.0, -hx - 0.012, top + 0.04))
+    board_z = top + 0.022
+
+    def flight(k, t):
+        """Bee k's place and heading on its work loop at t seconds (the loop is 4 s): a figure eight in front of the
+        hive, each bee on its own size, height and phase."""
+        w = 2 * math.pi / 4.0 * (1 + k % 2)
+        ph = 2 * math.pi * k / 7
+        ax, ay, az = 0.12 + 0.025 * (k % 3), 0.05 + 0.01 * (k % 2), 0.05 + 0.02 * (k % 3)
+        c = Vector((0.0, -h - 0.04, top + 0.06 + 0.04 * (k % 4)))
+        a = w * t + ph
+        p = c + Vector((ax * math.sin(a), ay * math.sin(2 * a), az * math.cos(a)))
+        v = Vector((ax * w * math.cos(a), ay * 2 * w * math.cos(2 * a), 0))
+        return p, math.atan2(v.y, v.x)
+
+    def crawl(k, t):
+        """Bees 0 and 1 walk slow circles on the landing board while the hive idles; the rest stay inside."""
+        if k > 1:
+            return door + Vector((0, 0.02, 0)), -math.pi / 2, OFF
+        a = 2 * math.pi * t / 4.0 * (1 if k == 0 else -1) + k * 2.0
+        p = Vector((0.05 * math.cos(a) + (0.04 if k else -0.05), -hx - 0.04 + 0.022 * math.sin(a), board_z + 0.004))
+        return p, a + (math.pi / 2 if k == 0 else -math.pi / 2), 1.0
+
+    def place(ob, p, yaw, s=1.0, bank=0.0):
+        ob.location = p
+        ob.rotation_euler = (bank, 0.0, yaw)
+        ob.scale = (s, s, s)
+
+    def idle(t):
+        for k, ob in enumerate(bees):
+            p, yaw, s = crawl(k, t)
+            place(ob, p, yaw, s)
+
+    def work(t):
+        for k, ob in enumerate(bees):
+            p, yaw = flight(k, t)
+            place(ob, p, yaw, 1.0, 0.25 * math.sin(2 * math.pi * t * 3 + k))
+
+    def start(t):
+        u = K.smooth(min(1.0, t / 0.6))
+        for k, ob in enumerate(bees):
+            p, yaw = flight(k, 0.0)
+            q0, _, s0 = crawl(k, 0.0)
+            place(ob, q0.lerp(p, u), yaw, s0 + (1 - s0) * min(1.0, u * 3))
+
+    def complete(t):
+        u = K.smooth(min(1.0, t / 0.8))
+        for k, ob in enumerate(bees):
+            p, yaw = flight(k, 0.0)
+            q, _, s1 = crawl(k, 0.0)
+            place(ob, p.lerp(q, u), yaw + math.pi, 1.0 + (s1 - 1.0) * max(0.0, u * 3 - 2))
+
+    rig["rest"] = lambda: idle(0.0)
+    rig["clips"] = {
+        "idle_loop": (4.0, True, idle),
+        "start": (0.6, False, start),
+        "work_loop": (4.0, True, work),
+        "complete": (0.8, False, complete),
+    }
+    rig["states"] = [("IDLE", lambda: idle(0.0)), ("WORKING", lambda: work(1.3))]
+    return rig
+
+
+# =====================================================================================================
 # Bake, export, icon, review
 # =====================================================================================================
 
@@ -717,7 +920,8 @@ def run(part, build, *, half, ortho, icon_target=(0, 0, 0), title="", lines=()):
 
 
 def review(name, title, lines, rig, icon, info, out, half):
-    """working_kit.review's views, seen from the part's front (-y): three-quarter front right, front, right side."""
+    """working_kit.review's views, seen from the part's front (-y): three-quarter front right, front, right side; and a
+    three-quarter from the rear left in frames/."""
     import render_kit as rk
     rl = rk.rl
     out.mkdir(parents=True, exist_ok=True)
@@ -736,6 +940,8 @@ def review(name, title, lines, rig, icon, info, out, half):
         "front": rl.camera("F", target + Vector((0, -20, 0)), target, ortho=size * 1.32),
         "side": rl.camera("S", target + Vector((20, 0, 0)), target, ortho=size * 1.32),
     }
+    # the back three-quarter (rear left) goes in frames/ only, beside the sheet
+    back = rl.camera("B", target + Vector((-1.0, 1.25, 0.75)).normalized() * size * 2.6, target, lens=50)
     paths = {v: [] for v in rk.VIEWS}
     for label, pose in rig["states"]:
         W.reset(rig)
@@ -745,6 +951,7 @@ def review(name, title, lines, rig, icon, info, out, half):
             p.parent.mkdir(parents=True, exist_ok=True)
             rl.render(cams[view], p, rk.W, rk.H)
             paths[view].append((label, p))
-    for cam in cams.values():
+        rl.render(back, out / "frames" / f"{name}_{label.lower().replace(' ', '_')}_back.png", rk.W, rk.H)
+    for cam in (*cams.values(), back):
         bpy.data.objects.remove(cam)
     rk.sheet(name, title, lines, paths, [(rig["states"][-1][0], icon)], [rk.fmt_stats(None, info)], out)

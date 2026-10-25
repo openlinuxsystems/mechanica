@@ -1,0 +1,309 @@
+// Parts map batch 16 (Scrap Mechanic parity, after the Crops step): the Beehive and the potted plants. The wiki's stats
+// (1.5 kg per weight bar; durability = bars; friction and buoyancy = bars / 10) and Craftbot recipes, each taking a
+// Pigment Flower. The Beehive is a station that works on its own (crafting.auto): whenever it is idle it turns a Pigment
+// Flower from its slots, or from a container piped to its two-way port, into Beeswax (beeswax_beehive, about one every
+// 3 minutes), and sends the wax down the port first. The pots are Settler Patchwork decor in one pot language (a
+// brick-red clay pot with a sea-teal band, small on a 1 x 1 footprint and large on 2 x 2) with the Big Pot in Old Stone;
+// their recipes are the 3000 group's (Farm and shack decor). Models and icons are built by tools/decor/build_decor.py
+// --batch 16 (tools/decor/garden.py) and tools/beehive/build_beehive.py (tools/part_kit/station_kit.py). Re-run with
+// tools/author-vanilla.sh.
+{
+  "format_version": 1,
+  "parts": [
+    {
+      "file": "parts/beehive.json",
+      "template": "interactive",
+      "set": {
+        "name": "Beehive",
+        "description": "A settler hive of painted boxes on a plank stand. Keep Pigment Flowers in it, or pipe them to its port, and the bees make a Beeswax about every 3 minutes, sent back down the pipe. Two-way port on the right.",
+        "category": "station",
+        "mass": 4.5,
+        "durability": 7,
+        "friction": 0.6,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "stack_size": 5,
+        "sound_material": "wood",
+        "size": [3, 4, 3],
+        "icon": "textures/items/beehive_icon.png",
+        "visual": { "color": "#ffffff" },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.5, 0], "normal": [0, -1, 0] }],
+        "sounds": {
+          "start": "beehive_start",
+          "work": "beehive_work",
+          "complete": "beehive_complete",
+          "place": "place_wood"
+        },
+        "io_ports": [{ "id": "port", "position": [0.375, -0.125, 0], "normal": [1, 0, 0] }],
+        "inventory": { "slots": 4, "accepts": ["pigment_flower", "beeswax"] },
+        "crafting": {
+          "speed": 1,
+          "queue_size": 1,
+          "auto": true,
+          "clips": { "start": "start", "work": "work_loop", "complete": "complete" }
+        },
+        "display": { "clips": { "readout": "station", "idle": "idle_loop" } }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/beehive.glb" }],
+      "recipes": [
+        {
+          "id": "beehive",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "wood_block_2", "count": 50 },
+            { "item": "component_kit", "count": 1 },
+            { "item": "circuit_board", "count": 4 },
+            { "item": "soil_bag", "count": 2 }
+          ],
+          "outputs": [{ "item": "beehive", "count": 1 }],
+          "time": 30,
+          "order": 1950
+        },
+        {
+          "id": "beeswax_beehive",
+          "stations": ["beehive"],
+          "inputs": [{ "item": "pigment_flower", "count": 1 }],
+          "outputs": [{ "item": "beeswax", "count": 1 }],
+          "time": 180,
+          "order": 1951
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/big_pot.json",
+      "template": "decor",
+      "set": {
+        "name": "Big Pot",
+        "description": "A carved stone urn from before the colony, moss in its cracks, with a fern growing in it.",
+        "icon": "textures/items/big_pot_icon.png",
+        "mass": 6,
+        "durability": 2,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": true,
+        "sound_material": "concrete",
+        "stack_size": 20,
+        "size": [3, 3, 3],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/big_pot.glb" }],
+      "recipes": [
+        {
+          "id": "big_pot",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "pigment_flower", "count": 1 }, { "item": "scrap_stone_block", "count": 10 }],
+          "outputs": [{ "item": "big_pot", "count": 1 }],
+          "time": 5,
+          "order": 3060
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/potted_plant.json",
+      "template": "decor",
+      "set": {
+        "name": "Potted Plant",
+        "description": "A broad-leafed plant in a large settler clay pot.",
+        "icon": "textures/items/potted_plant_icon.png",
+        "mass": 6,
+        "durability": 1,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": true,
+        "sound_material": "concrete",
+        "stack_size": 20,
+        "size": [2, 4, 2],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/potted_plant.glb" }],
+      "recipes": [
+        {
+          "id": "potted_plant",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "pigment_flower", "count": 1 }, { "item": "scrap_stone_block", "count": 5 }],
+          "outputs": [{ "item": "potted_plant", "count": 1 }],
+          "time": 5,
+          "order": 3061
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/potted_plant_small.json",
+      "template": "decor",
+      "set": {
+        "name": "Small Potted Plant",
+        "description": "A leafy little plant in a small settler clay pot.",
+        "icon": "textures/items/potted_plant_small_icon.png",
+        "mass": 6,
+        "durability": 1,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": true,
+        "sound_material": "concrete",
+        "stack_size": 20,
+        "size": [1, 2, 1],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/potted_plant_small.glb" }],
+      "recipes": [
+        {
+          "id": "potted_plant_small",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "pigment_flower", "count": 1 }, { "item": "scrap_stone_block", "count": 5 }],
+          "outputs": [{ "item": "potted_plant_small", "count": 1 }],
+          "time": 5,
+          "order": 3062
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/potted_seedling.json",
+      "template": "decor",
+      "set": {
+        "name": "Potted Seedling",
+        "description": "Fresh sprouts in a large settler clay pot, staked with a twig.",
+        "icon": "textures/items/potted_seedling_icon.png",
+        "mass": 6,
+        "durability": 2,
+        "friction": 0.6,
+        "buoyancy": 0.1,
+        "flammable": true,
+        "sound_material": "concrete",
+        "stack_size": 20,
+        "size": [2, 2, 2],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/potted_seedling.glb" }],
+      "recipes": [
+        {
+          "id": "potted_seedling",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "pigment_flower", "count": 1 }, { "item": "scrap_stone_block", "count": 5 }],
+          "outputs": [{ "item": "potted_seedling", "count": 1 }],
+          "time": 5,
+          "order": 3063
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/potted_vine.json",
+      "template": "decor",
+      "set": {
+        "name": "Potted Vine",
+        "description": "A trailing vine in a large settler clay pot, climbing a scrap-wood stake and spilling over the rim.",
+        "icon": "textures/items/potted_vine_icon.png",
+        "mass": 6,
+        "durability": 1,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": true,
+        "sound_material": "concrete",
+        "stack_size": 20,
+        "size": [2, 3, 2],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/potted_vine.glb" }],
+      "recipes": [
+        {
+          "id": "potted_vine",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "pigment_flower", "count": 1 },
+            { "item": "scrap_stone_block", "count": 5 },
+            { "item": "wood_block", "count": 2 }
+          ],
+          "outputs": [{ "item": "potted_vine", "count": 1 }],
+          "time": 5,
+          "order": 3064
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/potted_cactus_bloom.json",
+      "template": "decor",
+      "set": {
+        "name": "Potted Blooming Cactus",
+        "description": "A ribbed cactus in flower, in a small settler clay pot.",
+        "icon": "textures/items/potted_cactus_bloom_icon.png",
+        "mass": 3,
+        "durability": 2,
+        "friction": 0.6,
+        "buoyancy": 0.1,
+        "flammable": true,
+        "sound_material": "concrete",
+        "stack_size": 20,
+        "size": [1, 2, 1],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/potted_cactus_bloom.glb" }],
+      "recipes": [
+        {
+          "id": "potted_cactus_bloom",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "pigment_flower", "count": 1 }, { "item": "metal_block", "count": 1 }],
+          "outputs": [{ "item": "potted_cactus_bloom", "count": 1 }],
+          "time": 5,
+          "order": 3065
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/potted_blue_flower.json",
+      "template": "decor",
+      "set": {
+        "name": "Potted Blue Flower",
+        "description": "A clump of blue flowers in a small settler clay pot.",
+        "icon": "textures/items/potted_blue_flower_icon.png",
+        "mass": 3,
+        "durability": 2,
+        "friction": 0.6,
+        "buoyancy": 0.1,
+        "flammable": true,
+        "sound_material": "concrete",
+        "stack_size": 20,
+        "size": [1, 2, 1],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/potted_blue_flower.glb" }],
+      "recipes": [
+        {
+          "id": "potted_blue_flower",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "pigment_flower", "count": 1 }, { "item": "metal_block", "count": 1 }],
+          "outputs": [{ "item": "potted_blue_flower", "count": 1 }],
+          "time": 5,
+          "order": 3066
+        }
+      ]
+    },
+    {
+      "file": "parts/decor/potted_cactus.json",
+      "template": "decor",
+      "set": {
+        "name": "Potted Cactus",
+        "description": "A ribbed cactus with two arms in a small settler clay pot. Mind the spines.",
+        "icon": "textures/items/potted_cactus_icon.png",
+        "mass": 3,
+        "durability": 2,
+        "friction": 0.6,
+        "buoyancy": 0.1,
+        "flammable": true,
+        "sound_material": "concrete",
+        "stack_size": 20,
+        "size": [1, 2, 1],
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/potted_cactus.glb" }],
+      "recipes": [
+        {
+          "id": "potted_cactus",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "pigment_flower", "count": 1 }, { "item": "metal_block", "count": 1 }],
+          "outputs": [{ "item": "potted_cactus", "count": 1 }],
+          "time": 5,
+          "order": 3067
+        }
+      ]
+    }
+  ]
+}

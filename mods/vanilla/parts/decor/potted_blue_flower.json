@@ -1,0 +1,19 @@
+{
+  "id": "potted_blue_flower",
+  "name": "Potted Blue Flower",
+  "description": "A clump of blue flowers in a small settler clay pot.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 2,
+  "friction": 0.6,
+  "buoyancy": 0.1,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "concrete",
+  "size": [1, 2, 1],
+  "mesh": "meshes/parts/potted_blue_flower.glb",
+  "icon": "textures/items/potted_blue_flower_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

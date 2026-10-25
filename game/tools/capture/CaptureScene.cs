@@ -68,7 +68,7 @@ namespace Mechanica.Game.Tools;
 /// Given <c>consumables</c> it shows Bloom Tea and a Grazer Shake held and drunk, Fertilizer in hand, and a tomato crop
 /// beside a fertilized one (<c>tools/capture-consumables.sh</c>); given <c>grazer_products</c>, a tame Grazer eating from its
 /// Feeding Trough until its milk is ready, the milk collected and held, and Grazer Steak dropped by a Grazer and held;
-/// given <c>kitchen</c>, a Field Kitchen's station screen and cooking, and both burgers held and eaten; given <c>crops</c>,
+/// given <c>garden</c>, the potted plants in a yard and a piped Beehive with its screen and bees; given <c>kitchen</c>, a Field Kitchen's station screen and cooking, and both burgers held and eaten; given <c>crops</c>,
 /// a wild Pigment Flower, the flower and its seed held, and its crop at every grow stage.
 /// </summary>
 public partial class CaptureScene : Node
@@ -128,6 +128,7 @@ public partial class CaptureScene : Node
         var consumables = args.Length > 1 && (args[1] == "consumables" || crops || cropsK3 || cropsK4 || cropsK5);
         var grazerProducts = args.Length > 1 && args[1] == "grazer_products";
         var kitchen = args.Length > 1 && args[1] == "kitchen";
+        var garden = args.Length > 1 && args[1] == "garden";
         var fields = args.Length > 1 && args[1] == "fields";
         var building = args.Length > 1 && args[1] == "parts_building";
         var formations = args.Length > 1 && args[1] == "formations";
@@ -142,7 +143,7 @@ public partial class CaptureScene : Node
         var botClips = args.Length > 1 && args[1] == "bot_clips";
         var hands = args.Length > 1 && args[1] == "hands";
         var driving = args.Length > 1 && args[1] == "driving";
-        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !factions && !ladder && !beds && !extinguisher && !drops && !derelicts && !signs && !botClips && !hands && !driving && !connectLines && !husbandry && !consumables && !grazerProducts && !kitchen && !fields && !gauges && !building && args[1] != "survey" && args[1] != "spots" && args[1] != "daynight" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !factions && !ladder && !beds && !extinguisher && !drops && !derelicts && !signs && !botClips && !hands && !driving && !connectLines && !husbandry && !consumables && !grazerProducts && !kitchen && !garden && !fields && !gauges && !building && args[1] != "survey" && args[1] != "spots" && args[1] != "daynight" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         // Captures hold the sky at mid-morning so shots compare across runs; `daynight` walks it through the day.
@@ -151,7 +152,7 @@ public partial class CaptureScene : Node
         // Building the block wall needs Creative: free parts and no build reach.
         _main.Options = LaunchOptions.Offline with { Seed = args.Length > 1 && args[1] is "survey" or "spots" ? 1 : 7, GameMode = blocks || building || signs || soil || wheels || portable || liftCapture || connectLines || husbandry || consumables ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
         // The button shots show the HUD (the creation hotbar), which only a main reading the devices builds.
-        _main.ReadDeviceInput = icons || wheels || button || engineMenu || connectLines || gauges || drops || kitchen;
+        _main.ReadDeviceInput = icons || wheels || button || engineMenu || connectLines || gauges || drops || kitchen || garden;
         _main.DebugCar = debugCar;
         AddChild(_main);
         _camera = new Camera3D { Fov = args.Length > 1 && args[1] is "survey" or "spots" ? 70 : 40 };
@@ -249,6 +250,11 @@ public partial class CaptureScene : Node
         if (connectLines)
         {
             ConnectLineShots();
+            return;
+        }
+        if (garden)
+        {
+            GardenShots();
             return;
         }
         if (kitchen)
