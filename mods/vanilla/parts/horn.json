@@ -11,11 +11,10 @@
   "stack_size": 20,
   "sound_material": "metal",
   "size": [1, 1, 1],
-  "mesh": "meshes/horn.glb",
+  "mesh": "meshes/parts/horn.glb",
+  "icon": "textures/items/horn_icon.png",
   "visual": {
-    "color": "#c8b040",
-    "roughness": 0.4,
-    "metallic": 0.7
+    "color": "#ffffff"
   },
   "sockets": [
     {
@@ -44,6 +43,11 @@
       "default": 5
     }
   ],
+  "display": {
+    "clips": {
+      "readout": "pose"
+    }
+  },
   "properties": {
     "honk": 0.6
   }

@@ -59,6 +59,8 @@ namespace Mechanica.Game.Tools;
 /// where it meets the ground (<c>tools/capture-landmarks.sh</c>).
 /// Given <c>extinguisher</c> it holds the Fire Extinguisher and sprays out a burning stack of blocks
 /// (<c>tools/capture-extinguisher.sh</c>).
+/// Given <c>logic_parts</c> it shows the Horn, Timer, Logic Gate and Radio on a slab, at rest and switched on
+/// (<c>tools/capture-logic-parts.sh</c>).
 /// Given <c>opening</c> it plays the opening cinematic from the spawn and saves stills through it
 /// (<c>tools/capture-opening.sh</c>, which can also record the whole of it).
 /// Given <c>drops</c> it kills a Rakehand and shows its loot lying as glowing piles, the Use prompt naming the one aimed at,
@@ -105,6 +107,7 @@ public partial class CaptureScene : Node
         var debugCar = args.Length > 1 && args[1] == "debug_car";
         var button = args.Length > 1 && args[1] == "button";
         var toggle = args.Length > 1 && args[1] == "switch";
+        var logicParts = args.Length > 1 && args[1] == "logic_parts";
         var fabricator = args.Length > 1 && args[1] == "fabricator";
         var oil = args.Length > 1 && args[1] == "oil";
         var small = args.Length > 1 && args[1] == "small_pois";
@@ -144,7 +147,7 @@ public partial class CaptureScene : Node
         var botClips = args.Length > 1 && args[1] == "bot_clips";
         var hands = args.Length > 1 && args[1] == "hands";
         var driving = args.Length > 1 && args[1] == "driving";
-        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !factions && !ladder && !beds && !extinguisher && !drops && !derelicts && !signs && !botClips && !hands && !driving && !connectLines && !husbandry && !consumables && !grazerProducts && !kitchen && !garden && !fields && !gauges && !flight && !building && args[1] != "survey" && args[1] != "spots" && args[1] != "daynight" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !factions && !ladder && !beds && !extinguisher && !drops && !derelicts && !signs && !botClips && !hands && !driving && !connectLines && !husbandry && !consumables && !grazerProducts && !kitchen && !garden && !fields && !gauges && !flight && !logicParts && !building && args[1] != "survey" && args[1] != "spots" && args[1] != "daynight" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         // Captures hold the sky at mid-morning so shots compare across runs; `daynight` walks it through the day.
@@ -326,6 +329,11 @@ public partial class CaptureScene : Node
         if (toggle)
         {
             SwitchShots();
+            return;
+        }
+        if (logicParts)
+        {
+            LogicPartsShots();
             return;
         }
         if (fabricator)

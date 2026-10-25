@@ -36,11 +36,12 @@ public partial class VanillaLogicTest : StagedTest
     ];
 
     // Parts whose model is a file made elsewhere (tools/bearing_engine, tools/gas_engine, tools/electric_engine,
-    // tools/scrap_seat, tools/wheels, tools/switch, tools/button, and the parts map's batches 4 and 6 under tools/part_kit).
+    // tools/scrap_seat, tools/wheels, tools/switch, tools/button, the parts map's batches 4 and 6 under tools/part_kit, and
+    // the parts audit's batch D2 under tools/logic).
     private static readonly string[] Authored =
     [
         "electric_engine", "gas_engine", "scrap_drivers_seat", "scrap_seat", "scrap_gas_engine", "scrap_wheel", "wheel", "big_wheel", "switch", "button",
-        "drivers_seat", "passenger_seat", "drivers_saddle", "saddle", "toilet", "bathtub", "controller", "sensor", "sticky_wheel",
+        "drivers_seat", "passenger_seat", "drivers_saddle", "saddle", "toilet", "bathtub", "controller", "sensor", "sticky_wheel", "logic_gate", "timer",
     ];
 
     // Parts made at both stations, with a second, scrap recipe (`<id>_scrap`) at the Portable Fabricator.

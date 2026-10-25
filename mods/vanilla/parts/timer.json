@@ -11,11 +11,10 @@
   "stack_size": 20,
   "sound_material": "plastic",
   "size": [1, 1, 1],
-  "mesh": "meshes/timer.glb",
+  "mesh": "meshes/parts/timer.glb",
+  "icon": "textures/items/timer_icon.png",
   "visual": {
-    "color": "#c9b25a",
-    "roughness": 0.5,
-    "metallic": 0.2
+    "color": "#ffffff"
   },
   "sockets": [
     {
@@ -56,5 +55,16 @@
   ],
   "menu": {
     "signals": true
+  },
+  "display": {
+    "clips": {
+      "readout": "pose",
+      "scrub": [
+        {
+          "readout": "lit",
+          "clip": "lit"
+        }
+      ]
+    }
   }
 }

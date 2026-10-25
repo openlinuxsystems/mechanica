@@ -71,6 +71,9 @@ public sealed class LogicScriptTests : IDisposable
             Activate(creation, second);
         Steps(3);
         Assert.Equal(expected ? 1f : 0f, _runtime.Signals.Output(Car, gate));
+        // Its model shows the mode on its screen and lights the frame round it while the output is on.
+        Assert.Equal(mode, _runtime.Readouts.Text(Car, gate, "face"));
+        Assert.Equal(expected ? 1f : 0f, _runtime.Readouts.Number(Car, gate, "lit"));
     }
 
     [Fact]
@@ -142,14 +145,20 @@ public sealed class LogicScriptTests : IDisposable
         Link(creation, toggle, timer);
         Configure(creation, timer, "delay", 0.5);
         Steps(1);
+        Assert.Equal("rest", _runtime.Readouts.Text(Car, timer, "pose"));
         Activate(creation, toggle);
         Steps(2);
         Assert.Equal(1f, _runtime.Signals.Input(Car, timer));
         Assert.Equal(0f, _runtime.Signals.Output(Car, timer));
+        // Its model's hand sweeps while the change waits, and lights once the output is on.
+        Assert.Equal("count_loop", _runtime.Readouts.Text(Car, timer, "pose"));
+        Assert.Equal(0f, _runtime.Readouts.Number(Car, timer, "lit"));
         Steps(25);
         Assert.Equal(0f, _runtime.Signals.Output(Car, timer));
         Steps(10);
         Assert.Equal(1f, _runtime.Signals.Output(Car, timer));
+        Assert.Equal("rest", _runtime.Readouts.Text(Car, timer, "pose"));
+        Assert.Equal(1f, _runtime.Readouts.Number(Car, timer, "lit"));
     }
 
     [Fact]

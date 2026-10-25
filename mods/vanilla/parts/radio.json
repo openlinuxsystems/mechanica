@@ -11,11 +11,10 @@
   "stack_size": 10,
   "sound_material": "wood",
   "size": [2, 2, 1],
-  "mesh": "meshes/radio.glb",
+  "mesh": "meshes/parts/radio.glb",
+  "icon": "textures/items/radio_icon.png",
   "visual": {
-    "color": "#7a4a2a",
-    "roughness": 0.7,
-    "metallic": 0.1
+    "color": "#ffffff"
   },
   "sockets": [
     {
@@ -50,5 +49,16 @@
       "step": 1,
       "default": 1
     }
-  ]
+  ],
+  "display": {
+    "clips": {
+      "readout": "pose",
+      "scrub": [
+        {
+          "readout": "tune",
+          "clip": "tune"
+        }
+      ]
+    }
+  }
 }

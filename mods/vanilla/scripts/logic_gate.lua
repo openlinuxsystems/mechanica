@@ -1,6 +1,9 @@
 -- Logic gate: its output is 1 or 0 from its inputs, each of which is on when it is not 0.
 -- Setting "mode": and, or, xor (an odd number on), nand, nor or xnor. With no inputs everything is off,
--- so nand, nor and xnor are on.
+-- so nand, nor and xnor are on. Its "face" readout names the mode (the model's screen shows it) and its "lit"
+-- readout is 1 while the output is on.
+
+local shown_face, shown_lit
 
 local modes = {
   ["and"] = function(on, total) return total > 0 and on == total end,
@@ -19,6 +22,15 @@ function get_outputs()
       on = on + 1
     end
   end
-  local mode = modes[part.setting("mode")] or modes["and"]
-  return mode(on, total)
+  local name = modes[part.setting("mode")] and part.setting("mode") or "and"
+  local out = modes[name](on, total)
+  if name ~= shown_face then
+    part.display("face", name)
+    shown_face = name
+  end
+  if out ~= shown_lit then
+    part.display("lit", out and 1 or 0)
+    shown_lit = out
+  end
+  return out
 end

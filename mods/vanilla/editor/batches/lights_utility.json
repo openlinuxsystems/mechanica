@@ -528,7 +528,8 @@
         "size": [2, 2, 1],
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.25, 0], "normal": [0, -1, 0] }],
         "script": "scripts/radio.lua",
-        "visual": { "color": "#7a4a2a", "roughness": 0.7, "metallic": 0.1 },
+        "icon": "textures/items/radio_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "sounds": {
           "on": "radio_on",
           "off": "radio_off",
@@ -544,20 +545,10 @@
         "settings": [
           { "id": "station", "name": "Station", "type": "number", "min": 1, "max": 6, "step": 1, "default": 1 }
         ],
+        "display": { "clips": { "readout": "pose", "scrub": [{ "readout": "tune", "clip": "tune" }] } },
         "sound_material": "wood"
       },
-      "model": [
-        { "kind": "box", "size": [0.48, 0.34, 0.2], "position": [0, -0.06, 0] },
-        {
-          "kind": "cylinder",
-          "radius": 0.07,
-          "height": 0.02,
-          "position": [-0.1, -0.06, -0.1],
-          "rotation": [90, 0, 0]
-        },
-        { "kind": "box", "size": [0.14, 0.1, 0.02], "position": [0.12, -0.04, -0.1] },
-        { "kind": "cylinder", "radius": 0.008, "height": 0.24, "position": [0.18, 0.2, 0.05] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/radio.glb" }],
       "recipes": [
         {
           "id": "radio",
@@ -637,26 +628,18 @@
         "flammable": true,
         "stack_size": 20,
         "script": "scripts/horn.lua",
-        "visual": { "color": "#c8b040", "roughness": 0.4, "metallic": 0.7 },
+        "icon": "textures/items/horn_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "sounds": { "honk": "horn_honk" },
         "logic": { "inputs": 1, "use": "honk" },
         "settings": [
           { "id": "pitch", "name": "Pitch", "type": "number", "min": 1, "max": 9, "step": 1, "default": 5 }
         ],
+        "display": { "clips": { "readout": "pose" } },
         "properties": { "honk": 0.6 },
         "sound_material": "metal"
       },
-      "model": [
-        { "kind": "box", "size": [0.2, 0.06, 0.2], "position": [0, -0.095, 0] },
-        { "kind": "cylinder", "radius": 0.04, "height": 0.16, "rotation": [90, 0, 0] },
-        {
-          "kind": "cylinder",
-          "radius": 0.08,
-          "height": 0.04,
-          "position": [0, 0, -0.09],
-          "rotation": [90, 0, 0]
-        }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/horn.glb" }],
       "recipes": [
         {
           "id": "horn",
