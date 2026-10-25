@@ -11,10 +11,9 @@
   "stack_size": 20,
   "sound_material": "metal",
   "size": [6, 1, 8],
-  "mesh": "meshes/decor/roof_rack.glb",
+  "mesh": "meshes/parts/roof_rack.glb",
+  "icon": "textures/items/roof_rack_icon.png",
   "visual": {
-    "color": "#303030",
-    "roughness": 0.4,
-    "metallic": 0.7
+    "color": "#ffffff"
   }
 }

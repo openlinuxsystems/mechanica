@@ -1,7 +1,7 @@
 {
   "id": "exhaust_pipe",
   "name": "Exhaust Pipe",
-  "description": "A bent chrome tailpipe. Purely for looks.",
+  "description": "A bent tailpipe with a heat-blued tip. Purely for looks.",
   "category": "decor",
   "mass": 3,
   "durability": 3,
@@ -11,10 +11,9 @@
   "stack_size": 20,
   "sound_material": "metal",
   "size": [1, 3, 1],
-  "mesh": "meshes/decor/exhaust_pipe.glb",
+  "mesh": "meshes/parts/exhaust_pipe.glb",
+  "icon": "textures/items/exhaust_pipe_icon.png",
   "visual": {
-    "color": "#b0b4b8",
-    "roughness": 0.2,
-    "metallic": 0.95
+    "color": "#ffffff"
   }
 }
