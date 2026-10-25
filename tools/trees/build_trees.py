@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the harvestable trees, their log segments and the Wood Rod (Tree Harvesting spec; 2026-10-19 redesign).
+"""Build the harvestable trees, their log segments, the Wood Rod and the Pine Rod (Tree Harvesting spec; 2026-10-19 redesign).
 
 Stylised to sit with the player characters and the textured blocks and rocks: smooth, gently curving trunks with
 painted bark, and soft canopies made of painted leaf-cluster cards round a solid core, shaded as one rounded mass.
@@ -22,6 +22,8 @@ to glTF with numpy and Pillow, so the build needs no Blender:
 * ``mods/vanilla/meshes/items/birch_log.glb``, ``wood_log.glb``, ``pine_log.glb`` - log segments in their tree's
   bark with ringed end grain, long axis along glTF Z (sizes unchanged: they match the log parts' colliders).
 * ``mods/vanilla/meshes/items/wood_rod.glb`` - the Wood Rod: a rough hewn bar, 0.22 x 0.22 x 0.98 m, along glTF Z.
+* ``mods/vanilla/meshes/items/pine_rod.glb`` - the Pine Rod: the same bar (its own seed) in dark red-brown pine
+  heartwood with resin lines and darker pine end grain, so it tells apart from the pale Wood Rod.
 
 Every tree stands with its ground point at the origin; the trunk goes into the ground a little below it so trees sit
 on slopes. Sizes keep to the colliders and fall heights in ``mods/vanilla/world/worldgen.json``. Materials: bark is a
@@ -544,11 +546,11 @@ def log(radius, length, seed):
     return m
 
 
-def wood_rod():
-    rng = np.random.default_rng(71)
+def wood_rod(seed=71, radii=(0.13, 0.135, 0.128, 0.132)):
+    """A hewn bar along Z; the Pine Rod is the same bar from another seed (its own wobble and girth)."""
+    rng = np.random.default_rng(seed)
     m = Model(zup=False)
     path = [np.array([0, 0, z]) for z in np.linspace(-0.47, 0.47, 4)]
-    radii = [0.13, 0.135, 0.128, 0.132]
     tube(m, "bark", path, radii, 10, tile=0.8, around=1, tip=False, wobble=lambda a, i: 1 + rng.uniform(-0.03, 0.03))
     end_cap(m, "end", np.array([0, 0, 0.49]), (0, 0, 1), 0.12, 10)
     end_cap(m, "end", np.array([0, 0, -0.49]), (0, 0, -1), 0.12, 10)
@@ -615,6 +617,24 @@ def leaf_material(kind, size):
 
 def plain(hex_colour, rough=0.9):
     return {"factor": [*tex.hexrgb(hex_colour) ** 2.2, 1.0], "rough": rough}
+
+
+def pine_heartwood():
+    """The Pine Rod's hewn face: the Wood Rod's grain streaks recoloured as dark, red-brown pine heartwood with a few
+    resin lines, so the two rods tell apart at a glance (the Wood Rod is pale hewn oak)."""
+    grain = np.clip(tex.bark("oak")[0] * 1.55 + 0.08, 0, 1).mean(axis=2)
+    lo, hi = grain.min(), grain.max()
+    t = (grain - lo) / max(hi - lo, 1e-6)
+    col = tex.mix(tex.hexrgb("#5a2c16")[None, None], tex.hexrgb("#a9643a")[None, None], t ** 0.8)
+    rng = np.random.default_rng(73)
+    resin = np.clip(tex.noise(tex.BARK_SIZE, rng, 14, 90) * 3.0 - 2.0, 0, 1)
+    return tex.mix(col, tex.hexrgb("#3a1a0c")[None, None], resin * 0.7)
+
+
+def pine_end_material():
+    """Pine end grain with the heart darkened to match the heartwood faces."""
+    col = cached(("end", "pine"), lambda: tex.end_grain("pine")) * np.array([0.78, 0.66, 0.6])
+    return {"color": jpeg(rgb_image(col)), "rough": 0.85}
 
 
 def end_material(kind):
@@ -747,6 +767,8 @@ ITEM_MODELS = {
     "pine_log": lambda: (log(0.35, 1.2, 7), {"bark": bark_material("pine", 256), "end": end_material("pine")}),
     "wood_rod": lambda: (wood_rod(), {"bark": {**bark_material("oak", 128), "color": jpeg(rgb_image(
         cached(("rod",), lambda: np.clip(tex.bark("oak")[0] * 1.55 + 0.08, 0, 1)), 128))}, "end": end_material("oak")}),
+    "pine_rod": lambda: (wood_rod(79, (0.133, 0.128, 0.134, 0.13)), {"bark": {**bark_material("oak", 128), "color": jpeg(
+        rgb_image(cached(("pine_rod",), pine_heartwood), 128))}, "end": pine_end_material()}),
 }
 
 

@@ -3,7 +3,7 @@
   "model": [
     {
       "kind": "mesh",
-      "mesh": "meshes/items/wood_rod.glb"
+      "mesh": "meshes/items/pine_rod.glb"
     }
   ]
 }

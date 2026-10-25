@@ -11,6 +11,7 @@
   "sound_material": "metal",
   "size": [1, 1, 4],
   "mesh": "meshes/items/metal_rod.glb",
+  "icon": "textures/items/metal_rod_icon.png",
   "visual": {
     "color": "#ffffff",
     "roughness": 0.35,

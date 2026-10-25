@@ -12,6 +12,7 @@
   "sound_material": "concrete",
   "size": [2, 2, 2],
   "mesh": "meshes/items/stone_chunk.glb",
+  "icon": "textures/items/stone_chunk_icon.png",
   "visual": {
     "color": "#ffffff",
     "roughness": 0.95,

@@ -2,7 +2,8 @@
   // Mining (Boulder Mining spec, Square Rocks redesign): the boulders a drilled large deposit block breaks into, the
   // chunks a medium or small block (or a boulder) breaks into, the Stone and Metal Rods the chunks break into, and the
   // rods' refiner recipes. The deposits and their blocks are world objects in world/worldgen.json.
-  // Models: tools/rocks/build_rocks.py. Re-run tools/author-vanilla.sh after editing.
+  // Models: tools/rocks/build_rocks.py; icons: tools/harvest_icons/build_harvest_icons.py. Re-run
+  // tools/author-vanilla.sh after editing.
   "format_version": 1,
   "parts": [
     {
@@ -10,6 +11,7 @@
       "template": "item",
       "set": {
         "name": "Stone Boulder",
+        "icon": "textures/items/stone_boulder_icon.png",
         "description": "A block broken off a rock deposit, too big for the Sledgehammer. Break it with a drill into Stone Chunks.",
         "category": "resource",
         "loose": true,
@@ -33,6 +35,7 @@
       "base": "stone_boulder",
       "set": {
         "name": "Metal-Rich Boulder",
+        "icon": "textures/items/metal_boulder_icon.png",
         "description": "A block broken off a metal-rich deposit, veined with ore and too big for the Sledgehammer. Break it with a drill into Metal-Rich Chunks.",
         "mass": 140,
         "sound_material": "metal",
@@ -46,6 +49,7 @@
       "template": "item",
       "set": {
         "name": "Stone Chunk",
+        "icon": "textures/items/stone_chunk_icon.png",
         "description": "A broken piece of a rock deposit. Break it with a drill or the Sledgehammer for its Stone and Metal Rods.",
         "category": "resource",
         "loose": true,
@@ -75,6 +79,7 @@
       "base": "stone_chunk",
       "set": {
         "name": "Metal-Rich Chunk",
+        "icon": "textures/items/metal_chunk_icon.png",
         "description": "A broken piece of a metal-rich deposit, veined with ore. Break it with a drill or the Sledgehammer for mostly Metal Rods.",
         "mass": 36,
         "sound_material": "metal",
@@ -94,6 +99,7 @@
       "template": "item",
       "set": {
         "name": "Stone Rod",
+        "icon": "textures/items/stone_rod_icon.png",
         "description": "A bar of rough stone. Hold Use on it with the Refine Tool, or put it in a Refiner, for 20 Scrap Stone Blocks.",
         "category": "resource",
         "loose": true,
@@ -124,6 +130,7 @@
       "base": "stone_rod",
       "set": {
         "name": "Metal Rod",
+        "icon": "textures/items/metal_rod_icon.png",
         "description": "A bar of raw metal. Hold Use on it with the Refine Tool, or put it in a Refiner, for 20 Metal Blocks.",
         "mass": 16,
         "friction": 0.4,

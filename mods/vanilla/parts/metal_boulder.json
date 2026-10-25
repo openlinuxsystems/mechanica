@@ -12,6 +12,7 @@
   "sound_material": "metal",
   "size": [4, 4, 4],
   "mesh": "meshes/items/metal_boulder.glb",
+  "icon": "textures/items/metal_boulder_icon.png",
   "visual": {
     "color": "#ffffff",
     "roughness": 0.95,
