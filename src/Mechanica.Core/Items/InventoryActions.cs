@@ -227,6 +227,11 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
     // Makes every clip readout a station writes new, so the same clip plays again.
     private int _clipCount;
 
+    // Seconds since idle stations that work on their own last looked for inputs (they look twice a second).
+    private float _autoClock = AutoInterval;
+
+    private const float AutoInterval = 0.5f;
+
     /// <summary>Action name for moving items.</summary>
     public const string MoveItems = "MoveItems";
 
@@ -368,8 +373,17 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
     public void Tick(float seconds)
     {
         var working = new HashSet<(int Creation, int Part)>();
+        _autoClock += seconds;
+        var lookForInputs = _autoClock >= AutoInterval;
+        if (lookForInputs)
+            _autoClock = 0;
         foreach (var creation in world.AllCreations)
         {
+            if (lookForInputs)
+            {
+                foreach (var part in creation.AutoStations)
+                    StartOnItsOwn(creation, part);
+            }
             foreach (var (part, queue) in creation.ActiveCrafting.ToList())
             {
                 if (creation.InventoryOf(part) is not { } output)
@@ -400,6 +414,25 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
                 world.SetReadout(creation, part, CraftingDefinition.ClipReadout, clips.Complete is { } done ? $"{done}#{++_clipCount}" : null);
         }
         _working = working;
+    }
+
+    /// <summary>
+    /// Starts one craft at an idle station that works on its own (<see cref="CraftingDefinition.Auto"/>): the first of its
+    /// recipes, by order, whose inputs are in its near storage, the containers piped to its input ports or its own slots.
+    /// </summary>
+    private void StartOnItsOwn(Creation creation, int part)
+    {
+        if (creation.CraftingOf(part) is not { IsEmpty: true } queue || creation.InventoryOf(part) is not { } own
+            || creation.FindPart(part) is not { } placed)
+            return;
+        var pool = new List<Inventory>(Inputs(creation, part)) { own };
+        var recipe = recipes.ForStation(placed.Part).OrderBy(r => r.Definition.Order ?? int.MaxValue)
+            .FirstOrDefault(r => ItemPool.HasAll(pool, r.Inputs));
+        if (recipe is null)
+            return;
+        foreach (var input in recipe.Inputs)
+            ItemPool.Remove(pool, input.Item, input.Count);
+        queue.Enqueue(new CraftJob(recipe.QualifiedId, 1));
     }
 
     // What a station plays when it begins working: its start clip, then its work clip (the readout's "a>b").

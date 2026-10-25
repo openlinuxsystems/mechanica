@@ -771,6 +771,13 @@ ev("stations", "freezer_start", lambda rng: edges(peak(mix(0.7, (thud(rng, 0.3, 
 ev("stations", "freezer_work", noise_loop(150, 1200, 2.0, 0.3, ((120, 0.12), (240, 0.05))), loop=2.0, volume_db=-6.0, max_distance=25.0)
 ev("stations", "freezer_complete", lambda rng: edges(peak(mix(0.8, (beeps([1568, 1319, 1047], 0.1), 0), (hiss(rng, 0.5, 3000, 9000, 0.02, 0.3, 0.25), 0.2)), 0.6)),
    **TOOL)
+# The Beehive (parts batch 16): the bees stirring with a rising buzz over a knock of the lid, the swarm's hum (close
+# detuned tones beating, a little air), and two soft knocks of comb settling when a Beeswax is made.
+ev("stations", "beehive_start", lambda rng: edges(peak(mix(1.0, (wood_knock(rng, 0.18, 0.5), 0),
+   (glide(170, 230, 0.9) * decay(0.9, 0.6, attack=0.2) * 0.35 + band(noise(rng, 0.9), 300, 2500) * decay(0.9, 0.5, attack=0.2) * 0.12, 0.08)), 0.5)), **QUIET)
+ev("stations", "beehive_work", tonal_loop(((220, 0.3), (226, 0.25), (233, 0.2), (440, 0.08), (452, 0.06)), wobble=0.25, wobble_rate=3.0,
+   noise_amount=0.08, lo=300, hi=3000), loop=2.0, volume_db=-10.0, max_distance=15.0)
+ev("stations", "beehive_complete", lambda rng: edges(peak(mix(0.5, (wood_knock(rng, 0.15, 0.5), 0), (wood_knock(rng, 0.12, 0.35), 0.14)), 0.5)), **QUIET)
 # The Field Kitchen (consumables batch C4): burners clicking alight with a whoomph, a sizzle over the hum of its oven fan,
 # and a kitchen timer's ding.
 ev("stations", "field_kitchen_start", lambda rng: edges(peak(mix(0.7, (click(rng, 2200, 0.15), 0), (whoosh(rng, 0.4, 150, 1800) * 0.6, 0.08)), 0.6)), **TOOL)

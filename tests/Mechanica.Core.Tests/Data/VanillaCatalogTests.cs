@@ -30,7 +30,7 @@ public class VanillaCatalogTests
         "wooden_crate", "metal_crate", "barrel", "fabricator", "portable_fabricator", "refiner", "dispenser", "respawn_bed",
         "radio", "beacon", "headlight", "spotlight", "warehouse_spotlight", "construction_light", "interior_light",
         "warning_light", "shack_light", "fluorescent_light", "packing_lamp", "frame_beam_light", "neon_sign", "protector_sign",
-        "alarm_clock", "cash_register", "fancy_bed", "freezer", "anvil", "field_kitchen",
+        "alarm_clock", "cash_register", "fancy_bed", "freezer", "anvil", "field_kitchen", "beehive",
         // Resources, consumables, handheld weapons (produce_crate is left out for now)
         "component_kit", "circuit_board", "glue", "gasoline", "crude_oil", "battery_pack",
         "master_battery", "warehouse_key", "explosive_remnant", "scuttler_head", "carrot_seed", "potato_seed", "tomato_seed",
@@ -673,6 +673,8 @@ public class VanillaCatalogTests
     [InlineData("freezer", "complete", "idle_loop", "start", "work_loop")]
     [InlineData("refiner", "complete", "idle_loop", "start", "work_loop")]
     [InlineData("field_kitchen", "complete", "idle_loop", "start", "work_loop")]
+    // Parts map batch 16: the Beehive's clips are its bees.
+    [InlineData("beehive", "complete", "idle_loop", "start", "work_loop")]
     public void EachBedAndStationHasItsOwnModelIconAndClips(string id, params string[] clips)
     {
         var part = Part(id);

@@ -1,0 +1,32 @@
+{
+  "id": "beehive",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "wood_block_2",
+      "count": 50
+    },
+    {
+      "item": "component_kit",
+      "count": 1
+    },
+    {
+      "item": "circuit_board",
+      "count": 4
+    },
+    {
+      "item": "soil_bag",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "beehive",
+      "count": 1
+    }
+  ],
+  "time": 30,
+  "order": 1950
+}

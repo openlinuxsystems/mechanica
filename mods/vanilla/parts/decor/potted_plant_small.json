@@ -1,0 +1,19 @@
+{
+  "id": "potted_plant_small",
+  "name": "Small Potted Plant",
+  "description": "A leafy little plant in a small settler clay pot.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 1,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "concrete",
+  "size": [1, 2, 1],
+  "mesh": "meshes/parts/potted_plant_small.glb",
+  "icon": "textures/items/potted_plant_small_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

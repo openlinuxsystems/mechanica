@@ -1,0 +1,28 @@
+{
+  "id": "potted_vine",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "pigment_flower",
+      "count": 1
+    },
+    {
+      "item": "scrap_stone_block",
+      "count": 5
+    },
+    {
+      "item": "wood_block",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "potted_vine",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 3064
+}

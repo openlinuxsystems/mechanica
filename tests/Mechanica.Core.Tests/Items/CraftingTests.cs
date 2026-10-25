@@ -123,6 +123,100 @@ public class CraftingTests
     }
 
     [Fact]
+    public void AStationThatWorksOnItsOwnStartsACraftFromWhatIsInItsSlots()
+    {
+        // crafting.auto (parts batch 16, the Beehive): no order, no player; the first recipe it has the inputs for.
+        WorksOnItsOwn(Bench);
+        var (creation, bench) = Station();
+        var held = _world.FindCreation(creation)!.InventoryOf(bench)!;
+
+        _items.Tick(1f);
+        Assert.True(_world.FindCreation(creation)!.CraftingOf(bench)!.IsEmpty); // nothing to work with
+
+        held.Add(Scrap, 2);
+        _items.Tick(0.25f); // it looks twice a second
+        var queue = _world.FindCreation(creation)!.CraftingOf(bench)!;
+        Assert.True(queue.IsEmpty);
+        _items.Tick(0.25f); // Blocks (no wood for a Chest), its 1 s half done at speed 2
+        Assert.Equal(new CraftJob("test:blocks", 1, 0.5f), Assert.Single(queue.Jobs));
+        Assert.Equal(1, held.Count(Scrap));
+        _items.Tick(0.25f);
+        Assert.Equal(10, held.Count(Block));
+        Assert.True(queue.IsEmpty);
+        _items.Tick(0.5f); // the next one from the last scrap, started and done
+        Assert.Equal((0, 20), (held.Count(Scrap), held.Count(Block)));
+        _items.Tick(1f);
+        Assert.True(queue.IsEmpty); // and it waits for more
+    }
+
+    [Fact]
+    public void AStationThatWaitsForOrdersLeavesItsSlotsAlone()
+    {
+        var (creation, bench) = Station();
+        _world.FindCreation(creation)!.InventoryOf(bench)!.Add(Scrap, 1);
+
+        _items.Tick(1f);
+
+        Assert.True(_world.FindCreation(creation)!.CraftingOf(bench)!.IsEmpty);
+        Assert.Equal(1, _world.FindCreation(creation)!.InventoryOf(bench)!.Count(Scrap));
+    }
+
+    [Fact]
+    public void AStationThatWorksOnItsOwnTakesFromItsInputPipeAndSendsDownItsOutputPipe()
+    {
+        // The Beehive's two-way port: a chest piped in feeds it, a chest piped out takes what it makes.
+        TransportParts.Catalog(_catalog);
+        _catalog.Add(Block, _catalog.FindDefinition(Block)! with { StackSize = 10 });
+        _catalog.Add(Bench, _catalog.FindDefinition(Bench)! with
+        {
+            Crafting = _catalog.FindDefinition(Bench)!.Crafting! with { Auto = true },
+            IoPorts =
+            [
+                new ItemPortDefinition { Id = "input", Position = new Vec3(-0.125f, 0, 0), Normal = new Vec3(-1, 0, 0), Mode = ItemPortMode.In },
+                new ItemPortDefinition { Id = "output", Position = new Vec3(0.125f, 0, 0), Normal = new Vec3(1, 0, 0), Mode = ItemPortMode.Out },
+            ],
+        });
+        var creation = new Creation(_world.NextCreationId(), _catalog);
+        for (var x = 0; x < 5; x++)
+            Assert.True(creation.TryPlacePart(Block, new GridCell(x, -1, 0), default, out _, out var e), e);
+        var toward = GridRotation.FromAxes(new GridCell(0, 0, 1), new GridCell(0, 1, 0));
+        var place = (string part, int x, GridRotation rotation) =>
+        {
+            Assert.True(creation.TryPlacePart(part, new GridCell(x, 0, 0), rotation, out var placed, out var error), error);
+            return placed!.Id;
+        };
+        var source = place(TransportParts.OutChest, 0, TransportParts.AlongX);
+        place(TransportParts.Pipe, 1, TransportParts.AlongX);
+        var bench = place(Bench, 2, default);
+        place(TransportParts.Pipe, 3, TransportParts.AlongX);
+        var target = place(TransportParts.InChest, 4, toward);
+        creation.SetAllBodyPoses(Pose.Identity);
+        _world.Added(creation);
+        creation.InventoryOf(source)!.Add(Scrap, 2);
+
+        _items.Tick(1f); // starts the first and finishes it
+        Assert.Equal(1, creation.InventoryOf(source)!.Count(Scrap));
+        Assert.Equal(10, creation.InventoryOf(target)!.Count(Block));
+        _items.Tick(1f);
+        Assert.Equal(0, creation.InventoryOf(source)!.Count(Scrap));
+        Assert.Equal(20, creation.InventoryOf(target)!.Count(Block));
+        Assert.Equal(0, creation.InventoryOf(bench)!.Count(Block));
+    }
+
+    [Fact]
+    public void AStationThatWorksOnItsOwnStopsLookingOnceItIsTakenAway()
+    {
+        WorksOnItsOwn(Bench);
+        var (id, bench) = Station();
+        var creation = _world.FindCreation(id)!;
+        Assert.Equal([bench], creation.AutoStations);
+
+        creation.RemovePart(bench, _world.NextCreationId);
+
+        Assert.Empty(creation.AutoStations);
+    }
+
+    [Fact]
     public void CraftingTakesTheInputsAndTheStationMakesTheOutput()
     {
         var (creation, bench) = Station();
@@ -653,6 +747,9 @@ public class CraftingTests
         items.Register(dispatcher);
         return items;
     }
+
+    private void WorksOnItsOwn(string station) =>
+        _catalog.Add(station, _catalog.FindDefinition(station)! with { Crafting = _catalog.FindDefinition(station)!.Crafting! with { Auto = true } });
 
     private (int Creation, int Part) Station() => (Add(Bench), 1);
 

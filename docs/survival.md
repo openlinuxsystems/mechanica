@@ -72,6 +72,11 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
   two-way port, and puts the burgers in its slots or out of its port. Both burgers heal 30 (their perks come later).
 - **Ice:** the Freezer is a crafting station with one recipe: a full Water Bucket becomes 20 Ice Blocks in a minute,
   and the empty bucket comes back into the Freezer's slots with the ice.
+- **Beeswax:** break a wild hive off the side of a large rock in the forests (1 or 2 Beeswax), or keep bees. The Beehive
+  (Fabricator: 50 Wood Block 2, a Component Kit, 4 Circuit Boards and 2 Soil Bags, 30 s) is a station that works on its
+  own: put Pigment Flowers in its slots, or pipe them to its two-way port, and it turns one into a Beeswax every 3
+  minutes (`beeswax_beehive`), its bees flying while it works, with no order to queue. The wax goes out of its port
+  first, then into its slots (it holds only flowers and wax).
 - **Farming:** aim a Soil Bag at the ground (no steeper than 17°) to spill out a 3×3 soil mound (with Force build held,
   or aimed anywhere but the terrain, the bag itself is set down; picking a mound up gives the bag back). Plant a seed
   and water it. Soil looks dry, lightly watered, fully wet or drying, and empty soil dries out in about a game day. A crop grows only while its soil holds water,

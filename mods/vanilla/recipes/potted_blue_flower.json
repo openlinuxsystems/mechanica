@@ -1,0 +1,24 @@
+{
+  "id": "potted_blue_flower",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "pigment_flower",
+      "count": 1
+    },
+    {
+      "item": "metal_block",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "potted_blue_flower",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 3066
+}

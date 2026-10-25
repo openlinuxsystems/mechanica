@@ -40,6 +40,7 @@ public sealed class Creation
     // Item storage and crafting orders of container and station parts, made when first asked for.
     private readonly Dictionary<int, Inventory> _inventories = [];
     private readonly Dictionary<int, CraftingQueue> _crafting = [];
+    private readonly SortedSet<int> _autoStations = [];
     private readonly Dictionary<int, SoilState> _soil = [];
     // How strongly each burning part burns (0 to 1); parts not on fire have no entry.
     private readonly Dictionary<int, float> _fire = [];
@@ -437,6 +438,9 @@ public sealed class Creation
         // Ticked for every Creation every step, and most have no station.
         _crafting.Count == 0 ? [] : _crafting.Where(kv => !kv.Value.IsEmpty).OrderBy(kv => kv.Key).Select(kv => (kv.Key, kv.Value));
 
+    /// <summary>Stations that work on their own (<see cref="CraftingDefinition.Auto"/>), by part id.</summary>
+    public IReadOnlyCollection<int> AutoStations => _autoStations;
+
     /// <summary>Paints a part (Paint Tool): <paramref name="color"/> is <c>"#rrggbb"</c>, or null for its own colour.</summary>
     /// <returns>True when the colour changed.</returns>
     public bool SetPartColor(int partId, string? color)
@@ -583,6 +587,10 @@ public sealed class Creation
             return false;
         _parts[partId] = part with { Level = level };
         var definition = _definitions[partId] = PartUpgrades.At(written, level);
+        if (definition.Crafting?.Auto == true)
+            _autoStations.Add(partId);
+        else
+            _autoStations.Remove(partId);
         if (_inventories.TryGetValue(partId, out var inventory) && definition.Inventory?.Slots is { } slots)
             inventory.Grow(slots);
         // A level may change the part's mass, so the Bodies' masses are worked out again.
@@ -1079,6 +1087,8 @@ public sealed class Creation
     {
         _parts.Add(part.Id, part);
         _definitions.Add(part.Id, definition);
+        if (definition.Crafting?.Auto == true)
+            _autoStations.Add(part.Id);
         foreach (var c in PartGeometry.Cells(definition, part.Cell, part.Rotation))
             _occupancy.Add(c, part.Id);
     }
@@ -1091,6 +1101,7 @@ public sealed class Creation
             _occupancy.Remove(c);
         _parts.Remove(partId);
         _definitions.Remove(partId);
+        _autoStations.Remove(partId);
     }
 
     private void Delete(int partId)
@@ -1099,6 +1110,7 @@ public sealed class Creation
             _occupancy.Remove(c);
         _parts.Remove(partId);
         _definitions.Remove(partId);
+        _autoStations.Remove(partId);
         _poses.Remove(partId);
         _damage.Remove(partId);
         _velocities.Remove(partId);

@@ -1,0 +1,19 @@
+{
+  "id": "potted_seedling",
+  "name": "Potted Seedling",
+  "description": "Fresh sprouts in a large settler clay pot, staked with a twig.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 2,
+  "friction": 0.6,
+  "buoyancy": 0.1,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "concrete",
+  "size": [2, 2, 2],
+  "mesh": "meshes/parts/potted_seedling.glb",
+  "icon": "textures/items/potted_seedling_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

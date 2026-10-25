@@ -916,6 +916,9 @@ public partial class PartEditorScreen : Control
                 v => Set("Set queue size", x => x with { Crafting = x.Crafting! with { QueueSize = (int?)v } }), optional: true, fallback: 1);
             _partGrid.AddNumber("Link range", crafting.LinkRange, 0, 8, 0.25,
                 v => Set("Set link range", x => x with { Crafting = x.Crafting! with { LinkRange = (float?)v } }), optional: true, fallback: 0, suffix: "m");
+            // crafting.auto: the station starts its first recipe it has the inputs for whenever it is idle (the Beehive).
+            _partGrid.AddBool("Works on its own", crafting.Auto == true,
+                v => Set("Set works on its own", x => x with { Crafting = x.Crafting! with { Auto = v == true ? true : null } }));
             // The model clips that follow the station's work; the part plays them through display.clips with readout "station".
             _partGrid.AddText("Start clip", crafting.Clips?.Start,
                 v => SetStationClips("Set start clip", c => c with { Start = Blank(v) }), "played once when it begins working");

@@ -1,7 +1,7 @@
 {
   "id": "beeswax",
   "name": "Beeswax",
-  "description": "A slab of golden comb cut from a wild beehive. Hives cling to the sides of large rocks: break one to collect it. Worn Tile is set with it. Flammable.",
+  "description": "A slab of golden comb. Wild hives cling to the sides of large rocks: break one to collect it, or keep a Beehive fed with Pigment Flowers. Worn Tile is set with it. Flammable.",
   "category": "resource",
   "mass": 6,
   "durability": 2,

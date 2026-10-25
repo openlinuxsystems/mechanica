@@ -1,0 +1,24 @@
+{
+  "id": "potted_plant_small",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "pigment_flower",
+      "count": 1
+    },
+    {
+      "item": "scrap_stone_block",
+      "count": 5
+    }
+  ],
+  "outputs": [
+    {
+      "item": "potted_plant_small",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 3062
+}

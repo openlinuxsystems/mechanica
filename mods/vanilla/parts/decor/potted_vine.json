@@ -1,0 +1,19 @@
+{
+  "id": "potted_vine",
+  "name": "Potted Vine",
+  "description": "A trailing vine in a large settler clay pot, climbing a scrap-wood stake and spilling over the rim.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 1,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "concrete",
+  "size": [2, 3, 2],
+  "mesh": "meshes/parts/potted_vine.glb",
+  "icon": "textures/items/potted_vine_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

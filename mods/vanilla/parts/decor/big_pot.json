@@ -1,0 +1,19 @@
+{
+  "id": "big_pot",
+  "name": "Big Pot",
+  "description": "A carved stone urn from before the colony, moss in its cracks, with a fern growing in it.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 2,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "concrete",
+  "size": [3, 3, 3],
+  "mesh": "meshes/parts/big_pot.glb",
+  "icon": "textures/items/big_pot_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

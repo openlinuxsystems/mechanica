@@ -1,0 +1,24 @@
+{
+  "id": "big_pot",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "pigment_flower",
+      "count": 1
+    },
+    {
+      "item": "scrap_stone_block",
+      "count": 10
+    }
+  ],
+  "outputs": [
+    {
+      "item": "big_pot",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 3060
+}

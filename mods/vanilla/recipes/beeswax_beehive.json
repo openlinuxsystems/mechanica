@@ -1,0 +1,20 @@
+{
+  "id": "beeswax_beehive",
+  "stations": [
+    "beehive"
+  ],
+  "inputs": [
+    {
+      "item": "pigment_flower",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "beeswax",
+      "count": 1
+    }
+  ],
+  "time": 180,
+  "order": 1951
+}

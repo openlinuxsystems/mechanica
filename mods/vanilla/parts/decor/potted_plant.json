@@ -1,0 +1,19 @@
+{
+  "id": "potted_plant",
+  "name": "Potted Plant",
+  "description": "A broad-leafed plant in a large settler clay pot.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 1,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "concrete",
+  "size": [2, 4, 2],
+  "mesh": "meshes/parts/potted_plant.glb",
+  "icon": "textures/items/potted_plant_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

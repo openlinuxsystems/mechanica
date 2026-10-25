@@ -98,6 +98,29 @@
       "max_distance": 30
     },
     {
+      "id": "beehive_start",
+      "clips": [
+        "sounds/stations/beehive_start.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "beehive_work",
+      "clips": [
+        "sounds/stations/beehive_work.ogg"
+      ],
+      "loop": true,
+      "volume_db": -10,
+      "max_distance": 15
+    },
+    {
+      "id": "beehive_complete",
+      "clips": [
+        "sounds/stations/beehive_complete.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
       "id": "field_kitchen_start",
       "clips": [
         "sounds/stations/field_kitchen_start.ogg"
