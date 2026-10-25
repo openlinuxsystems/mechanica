@@ -42,10 +42,13 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
   Any part with `respawn_point` is a bed: vanilla has the Respawn Bed, a sleeping bag on a foam mat (it burns), and the
   steel Fancy Bed (it does not, and is tougher). You respawn standing on top of the bed: on its collision box when that
   is a box (the sleeping bag's is lower than its block), else on the top of its size.
-- **Food:** left click with food in hand eats it and heals you: a Carrot 25, a Tomato 20, a Garden Burger or a Colony
-  Burger 30. The Potato is not eaten raw: it is potato-weapon ammo and a cooking input. Carrots, tomatoes and burgers
-  stack to 10, potatoes to 50. Every player starts with 3 carrots.
+- **Food:** left click with food in hand eats it and heals you: a Carrot 25, a Tomato 20, a Beetroot 30, a Banana 35, a
+  Garden Burger or a Colony Burger 30. The Potato is not eaten raw: it is potato-weapon ammo and a cooking input. Carrots,
+  tomatoes, beetroots, bananas, chilies and burgers stack to 10, potatoes to 50. Every player starts with 3 carrots.
   The heal is the item's `properties.health`, read by `food.lua`. Eating takes about 1.4 s and stops a sprint.
+- **Chili:** a joke food. Eating one burns away 50 health (its `properties.health` is -50: `food.lua` hurts through
+  `holder.hurt`, the normal damage path), even at full health, so a second one in a row can kill (knockout bag and
+  all). The host decides it and every client sees the health drop. It is grown, or a rare find in gold Bloom Pods.
 - **Drinks:** Bloom Tea heals 20 and a Grazer Shake 100. They are found in loot only (chests, lockers, crates and ruin
   chests; the Grazer Shake in the better ones). A drink is downed in two gulps in about 0.7 s, and you can keep sprinting
   while you drink.
@@ -72,16 +75,22 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
   using a second of water per second of growth (twice that for a seed with `thirst` 2), through four stages. Every
   vanilla crop is ripe after 1260 s (0.875 of a game day, as in Scrap Mechanic; Fertilizer makes that 84 s). A mound
   holds 1260 s of water and a full Water Bucket gives 1260 s, so one bucket grows one crop (a Water Cannon's ten jets a
-  bucket water as much). Harvest it ripe (E): 2 Carrots, 2 Tomatoes, 10 Potatoes, 2 Cotton or 2 Pigment Flowers, and 1
-  to 3 seeds back (farmed Cotton and Pigment Flowers exactly 1). Crops keep growing while nobody is near (the soil catches up from the world
+  bucket water as much). Harvest it ripe (E): 2 Carrots, 2 Tomatoes, 10 Potatoes, 2 Cotton, 2 Pigment Flowers, 2
+  Beetroots, 2 Bananas or 2 Chilies, and 1 to 3 seeds back (farmed Cotton and Pigment Flowers exactly 1). Crops keep growing while nobody is near (the soil catches up from the world
   clock when it next runs) and are saved with the soil's Creation.
 - **Pigment Flowers:** our own flower, whose nine petals are the Paint Tool's colours. It is not food: the Fabricator
   makes 10 Paint Ammo from one in 5 s. Wild Pigment Flowers grow in meadows and forests (`wild_pigment_flower`): press
   Use on one to pick a Pigment Flower and, 40 % of the time, a Pigment Flower Seed; it flowers again half an hour of
   world time later. The seed (also a rare find in Bloom Pods and ruin chests) grows in soil or a Growbed like the other
   crops, and its raid value is 0.
+- **Beetroot, Banana and Chili** (crops batch K3): Beetroot is a root like the carrot, its crimson shoulders rising out of
+  the soil when ripe; the Banana grows on a dwarf banana plant that fits a mound, its bunch hanging under the leaves and
+  turning yellow; the Chili on a knee-high bush, its pods green, then red. Their seeds draw raids more than the first crops
+  (raid value: Beetroot 5, Banana and Chili 10, against Carrot 2). Beetroot Seed comes from green Bloom Pods, crates, farm
+  cargo spills and Seed Scuttlers; Banana and Chili Seeds are rarer, from purple Bloom Pods (Banana Seed also from ruin
+  chests). The Fridge keeps all three.
 - **Growbeds:** the Growbed (Fabricator: 2 Component Kits, 2 Circuit Boards and a Soil Bag) is soil you build into a
-  Creation, so a farm can be a cart, a boat or a base. It takes carrot, potato, tomato, cotton and pigment flower seeds, and a harvest
+  Creation, so a farm can be a cart, a boat or a base. It takes carrot, potato, tomato, cotton, pigment flower, beetroot, banana and chili seeds, and a harvest
   always gives 5 crops. It holds 2160 s of water, so a bucket is enough for a crop with water to spare. It runs on batteries: each Battery Pack powers 6 minutes of growth, taken from Battery Containers
   wired into it (or any container on its Creation); its cyan light shows while it grows. The crop rides along with the
   Creation wherever it drives, across chunks and while it is parked, and saves with it. Picking a bed (or a soil mound) up

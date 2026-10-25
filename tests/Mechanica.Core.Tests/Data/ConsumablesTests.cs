@@ -221,6 +221,8 @@ public class ConsumablesTests
 
         Assert.Equal(["parts/carrot.json", "parts/tomato.json", "parts/potato.json", "parts/carrot_seed.json", "parts/tomato_seed.json",
                 "parts/potato_seed.json", "parts/cotton_seed.json", "parts/pigment_flower.json", "parts/pigment_flower_seed.json",
+                "parts/beetroot.json", "parts/banana.json", "parts/chili.json", "parts/beetroot_seed.json", "parts/banana_seed.json",
+                "parts/chili_seed.json",
                 "parts/chemical.json", "parts/gasoline.json",
                 "parts/bloom_tea.json", "parts/grazer_shake.json", "parts/grazer_milk.json", "parts/grazer_steak.json", "parts/fertilizer.json",
                 "parts/garden_burger.json", "parts/colony_burger.json"],

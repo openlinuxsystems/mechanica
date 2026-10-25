@@ -916,6 +916,8 @@
         { "item": "carrot_seed", "count": 2, "count_max": 4, "weight": 1.0 },
         { "item": "tomato_seed", "count": 2, "count_max": 4, "weight": 1.0 },
         { "item": "pigment_flower_seed", "count": 1, "count_max": 2, "weight": 0.5 },
+        { "item": "beetroot_seed", "count": 1, "count_max": 2, "weight": 0.75 },
+        { "item": "beetroot", "count": 1, "count_max": 3, "weight": 1.0 },
         { "item": "glowstick", "count": 1, "count_max": 2, "weight": 1.0 },
         { "item": "paint_ammo", "count": 5, "count_max": 10, "weight": 1.0 },
         { "item": "fire_extinguisher", "count": 2, "count_max": 4, "weight": 1.0 },
@@ -938,6 +940,9 @@
         { "item": "bloom_tea", "count": 2, "count_max": 3, "weight": 2.0 },
         { "item": "fertilizer", "count": 2, "count_max": 4, "weight": 1.0 },
         { "item": "grazer_shake", "count": 1, "weight": 1.0 },
+        { "item": "banana_seed", "count": 1, "count_max": 2, "weight": 0.5 },
+        { "item": "chili_seed", "count": 1, "count_max": 2, "weight": 0.5 },
+        { "item": "banana", "count": 1, "count_max": 3, "weight": 1.0 },
         { "item": "wheel", "count": 2, "count_max": 4, "weight": 2.0 },
         { "item": "sport_suspension", "count": 1, "count_max": 2, "weight": 1.0 },
         { "item": "scrap_gas_engine", "count": 1, "weight": 1.5 },
@@ -954,6 +959,7 @@
         { "item": "popper", "count": 1, "count_max": 2, "weight": 2.0 },
         { "item": "potato_blaster", "count": 1, "weight": 1.0 },
         { "item": "grazer_shake", "count": 1, "count_max": 2, "weight": 2.0 },
+        { "item": "chili", "count": 1, "count_max": 2, "weight": 0.5 },
         { "item": "electric_engine", "count": 1, "weight": 1.5 },
         { "item": "gas_engine", "count": 1, "weight": 2.0 },
         { "item": "thruster", "count": 1, "weight": 1.0 },
@@ -965,7 +971,9 @@
     // Mechanic's: lockers hold food, cloth and components; file cabinets office stock (glue, ink) and components; a broken
     // microwave scrap or a circuit board; ruin chests (which refill, "refill_days") a bit of everything. Resources stay
     // plentiful. Bloom Tea and Grazer Shake are loot only (consumables batch C2): tea in crates, lockers and Bloom Pods, the
-    // full-heal shake rarer (lockers, purple and gold pods); Fertilizer in pods, crates and ruin chests.
+    // full-heal shake rarer (lockers, purple and gold pods); Fertilizer in pods, crates and ruin chests. Crops batch K3: Beetroot
+    // and its seed are common (green pods, crates, lockers, ruin chests); Banana and Chili seeds epic (purple pods, Banana Seed
+    // also in ruin chests), and the Chili itself a rare gold pod find, the order Scrap Mechanic unlocks them in.
     // The Warehouse Key: one locker on each warehouse's top floor holds it (the only place the world gives one).
     "warehouse_office": {
       "items": [
@@ -977,6 +985,7 @@
         { "item": "carrot", "count": 2, "count_max": 5, "weight": 3.0 },
         { "item": "potato", "count": 3, "count_max": 8, "weight": 3.0 },
         { "item": "tomato", "count": 2, "count_max": 5, "weight": 2.0 },
+        { "item": "beetroot", "count": 1, "count_max": 3, "weight": 1.0 },
         { "item": "component_kit", "count": 1, "count_max": 3, "weight": 3.0 },
         { "item": "cotton", "count": 2, "count_max": 4, "weight": 2.0 },
         { "item": "glowstick", "count": 1, "count_max": 2, "weight": 2.0 },
@@ -1018,6 +1027,9 @@
         { "item": "tomato_seed", "count": 2, "count_max": 4, "weight": 1.0 },
         { "item": "cotton_seed", "count": 2, "count_max": 4, "weight": 1.0 },
         { "item": "pigment_flower_seed", "count": 1, "count_max": 2, "weight": 0.5 },
+        { "item": "beetroot", "count": 1, "count_max": 3, "weight": 1.0 },
+        { "item": "banana", "count": 1, "count_max": 2, "weight": 0.5 },
+        { "item": "banana_seed", "count": 1, "weight": 0.5 },
         { "item": "fire_extinguisher", "count": 2, "count_max": 4, "weight": 1.0 },
         { "item": "popper", "count": 1, "weight": 1.0 },
         { "item": "bloom_tea", "count": 1, "count_max": 2, "weight": 1.0 },
@@ -1039,6 +1051,8 @@
         { "item": "carrot", "count": 2, "count_max": 4, "weight": 2.0 },
         { "item": "carrot_seed", "count": 2, "count_max": 4, "weight": 1.0 },
         { "item": "potato_seed", "count": 2, "count_max": 4, "weight": 1.0 },
+        { "item": "beetroot_seed", "count": 1, "count_max": 2, "weight": 0.75 },
+        { "item": "beetroot", "count": 1, "count_max": 3, "weight": 1.0 },
         { "item": "gasoline", "count": 1, "count_max": 2, "weight": 1.0 },
         { "item": "fire_extinguisher", "count": 2, "count_max": 4, "weight": 1.0 },
         { "item": "glue", "count": 1, "weight": 1.0 },
@@ -1612,7 +1626,7 @@
       "max_slope": 0.4,
       "damage_from": [],
       "harvest": true,
-      "drops": [{ "item": "carrot_seed", "count": 2, "count_max": 4 }, { "item": "potato_seed", "count": 2, "count_max": 4 }, { "item": "tomato_seed", "count": 1, "count_max": 3, "chance": 0.7 }, { "item": "carrot", "count": 1, "count_max": 3, "chance": 0.6 }, { "item": "soil_bag", "count": 1, "chance": 0.5 }]
+      "drops": [{ "item": "carrot_seed", "count": 2, "count_max": 4 }, { "item": "potato_seed", "count": 2, "count_max": 4 }, { "item": "tomato_seed", "count": 1, "count_max": 3, "chance": 0.7 }, { "item": "beetroot_seed", "count": 1, "count_max": 2, "chance": 0.4 }, { "item": "carrot", "count": 1, "count_max": 3, "chance": 0.6 }, { "item": "soil_bag", "count": 1, "chance": 0.5 }]
     },
     {
       "id": "cargo_spill_building",

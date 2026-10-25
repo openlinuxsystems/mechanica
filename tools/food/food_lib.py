@@ -454,3 +454,42 @@ def noise3(p, scale=1.0, seed=0):
     s = seed * 1.7
     return (math.sin(x * 1.9 + s) * math.cos(y * 2.3 - s) + math.sin(y * 1.3 + z * 2.1 + 2 * s)
             + math.cos(z * 1.7 - x * 1.1 + 3 * s)) / 3
+
+
+def merged(root, name, ratio=1.0):
+    """The objects under ``root`` as one mesh (modifiers and transforms applied, the hidden buds left out), named
+    ``name``: the world draws an object's model from the first mesh in its file (TerrainChunk), so a world prop is one
+    mesh with a primitive per material. ``ratio`` < 1 then decimates it, as a prop scattered over a biome is drawn many
+    times."""
+    import bpy
+    dg = bpy.context.evaluated_depsgraph_get()
+    parts = []
+    for o in tree(root):
+        if o.type != "MESH" or min(o.matrix_world.to_scale()) < 1e-3:
+            continue
+        me = bpy.data.meshes.new_from_object(o.evaluated_get(dg), preserve_all_data_layers=True, depsgraph=dg)
+        me.transform(o.matrix_world)
+        if "Col" not in me.color_attributes:
+            # white vertex colours for the plain-coloured pieces: the world draws the whole mesh with its vertex colours,
+            # and a missing layer would come out black and see-through once joined
+            col = me.color_attributes.new("Col", "FLOAT_COLOR", "CORNER")
+            for d in col.data:
+                d.color = (1.0, 1.0, 1.0, 1.0)
+        ob = bpy.data.objects.new(name if not parts else o.name + "_Merged", me)
+        bpy.context.scene.collection.objects.link(ob)
+        parts.append(ob)
+    for o in tree(root):
+        bpy.data.objects.remove(o)
+    bpy.ops.object.select_all(action="DESELECT")
+    for ob in parts:
+        ob.select_set(True)
+    bpy.context.view_layer.objects.active = parts[0]
+    bpy.ops.object.join()
+    ob = parts[0]
+    ob.name = name
+    if ratio < 1.0:
+        mod = ob.modifiers.new("Decimate", "DECIMATE")
+        mod.ratio = ratio
+        bpy.ops.object.modifier_apply(modifier=mod.name)
+    print(f"{name}: {sum(len(p.vertices) - 2 for p in ob.data.polygons)} triangles")
+    return ob

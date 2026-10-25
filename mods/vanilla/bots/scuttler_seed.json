@@ -63,6 +63,11 @@
       "item": "tomato_seed",
       "chance": 0.3,
       "count": 1
+    },
+    {
+      "item": "beetroot_seed",
+      "chance": 0.2,
+      "count": 1
     }
   ],
   "behavior": {

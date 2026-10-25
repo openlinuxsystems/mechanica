@@ -356,7 +356,7 @@
         "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.875, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
-        "inventory": { "slots": 20, "accepts": ["carrot", "potato", "tomato"] }
+        "inventory": { "slots": 20, "accepts": ["carrot", "potato", "tomato", "beetroot", "banana", "chili"] }
       },
       "model": [{ "kind": "mesh", "mesh": "meshes/parts/fridge.glb" }],
       "recipes": [

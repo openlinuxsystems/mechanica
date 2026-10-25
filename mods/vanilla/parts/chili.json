@@ -1,0 +1,32 @@
+{
+  "id": "chili",
+  "name": "Chili",
+  "description": "Fiercely hot: eating one takes 50 health, even at full health. Eat at your own risk.",
+  "category": "consumable",
+  "mass": 1.5,
+  "durability": 1,
+  "friction": 0.4,
+  "buoyancy": 0.4,
+  "flammable": true,
+  "stack_size": 10,
+  "mesh": "meshes/items/chili.glb",
+  "icon": "textures/items/chili_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "script": "scripts/food.lua",
+  "sounds": {
+    "pickup": "pickup_produce",
+    "eat": "eat_crunch"
+  },
+  "held": {
+    "mesh": "meshes/items/chili_held.glb",
+    "offset": [-0.04, 0.066, 0.0225],
+    "rotation": [-90, 0, 90],
+    "juice": "#d42a1e"
+  },
+  "properties": {
+    "health": -50,
+    "eat_seconds": 1.4
+  }
+}

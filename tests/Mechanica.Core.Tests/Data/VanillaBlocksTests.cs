@@ -228,7 +228,7 @@ public class VanillaBlocksTests
     [Theory]
     [InlineData("structural_blocks.json", 86)]
     [InlineData("survival.json", 25)]
-    [InlineData("consumables.json", 18)]
+    [InlineData("consumables.json", 24)]
     [InlineData("joints.json", 4)]
     [InlineData("decor.json", 26)]
     [InlineData("parts_building.json", 38)]

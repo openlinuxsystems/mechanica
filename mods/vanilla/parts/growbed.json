@@ -1,7 +1,7 @@
 {
   "id": "growbed",
   "name": "Growbed",
-  "description": "A raised bed of soil to build onto anything: crops grow on your creation and ride along with it. Plant carrot, potato, tomato, cotton or pigment flower seeds and water it; every harvest gives 5. It needs power: link a Battery Container to it with the Connect Tool (one battery grows for 6 minutes).",
+  "description": "A raised bed of soil to build onto anything: crops grow on your creation and ride along with it. Plant carrot, potato, tomato, cotton, pigment flower, beetroot, banana or chili seeds and water it; every harvest gives 5. It needs power: link a Battery Container to it with the Connect Tool (one battery grows for 6 minutes).",
   "category": "interactive",
   "mass": 4.5,
   "durability": 3,
@@ -40,7 +40,10 @@
       "potato_seed",
       "tomato_seed",
       "cotton_seed",
-      "pigment_flower_seed"
+      "pigment_flower_seed",
+      "beetroot_seed",
+      "banana_seed",
+      "chili_seed"
     ]
   },
   "logic": {

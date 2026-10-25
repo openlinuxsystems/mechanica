@@ -1,0 +1,32 @@
+{
+  "id": "banana",
+  "name": "Banana",
+  "description": "Soft and sweet. Eat it to heal.",
+  "category": "consumable",
+  "mass": 1.5,
+  "durability": 1,
+  "friction": 0.4,
+  "buoyancy": 0.4,
+  "flammable": true,
+  "stack_size": 10,
+  "mesh": "meshes/items/banana.glb",
+  "icon": "textures/items/banana_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "script": "scripts/food.lua",
+  "sounds": {
+    "pickup": "pickup_produce",
+    "eat": "eat_soft"
+  },
+  "held": {
+    "mesh": "meshes/items/banana_held.glb",
+    "offset": [-0.04, 0.066, 0.035],
+    "rotation": [-90, 0, 90],
+    "juice": "#efe3b0"
+  },
+  "properties": {
+    "health": 35,
+    "eat_seconds": 1.4
+  }
+}

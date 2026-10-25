@@ -339,7 +339,7 @@ one) in `mods/vanilla/scripts/`.
   `held.spray` while the holder holds Use, through the guard flag players already send.
   A dead player's uses are refused.
 - **`can_use`, `can_reload_item` and the script's setup only read.** Functions that change the world (`item.consume`, `item.replace`, `item.counter`,
-  `holder.heal`, `inventory.take`, `inventory.put`, `farm.plant`, `farm.water`, `fire.douse`, `fire.ignite` and the `combat` ones that deal damage
+  `holder.heal`, `holder.hurt`, `inventory.take`, `inventory.put`, `farm.plant`, `farm.water`, `fire.douse`, `fire.ignite` and the `combat` ones that deal damage
   or launch) raise an error there.
 - **Damage follows the world's rules.** In Creative nothing hurts players; with friendly fire off
   (the default) no shot, splash or part script hurts a player, but a player's own splash still hurts them.
@@ -385,6 +385,7 @@ end
 | `holder.health()` | Their health. |
 | `holder.max_health()` | The most health a player can have (`max_health` in `survival.json`). |
 | `holder.heal(amount)` | Gives them up to `amount` health, never past the maximum, and returns their health. |
+| `holder.hurt(amount, cause?)` | Takes `amount` health from them through the normal damage path, as a bot's bite or a fall does: at 0 they die (and drop their knockout bag), and the HUD and the hurt event show it; nothing in Creative or when they are dead. `cause` (a lowercase word of letters and `_`, default `"item"`) is what the hurt event reports; only the `hits.causes` in `survival.json` make them flinch. Returns their health. Vanilla's `food.lua` hurts with a negative `health` (the Chili). |
 | `holder.aiming()` | `true` while they hold right click to aim the item. |
 | `holder.using()` | `true` while they keep Use held after a held use (`UseItem` with `hold`; an item with `held.hold_use`), until they let go (`ReleaseItem`). A spray reads it in `on_update`. |
 

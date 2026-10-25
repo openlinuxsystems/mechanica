@@ -19,6 +19,10 @@ namespace Mechanica.Game.Tests;
 /// both machines until it flowers again half an hour of world time later. Then the client plants a Pigment Flower Seed in a
 /// soil mound beside it and waters it once; the plant (stake and tag, grow, wilt and sway clips) grows half way on the
 /// host's clock, then ripe its heads open, and harvested it gives two Pigment Flowers and exactly one seed back.
+/// Batch K3: in the same mound the client grows a Banana Seed (watered once, ripe after 1260 s on the host's clock, its bunch
+/// yellow) and harvests two bananas and one to three seeds; eating a banana heals 35, and a chili eaten at full health
+/// hurts 50 on the host and the client sees the drop. Beetroot, Banana and Chili each have their bitten models and a plant
+/// that grows, wilts and sways.
 /// </summary>
 public partial class CropsTest : StagedTest
 {
@@ -26,6 +30,9 @@ public partial class CropsTest : StagedTest
     private const string Seed = "vanilla:pigment_flower_seed";
     private const string Bucket = "vanilla:water_bucket_full";
     private const string Soil = "vanilla:soil";
+    private const string Banana = "vanilla:banana";
+    private const string BananaSeed = "vanilla:banana_seed";
+    private const string Chili = "vanilla:chili";
 
     private readonly List<ActionResult> _results = [];
     private NetTestHarness _harness = null!;
@@ -36,6 +43,7 @@ public partial class CropsTest : StagedTest
     private int _soil;
     private int _soilPart;
     private int _seedsPicked;
+    private float _health;
 
     protected override string Tag => "crops";
 
@@ -192,6 +200,132 @@ public partial class CropsTest : StagedTest
             if (_client.Main.Survival.CropNodes.ContainsKey((_soil, _soilPart)) || Count(Flower) != 3)
                 return false;
             return Check(Count(Seed) == 1, $"exactly one seed back ({Count(Seed)})");
+        });
+        Add("the client plants a Banana Seed in the same mound and waters it once", frame =>
+        {
+            if (frame == 0)
+            {
+                _results.Clear();
+                var pockets = _host.Main.Inventory.Items!.PlayerInventory(Peer);
+                pockets.Add(BananaSeed, 1);
+                pockets.Add(Bucket, 1);
+                return false;
+            }
+            if (frame == 20)
+            {
+                LookAt(_soilAt);
+                Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(BananaSeed), Creation: _soil, Part: _soilPart));
+            }
+            if (frame < 20 || _results.Count == 0)
+                return false;
+            if (!_results[^1].Ok)
+                return Check(false, $"planting or watering failed ({_results[^1]})");
+            if (_results.Count == 1)
+            {
+                if (HostSoil.Seed != BananaSeed)
+                    return false;
+                var aim = (_soilAt - _client.Main.LocalPlayer!.Head.GlobalPosition).Normalized();
+                Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Bucket), new Vec3(aim.X, aim.Y, aim.Z)));
+                return false;
+            }
+            if (HostSoil.Water < 1200f || !_client.Main.Survival.CropNodes.TryGetValue((_soil, _soilPart), out var crop) || crop.View?.Seed != BananaSeed
+                || crop.Plant is null)
+                return false;
+            var player = crop.Plant.FindChildren("*", nameof(AnimationPlayer), true, false).OfType<AnimationPlayer>().FirstOrDefault();
+            return Check(player is not null && new[] { "grow", "wilt", "sway" }.All(c => player.HasAnimation(c)), "the banana plant has its grow, wilt and sway clips");
+        });
+        Add("after 1260 s on the host's clock the banana plant is ripe, its bunch yellow", frame =>
+        {
+            if (frame == 0)
+                _host.Main.Scripts.Runtime.Time += 1270;
+            var crop = _client.Main.Survival.CropNodes[(_soil, _soilPart)];
+            if (crop.View is not { Ripe: true } || crop.GrowShown < SoilState.Stages)
+                return false;
+            // Each hand of the bunch has a green and a ripe look, switched at the end of the grow clip.
+            var ripe = crop.Plant!.FindChildren("Hand*_ripe", nameof(Node3D), true, false).OfType<Node3D>().Count(h => h.Scale.X > 0.5f);
+            var green = crop.Plant!.FindChildren("Hand*_green", nameof(Node3D), true, false).OfType<Node3D>().Count(h => h.Scale.X > 0.5f);
+            return Check(ripe >= 2 && green == 0, $"the ripe hands show and the green ones are gone ({ripe} ripe, {green} green)");
+        });
+        Add("harvested, it gives two bananas and one to three seeds", frame =>
+        {
+            if (frame == 0)
+            {
+                _results.Clear();
+                Request(LogicActions.ActivatePart, new LogicPartArgs(_soil, _soilPart));
+            }
+            if (_results.Count == 0)
+                return false;
+            if (!_results[0].Ok)
+                return Check(false, $"the harvest is refused ({_results[0]})");
+            if (_client.Main.Survival.CropNodes.ContainsKey((_soil, _soilPart)) || Count(Banana) != 2)
+                return false;
+            return Check(Count(BananaSeed) is >= 1 and <= 3, $"one to three seeds back ({Count(BananaSeed)})");
+        });
+        Add("eating a banana heals 35, on the host and on the client", frame =>
+        {
+            if (frame == 0)
+            {
+                _results.Clear();
+                _host.Main.Survival.Actions!.Damage(Peer, 50, "test");
+                return false;
+            }
+            if (frame == 20)
+            {
+                _health = _client.Main.Survival.Own!.Health;
+                Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Banana)));
+            }
+            if (frame < 20 || _results.Count == 0)
+                return false;
+            if (!_results[0].Ok)
+                return Check(false, $"eating is refused ({_results[0]})");
+            if (_client.Main.Survival.Own!.Health == _health || Count(Banana) != 1) // the pockets sync on their own
+                return false;
+            Check(_host.Main.Survival.Actions!.HealthOf(Peer) == 85f, $"the host heals 35 (50 -> {_host.Main.Survival.Actions!.HealthOf(Peer)})");
+            return Check(_client.Main.Survival.Own!.Health == _health + 35, $"the client sees it ({_health} -> {_client.Main.Survival.Own!.Health})");
+        });
+        Add("a chili eaten at full health hurts 50 on the host, and the client sees the drop", frame =>
+        {
+            if (frame == 0)
+            {
+                _results.Clear();
+                _host.Main.Survival.Actions!.Heal(Peer, 100);
+                _host.Main.Inventory.Items!.PlayerInventory(Peer).Add(Chili, 1);
+                return false;
+            }
+            if (frame == 30)
+            {
+                Check(_client.Main.Survival.Own!.Health == 100f, $"the client is at full health ({_client.Main.Survival.Own!.Health})");
+                Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Chili)));
+            }
+            if (frame < 30 || _results.Count == 0)
+                return false;
+            if (!_results[0].Ok)
+                return Check(false, $"the chili is refused at full health ({_results[0]})");
+            if (_client.Main.Survival.Own!.Health == 100f || Count(Chili) != 0)
+                return false;
+            Check(_host.Main.Survival.Actions!.HealthOf(Peer) == 50f, $"the host takes 50 ({_host.Main.Survival.Actions!.HealthOf(Peer)})");
+            Check(!_host.Main.Survival.Actions!.IsDead(Peer), "one chili does not kill from full health");
+            return Check(_client.Main.Survival.Own!.Health == 50f, $"the client sees 50 ({_client.Main.Survival.Own!.Health})");
+        });
+        Add("Beetroot, Banana and Chili have their bitten models in hand and plants that grow, wilt and sway", _ =>
+        {
+            var survival = _client.Main.Survival;
+            foreach (var crop in new[] { "beetroot", "banana", "chili" })
+            {
+                var food = survival.Catalog.FindDefinition("vanilla:" + crop);
+                var seed = survival.Catalog.FindDefinition("vanilla:" + crop + "_seed");
+                var held = food?.Held?.Mesh is { } mesh ? survival.Assets!.InstantiateScene(mesh, "vanilla") : null;
+                Check(held is not null && Enumerable.Range(0, 3).All(k => held.FindChild($"eat_{k}", true, false) is Node3D),
+                    $"the {crop} in hand has its whole and two bitten versions");
+                var plant = seed?.Seed?.Plant is { } path ? survival.Assets!.SceneOf("vanilla:" + crop + "_seed", path) : null;
+                var player = plant?.FindChildren("*", nameof(AnimationPlayer), true, false).OfType<AnimationPlayer>().FirstOrDefault();
+                Check(player is not null && new[] { "grow", "wilt", "sway" }.All(c => player.HasAnimation(c)),
+                    $"the {crop} plant has its grow, wilt and sway clips");
+                Check(plant?.FindChild("*Stake*", true, false) is not null, $"the {crop} plant has its stake and tag");
+                held?.Free();
+                plant?.Free();
+            }
+            return true;
         });
     }
 
