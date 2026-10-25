@@ -428,13 +428,16 @@ Scuttler burrow, up onto the shrine's plinth, and into the gaps of the bunker an
 bots' wild `near` lists (`editor/batches/bots.json`) name the sites, so Scuttlers, Rakehands and Blue Spoolers are met
 round them. `WorldGenTests.FactionSitesStandOnTheirFactionsGround` keeps the counts and the Workshop clearance.
 
-### Wild cotton, beehives and embers
+### Wild cotton, pigment flowers, beehives and embers
 
-Three crafting resources the block recipes need come from the vanilla world:
+Four crafting resources the recipes need come from the vanilla world:
 
 - **Cotton:** `wild_cotton` clumps (`tools/food/build_cotton.py`) stand in the Autumn Forest. Press Use on one to pick
   1 or 2 Cotton and, now and then, a Cotton Seed; the bolls grow back after `regrow` seconds. Cotton Seed grows into a
   cotton plant in soil like the other crops.
+- **Pigment Flower:** `wild_pigment_flower` clumps (`tools/food/build_pigment_flower.py`) grow in meadows and forests,
+  as thinly as wild cotton. Press Use on one to pick a Pigment Flower (the Paint Ammo input) and, 40 % of the time, a
+  Pigment Flower Seed; the clump flowers again after `regrow` seconds.
 - **Beeswax:** the `scene_rock_hive` scene sets a `rock_beehive` (`tools/beeswax/build_beeswax.py`) against the side of
   a `hive_rock`, a large rock at one fixed size, in the Forest and the Autumn Forest. Breaking the hive drops 1 or 2
   Beeswax and leaves the rock.

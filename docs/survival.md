@@ -72,11 +72,16 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
   using a second of water per second of growth (twice that for a seed with `thirst` 2), through four stages. Every
   vanilla crop is ripe after 1260 s (0.875 of a game day, as in Scrap Mechanic; Fertilizer makes that 84 s). A mound
   holds 1260 s of water and a full Water Bucket gives 1260 s, so one bucket grows one crop (a Water Cannon's ten jets a
-  bucket water as much). Harvest it ripe (E): 2 Carrots, 2 Tomatoes, 10 Potatoes or 2 Cotton, and 1 to 3 seeds back
-  (farmed Cotton exactly 1). Crops keep growing while nobody is near (the soil catches up from the world
+  bucket water as much). Harvest it ripe (E): 2 Carrots, 2 Tomatoes, 10 Potatoes, 2 Cotton or 2 Pigment Flowers, and 1
+  to 3 seeds back (farmed Cotton and Pigment Flowers exactly 1). Crops keep growing while nobody is near (the soil catches up from the world
   clock when it next runs) and are saved with the soil's Creation.
+- **Pigment Flowers:** our own flower, whose nine petals are the Paint Tool's colours. It is not food: the Fabricator
+  makes 10 Paint Ammo from one in 5 s. Wild Pigment Flowers grow in meadows and forests (`wild_pigment_flower`): press
+  Use on one to pick a Pigment Flower and, 40 % of the time, a Pigment Flower Seed; it flowers again half an hour of
+  world time later. The seed (also a rare find in Bloom Pods and ruin chests) grows in soil or a Growbed like the other
+  crops, and its raid value is 0.
 - **Growbeds:** the Growbed (Fabricator: 2 Component Kits, 2 Circuit Boards and a Soil Bag) is soil you build into a
-  Creation, so a farm can be a cart, a boat or a base. It takes carrot, potato, tomato and cotton seeds, and a harvest
+  Creation, so a farm can be a cart, a boat or a base. It takes carrot, potato, tomato, cotton and pigment flower seeds, and a harvest
   always gives 5 crops. It holds 2160 s of water, so a bucket is enough for a crop with water to spare. It runs on batteries: each Battery Pack powers 6 minutes of growth, taken from Battery Containers
   wired into it (or any container on its Creation); its cyan light shows while it grows. The crop rides along with the
   Creation wherever it drives, across chunks and while it is parked, and saves with it. Picking a bed (or a soil mound) up
@@ -161,7 +166,7 @@ their item's properties.
   rules with `rules/survival.patch.json`; only `max_drops` and `aim_tolerance` are locked (see
   [Game rules](packaging-guide.md#game-rules)).
 - The Paint Tool (`paint_tool`, a tool: 10 Scrap Metal Blocks, 5 Glass Blocks and 2 Component Kits, 30 s) has to be
-  crafted before it paints, and each stroke takes `ammo_per_stroke` of `ammo` (`paint_ammo`, 10 from 2 tomatoes in 3 s)
+  crafted before it paints, and each stroke takes `ammo_per_stroke` of `ammo` (`paint_ammo`, 10 from a Pigment Flower in 5 s)
   from the painter: a click, or a whole drag (`PaintArgs.stroke`, up to `max_parts_per_action` parts and while no gap is
   longer than `stroke_seconds`). Taking paint off is free. These are `paint` in `game/data/building.json`.
 - The water bucket has two items: the empty `water_bucket` (the one the Fabricator makes) and the full

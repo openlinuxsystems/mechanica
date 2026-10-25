@@ -1,6 +1,7 @@
 {
   // Crops batch K1: soil holds 1260 s of water and a full Water Bucket gives 1260 s, so one bucket grows one crop
-  // (every vanilla crop grows in 1260 s). Re-run with tools/author-vanilla.sh.
+  // (every vanilla crop grows in 1260 s). Crops batch K2: Paint Ammo is made from the Pigment Flower (1 = 10, 5 s), no
+  // longer from tomatoes. Re-run with tools/author-vanilla.sh.
   "format_version": 1,
   "parts": [
     {
@@ -485,7 +486,7 @@
       "template": "item",
       "set": {
         "name": "Paint Ammo",
-        "description": "A tin of paint for the Paint Tool. Each stroke of paint uses one.",
+        "description": "A tin of paint for the Paint Tool. Each stroke of paint uses one. The Fabricator makes 10 from a Pigment Flower.",
         "category": "resource",
         "tab": "consumable",
         "mass": 3,
@@ -506,8 +507,8 @@
           "stations": ["fabricator"],
           "inputs": [
             {
-              "item": "tomato",
-              "count": 2
+              "item": "pigment_flower",
+              "count": 1
             }
           ],
           "outputs": [
@@ -516,7 +517,7 @@
               "count": 10
             }
           ],
-          "time": 3,
+          "time": 5,
           "order": 2440
         }
       ]

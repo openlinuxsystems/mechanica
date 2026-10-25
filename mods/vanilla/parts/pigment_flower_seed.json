@@ -1,0 +1,36 @@
+{
+  "id": "pigment_flower_seed",
+  "name": "Pigment Flower Seed",
+  "description": "Plant in watered soil. Grows into Pigment Flowers, which the Fabricator makes into Paint Ammo. Picking a wild Pigment Flower sometimes gives one.",
+  "category": "consumable",
+  "mass": 4.5,
+  "durability": 2,
+  "friction": 0.4,
+  "buoyancy": 0.3,
+  "flammable": true,
+  "stack_size": 20,
+  "mesh": "meshes/items/pigment_flower_seed.glb",
+  "icon": "textures/items/pigment_flower_seed_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "script": "scripts/seed.lua",
+  "sounds": {
+    "pickup": "seed_pickup",
+    "place": "seed_place"
+  },
+  "seed": {
+    "crop": "pigment_flower",
+    "grow_time": 1260,
+    "yield": 2,
+    "seeds": 1,
+    "seeds_max": 1,
+    "plant": "meshes/crops/pigment_flower_plant.glb",
+    "value": 0
+  },
+  "held": {
+    "mesh": "meshes/items/pigment_flower_seed.glb",
+    "offset": [-0.028, 0.062, -0.035],
+    "rotation": [0, 90, 90]
+  }
+}
