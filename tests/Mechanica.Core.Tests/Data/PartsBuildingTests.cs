@@ -65,7 +65,7 @@ public class PartsBuildingTests
 
     [Theory]
     [InlineData("ramp_block", 2, 210, "scrap_metal_block:8", "scrap_wood_block:8")]
-    [InlineData("metal_railing", 2, 240, "scrap_metal_block:8")]
+    [InlineData("metal_railing", 2, 240, "metal_block:1")]
     [InlineData("windshield", 10, 1580, "glass_block:10", "metal_block:5")]
     [InlineData("side_window", 10, 1590, "glass_block:5", "metal_block:5")]
     [InlineData("concave_wedge", 2, 190, "metal_block:1")]

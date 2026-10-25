@@ -205,7 +205,7 @@
       "recipes": [
         {
           "id": "scrap_stone_wedge",
-          "stations": ["fabricator"],
+          "stations": ["fabricator", "portable_fabricator"],
           "inputs": [{ "item": "scrap_stone_block", "count": 1 }],
           "outputs": [{ "item": "scrap_stone_wedge", "count": 1 }],
           "time": 2,

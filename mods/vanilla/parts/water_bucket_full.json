@@ -7,6 +7,7 @@
   "durability": 3,
   "friction": 0.6,
   "buoyancy": 0.5,
+  "flammable": false,
   "stack_size": 1,
   "mesh": "meshes/items/water_bucket_full.glb",
   "icon": "textures/items/water_bucket_full_icon.png",

@@ -1,7 +1,8 @@
 {
   "id": "scrap_stone_wedge",
   "stations": [
-    "fabricator"
+    "fabricator",
+    "portable_fabricator"
   ],
   "inputs": [
     {
