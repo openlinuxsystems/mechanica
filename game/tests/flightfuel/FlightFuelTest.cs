@@ -17,11 +17,12 @@ namespace Mechanica.Game.Tests;
 /// Container, a switch beside it) by the client, who links the switch and the container to the jet with the Connect Tool
 /// and switches it on: with no batteries it stays on the ground. The host puts one battery in the container: the jet takes
 /// it and lifts the craft, and the client sees it fly with the fan's run clip playing. The client keeps it hovering a
-/// metre or two up with the switch until the battery runs out (60 s of full power, run at four times speed; it flies level
-/// all that time); then it comes down and stays down with the switch on, and the client sees the fan stop. Then, 15 m on,
+/// metre or two up with the switch until the battery runs out (60 s of full power, run at four times speed); then it
+/// comes down and stays down with the switch on, and the client sees the fan stop. Then, 15 m on,
 /// the same for a rotor craft (four rotors, paired clockwise and counter-clockwise, along a beam under a Battery Container,
 /// a battery each since every part burns its own): the client sees the blades pitched for their spin and the models
-/// turning, and it comes down when the batteries (two minutes each) run out.
+/// turning, and it comes down when the batteries (two minutes each) run out. Each charge must last at least its
+/// full-power time; how long either craft flies level is only printed, since a hard bump can tip one before then.
 /// </summary>
 public partial class FlightFuelTest : StagedTest
 {
@@ -43,7 +44,7 @@ public partial class FlightFuelTest : StagedTest
     private bool _on, _pending;
     private int _down;
     // Game seconds (physics deltas grow with the time scale) since the test began, and when the battery was taken.
-    private double _clock, _taken, _airborne;
+    private double _clock, _taken, _airborne, _emptied;
     private float _highest, _clientHighest;
     private readonly HashSet<string> _clips = [];
     private float _turned;
@@ -157,6 +158,8 @@ public partial class FlightFuelTest : StagedTest
             Trace(frame);
             if (Height(_host) > 0.5f && Body(_host).GlobalBasis.Y.Dot(Vector3.Up) > 0.9f)
                 _airborne = _clock;
+            if (_emptied == 0 && _lifts.All(l => _host.Main.Display.Readouts.Number(_craft, l, "fuel") == 0f))
+                _emptied = _clock;
             // Out of charge, at rest on the ground with the switch on and nothing pushing, for a second. Unpowered, nothing
             // keeps it level, so it may land on its side.
             var landed = _on && !_pending && Height(_host) < 0.6f && Body(_host).LinearVelocity.Length() < 0.05f && !Pushing
@@ -166,16 +169,19 @@ public partial class FlightFuelTest : StagedTest
                 return false;
             Engine.TimeScale = 1;
             var flown = (float)(_airborne - _taken);
-            GD.Print($"[flightfuel] RESULT the {name} flew {flown:F1} s on a battery each ({seconds} s of full power), up to {_highest:F2} m, "
-                + $"landed with up {Body(_host).GlobalBasis.Y}");
-            // The switch is off now and then, which burns nothing, so it stays up longer than the charge's full-power time.
-            Check(flown >= seconds, $"it flew level at least as long as the battery's {seconds} s of full power ({flown:F1} s)");
+            var lasted = (float)(_emptied - _taken);
+            GD.Print($"[flightfuel] RESULT the {name} flew {flown:F1} s and its batteries lasted {lasted:F1} s ({seconds} s of full power), "
+                + $"up to {_highest:F2} m, landed with up {Body(_host).GlobalBasis.Y}");
+            // The switch is off now and then, which burns nothing, so the charge lasts longer than its full-power time. Not how
+            // long it flew level: a hard bump near the ground can tip either craft before the charge
+            // runs out.
+            Check(lasted >= seconds, $"a battery each lasted at least its {seconds} s of full power ({lasted:F1} s)");
             Check(Host.Parts.Count > 0 && Host.InventoryOf(_battery)!.Count(Pack) == 0, "its container is empty");
             Check(_client.Main.Display.Readouts.Number(_craft, _lifts[0], "fuel") == 0f, "the client's menu shows the charge gone");
             if (stopped is not null)
                 Check(Display(_client, _lifts[0])?.Clip == stopped, $"the client plays its {stopped} clip ({Display(_client, _lifts[0])?.Clip})");
             Check(Body(_client).GlobalPosition.DistanceTo(Body(_host).GlobalPosition) < 0.3f, "the client has it on the ground there too");
-            _taken = 0;
+            _taken = _emptied = 0;
             _results.Clear();
             return true;
         });
