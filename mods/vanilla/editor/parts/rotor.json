@@ -2,22 +2,8 @@
   "format_version": 1,
   "model": [
     {
-      "kind": "cylinder",
-      "radius": 0.07,
-      "height": 0.2,
-      "position": [0, -0.025, 0]
-    },
-    {
-      "kind": "box",
-      "size": [0.72, 0.02, 0.08],
-      "position": [0, 0.07, 0],
-      "rotation": [0, 0, 0]
-    },
-    {
-      "kind": "box",
-      "size": [0.72, 0.02, 0.08],
-      "position": [0, 0.07, 0],
-      "rotation": [0, 90, 0]
+      "kind": "mesh",
+      "mesh": "meshes/parts/rotor.glb"
     }
   ]
 }

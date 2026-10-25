@@ -7,8 +7,15 @@
 -- toward the jet pointing straight down with properties.level_torque N·m per radian of tilt, less
 -- properties.level_damping N·m per rad/s of rolling or pitching, at most properties.max_level_torque N·m.
 -- It never turns the Body about the vertical, so the pilot keeps the heading.
+-- It is an electric fan: it burns properties.fuel (batteries) from the containers linked into it with the Connect Tool
+-- (Battery Containers), or from every container of the Creation when none is, one item per properties.fuel_time
+-- seconds at full power; with none left it gives no thrust. In Creative it needs none.
 -- Sounds: "ignite" when it starts, the "loop" while it runs (its "thrust" parameter follows the power)
--- and "cut" when it stops. Its "power" display (a glow under the jet) follows the power.
+-- and "cut" when it stops. Its "power" display (a glow under the jet) follows the power, its "pose" readout plays the
+-- model's "run_loop" clip (the fan spins and the lip ring glows) while it runs and "off" when it stops, and its menu
+-- shows "fuel" (what is left of the battery in use) and "fuel_items" (batteries left in its containers).
+
+local SHOW_EVERY = 10
 
 local function clamp(v, lo, hi)
   return math.max(lo, math.min(hi, v))
@@ -42,6 +49,48 @@ local function command(dt)
   end
   if part.setting("invert") then value = -value end
   return clamp(value, -1, 1)
+end
+
+-- The containers linked into the jet (its Battery Containers), or nil when none is: then it burns from all of the
+-- Creation's.
+local function tanks()
+  local ids
+  for _, input in ipairs(part.inputs()) do
+    if input.storage then
+      ids = ids or {}
+      ids[#ids + 1] = input.part
+    end
+  end
+  return ids
+end
+
+-- Burns charge for dt seconds at this power; false when the Creation has no batteries left.
+local function burn(power, dt)
+  if world.creative() or power == 0 then
+    return true
+  end
+  state.fuel = (state.fuel or 0) - power * dt
+  if state.fuel > 0 then
+    return true
+  end
+  if creation.take(properties.fuel, 1, tanks()) > 0 then
+    state.fuel = state.fuel + properties.fuel_time
+    return true
+  end
+  state.fuel = 0
+  return false
+end
+
+local function show(power)
+  local pose = power > 0 and "run_loop" or "off"
+  if state.pose ~= pose then
+    state.pose = pose
+    part.display("pose", pose)
+  end
+  if world.tick() % SHOW_EVERY == 0 then
+    part.display("fuel", world.creative() and 1 or clamp((state.fuel or 0) / properties.fuel_time, 0, 1))
+    part.display("fuel_items", creation.count(properties.fuel, tanks()))
+  end
 end
 
 local function hum(power)
@@ -82,10 +131,18 @@ local function level(ux, uy, uz)
   part.apply_torque(vec3(px, 0, pz))
 end
 
+function on_create()
+  state.pose = nil
+end
+
 function on_update(dt)
   local power = clamp(command(dt), 0, 1)
+  if not burn(power, dt) then
+    power = 0
+  end
   state.power = power
   part.display("power", power)
+  show(power)
   hum(power)
   if power == 0 then return end
   local d = part.to_world(vec3(0, -1, 0))

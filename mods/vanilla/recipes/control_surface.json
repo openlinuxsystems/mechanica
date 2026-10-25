@@ -5,11 +5,15 @@
   ],
   "inputs": [
     {
-      "item": "scrap_metal_block",
-      "count": 4
+      "item": "aluminum_block",
+      "count": 5
     },
     {
-      "item": "component_kit",
+      "item": "bearing",
+      "count": 1
+    },
+    {
+      "item": "circuit_board",
       "count": 1
     }
   ],
@@ -19,6 +23,6 @@
       "count": 1
     }
   ],
-  "time": 3,
+  "time": 10,
   "order": 1150
 }

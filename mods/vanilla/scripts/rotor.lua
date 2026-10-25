@@ -10,8 +10,16 @@
 -- "a_d" are the keys of the pilot in a seat linked to it, and "space_shift" is a collective lever the pilot
 -- raises with Space and lowers with Shift, at properties.lever_rate per second, that stays where they leave
 -- it. "invert" flips the command.
+-- It is an electric motor: while it is driven it burns properties.fuel (batteries) from the containers linked into it
+-- with the Connect Tool (Battery Containers), or from every container of the Creation when none is, one item per
+-- properties.fuel_time seconds at full command; with none left it spools down and gives no thrust. In Creative it needs
+-- none.
 -- Sounds: "spin_up" when it starts turning, the "loop" while it turns (its "speed" parameter follows the
 -- speed) and "spin_down" when it is told to stop. Its "power" display (the downwash glow) follows the speed. Its model spins at up to properties.spin_rate rad/s.
+-- Its "blades" readout plays the model's "cw" or "ccw" clip, pitching the blades for its spin, and its menu shows
+-- "fuel" (what is left of the battery in use) and "fuel_items" (batteries left in its containers).
+
+local SHOW_EVERY = 10
 
 -- The spin the model was last given (not saved: a loaded rotor shows its spin afresh).
 local shown_spin
@@ -50,6 +58,48 @@ local function command(dt)
   return clamp(value, -1, 1)
 end
 
+-- The containers linked into the rotor (its Battery Containers), or nil when none is: then it burns from all of the
+-- Creation's.
+local function tanks()
+  local ids
+  for _, input in ipairs(part.inputs()) do
+    if input.storage then
+      ids = ids or {}
+      ids[#ids + 1] = input.part
+    end
+  end
+  return ids
+end
+
+-- Burns charge for dt seconds at this command; false when the Creation has no batteries left.
+local function burn(target, dt)
+  if world.creative() or target == 0 then
+    return true
+  end
+  state.fuel = (state.fuel or 0) - target * dt
+  if state.fuel > 0 then
+    return true
+  end
+  if creation.take(properties.fuel, 1, tanks()) > 0 then
+    state.fuel = state.fuel + properties.fuel_time
+    return true
+  end
+  state.fuel = 0
+  return false
+end
+
+local function show()
+  local blades = part.setting("spin") == "counterclockwise" and "ccw" or "cw"
+  if state.blades ~= blades then
+    state.blades = blades
+    part.display("blades", blades)
+  end
+  if world.tick() % SHOW_EVERY == 0 then
+    part.display("fuel", world.creative() and 1 or clamp((state.fuel or 0) / properties.fuel_time, 0, 1))
+    part.display("fuel_items", creation.count(properties.fuel, tanks()))
+  end
+end
+
 local function noise(target, speed)
   if target > 0 and not state.loop then
     play("spin_up")
@@ -68,8 +118,16 @@ local function noise(target, speed)
   state.target = target
 end
 
+function on_create()
+  state.blades = nil
+end
+
 function on_update(dt)
   local target = clamp(command(dt), 0, 1)
+  if not burn(target, dt) then
+    target = 0
+  end
+  show()
   local speed = state.speed or 0
   local step = properties.spool_rate * dt
   speed = speed + clamp(target - speed, -step, step)

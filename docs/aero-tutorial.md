@@ -26,8 +26,8 @@ Connect Tool and listen to the same seats and switches.
 | Thruster | 1×1×1 | Pushes its creation toward its base: the flame comes out of the face opposite the one you attach. Its lever (E) picks a power step: each step pushes half again as hard and burns half again as much. Five levels (Component Kits, U): each is lighter (12 kg down to 4.5 kg), tougher, unlocks one more step (3 up to 7) and goes further on a gasoline. | 200 N at full power on step 1 (450 N on step 3); a Thruster 1 burns a gasoline every 112 s at full power on step 1, a Thruster 5 every 224 s (none in Creative). |
 | Wing | 4×1×4 (1 m by 1 m) | Lift square to the air flowing over it, and drag along it. It is cambered: it lifts toward its top even when level. It stalls past about 10° up. | Lift coefficient 0.4 level, plus 4.5 per radian; at most 1.2. Area 1 m². |
 | Control Surface | 4×1×2 (1 m by 0.5 m) | A wing without camber that tilts the air it meets by up to 10° on command: an elevator, aileron or rudder. | Area 0.5 m². |
-| Rotor | 3×1×3 | A propeller that pulls its creation away from its base, and twists the creation the other way from its spin. It spools up and down. | 150 N and 40 N·m at full speed; full speed in 1.25 s. |
-| Hover Jet | 2×1×2 | Like a thruster, and while "Stabilize" is on it keeps its body level (never turning it about the vertical). | 300 N; levelling up to 600 N·m. |
+| Rotor | 3×1×3 | A propeller that pulls its creation away from its base, and twists the creation the other way from its spin. It spools up and down. An electric motor: it burns batteries from the Battery Containers linked to it. | 150 N and 40 N·m at full speed; full speed in 1.25 s; a battery every 120 s at full command (none in Creative). |
+| Hover Jet | 2×1×2 | Like a thruster, and while "Stabilize" is on it keeps its body level (never turning it about the vertical). An electric fan: it burns batteries from the Battery Containers linked to it. | 300 N; levelling up to 600 N·m; a battery every 60 s at full power (none in Creative). |
 
 The numbers are the parts' `properties` in `mods/vanilla/editor/batches/aero.json`; see
 [Part Data Schema Reference](part-data-schema.md#aero-parts) for each one.
@@ -105,7 +105,10 @@ This is the plane the automated test flies (`game/tests/vanilla/VanillaAeroTest.
 
 ## Build a helicopter
 
-About 43 kg; it climbs on four rotors and the hover jet keeps it level.
+About 43 kg; it climbs on four rotors and the hover jet keeps it level. Outside Creative it needs batteries: a Battery
+Container on the body, linked to the rotors and the jet (or the only container on it), and batteries in it. A battery
+lasts a rotor two minutes and the jet one minute at full power; with none left they spool down and stop pushing, so land
+before the gauge (E on a rotor shows its batteries) runs out.
 
 1. **Body.** A cross of cardboard blocks, three blocks to each side of the middle, and a seat in the
    middle.

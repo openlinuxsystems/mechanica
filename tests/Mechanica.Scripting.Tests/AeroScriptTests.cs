@@ -11,7 +11,7 @@ namespace Mechanica.Scripting.Tests;
 /// <summary>
 /// The vanilla aero and propulsion scripts (chunk 11) on the real vanilla parts: the thruster's push, pilot
 /// controls and fuel, the wing's lift, drag and stall, the control surface's deflection, the rotor's spool,
-/// thrust and counter-torque, and the hover jet's levelling. Also the Aero Tutorial's example mods
+/// thrust and counter-torque, the hover jet's levelling, and the batteries the rotor and hover jet burn. Also the Aero Tutorial's example mods
 /// (<c>examples/mods/example_bearing</c> and <c>example_thruster</c>), loaded beside vanilla.
 /// </summary>
 public sealed class AeroScriptTests : IDisposable
@@ -340,6 +340,68 @@ public sealed class AeroScriptTests : IDisposable
         Configure(creation, jet, "stabilize", false);
         Steps(2);
         AssertNear(Vector3.Zero, Last(jet)!.Value.Torque);
+    }
+
+    [Fact]
+    public void AHoverJetBurnsBatteriesOutsideCreative()
+    {
+        _runtime.Creative = false;
+        var creation = Board();
+        var toggle = Place(creation, "vanilla:switch", new GridCell(-2, 1, 0));
+        var jet = Place(creation, "vanilla:hover_jet", new GridCell(-1, 1, -1));
+        var battery = BatteryContainer(creation);
+        Link(creation, toggle, jet);
+        Activate(creation, toggle);
+        Steps(3);
+        Assert.Null(Last(jet));
+        Assert.Equal("off", _runtime.Readouts.Text(Craft, jet, "pose"));
+
+        creation.InventoryOf(battery)!.Add("vanilla:battery_pack", 1);
+        Steps(3);
+        Assert.Equal(0, creation.InventoryOf(battery)!.Count("vanilla:battery_pack"));
+        AssertNear(new Vector3(0, -300, 0), Last(jet)!.Value.Force);
+        Assert.Equal("run_loop", _runtime.Readouts.Text(Craft, jet, "pose"));
+        // properties.fuel_time is 60 s of full power per battery.
+        Steps(60 * 60 + 5);
+        Assert.Null(Last(jet));
+        Assert.Equal(0f, _runtime.Signals.Output(Craft, jet));
+        Assert.Equal("off", _runtime.Readouts.Text(Craft, jet, "pose"));
+    }
+
+    [Fact]
+    public void ARotorBurnsBatteriesOutsideCreativeAndSpoolsDownWithout()
+    {
+        _runtime.Creative = false;
+        var creation = Board();
+        var toggle = Place(creation, "vanilla:switch", new GridCell(2, 1, 0));
+        // 3 by 3 cells with its hub over the block at x -1.
+        var rotor = Place(creation, "vanilla:rotor", new GridCell(-2, 1, -1));
+        var battery = BatteryContainer(creation);
+        Link(creation, toggle, rotor);
+        Configure(creation, rotor, "spin", "counterclockwise");
+        Activate(creation, toggle);
+        Steps(90);
+        Assert.Null(Last(rotor));
+        Assert.Equal("ccw", _runtime.Readouts.Text(Craft, rotor, "blades"));
+
+        creation.InventoryOf(battery)!.Add("vanilla:battery_pack", 1);
+        Steps(120);
+        Assert.Equal(0, creation.InventoryOf(battery)!.Count("vanilla:battery_pack"));
+        AssertNear(new Vector3(0, 150, 0), Last(rotor)!.Value.Force, 0.5f);
+        // properties.fuel_time is 120 s of full command per battery; then it spools down (0.8 a second) and stops.
+        Steps(115 * 60);
+        Assert.NotNull(Last(rotor));
+        Steps(8 * 60);
+        Assert.Null(Last(rotor));
+        Assert.Equal(0f, _runtime.Signals.Output(Craft, rotor));
+    }
+
+    // A Battery Container standing on two blocks beside the board (it holds no batteries yet).
+    private static int BatteryContainer(Creation creation)
+    {
+        Place(creation, "vanilla:metal_block", new GridCell(2, 0, 1));
+        Place(creation, "vanilla:metal_block", new GridCell(2, 0, 2));
+        return Place(creation, "vanilla:battery", new GridCell(1, 1, 1));
     }
 
     [Fact]

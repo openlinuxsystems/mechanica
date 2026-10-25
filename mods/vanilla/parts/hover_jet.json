@@ -1,7 +1,7 @@
 {
   "id": "hover_jet",
   "name": "Hover Jet",
-  "description": "Pushes its creation toward its base, so one underneath lifts it. With Stabilize on (R) it also keeps its creation level while it runs.",
+  "description": "Pushes its creation toward its base, so one underneath lifts it. With Stabilize on (R) it also keeps its creation level while it runs. Burns batteries from the Battery Containers linked to it.",
   "category": "interactive",
   "mass": 4,
   "durability": 4,
@@ -11,11 +11,10 @@
   "stack_size": 10,
   "sound_material": "metal",
   "size": [2, 1, 2],
-  "mesh": "meshes/hover_jet.glb",
+  "mesh": "meshes/parts/hover_jet.glb",
+  "icon": "textures/items/hover_jet_icon.png",
   "visual": {
-    "color": "#4f7a8a",
-    "roughness": 0.4,
-    "metallic": 0.7
+    "color": "#ffffff"
   },
   "collision": {
     "shape": "box",
@@ -66,12 +65,29 @@
       "default": true
     }
   ],
+  "menu": {
+    "readouts": [
+      {
+        "id": "fuel",
+        "name": "Fuel",
+        "kind": "bar"
+      },
+      {
+        "id": "fuel_items",
+        "name": "Batteries",
+        "kind": "number"
+      }
+    ]
+  },
   "display": {
     "glow": {
       "readout": "power",
       "offset": [0, 0.125, 0],
       "direction": [0, 1, 0],
       "length": 0.5
+    },
+    "clips": {
+      "readout": "pose"
     }
   },
   "properties": {
@@ -79,6 +95,8 @@
     "lever_rate": 0.5,
     "level_torque": 300,
     "level_damping": 120,
-    "max_level_torque": 600
+    "max_level_torque": 600,
+    "fuel": "battery_pack",
+    "fuel_time": 60
   }
 }

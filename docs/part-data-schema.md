@@ -563,8 +563,10 @@ setting (`link`, `w_s`, `a_d` or `space_shift`) and the `invert` toggle.
 | `scripts/rotor.lua` | `thrust` (N), `counter_torque` (N·m) | Pull and twist at full speed. The `spin` setting picks the twist's direction. |
 | | `spool_rate` (1/s), `lever_rate` (1/s) | How fast its speed follows the command, and the lever's speed. |
 | | `inflow_speed` (m/s), `max_inflow_gain` | Climb speed along its axis where it pulls nothing, and the most extra pull while sinking. |
+| | `fuel`, `fuel_time` (s) | Item burned while it is driven (`battery_pack`) from the Battery Containers linked into it (or from all of the creation's containers when none is), and seconds of full command per item. With none left it spools down. Creative needs none. Its `blades` readout plays the model's `cw` or `ccw` clip for its `spin` setting. |
 | `scripts/hover_jet.lua` | `thrust` (N), `lever_rate` (1/s) | Push toward its base at full power, and the lever's speed. |
 | | `level_torque` (N·m/rad), `level_damping` (N·m·s/rad), `max_level_torque` (N·m) | Levelling while the `stabilize` setting is on. |
+| | `fuel`, `fuel_time` (s) | Item burned (`battery_pack`) from the Battery Containers linked into it (or from all of the creation's containers when none is), and seconds of full power per item. With none left it gives no thrust. Creative needs none. Its `pose` readout plays the model's `run_loop` clip while it runs and `off` when it stops. |
 
 ### Lights and utility parts
 
