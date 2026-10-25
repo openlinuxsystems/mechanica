@@ -11,11 +11,10 @@
   "stack_size": 20,
   "sound_material": "plastic",
   "size": [1, 1, 1],
-  "mesh": "meshes/logic_gate.glb",
+  "mesh": "meshes/parts/logic_gate.glb",
+  "icon": "textures/items/logic_gate_icon.png",
   "visual": {
-    "color": "#d9d2c3",
-    "roughness": 0.5,
-    "metallic": 0.2
+    "color": "#ffffff"
   },
   "sockets": [
     {
@@ -58,5 +57,16 @@
     "use": "cycle",
     "cycle": "mode",
     "signals": true
+  },
+  "display": {
+    "clips": {
+      "readout": "face",
+      "scrub": [
+        {
+          "readout": "lit",
+          "clip": "lit"
+        }
+      ]
+    }
   }
 }

@@ -994,7 +994,9 @@
         "flammable": false,
         "stack_size": 20,
         "script": "scripts/logic_gate.lua",
-        "visual": { "color": "#d9d2c3", "roughness": 0.5, "metallic": 0.2 },
+        "icon": "textures/items/logic_gate_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "display": { "clips": { "readout": "face", "scrub": [{ "readout": "lit", "clip": "lit" }] } },
         "settings": [
           {
             "id": "mode",
@@ -1014,10 +1016,7 @@
         ],
         "menu": { "use": "cycle", "cycle": "mode", "signals": true }
       },
-      "model": [
-        { "kind": "box", "size": [0.25, 0.08, 0.25], "position": [0, -0.085, 0] },
-        { "kind": "box", "size": [0.18, 0.08, 0.18], "position": [0, -0.005, 0] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/logic_gate.glb" }],
       "recipes": [
         {
           "id": "logic_gate",
@@ -1046,7 +1045,9 @@
         "flammable": false,
         "stack_size": 20,
         "script": "scripts/timer.lua",
-        "visual": { "color": "#c9b25a", "roughness": 0.5, "metallic": 0.2 },
+        "icon": "textures/items/timer_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "display": { "clips": { "readout": "pose", "scrub": [{ "readout": "lit", "clip": "lit" }] } },
         "sounds": { "complete": "timer_complete" },
         "settings": [
           {
@@ -1062,10 +1063,7 @@
         ],
         "menu": { "signals": true }
       },
-      "model": [
-        { "kind": "box", "size": [0.25, 0.08, 0.25], "position": [0, -0.085, 0] },
-        { "kind": "cylinder", "radius": 0.08, "height": 0.08, "position": [0, -0.005, 0] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/timer.glb" }],
       "recipes": [
         {
           "id": "timer",

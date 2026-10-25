@@ -538,7 +538,8 @@ The vanilla scripts read these properties:
 | | `uneven`, `backfire`, `hard_gear`, `smoke` | How much its speed wobbles (share of itself), backfires a second, the power from which it runs hard, and its smoke at full power (0 to 1). Keep `speed` × (1 + `uneven`) at or under the 60 rad/s bearing limit. |
 | `scripts/sensor.lua` | `interval` | Steps between looks (its `range` and what it detects are settings). |
 | | `cone` (°) | How far off its face its ring of rays looks, so it sees a narrow cone. Its menu preview uses the same angle. |
-| `scripts/timer.lua` | (the `mode` setting) | `once` passes its input on after the delay; `repeat` blinks its output every delay while the input is on. |
+| `scripts/timer.lua` | (the `mode` setting) | `once` passes its input on after the delay; `repeat` blinks its output every delay while the input is on. Its `pose` readout is `count_loop` while a change waits or it blinks and `rest` otherwise, and `lit` is 1 while its output is on (the model's sweep hand and its glow). |
+| `scripts/logic_gate.lua` | (the `mode` setting) | Its output from its inputs in that mode. Its `face` readout names the mode (the model's screen shows it) and `lit` is 1 while its output is on. |
 | `scripts/button.lua` | `pulse` (s) | How long it stays on. |
 | `scripts/controller.lua` | `speed` (rad/s) | How fast bearings move to single-angle frames (a frame's joints carry their own speeds). |
 | | `torque` (N·m), `force` (N) | Most torque on its bearings and force on its pistons. |
@@ -573,9 +574,9 @@ setting (`link`, `w_s`, `a_d` or `space_shift`) and the `invert` toggle.
 | Script | Property | Meaning |
 |--------|----------|---------|
 | `scripts/light.lua` | `blink` (s), `duty` (and a `brightness` setting) | Blink period (0 or missing: steady) and the share of it spent lit. With no inputs linked it shines until E turns it off; linked, it shines while its input is above 0. A part with a `brightness` number setting (1 to 10) shines at that many tenths of full. It shows `on` or `off` on its `pose` readout, so a model with those clips (`display.clips`) lights its lamp with it. |
-| `scripts/radio.lua` | (the `station` setting) | Plays the `station_N` sound loop; E turns it on and off. |
+| `scripts/radio.lua` | (the `station` setting) | Plays the `station_N` sound loop; E turns it on and off. Shows `on`/`off` on `pose` (the dial light) and the station on `tune` (0 for 1 to 1 for 6, the dial's needle). |
 | `scripts/beacon.lua` | `ping`, `flash` (s) | Seconds between pings, and how long each ping lights it fully. |
-| `scripts/horn.lua` | `honk` (s) | How long E sounds it; a linked input sounds it while above 0. |
+| `scripts/horn.lua` | `honk` (s) | How long E sounds it; a linked input sounds it while above 0. Shows `on` on `pose` while it sounds, `off` otherwise. |
 | `scripts/drill.lua` | `min_spin` (rad/s), `interval` (s), `damage`, `damage_to` ({type = damage}), `tip` ({from, reach}), `flank` ({at, from, reach, rays, lean}), `shake` (N) | Drill: no input; while a bearing spins it at `min_spin` or more it bites what its tip and the flanks of its bit touch (the only tool that breaks rock deposits), and each bite shakes its Body sideways with `shake` N (more the faster it turns). Its `spin` readout (0 to 1 of `min_spin`) drives the base ring glow. |
 | `scripts/saw_blade.lua` | `min_spin` (rad/s), `interval` (s), `damage`, `damage_to` ({type = damage}), `rim` and `faces` ({from, reach, rays}) | Saw Blade: no input; while a bearing spins it at `min_spin` or more it bites what its rim and faces touch, `damage_to` per part type or world object kind (logs cut faster than standing trees). Its `spin` readout (0 to 1 of `min_spin`) drives the hub glow. |
 | `scripts/water_cannon.lua` | `muzzle`, `range` (m), `water` (s), `impulse` (N·s), `interval` (s), `water_item`, `jets`, `douse`, `splash` (m) | Fires on a rising input or E: waters soil it hits, else pushes what it hits, and douses fires along its jet. Its water is `water_item` (a full bucket, `jets` jets each) from the Water Containers linked into it; with none it only clicks (its `dry` sound). Creative needs none. Its model plays `fire` on its `clip` readout. |

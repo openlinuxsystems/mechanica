@@ -230,12 +230,17 @@ public sealed class ContentScriptTests : IDisposable
         var radio = Place(creation, "vanilla:radio", new GridCell(0, 1, 0));
         Steps(2);
         Assert.Empty(_sound.Loops);
+        Assert.Equal("off", _runtime.Readouts.Text(creation.Id, radio, "pose"));
+        Assert.Equal(0f, _runtime.Readouts.Number(creation.Id, radio, "tune"));
         Activate(creation, radio);
         Steps(1);
         Assert.Equal("radio_loop_01", Assert.Single(_sound.Loops.Values).Sound);
+        Assert.Equal("on", _runtime.Readouts.Text(creation.Id, radio, "pose"));
         Configure(creation, radio, "station", 4);
         Steps(1);
         Assert.Equal("radio_loop_04", Assert.Single(_sound.Loops.Values).Sound);
+        // The dial's needle: station 1 is 0, station 6 is 1.
+        Assert.Equal(0.6f, _runtime.Readouts.Number(creation.Id, radio, "tune")!.Value, 4);
         Assert.Contains(_sound.Played, p => p.Sound == "radio_tune");
         Activate(creation, radio);
         Steps(1);
@@ -256,8 +261,10 @@ public sealed class ContentScriptTests : IDisposable
         Activate(creation, horn);
         Steps(1);
         Assert.Equal("horn_honk", Assert.Single(_sound.Loops.Values).Sound);
+        Assert.Equal("on", _runtime.Readouts.Text(creation.Id, horn, "pose"));
         Steps(40);
         Assert.Empty(_sound.Loops);
+        Assert.Equal("off", _runtime.Readouts.Text(creation.Id, horn, "pose"));
         Activate(creation, button);
         Steps(60);
         // Its pitch setting (5 of 9 plays as recorded) tunes the honk while it sounds.
