@@ -80,6 +80,12 @@ public enum CollisionShape
 
     /// <summary>Convex hull of a mesh file.</summary>
     Convex,
+
+    /// <summary>
+    /// Several boxes, one rigid shape between them (a frame a player walks through); uses
+    /// <see cref="CollisionDefinition.Boxes"/>.
+    /// </summary>
+    Boxes,
 }
 
 /// <summary>
@@ -1388,11 +1394,28 @@ public sealed record CollisionDefinition
     /// <summary>Mesh for <see cref="CollisionShape.Convex"/>.</summary>
     public string? Mesh { get; init; }
 
+    /// <summary>The boxes of <see cref="CollisionShape.Boxes"/>, each placed from the shape centre.</summary>
+    public IReadOnlyList<CollisionBox>? Boxes { get; init; }
+
     /// <summary>
     /// Sphere or cylinder only: the height of a step edge, in metres above the shape's lowest point, that it rolls up as
     /// if the edge were a ramp (wheels climbing a block). Null or 0: edges are hard corners.
     /// </summary>
     public float? Climb { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>One box of a <see cref="CollisionShape.Boxes"/> shape, in metres.</summary>
+public sealed record CollisionBox
+{
+    /// <summary>Box extents in metres.</summary>
+    public Vec3? Size { get; init; }
+
+    /// <summary>Box centre relative to the collision shape's centre, in metres.</summary>
+    public Vec3? Offset { get; init; }
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]

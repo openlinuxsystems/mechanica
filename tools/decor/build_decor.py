@@ -1,4 +1,5 @@
-"""Builds the furniture and decor parts of the parts map's batches 13a-15b, the potted plants of batch 16, and their icons.
+"""Builds the furniture and decor parts of the parts map's batches 13a-15b, the potted plants of batch 16, the parts audit's
+batch D4 (the chunk-23 furniture, frames and Stairs Block), and their icons.
 
     pip install bpy==5.2.2 numpy pillow
     python tools/decor/build_decor.py                    # every batch: writes the .glb files and the icons
@@ -6,7 +7,7 @@
     python tools/decor/build_decor.py --only mug,calendar --render OUT_DIR   # these, with review sheets
 
 Writes ``mods/vanilla/meshes/parts/<id>.glb`` and ``mods/vanilla/textures/items/<id>_icon.png``. The models are in
-office.py (13a, 13b), farm.py (14a, 14b), industry.py (15a, 15b) and garden.py (16, the pots); tools/part_kit/decor_kit.py has the shared materials, shapes and runner. The outputs are
+office.py (13a, 13b), farm.py (14a, 14b), industry.py (15a, 15b) and garden.py (16, the pots) and furniture_d4.py (d4); tools/part_kit/decor_kit.py has the shared materials, shapes and runner. The outputs are
 committed; re-run this after changing a model and commit the result. The build is deterministic (seeded noise only).
 """
 
@@ -21,6 +22,7 @@ import office  # noqa: E402
 import farm  # noqa: E402
 import industry  # noqa: E402
 import garden  # noqa: E402
+import furniture_d4  # noqa: E402
 
 BATCHES = {
     "13a": (office.BATCH_13A, office.materials_13),
@@ -30,6 +32,7 @@ BATCHES = {
     "15a": (industry.BATCH_15A, industry.materials_15),
     "15b": (industry.BATCH_15B, industry.materials_15),
     "16": (garden.BATCH_16, garden.materials_16),
+    "d4": (furniture_d4.BATCH_D4, furniture_d4.materials_d4),
 }
 
 if __name__ == "__main__":

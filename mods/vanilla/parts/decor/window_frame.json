@@ -1,7 +1,7 @@
 {
   "id": "window_frame",
   "name": "Window Frame",
-  "description": "A frame for a window opening, 1 m square.",
+  "description": "A painted timber frame for a window opening, 1 m square, with corner blocks and a sill.",
   "category": "decor",
   "mass": 4.5,
   "durability": 3,
@@ -11,10 +11,30 @@
   "stack_size": 20,
   "sound_material": "wood",
   "size": [4, 4, 1],
-  "mesh": "meshes/decor/window_frame.glb",
+  "mesh": "meshes/parts/window_frame.glb",
+  "icon": "textures/items/window_frame_icon.png",
   "visual": {
-    "color": "#8a6a4a",
-    "roughness": 0.7,
-    "metallic": 0
+    "color": "#ffffff"
+  },
+  "collision": {
+    "shape": "boxes",
+    "boxes": [
+      {
+        "size": [1, 0.08, 0.25],
+        "offset": [0, -0.46, 0]
+      },
+      {
+        "size": [1, 0.08, 0.25],
+        "offset": [0, 0.46, 0]
+      },
+      {
+        "size": [0.08, 0.84, 0.25],
+        "offset": [-0.46, 0, 0]
+      },
+      {
+        "size": [0.08, 0.84, 0.25],
+        "offset": [0.46, 0, 0]
+      }
+    ]
   }
 }

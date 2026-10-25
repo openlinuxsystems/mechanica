@@ -530,6 +530,9 @@ public partial class CreationNode : Node3D
                 PartGeometry.CentreMetres(definition, part.Cell, part.Rotation).ToGodot());
             // Shapes must be direct children of the body; meshes hang off a node per part.
             node.AddChild(new CollisionShape3D { Name = $"Shape{id}", Shape = model.Shape, Transform = placed * model.ShapeTransform });
+            // A boxes collision's other boxes (a frame's posts and head): Shape<part id>_<n>, so PartOfShape still finds the part.
+            for (var k = 0; k < (model.MoreShapes?.Count ?? 0); k++)
+                node.AddChild(new CollisionShape3D { Name = $"Shape{id}_{k + 1}", Shape = model.MoreShapes![k].Shape, Transform = placed * model.MoreShapes[k].Transform });
             if (definition.Collision is { Climb: > 0f, Radius: { } radius } climbing && climbing.Shape is CollisionShape.Sphere or CollisionShape.Cylinder)
             {
                 var shape = placed * model.ShapeTransform;
@@ -711,6 +714,19 @@ public partial class CreationNode : Node3D
     }
 
     private static string JointName(Connection c) => $"Joint{c.A}_{c.B}";
+
+    /// <summary>
+    /// The part id behind a Body's collision shape node name (<c>Shape&lt;part id&gt;</c>, or <c>Shape&lt;part id&gt;_&lt;n&gt;</c> for a
+    /// boxes collision's other boxes), or null for any other name.
+    /// </summary>
+    public static int? PartOfShape(string name)
+    {
+        if (!name.StartsWith("Shape", StringComparison.Ordinal))
+            return null;
+        var digits = name.AsSpan(5);
+        var cut = digits.IndexOf('_');
+        return int.TryParse(cut >= 0 ? digits[..cut] : digits, out var id) ? id : null;
+    }
 
     // Builds an aimed joint (parts map E8) as a bearing-style hinge pair: a yaw hinge from the turret part's Body to a
     // yoke, and a pitch hinge from the yoke to the Body built on the turret, both about the joint's pivot. As with

@@ -1,7 +1,7 @@
 {
   "id": "wooden_table",
   "name": "Wooden Table",
-  "description": "A sturdy table of planks.",
+  "description": "A trestle table: a top of four odd planks, a wedged stretcher and a zinc patch on one corner.",
   "category": "decor",
   "mass": 6,
   "durability": 3,
@@ -11,10 +11,9 @@
   "stack_size": 20,
   "sound_material": "wood",
   "size": [6, 3, 4],
-  "mesh": "meshes/decor/wooden_table.glb",
+  "mesh": "meshes/parts/wooden_table.glb",
+  "icon": "textures/items/wooden_table_icon.png",
   "visual": {
-    "color": "#9a6a3a",
-    "roughness": 0.7,
-    "metallic": 0
+    "color": "#ffffff"
   }
 }

@@ -159,6 +159,7 @@ and a simpler shape is cheaper to simulate.
 | `cylinder` | `radius`, `height` (along local Y) |
 | `capsule` | `radius`, `height` (along local Y, including the caps, so at least 2 × radius) |
 | `convex` | `mesh`: a `.glb`/`.gltf` whose points are wrapped in a convex hull |
+| `boxes` | `boxes`: a list of `{ "size": [x, y, z], "offset": [x, y, z] }` boxes (offset from the shape centre, optional), one rigid shape between them, for a frame with a hole a player walks or throws through (the Door Frame and Window Frame) |
 
 Every shape also takes an optional `offset`: `[x, y, z]` metres from the part centre.
 

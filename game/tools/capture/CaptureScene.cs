@@ -143,6 +143,7 @@ public partial class CaptureScene : Node
         var flight = args.Length > 1 && args[1] == "flight";
         var ladder = args.Length > 1 && args[1] == "ladder";
         var beds = args.Length > 1 && args[1] == "beds";
+        var furniture = args.Length > 1 && args[1] == "furniture";
         var extinguisher = args.Length > 1 && args[1] == "extinguisher";
         var drops = args.Length > 1 && args[1] == "drops";
         var derelicts = args.Length > 1 && args[1] == "derelicts";
@@ -150,7 +151,7 @@ public partial class CaptureScene : Node
         var botClips = args.Length > 1 && args[1] == "bot_clips";
         var hands = args.Length > 1 && args[1] == "hands";
         var driving = args.Length > 1 && args[1] == "driving";
-        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !factions && !ladder && !beds && !extinguisher && !drops && !derelicts && !signs && !botClips && !hands && !driving && !connectLines && !husbandry && !consumables && !grazerProducts && !kitchen && !garden && !fields && !gauges && !flight && !logicParts && !vehicleBody && !building && args[1] != "survey" && args[1] != "spots" && args[1] != "daynight" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !landmarks && !formations && !factions && !ladder && !beds && !extinguisher && !drops && !derelicts && !signs && !botClips && !hands && !driving && !connectLines && !husbandry && !consumables && !grazerProducts && !kitchen && !garden && !fields && !gauges && !flight && !logicParts && !vehicleBody && !furniture && !building && args[1] != "survey" && args[1] != "spots" && args[1] != "daynight" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         // Captures hold the sky at mid-morning so shots compare across runs; `daynight` walks it through the day.
@@ -392,6 +393,11 @@ public partial class CaptureScene : Node
         if (beds)
         {
             BedShots();
+            return;
+        }
+        if (furniture)
+        {
+            FurnitureShots();
             return;
         }
         if (derelicts)
