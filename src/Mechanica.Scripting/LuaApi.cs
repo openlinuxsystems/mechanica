@@ -142,6 +142,7 @@ public static class LuaApi
         new("holder.health", "holder.health()", "The holder's health.", "holder"),
         new("holder.max_health", "holder.max_health()", "The most health a player can have.", "holder"),
         new("holder.heal", "holder.heal(amount)", "Gives the holder health, up to the maximum; returns their health.", "holder"),
+        new("holder.hurt", "holder.hurt(amount, cause?)", "Takes amount health from the holder through the normal damage path (death and the knockout bag included; nothing in Creative); cause (a lowercase word, default \"item\") is what the hurt event reports. Returns their health.", "holder"),
         new("holder.aiming", "holder.aiming()", "True while the holder holds right click to aim the item (AimItem).", "holder"),
         new("holder.using", "holder.using()", "True while the holder keeps Use held after a held use (UseItem with hold, an item with held.hold_use), until they let go (ReleaseItem): a spray reads it in on_update.", "holder"),
 

@@ -35,6 +35,9 @@ public sealed partial class ScriptRuntime
     // Most pellets one combat.pellets call may make.
     private const int MaxPellets = 64;
 
+    // What holder.hurt reports as the cause when the script names none.
+    private const string HurtCause = "item";
+
     // Largest a projectile's look may be drawn (combat.projectile size), in metres.
     private const float MaxProjectileSize = 10f;
 
@@ -552,6 +555,18 @@ public sealed partial class ScriptRuntime
         {
             var instance = Acting("holder.heal");
             return DynValue.NewNumber(_survival!.Heal(instance.Holder!.Value, LuaValues.Number(args[0], "holder.heal", 1)));
+        });
+        Fn(holder, "hurt", args =>
+        {
+            // Through the normal damage path (SurvivalActions.Damage): the HUD, death and the knockout bag follow from it.
+            var instance = Acting("holder.hurt");
+            var amount = LuaValues.Number(args[0], "holder.hurt", 1);
+            if (amount < 0)
+                throw new ScriptRuntimeException("holder.hurt: amount must be 0 or more");
+            var cause = args.Count > 1 && !args[1].IsNil() ? args.AsType(1, "holder.hurt", DataType.String).String : HurtCause;
+            if (cause.Length is 0 or > 32 || !cause.All(c => c is (>= 'a' and <= 'z') or '_'))
+                throw new ScriptRuntimeException("holder.hurt: cause must be a short lowercase word (letters and _)");
+            return DynValue.NewNumber(_survival!.Damage(instance.Holder!.Value, amount, cause));
         });
         Fn(holder, "aiming", _ => DynValue.NewBoolean(_aiming.Contains(ItemNow().Holder!.Value)));
         Fn(holder, "using", _ => DynValue.NewBoolean(_using.Contains(ItemNow().Holder!.Value)));

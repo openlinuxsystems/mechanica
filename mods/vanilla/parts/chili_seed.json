@@ -1,0 +1,36 @@
+{
+  "id": "chili_seed",
+  "name": "Chili Seed",
+  "description": "Plant in watered soil. Grows into a chili bush. A rare find.",
+  "category": "consumable",
+  "mass": 4.5,
+  "durability": 2,
+  "friction": 0.4,
+  "buoyancy": 0.3,
+  "flammable": true,
+  "stack_size": 20,
+  "mesh": "meshes/items/chili_seed.glb",
+  "icon": "textures/items/chili_seed_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "script": "scripts/seed.lua",
+  "sounds": {
+    "pickup": "seed_pickup",
+    "place": "seed_place"
+  },
+  "seed": {
+    "crop": "chili",
+    "grow_time": 1260,
+    "yield": 2,
+    "seeds": 1,
+    "seeds_max": 3,
+    "plant": "meshes/crops/chili_plant.glb",
+    "value": 10
+  },
+  "held": {
+    "mesh": "meshes/items/chili_seed.glb",
+    "offset": [-0.028, 0.062, -0.035],
+    "rotation": [0, 90, 90]
+  }
+}

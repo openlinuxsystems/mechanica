@@ -1,0 +1,32 @@
+{
+  "id": "beetroot",
+  "name": "Beetroot",
+  "description": "Earthy and sweet. Eat it to heal.",
+  "category": "consumable",
+  "mass": 1.5,
+  "durability": 1,
+  "friction": 0.4,
+  "buoyancy": 0.4,
+  "flammable": true,
+  "stack_size": 10,
+  "mesh": "meshes/items/beetroot.glb",
+  "icon": "textures/items/beetroot_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "script": "scripts/food.lua",
+  "sounds": {
+    "pickup": "pickup_produce",
+    "eat": "eat_crunch"
+  },
+  "held": {
+    "mesh": "meshes/items/beetroot_held.glb",
+    "offset": [-0.04, 0.08, -0.02],
+    "rotation": [180, 0, 90],
+    "juice": "#a8184c"
+  },
+  "properties": {
+    "health": 30,
+    "eat_seconds": 1.4
+  }
+}

@@ -15,6 +15,10 @@ namespace Mechanica.Core.Tests.Data;
 /// Batch K2 adds the Pigment Flower: a 6 kg craft input, not food, whose seed grows like the others (2 flowers, exactly
 /// 1 seed back, raid value 0) in soil or a Growbed; wild ones in meadows and forests are picked like wild cotton; and the
 /// Fabricator makes 10 Paint Ammo from one in 5 s, no longer from tomatoes.
+/// Batch K3 adds Beetroot, Banana and Chili: fruit stats, food heals from the Food page (Beetroot 30, Banana 35), the Chili
+/// a joke food that hurts 50; their seeds grow like the others (2 crops, 1 to 3 seeds back, raid values 5, 10 and 10) in
+/// soil or a Growbed; Beetroot Seed is common loot, Banana and Chili Seeds epic, the Chili a rare legendary find.
+/// Wild cotton is one light mesh like the wild Pigment Flower.
 /// </summary>
 public class CropsTests
 {
@@ -33,6 +37,9 @@ public class CropsTests
     [InlineData("potato_seed")]
     [InlineData("cotton_seed")]
     [InlineData("pigment_flower_seed")]
+    [InlineData("beetroot_seed")]
+    [InlineData("banana_seed")]
+    [InlineData("chili_seed")]
     public void SeedsTakeTheWikisSeedStats(string id)
     {
         var part = Part(id);
@@ -50,6 +57,9 @@ public class CropsTests
     [InlineData("potato_seed", "potato", 10, 1, 3, 1)]
     [InlineData("cotton_seed", "cotton", 2, 1, 1, 0)]
     [InlineData("pigment_flower_seed", "pigment_flower", 2, 1, 1, 0)]
+    [InlineData("beetroot_seed", "beetroot", 2, 1, 3, 5)]
+    [InlineData("banana_seed", "banana", 2, 1, 3, 10)]
+    [InlineData("chili_seed", "chili", 2, 1, 3, 10)]
     public void EveryCropGrowsIn1260SecondsWithItsHarvestAndRaidValue(string id, string crop, int yield, int seeds, int seedsMax, double value)
     {
         var seed = Part(id).Seed!;
@@ -73,7 +83,7 @@ public class CropsTests
         Assert.Equal(2160f, growbed.Capacity);
         Assert.Equal(bucket, cannon["water"]!.GetValue<double>() * cannon["jets"]!.GetValue<int>(), 3);
         Assert.Equal("water_bucket_full", cannon["water_item"]!.GetValue<string>());
-        foreach (var id in new[] { "carrot_seed", "tomato_seed", "potato_seed", "cotton_seed", "pigment_flower_seed" })
+        foreach (var id in new[] { "carrot_seed", "tomato_seed", "potato_seed", "cotton_seed", "pigment_flower_seed", "beetroot_seed", "banana_seed", "chili_seed" })
         {
             var drinks = Part(id).Seed!.GrowTime!.Value * (Part(id).Seed!.Thirst ?? 1f);
             Assert.True(drinks <= bucket && drinks <= soil.Capacity, $"a {id} crop drinks one bucket at most ({drinks} s)");
@@ -134,8 +144,9 @@ public class CropsTests
     {
         var growbed = Part("growbed");
 
-        Assert.Equal(["carrot_seed", "potato_seed", "tomato_seed", "cotton_seed", "pigment_flower_seed"], growbed.Soil!.Seeds);
-        Assert.Contains("pigment flower seeds", growbed.Description);
+        Assert.Equal(["carrot_seed", "potato_seed", "tomato_seed", "cotton_seed", "pigment_flower_seed", "beetroot_seed", "banana_seed", "chili_seed"],
+            growbed.Soil!.Seeds);
+        Assert.Contains("pigment flower, beetroot, banana or chili seeds", growbed.Description);
     }
 
     [Fact]
@@ -183,5 +194,80 @@ public class CropsTests
             Assert.True(seed.Weight <= table.Items!.Where(i => i.Item!.EndsWith("_seed", StringComparison.Ordinal)).Min(i => i.Weight),
                 "no likelier than any other seed in its table");
         }
+    }
+
+    [Theory]
+    [InlineData("beetroot", 30, "eat_crunch")]
+    [InlineData("banana", 35, "eat_soft")]
+    [InlineData("chili", -50, "eat_crunch")]
+    public void TheNewProduceIsFoodWithTheFruitStats(string id, int health, string eat)
+    {
+        var food = Part(id);
+
+        Assert.Equal((1.5, 1, 0.4, 0.4, true, 10),
+            (Math.Round((double)food.Mass!.Value, 3), (int)food.Durability!.Value, Math.Round((double)food.Friction!.Value, 3),
+                Math.Round((double)food.Buoyancy!.Value, 3), food.Flammable!.Value, food.StackSize!.Value));
+        Assert.Equal(PartCategory.Consumable, food.Category);
+        Assert.Equal("scripts/food.lua", food.Script);
+        Assert.Equal((health, 1.4), (food.Properties!["health"]!.GetValue<int>(), food.Properties!["eat_seconds"]!.GetValue<double>()));
+        Assert.Equal(eat, food.Sounds!["eat"]);
+        Assert.Equal($"meshes/items/{id}_held.glb", food.Held?.Mesh);
+        Assert.Equal($"meshes/crops/{id}_plant.glb", Part(id + "_seed").Seed!.Plant);
+        foreach (var file in new[] { $"meshes/items/{id}.glb", $"meshes/items/{id}_held.glb", $"meshes/items/{id}_seed.glb",
+                     $"meshes/crops/{id}_plant.glb", $"textures/items/{id}_icon.png", $"textures/items/{id}_seed_icon.png" })
+            Assert.True(File.Exists(Path.Combine(TestMods.RepoRoot, "mods", "vanilla", file)), $"{file} is built");
+        Assert.Contains(id, Part("fridge").Inventory!.Accepts!);
+    }
+
+    [Fact]
+    public void TheChiliHurtsHalfOfAFullHealthAndDoesNotKillFromFull()
+    {
+        // food.lua takes a negative health through holder.hurt; at full health one Chili leaves the eater standing.
+        var hurt = -Part("chili").Properties!["health"]!.GetValue<float>();
+        var max = Mechanica.Core.Survival.SurvivalSettings.FromJson(File.ReadAllText(Path.Combine(TestMods.RepoRoot, "game", "data", "survival.json"))).MaxHealth;
+
+        Assert.Equal(50f, hurt);
+        Assert.True(hurt < max, $"one Chili does not kill from full health ({hurt} of {max})");
+        Assert.Contains("holder.hurt", File.ReadAllText(Path.Combine(TestMods.RepoRoot, "mods", "vanilla", "scripts", "food.lua")));
+    }
+
+    [Theory]
+    [InlineData("beetroot_seed", "common")]
+    [InlineData("beetroot_seed", "crate")]
+    [InlineData("banana_seed", "epic")]
+    [InlineData("chili_seed", "epic")]
+    [InlineData("chili", "legendary")]
+    public void TheNewSeedsAreSparingLootInTheirTiers(string item, string table)
+    {
+        var tables = World.Value.LootTables!;
+        var entry = tables[table].Items!.Single(i => i.Item == item);
+
+        Assert.True(entry.Weight <= 1.0, $"{item} is a sparing find in {table} ({entry.Weight})");
+        // Rarer crops only in rarer tiers: Banana and Chili Seeds are never common loot.
+        Assert.DoesNotContain(tables["common"].Items!, i => i.Item is "banana_seed" or "chili_seed");
+        Assert.DoesNotContain(tables["crate"].Items!, i => i.Item is "banana_seed" or "chili_seed");
+    }
+
+    [Fact]
+    public void BeetrootSeedsComeFromTheSeedScuttlerAndFarmCargo()
+    {
+        var bots = Mechanica.Core.Bots.BotBook.Load(Vanilla.Value);
+        Assert.Contains(bots.FindBot("scuttler_seed")!.Drops, d => d.Item == "vanilla:beetroot_seed");
+        Assert.Contains(WorldObject("cargo_spill_farming").Drops!, d => d.Item == "beetroot_seed");
+    }
+
+    [Fact]
+    public void TheWildCottonIsOneLightMesh()
+    {
+        // As the wild Pigment Flower: the world draws only the first mesh of a prop's file (TerrainChunk), many times over.
+        var bytes = File.ReadAllBytes(Path.Combine(TestMods.RepoRoot, "mods", "vanilla", "meshes", "world", "props", "wild_cotton.glb"));
+        using var doc = JsonDocument.Parse(bytes.AsMemory(20, BitConverter.ToInt32(bytes, 12)));
+        var meshes = doc.RootElement.GetProperty("meshes");
+        var accessors = doc.RootElement.GetProperty("accessors");
+        var triangles = meshes.EnumerateArray().SelectMany(m => m.GetProperty("primitives").EnumerateArray())
+            .Sum(p => accessors[p.GetProperty("indices").GetInt32()].GetProperty("count").GetInt32() / 3);
+
+        Assert.Equal(1, meshes.GetArrayLength());
+        Assert.InRange(triangles, 1000, 12000);
     }
 }

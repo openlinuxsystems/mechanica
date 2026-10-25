@@ -68,6 +68,57 @@ public sealed class ItemScriptTests : IDisposable
         Assert.Equal("You are dead. Respawn first.", _rig.Refused(Me, 0));
     }
 
+    [Fact]
+    public void AFoodWithNegativeHealthHurtsEvenAtFullHealth()
+    {
+        // Crops batch K3: the Chili. food.lua takes it through holder.hurt, the normal damage path.
+        var chili = _rig.AddItem("chili", "scripts/food.lua", new JsonObject { ["health"] = -50, ["eat_seconds"] = 1 });
+        F.Pockets(Me).Add(chili, 3);
+        var hurt = new List<(int Peer, float Amount, string Cause)>();
+        F.Survival.Hurt += (peer, amount, cause) => hurt.Add((peer, amount, cause));
+
+        Assert.Equal(50.0, _rig.Used(Me, F.SlotOf(Me, chili))["health"]!.GetValue<double>());
+        Assert.Equal([(Me.Peer, 50f, "food")], hurt);
+        Assert.Equal("You are still eating.", _rig.Refused(Me, F.SlotOf(Me, chili)));
+        _rig.Runtime.Update(0.85f);
+        // At 50 health or less the second one kills, as any other blow.
+        Assert.Equal(0.0, _rig.Used(Me, F.SlotOf(Me, chili))["health"]!.GetValue<double>());
+        Assert.True(F.Survival.IsDead(Me.Peer));
+        Assert.Equal(0, F.Pockets(Me).Count(chili)); // the last one went into the knockout bag with the rest of the pockets
+        Assert.DoesNotContain(_rig.Messages, m => m.Kind == ScriptMessageKind.Error);
+    }
+
+    [Fact]
+    public void HolderHurtChecksItsArgumentsAndOnlyActsInOnUse()
+    {
+        _rig.Write("scripts/thorn.lua", """
+            function on_use(target)
+              local ok, why = pcall(holder.hurt, -1)
+              local ok2, why2 = pcall(holder.hurt, 5, "Not A Word")
+              return { left = holder.hurt(10, "thorn"), negative = why, cause = why2 }
+            end
+            """);
+        _rig.Write("scripts/sneak.lua", """
+            function can_use(target) holder.hurt(10) end
+            function on_use(target) end
+            """);
+        var thorn = _rig.AddItem("thorn", "scripts/thorn.lua");
+        var sneak = _rig.AddItem("sneak", "scripts/sneak.lua");
+        F.Pockets(Me).Add(thorn, 1);
+        F.Pockets(Me).Add(sneak, 1);
+        var causes = new List<string>();
+        F.Survival.Hurt += (_, _, cause) => causes.Add(cause);
+
+        var used = _rig.Used(Me, F.SlotOf(Me, thorn));
+        Assert.Equal(90.0, used["left"]!.GetValue<double>());
+        Assert.Contains("amount must be 0 or more", used["negative"]!.GetValue<string>());
+        Assert.Contains("cause must be a short lowercase word", used["cause"]!.GetValue<string>());
+        Assert.Equal(["thorn"], causes);
+
+        Assert.Contains("holder.hurt changes the world", _rig.Refused(Me, F.SlotOf(Me, sneak)));
+        Assert.Equal(90f, F.Survival.HealthOf(Me.Peer));
+    }
+
     // ---- Weapons (mods/vanilla/scripts/potato_gun.lua) ----
 
     [Fact]

@@ -7,7 +7,8 @@ It writes, procedurally:
 * ``mods/vanilla/meshes/items/cotton_seed.glb`` - the shared seed packet with the cotton's label.
 * ``mods/vanilla/meshes/crops/cotton_plant.glb`` - the plant with its ``grow``, ``wilt`` and ``sway`` clips
   (crop_rig.py), stake and crop tag included.
-* ``mods/vanilla/meshes/world/props/wild_cotton.glb`` - a ripe wild clump for the Autumn Forest.
+* ``mods/vanilla/meshes/world/props/wild_cotton.glb`` - a ripe wild clump for the Autumn Forest, one decimated mesh
+  (food_lib.merged: the world draws only the first mesh of a prop's file).
 * ``mods/vanilla/textures/items/cotton_icon.png`` and ``cotton_seed_icon.png`` - 256 x 256 icons.
 
     pip install bpy==5.2.2 numpy pillow
@@ -32,6 +33,8 @@ import cotton  # noqa: E402
 import crop_rig  # noqa: E402
 import food_lib as fl  # noqa: E402
 import seed_packet as sp  # noqa: E402
+
+WILD_DECIMATE = 0.075         # the wild clump keeps this share of its triangles (some 9k, as a scattered prop)
 
 
 def export_lying(root, path):
@@ -76,10 +79,10 @@ def main(argv):
     bt.export(fl.tree(rig.root), bt.MESHES / "crops" / "cotton_plant.glb", animations=True)
 
     fl.reset()
-    wild = cotton.build_wild()
-    bt.export(fl.tree(wild), bt.MESHES / "world" / "props" / "wild_cotton.glb")
+    wild = fl.merged(cotton.build_wild(), "WildCotton", ratio=WILD_DECIMATE)
+    bt.export([wild], bt.MESHES / "world" / "props" / "wild_cotton.glb")
     if out:
-        fl.render_view(fl.tree(wild), out / "wild_cotton.png", (1.2, -1.8, 1.0), ortho=1.4, target=(0, 0, 0.4), size=700)
+        fl.render_view([wild], out / "wild_cotton.png", (1.2, -1.8, 1.0), ortho=1.4, target=(0, 0, 0.4), size=700)
 
     print("held cotton_seed:", json.dumps(bt.held_entry(bt.packet_placement())))
 

@@ -33,7 +33,10 @@
     "accepts": [
       "carrot",
       "potato",
-      "tomato"
+      "tomato",
+      "beetroot",
+      "banana",
+      "chili"
     ]
   }
 }
