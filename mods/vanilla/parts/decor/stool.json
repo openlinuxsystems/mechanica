@@ -1,7 +1,7 @@
 {
   "id": "stool",
   "name": "Stool",
-  "description": "A round three-legged stool.",
+  "description": "A round three-legged stool of scrap planks, one split leg bound with rope.",
   "category": "decor",
   "mass": 3,
   "durability": 3,
@@ -11,10 +11,9 @@
   "stack_size": 20,
   "sound_material": "wood",
   "size": [2, 2, 2],
-  "mesh": "meshes/decor/stool.glb",
+  "mesh": "meshes/parts/stool.glb",
+  "icon": "textures/items/stool_icon.png",
   "visual": {
-    "color": "#9a6a3a",
-    "roughness": 0.7,
-    "metallic": 0
+    "color": "#ffffff"
   }
 }

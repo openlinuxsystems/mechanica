@@ -1253,6 +1253,7 @@ public partial class PartEditorScreen : Control
             CollisionShape.Sphere => new CollisionDefinition { Shape = shape, Radius = MathF.Min(radius, size.Y / 2) },
             CollisionShape.Capsule => new CollisionDefinition { Shape = shape, Radius = MathF.Min(radius, size.Y / 2), Height = size.Y },
             CollisionShape.Convex => new CollisionDefinition { Shape = shape, Mesh = part.Mesh },
+            CollisionShape.Boxes => new CollisionDefinition { Shape = shape, Boxes = [new CollisionBox { Size = size }] },
             _ => new CollisionDefinition { Shape = shape, Radius = radius, Height = size.Y },
         };
     }

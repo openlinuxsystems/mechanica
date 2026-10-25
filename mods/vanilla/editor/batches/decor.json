@@ -119,7 +119,7 @@
       "template": "decor",
       "set": {
         "name": "Wooden Table",
-        "description": "A sturdy table of planks.",
+        "description": "A trestle table: a top of four odd planks, a wedged stretcher and a zinc patch on one corner.",
         "mass": 6,
         "durability": 3,
         "friction": 0.5,
@@ -128,15 +128,10 @@
         "sound_material": "wood",
         "stack_size": 20,
         "size": [6, 3, 4],
-        "visual": { "color": "#9a6a3a", "roughness": 0.7, "metallic": 0.0 }
+        "icon": "textures/items/wooden_table_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
       },
-      "model": [
-        { "kind": "box", "size": [1.5, 0.06, 1], "position": [0, 0.345, 0] },
-        { "kind": "box", "size": [0.08, 0.69, 0.08], "position": [0.68, -0.03, 0.43] },
-        { "kind": "box", "size": [0.08, 0.69, 0.08], "position": [0.68, -0.03, -0.43] },
-        { "kind": "box", "size": [0.08, 0.69, 0.08], "position": [-0.68, -0.03, 0.43] },
-        { "kind": "box", "size": [0.08, 0.69, 0.08], "position": [-0.68, -0.03, -0.43] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/wooden_table.glb" }],
       "recipes": [
         {
           "id": "wooden_table",
@@ -153,7 +148,7 @@
       "template": "decor",
       "set": {
         "name": "Chair",
-        "description": "A plain wooden chair. It is only for show; seats are for sitting.",
+        "description": "A scrap-wood chair: odd planks, two back slats and zinc corner brackets. It is only for show; seats are for sitting.",
         "mass": 3,
         "durability": 3,
         "friction": 0.5,
@@ -162,16 +157,10 @@
         "sound_material": "wood",
         "stack_size": 20,
         "size": [2, 4, 2],
-        "visual": { "color": "#8a5a30", "roughness": 0.7, "metallic": 0.0 }
+        "icon": "textures/items/chair_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
       },
-      "model": [
-        { "kind": "box", "size": [0.44, 0.05, 0.44], "position": [0, -0.06, 0] },
-        { "kind": "box", "size": [0.44, 0.45, 0.05], "position": [0, 0.24, 0.2] },
-        { "kind": "box", "size": [0.05, 0.42, 0.05], "position": [0.19, -0.29, 0.19] },
-        { "kind": "box", "size": [0.05, 0.42, 0.05], "position": [0.19, -0.29, -0.19] },
-        { "kind": "box", "size": [0.05, 0.42, 0.05], "position": [-0.19, -0.29, 0.19] },
-        { "kind": "box", "size": [0.05, 0.42, 0.05], "position": [-0.19, -0.29, -0.19] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/chair.glb" }],
       "recipes": [
         {
           "id": "chair",
@@ -188,7 +177,7 @@
       "template": "decor",
       "set": {
         "name": "Stool",
-        "description": "A round three-legged stool.",
+        "description": "A round three-legged stool of scrap planks, one split leg bound with rope.",
         "mass": 3,
         "durability": 3,
         "friction": 0.5,
@@ -197,14 +186,10 @@
         "sound_material": "wood",
         "stack_size": 20,
         "size": [2, 2, 2],
-        "visual": { "color": "#9a6a3a", "roughness": 0.7, "metallic": 0.0 }
+        "icon": "textures/items/stool_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null }
       },
-      "model": [
-        { "kind": "cylinder", "radius": 0.2, "height": 0.05, "position": [0, 0.225, 0] },
-        { "kind": "cylinder", "radius": 0.025, "height": 0.45, "position": [0.13, -0.02, 0] },
-        { "kind": "cylinder", "radius": 0.025, "height": 0.45, "position": [-0.065, -0.02, 0.1126] },
-        { "kind": "cylinder", "radius": 0.025, "height": 0.45, "position": [-0.065, -0.02, -0.1126] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/stool.glb" }],
       "recipes": [
         {
           "id": "stool",
@@ -221,7 +206,7 @@
       "template": "decor",
       "set": {
         "name": "Pallet",
-        "description": "A wooden shipping pallet.",
+        "description": "A wooden shipping pallet: three notched stringers under worn deck boards.",
         "mass": 6,
         "durability": 3,
         "friction": 0.5,
@@ -229,19 +214,11 @@
         "sound_material": "wood",
         "stack_size": 20,
         "size": [5, 1, 5],
-        "visual": { "color": "#b08850", "roughness": 0.7, "metallic": 0.0 },
+        "icon": "textures/items/pallet_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "buoyancy": 0.6
       },
-      "model": [
-        { "kind": "box", "size": [1.25, 0.03, 0.1], "position": [0, 0.095, -0.55] },
-        { "kind": "box", "size": [1.25, 0.03, 0.1], "position": [0, 0.095, -0.275] },
-        { "kind": "box", "size": [1.25, 0.03, 0.1], "position": [0, 0.095, 0] },
-        { "kind": "box", "size": [1.25, 0.03, 0.1], "position": [0, 0.095, 0.275] },
-        { "kind": "box", "size": [1.25, 0.03, 0.1], "position": [0, 0.095, 0.55] },
-        { "kind": "box", "size": [0.1, 0.16, 1.25], "position": [-0.55, -0.03, 0] },
-        { "kind": "box", "size": [0.1, 0.16, 1.25], "position": [0, -0.03, 0] },
-        { "kind": "box", "size": [0.1, 0.16, 1.25], "position": [0.55, -0.03, 0] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/pallet.glb" }],
       "recipes": [
         {
           "id": "pallet",
@@ -675,24 +652,20 @@
       "template": "decor",
       "set": {
         "name": "Stairs Block",
-        "description": "A flight of four steps in one block of 1 m by 1 m.",
+        "description": "A flight of four steel steps in one block of 1 m by 1 m: checker-plate treads with mustard nosings.",
         "mass": 6,
         "durability": 5,
         "friction": 0.5,
         "buoyancy": 0.2,
         "flammable": false,
-        "sound_material": "concrete",
+        "sound_material": "metal",
         "stack_size": 20,
         "size": [4, 4, 4],
-        "visual": { "color": "#d4d4d4", "texture": "textures/blocks/concrete.png", "roughness": 0.7, "metallic": 0.0 }
+        "icon": "textures/items/stairs_block_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "collision": { "shape": "convex", "mesh": "meshes/parts/stairs_block.glb" }
       },
-      "model": [
-        { "kind": "box", "size": [1, 0.25, 0.25], "position": [0, -0.375, 0.375] },
-        { "kind": "box", "size": [1, 0.5, 0.25], "position": [0, -0.25, 0.125] },
-        { "kind": "box", "size": [1, 0.75, 0.25], "position": [0, -0.125, -0.125] },
-        { "kind": "box", "size": [1, 1, 0.25], "position": [0, 0, -0.375] }
-      ],
-      "collision_from_model": true,
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/stairs_block.glb" }],
       "recipes": [
         {
           "id": "stairs_block",
@@ -709,7 +682,7 @@
       "template": "decor",
       "set": {
         "name": "Door Frame",
-        "description": "A frame for a doorway, 1 m wide and 2 m tall.",
+        "description": "A painted timber door frame, 1.25 m wide and 2.5 m tall, with a 1.05 m by 2.3 m opening to walk through.",
         "mass": 6,
         "durability": 3,
         "friction": 0.5,
@@ -717,13 +690,19 @@
         "flammable": true,
         "sound_material": "wood",
         "stack_size": 20,
-        "size": [4, 8, 1],
-        "visual": { "color": "#8a6a4a", "roughness": 0.7, "metallic": 0.0 }
+        "size": [5, 10, 1],
+        "icon": "textures/items/door_frame_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "collision": {
+          "shape": "boxes",
+          "boxes": [
+            { "size": [0.1, 2.5, 0.25], "offset": [-0.575, 0, 0] },
+            { "size": [0.1, 2.5, 0.25], "offset": [0.575, 0, 0] },
+            { "size": [1.05, 0.2, 0.25], "offset": [0, 1.15, 0] }
+          ]
+        }
       },
-      "model": [
-        { "kind": "box", "size": [1, 2, 0.25] },
-        { "kind": "box", "size": [0.8, 1.9, 0.26], "operation": "subtract", "position": [0, -0.05, 0] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/door_frame.glb" }],
       "recipes": [
         {
           "id": "door_frame",
@@ -740,7 +719,7 @@
       "template": "decor",
       "set": {
         "name": "Window Frame",
-        "description": "A frame for a window opening, 1 m square.",
+        "description": "A painted timber frame for a window opening, 1 m square, with corner blocks and a sill.",
         "mass": 4.5,
         "durability": 3,
         "friction": 0.5,
@@ -749,14 +728,19 @@
         "sound_material": "wood",
         "stack_size": 20,
         "size": [4, 4, 1],
-        "visual": { "color": "#8a6a4a", "roughness": 0.7, "metallic": 0.0 }
+        "icon": "textures/items/window_frame_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "collision": {
+          "shape": "boxes",
+          "boxes": [
+            { "size": [1, 0.08, 0.25], "offset": [0, -0.46, 0] },
+            { "size": [1, 0.08, 0.25], "offset": [0, 0.46, 0] },
+            { "size": [0.08, 0.84, 0.25], "offset": [-0.46, 0, 0] },
+            { "size": [0.08, 0.84, 0.25], "offset": [0.46, 0, 0] }
+          ]
+        }
       },
-      "model": [
-        { "kind": "box", "size": [1, 1, 0.25] },
-        { "kind": "box", "size": [0.8, 0.8, 0.26], "operation": "subtract" },
-        { "kind": "box", "size": [0.8, 0.03, 0.04] },
-        { "kind": "box", "size": [0.03, 0.8, 0.04] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/window_frame.glb" }],
       "recipes": [
         {
           "id": "window_frame",

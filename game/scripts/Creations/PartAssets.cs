@@ -39,9 +39,15 @@ public sealed record PartMesh(Mesh Mesh, Transform3D Transform, IReadOnlyList<Ma
 /// <summary>
 /// What the runtime needs to show and collide one part definition, in part-local metres with the
 /// origin at the footprint centre. <see cref="IsPlaceholder"/> is true when the mod gave no mesh or the
-/// mesh failed to load, so a primitive matching the collision shape stands in.
+/// mesh failed to load, so a primitive matching the collision shape stands in. A <c>boxes</c> collision has its first box
+/// in <see cref="Shape"/> and the others in <see cref="MoreShapes"/>.
 /// </summary>
-public sealed record PartModel(IReadOnlyList<PartMesh> Meshes, Shape3D Shape, Transform3D ShapeTransform, bool IsPlaceholder);
+public sealed record PartModel(IReadOnlyList<PartMesh> Meshes, Shape3D Shape, Transform3D ShapeTransform, bool IsPlaceholder,
+    IReadOnlyList<(Shape3D Shape, Transform3D Transform)>? MoreShapes = null)
+{
+    /// <summary>Every collision shape of the part with its transform from the part centre, the first one first.</summary>
+    public IEnumerable<(Shape3D Shape, Transform3D Transform)> Shapes => [(Shape, ShapeTransform), .. MoreShapes ?? []];
+}
 
 /// <summary>
 /// Loads part meshes at runtime from mod folders with <see cref="GltfDocument"/> (D6) and builds
@@ -91,11 +97,13 @@ public sealed class PartAssets
         if (_models.TryGetValue(cacheKey, out var cached))
             return cached;
         var modId = _content?.FindPart(qualifiedId)?.ModId;
-        var (shape, shapeTransform) = BuildShape(definition, modId);
+        var shapes = BuildShapes(definition, modId);
+        var (shape, shapeTransform) = shapes[0];
+        var more = shapes.Count > 1 ? shapes.Skip(1).ToList() : null;
         var meshes = definition.Mesh is { } mesh && modId is not null ? LoadMeshes(mesh, modId) : null;
         var model = meshes is { Count: > 0 }
-            ? new PartModel(meshes, shape, shapeTransform, IsPlaceholder: false)
-            : new PartModel([new PartMesh(PlaceholderMesh(definition, shape), shapeTransform)], shape, shapeTransform, IsPlaceholder: true);
+            ? new PartModel(meshes, shape, shapeTransform, IsPlaceholder: false, more)
+            : new PartModel([.. shapes.Select(s => new PartMesh(PlaceholderMesh(definition, s.Shape), s.Transform))], shape, shapeTransform, IsPlaceholder: true, more);
         if (definition.Visual is { } visual)
             model = model with { Meshes = [.. model.Meshes.Select(m => ApplyVisual(m, visual, modId) with { TextureSpan = visual.TextureSpan ?? 1 })] };
         return _models[cacheKey] = model;
@@ -223,12 +231,23 @@ public sealed class PartAssets
             Collect(child, transform, meshes);
     }
 
-    /// <summary>The collision shape of a part and its transform from the part centre.</summary>
-    public (Shape3D Shape, Transform3D Transform) BuildShape(PartDefinition definition, string? modId)
+    /// <summary>The (first) collision shape of a part and its transform from the part centre.</summary>
+    public (Shape3D Shape, Transform3D Transform) BuildShape(PartDefinition definition, string? modId) => BuildShapes(definition, modId)[0];
+
+    /// <summary>
+    /// Every collision shape of a part with its transform from the part centre: one, or a <c>boxes</c> collision's boxes
+    /// in order. Never empty.
+    /// </summary>
+    public IReadOnlyList<(Shape3D Shape, Transform3D Transform)> BuildShapes(PartDefinition definition, string? modId)
     {
         var collision = definition.Collision;
         var offset = new Transform3D(Basis.Identity, (collision?.Offset ?? Vec3.Zero).ToGodot());
         var footprint = (definition.Size ?? GridSize.One).Metres.ToGodot();
+        if (collision is { Shape: CollisionShape.Boxes, Boxes: { Count: > 0 } boxes })
+        {
+            return [.. boxes.Select(b => ((Shape3D)new BoxShape3D { Size = b.Size?.ToGodot() ?? footprint },
+                offset * new Transform3D(Basis.Identity, (b.Offset ?? Vec3.Zero).ToGodot())))];
+        }
         Shape3D shape = collision?.Shape switch
         {
             CollisionShape.Box => new BoxShape3D { Size = collision.Size?.ToGodot() ?? footprint },
@@ -238,7 +257,7 @@ public sealed class PartAssets
             CollisionShape.Convex => (Shape3D?)ConvexShape(collision.Mesh!, modId) ?? new BoxShape3D { Size = footprint },
             _ => new BoxShape3D { Size = footprint },
         };
-        return (shape, offset);
+        return [(shape, offset)];
     }
 
     private ConvexPolygonShape3D? ConvexShape(string path, string? modId)

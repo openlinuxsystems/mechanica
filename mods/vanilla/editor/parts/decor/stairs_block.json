@@ -2,24 +2,8 @@
   "format_version": 1,
   "model": [
     {
-      "kind": "box",
-      "size": [1, 0.25, 0.25],
-      "position": [0, -0.375, 0.375]
-    },
-    {
-      "kind": "box",
-      "size": [1, 0.5, 0.25],
-      "position": [0, -0.25, 0.125]
-    },
-    {
-      "kind": "box",
-      "size": [1, 0.75, 0.25],
-      "position": [0, -0.125, -0.125]
-    },
-    {
-      "kind": "box",
-      "size": [1, 1, 0.25],
-      "position": [0, 0, -0.375]
+      "kind": "mesh",
+      "mesh": "meshes/parts/stairs_block.glb"
     }
   ]
 }

@@ -1,7 +1,7 @@
 {
   "id": "door_frame",
   "name": "Door Frame",
-  "description": "A frame for a doorway, 1 m wide and 2 m tall.",
+  "description": "A painted timber door frame, 1.25 m wide and 2.5 m tall, with a 1.05 m by 2.3 m opening to walk through.",
   "category": "decor",
   "mass": 6,
   "durability": 3,
@@ -10,11 +10,27 @@
   "flammable": true,
   "stack_size": 20,
   "sound_material": "wood",
-  "size": [4, 8, 1],
-  "mesh": "meshes/decor/door_frame.glb",
+  "size": [5, 10, 1],
+  "mesh": "meshes/parts/door_frame.glb",
+  "icon": "textures/items/door_frame_icon.png",
   "visual": {
-    "color": "#8a6a4a",
-    "roughness": 0.7,
-    "metallic": 0
+    "color": "#ffffff"
+  },
+  "collision": {
+    "shape": "boxes",
+    "boxes": [
+      {
+        "size": [0.1, 2.5, 0.25],
+        "offset": [-0.575, 0, 0]
+      },
+      {
+        "size": [0.1, 2.5, 0.25],
+        "offset": [0.575, 0, 0]
+      },
+      {
+        "size": [1.05, 0.2, 0.25],
+        "offset": [0, 1.15, 0]
+      }
+    ]
   }
 }

@@ -104,9 +104,8 @@ public partial class PartPreview : Node3D
         if (source.Pieces.Count == 0)
         {
             // Nothing modelled yet: show the part as the game would, a placeholder or its existing mesh.
-            var (shape, transform) = assets.BuildShape(definition, modId);
             var meshes = definition.Mesh is { } path ? assets.LoadMeshes(path, modId) : null;
-            foreach (var mesh in meshes ?? [new PartMesh(PartAssets.PlaceholderMesh(definition, shape), transform)])
+            foreach (var mesh in meshes ?? [.. assets.BuildShapes(definition, modId).Select(s => new PartMesh(PartAssets.PlaceholderMesh(definition, s.Shape), s.Transform))])
                 Model.AddChild(new MeshInstance3D { Mesh = mesh.Mesh, Transform = mesh.Transform });
         }
         if (definition.Visual is { } visual)
@@ -117,14 +116,17 @@ public partial class PartPreview : Node3D
             _content.AddChild(Lines("Footprint", FootprintLines(size), FootprintColor));
         if (ShowCollision && definition.IsPlaceable)
         {
-            var (shape, transform) = assets.BuildShape(definition, modId);
-            _content.AddChild(new MeshInstance3D
+            var shapes = assets.BuildShapes(definition, modId);
+            for (var i = 0; i < shapes.Count; i++)
             {
-                Name = "Collision",
-                Mesh = shape.GetDebugMesh(),
-                Transform = transform,
-                MaterialOverride = Unshaded(CollisionColor, onTop: true),
-            });
+                _content.AddChild(new MeshInstance3D
+                {
+                    Name = i == 0 ? "Collision" : $"Collision{i + 1}",
+                    Mesh = shapes[i].Shape.GetDebugMesh(),
+                    Transform = shapes[i].Transform,
+                    MaterialOverride = Unshaded(CollisionColor, onTop: true),
+                });
+            }
         }
         if (ShowSockets)
         {

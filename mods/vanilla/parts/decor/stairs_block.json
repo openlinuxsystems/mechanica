@@ -1,7 +1,7 @@
 {
   "id": "stairs_block",
   "name": "Stairs Block",
-  "description": "A flight of four steps in one block of 1 m by 1 m.",
+  "description": "A flight of four steel steps in one block of 1 m by 1 m: checker-plate treads with mustard nosings.",
   "category": "decor",
   "mass": 6,
   "durability": 5,
@@ -9,17 +9,15 @@
   "buoyancy": 0.2,
   "flammable": false,
   "stack_size": 20,
-  "sound_material": "concrete",
+  "sound_material": "metal",
   "size": [4, 4, 4],
-  "mesh": "meshes/decor/stairs_block.glb",
+  "mesh": "meshes/parts/stairs_block.glb",
+  "icon": "textures/items/stairs_block_icon.png",
   "visual": {
-    "color": "#d4d4d4",
-    "roughness": 0.7,
-    "metallic": 0,
-    "texture": "textures/blocks/concrete.png"
+    "color": "#ffffff"
   },
   "collision": {
     "shape": "convex",
-    "mesh": "meshes/decor/stairs_block.glb"
+    "mesh": "meshes/parts/stairs_block.glb"
   }
 }

@@ -214,7 +214,24 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
                 if (c.Mesh is null)
                     sink.Error(Code, $"{p}.mesh", "a convex shape needs a mesh.");
                 break;
+            case CollisionShape.Boxes:
+                if (c.Boxes is not { Count: > 0 } boxes)
+                {
+                    sink.Error(Code, $"{p}.boxes", "a boxes shape needs at least one box: { \"size\": [x, y, z], \"offset\": [x, y, z] }.");
+                    break;
+                }
+                for (var i = 0; i < boxes.Count; i++)
+                {
+                    if (boxes[i].Size is not { } b)
+                        sink.Error(Code, $"{p}.boxes[{i}].size", "a box needs size [x, y, z] in metres.");
+                    else if (b.X <= 0 || b.Y <= 0 || b.Z <= 0)
+                        sink.Error(Code, $"{p}.boxes[{i}].size", "box size must be greater than 0 on every axis.");
+                    KnownKeys.WarnUnknown(boxes[i].Extra, $"{p}.boxes[{i}]", sink, typeof(CollisionBox));
+                }
+                break;
         }
+        if (c.Boxes is not null && c.Shape != CollisionShape.Boxes)
+            sink.Error(Code, $"{p}.boxes", "only a boxes shape takes boxes.");
         if (c.Climb is { } climb)
         {
             if (c.Shape is not (CollisionShape.Sphere or CollisionShape.Cylinder))

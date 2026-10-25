@@ -237,10 +237,7 @@ public partial class ScriptSync : Node, IScriptPhysics, IScriptSound
         if (collider is not CreationBody body || body.GetParent() is not CreationNode node)
             return (null, null);
         var owner = body.ShapeFindOwner(shape);
-        var part = body.ShapeOwnerGetOwner(owner) is CollisionShape3D { Name: var name } && name.ToString() is var text
-            && text.StartsWith("Shape", StringComparison.Ordinal) && int.TryParse(text.AsSpan(5), out var id)
-            ? id
-            : (int?)null;
+        var part = body.ShapeOwnerGetOwner(owner) is CollisionShape3D { Name: var name } ? CreationNode.PartOfShape(name.ToString()) : null;
         return (node.Creation.Id, part);
     }
 

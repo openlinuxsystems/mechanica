@@ -155,8 +155,7 @@ public partial class PlayerController
         if (shape < 0)
             return null;
         var owner = body.ShapeFindOwner(shape);
-        return body.ShapeOwnerGetOwner(owner) is CollisionShape3D { Name: var name } && name.ToString() is var text
-            && text.StartsWith("Shape", StringComparison.Ordinal) && int.TryParse(text.AsSpan(5), out var id) ? id : null;
+        return body.ShapeOwnerGetOwner(owner) is CollisionShape3D { Name: var name } ? CreationNode.PartOfShape(name.ToString()) : null;
     }
 
     // Where a climbable part stands now, or null when it is gone, not climbable or not upright enough.

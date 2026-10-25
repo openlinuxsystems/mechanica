@@ -1,7 +1,7 @@
 {
   "id": "chair",
   "name": "Chair",
-  "description": "A plain wooden chair. It is only for show; seats are for sitting.",
+  "description": "A scrap-wood chair: odd planks, two back slats and zinc corner brackets. It is only for show; seats are for sitting.",
   "category": "decor",
   "mass": 3,
   "durability": 3,
@@ -11,10 +11,9 @@
   "stack_size": 20,
   "sound_material": "wood",
   "size": [2, 4, 2],
-  "mesh": "meshes/decor/chair.glb",
+  "mesh": "meshes/parts/chair.glb",
+  "icon": "textures/items/chair_icon.png",
   "visual": {
-    "color": "#8a5a30",
-    "roughness": 0.7,
-    "metallic": 0
+    "color": "#ffffff"
   }
 }

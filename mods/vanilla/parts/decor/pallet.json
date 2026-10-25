@@ -1,7 +1,7 @@
 {
   "id": "pallet",
   "name": "Pallet",
-  "description": "A wooden shipping pallet.",
+  "description": "A wooden shipping pallet: three notched stringers under worn deck boards.",
   "category": "decor",
   "mass": 6,
   "durability": 3,
@@ -11,10 +11,9 @@
   "stack_size": 20,
   "sound_material": "wood",
   "size": [5, 1, 5],
-  "mesh": "meshes/decor/pallet.glb",
+  "mesh": "meshes/parts/pallet.glb",
+  "icon": "textures/items/pallet_icon.png",
   "visual": {
-    "color": "#b08850",
-    "roughness": 0.7,
-    "metallic": 0
+    "color": "#ffffff"
   }
 }
