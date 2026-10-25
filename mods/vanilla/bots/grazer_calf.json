@@ -14,7 +14,8 @@
   "color": "#c9b48a",
   "tame": {
     "foods": [
-      "carrot"
+      "carrot",
+      "corn"
     ],
     "feeds": 1,
     "lead": "lead",

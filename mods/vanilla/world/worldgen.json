@@ -144,7 +144,8 @@
         { "object": "scene_spooler_tower", "spacing": 200.0, "chance": 0.26, "near": { "objects": ["scene_plant", "scene_container_yard", "scene_workyard", "scene_crane_site"], "pois": ["poi_03", "poi_08", "poi_15", "poi_19", "poi_21", "poi_24", "poi_27", "poi_28", "poi_31", "poi_35", "warehouse", "warehouse_small", "warehouse_large"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
         { "object": "scene_scuttler_marks", "spacing": 360.0, "chance": 0.3, "near": { "objects": ["scene_junk_pile", "scene_scrap_outpost", "scene_salvager_crash", "scene_harvester_wreck", "scene_escape_pod", "scene_salvager_wreck", "scene_squatter_camp", "scene_rover_wreck", "scene_breakdown"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
         { "object": "scene_rakehand_marks", "spacing": 360.0, "chance": 0.3, "near": { "objects": ["scene_farmstead", "scene_hay_field", "scene_farmyard", "scene_field_edge", "scene_farm_wreck", "scene_kitchen_garden"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
-        { "object": "scene_spooler_marks", "spacing": 360.0, "chance": 0.3, "near": { "objects": ["scene_plant", "scene_container_yard", "scene_workyard", "scene_crane_site"], "pois": ["poi_03", "poi_08", "poi_15", "poi_19", "poi_21", "poi_24", "poi_27", "poi_28", "poi_31", "poi_35", "warehouse", "warehouse_small", "warehouse_large"], "within": 150.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } }
+        { "object": "scene_spooler_marks", "spacing": 360.0, "chance": 0.3, "near": { "objects": ["scene_plant", "scene_container_yard", "scene_workyard", "scene_crane_site"], "pois": ["poi_03", "poi_08", "poi_15", "poi_19", "poi_21", "poi_24", "poi_27", "poi_28", "poi_31", "poi_35", "warehouse", "warehouse_small", "warehouse_large"], "within": 150.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "wild_corn", "spacing": 24.0, "chance": 0.2 }
       ],
       "flora": [
         { "kind": "grass", "density": 2.4, "coverage": 0.85, "patch_size": 16.0, "scale": [0.8, 1.35], "colors": ["#6ea83a", "#7cb442", "#92b840", "#619e36"] },
@@ -320,7 +321,8 @@
         { "object": "scene_scuttler_marks", "spacing": 360.0, "chance": 0.3, "near": { "objects": ["scene_junk_pile", "scene_scrap_outpost", "scene_salvager_crash", "scene_harvester_wreck", "scene_escape_pod", "scene_salvager_wreck", "scene_squatter_camp", "scene_rover_wreck", "scene_breakdown"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
         { "object": "scene_rakehand_marks", "spacing": 320.0, "chance": 0.3, "near": { "objects": ["scene_farmstead", "scene_hay_field", "scene_farmyard", "scene_field_edge", "scene_farm_wreck", "scene_kitchen_garden"], "within": 200.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
         { "object": "scene_spooler_marks", "spacing": 360.0, "chance": 0.3, "near": { "objects": ["scene_plant", "scene_container_yard", "scene_workyard", "scene_crane_site"], "pois": ["poi_03", "poi_08", "poi_15", "poi_19", "poi_21", "poi_24", "poi_27", "poi_28", "poi_31", "poi_35", "warehouse", "warehouse_small", "warehouse_large"], "within": 150.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
-        { "object": "scene_thresher_marks", "spacing": 300.0, "chance": 0.3, "near": { "objects": ["scene_harvest_wreck", "scene_farm_wreck", "scene_harvester_wreck"], "pois": ["farmbot_scrapyard", "poi_32", "poi_41"], "within": 250.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } }
+        { "object": "scene_thresher_marks", "spacing": 300.0, "chance": 0.3, "near": { "objects": ["scene_harvest_wreck", "scene_farm_wreck", "scene_harvester_wreck"], "pois": ["farmbot_scrapyard", "poi_32", "poi_41"], "within": 250.0 }, "away": { "pois": ["outpost", "poi_02", "poi_13"], "distance": 100.0 } },
+        { "object": "wild_corn", "spacing": 16.0, "chance": 0.25 }
       ],
       "flora": [
         { "kind": "grass", "density": 2.6, "coverage": 0.9, "patch_size": 24.0, "scale": [1.0, 1.5], "models": ["grass_tall", "grass_tipped"], "colors": ["#e0c04a", "#d4b03e", "#e8cc5a", "#c9a83a"] },
@@ -1374,6 +1376,24 @@
       "damage_from": [],
       "harvest": true,
       "drops": [{ "item": "pigment_flower", "count": 1 }, { "item": "pigment_flower_seed", "count": 1, "chance": 0.4 }],
+      "regrow": 1800.0
+    },
+    {
+      // Wild corn in fields and meadows and at the edges of corn fields (crops batch K5, tools/food/build_corn.py): a clump
+      // of tall stalks that stands in the way like a sapling. Two Sledgehammer blows (or a creation's saw, drill or gun)
+      // break it for 3 or 4 Corn, left on the ground; it grows back half an hour of world time later.
+      "id": "wild_corn",
+      "collider": { "shape": "cylinder", "radius": 0.3, "height": 2.0, "at": [0.0, 1.0, 0.0] },
+      "mesh": { "file": "meshes/world/props/wild_corn.glb" },
+      "footprint": 1.2,
+      "scale": [0.85, 1.1],
+      "sink": 0.03,
+      "max_slope": 0.45,
+      "health": 20.0,
+      "damage_from": ["sledge", "saw", "drill", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "debris": { "chips": ["#6f9440", "#b0a860"] },
+      "drops": [{ "item": "corn", "count": 3, "count_max": 4 }],
       "regrow": 1800.0
     },
     {
@@ -8148,7 +8168,13 @@
             { "object": "field_marker_post", "at": [16.8, 16.8] },
             { "object": "field_marker_post", "at": [-16.8, 16.8], "chance": 0.7 },
             { "object": "crop_cart", "at": [-4.0, 19.6], "yaw": 160.0 },
-            { "object": "scarecrow", "at": [6.0, 19.0], "yaw": 180.0, "chance": 0.6 }
+            { "object": "scarecrow", "at": [6.0, 19.0], "yaw": 180.0, "chance": 0.6 },
+            // Self-sown wild corn along the field's edges, there to be broken for Corn (crops batch K5).
+            { "object": "wild_corn", "at": [-17.2, -7.0] },
+            { "object": "wild_corn", "at": [-17.4, 3.0], "chance": 0.7 },
+            { "object": "wild_corn", "at": [17.3, -1.0] },
+            { "object": "wild_corn", "at": [17.2, 9.0], "chance": 0.7 },
+            { "object": "wild_corn", "at": [1.5, 17.2], "chance": 0.6 }
           ] },
           { "weight": 2, "pieces": [
             { "object": "field_sunflower", "at": [-12.0, -8.0] },
@@ -8206,7 +8232,10 @@
             { "object": "field_gate_post_pair", "at": [0.0, 17.2] },
             { "object": "field_marker_post", "at": [20.8, 16.8] },
             { "object": "field_marker_post", "at": [-20.8, 16.8], "chance": 0.7 },
-            { "object": "pitchfork_stack", "at": [-10.0, 19.4], "chance": 0.6 }
+            { "object": "pitchfork_stack", "at": [-10.0, 19.4], "chance": 0.6 },
+            { "object": "wild_corn", "at": [-21.2, -6.0] },
+            { "object": "wild_corn", "at": [-21.3, 5.0], "chance": 0.7 },
+            { "object": "wild_corn", "at": [-6.0, 17.1], "chance": 0.6 }
           ] }
         ]
       }

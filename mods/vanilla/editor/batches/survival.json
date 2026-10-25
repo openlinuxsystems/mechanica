@@ -1,7 +1,8 @@
 {
   // Crops batch K1: soil holds 1260 s of water and a full Water Bucket gives 1260 s, so one bucket grows one crop
   // (every vanilla crop grows in 1260 s). Crops batch K2: Paint Ammo is made from the Pigment Flower (1 = 10, 5 s), no
-  // longer from tomatoes. Re-run with tools/author-vanilla.sh.
+  // longer from tomatoes. Crops batch K5: a second Popper recipe, 5 Corn + 1 Gasoline = 2 (6 s, order 2541). Re-run with
+  // tools/author-vanilla.sh.
   "format_version": 1,
   "parts": [
     {
@@ -797,6 +798,29 @@
           ],
           "time": 6,
           "order": 2540
+        },
+        {
+          // Crops batch K5 (crops map, open question 8): Corn makes Poppers too, beside the tomato recipe.
+          "id": "popper_corn",
+          "stations": ["fabricator"],
+          "inputs": [
+            {
+              "item": "corn",
+              "count": 5
+            },
+            {
+              "item": "gasoline",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "popper",
+              "count": 2
+            }
+          ],
+          "time": 6,
+          "order": 2541
         }
       ]
     },

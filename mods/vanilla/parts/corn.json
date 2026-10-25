@@ -1,0 +1,32 @@
+{
+  "id": "corn",
+  "name": "Corn",
+  "description": "A fat ear of golden corn, its husk pulled back. Eat it for a little health. Tame Grazers eat it from their Feeding Trough like carrots, and the Fabricator makes Poppers from it. It grows wild in fields and meadows: break a corn plant with the Sledgehammer (or a creation's saw) for 3 or 4 ears; it grows back. Flammable.",
+  "category": "consumable",
+  "mass": 6,
+  "durability": 2,
+  "friction": 0.4,
+  "buoyancy": 0.3,
+  "flammable": true,
+  "stack_size": 10,
+  "mesh": "meshes/items/corn.glb",
+  "icon": "textures/items/corn_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "script": "scripts/food.lua",
+  "sounds": {
+    "pickup": "pickup_produce",
+    "eat": "eat_crunch"
+  },
+  "held": {
+    "mesh": "meshes/items/corn_held.glb",
+    "offset": [-0.04, 0.066, 0.02],
+    "rotation": [-90, 0, 90],
+    "juice": "#f2cf4a"
+  },
+  "properties": {
+    "health": 4,
+    "eat_seconds": 1.4
+  }
+}

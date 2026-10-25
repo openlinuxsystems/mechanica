@@ -46,7 +46,8 @@
   },
   "tame": {
     "foods": [
-      "carrot"
+      "carrot",
+      "corn"
     ],
     "feeds": 3,
     "lead": "lead",

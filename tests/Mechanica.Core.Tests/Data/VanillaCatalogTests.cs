@@ -36,7 +36,7 @@ public class VanillaCatalogTests
         "master_battery", "warehouse_key", "explosive_remnant", "scuttler_head", "carrot_seed", "potato_seed", "tomato_seed",
         "cotton_seed", "pigment_flower_seed", "beetroot_seed", "banana_seed", "chili_seed", "blueberry_seed", "orange_seed", "broccoli_seed",
         "pineapple_seed", "carrot", "potato", "tomato", "cotton", "pigment_flower", "beetroot", "banana", "chili", "blueberry", "orange", "broccoli",
-        "pineapple", "beeswax", "ember", "water_bucket", "chemical_bucket", "glowstick", "popper", "potato_blaster", "potato_scattergun",
+        "pineapple", "corn", "beeswax", "ember", "water_bucket", "chemical_bucket", "glowstick", "popper", "potato_blaster", "potato_scattergun",
         "potato_launcher", "bloom_tea", "grazer_shake", "fertilizer", "grazer_milk", "grazer_steak", "garden_burger", "colony_burger",
         // World / farming parts
         "soil_bag",

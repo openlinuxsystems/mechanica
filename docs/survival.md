@@ -43,9 +43,9 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
   steel Fancy Bed (it does not, and is tougher). You respawn standing on top of the bed: on its collision box when that
   is a box (the sleeping bag's is lower than its block), else on the top of its size.
 - **Food:** left click with food in hand eats it and heals you: a Carrot 25, a Tomato 20, a Beetroot 30, a Banana 35, a
-  Blueberry 40, an Orange 45, a Broccoli 50, a Pineapple 55, a Garden Burger or a Colony Burger 30. The Potato is not eaten
-  raw: it is potato-weapon ammo and a cooking input. Carrots, tomatoes, beetroots, bananas, chilies, blueberries, oranges,
-  broccoli, pineapples and burgers stack to 10, potatoes to 50. Every player starts with 3 carrots.
+  Blueberry 40, an Orange 45, a Broccoli 50, a Pineapple 55, a Garden Burger or a Colony Burger 30, an ear of Corn only 4.
+  The Potato is not eaten raw: it is potato-weapon ammo and a cooking input. Carrots, tomatoes, beetroots, bananas, chilies,
+  blueberries, oranges, broccoli, pineapples, corn and burgers stack to 10, potatoes to 50. Every player starts with 3 carrots.
   The heal is the item's `properties.health`, read by `food.lua`. Eating takes about 1.4 s and stops a sprint.
 - **Chili:** a joke food. Eating one burns away 50 health (its `properties.health` is -50: `food.lua` hurts through
   `holder.hurt`, the normal damage path), even at full health, so a second one in a row can kill (knockout bag and
@@ -54,10 +54,11 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
   ruin chests); the Grazer Shake in the better loot, and the Fabricator makes one from 100 Ice Blocks, 3 Oranges and a
   Grazer Milk in 10 s (crops batch K4). A drink is downed in two gulps in about 0.7 s, and you can keep sprinting
   while you drink.
-- **Grazer Milk and Grazer Steak:** a tame Grazer living by a Feeding Trough eats a carrot from it every 30 s; after
-  five it has a bottle of Grazer Milk ready, shown by a milk icon bobbing over its back on every peer. Press Use (E) on
-  it to take the bottle into your inventory (you need room); the next is ready after five more carrots and at least
-  5 minutes. Calves give none. Grazer Milk is a drink that heals 20 (stack 5). Every Grazer drops one or two Grazer
+- **Grazer Milk and Grazer Steak:** a tame Grazer living by a Feeding Trough eats a carrot or an ear of corn from it
+  every 30 s (the trough holds both; the Grazer's `tame.foods`); after five it has a bottle of Grazer Milk ready, shown
+  by a milk icon bobbing over its back on every peer. Press Use (E) on it to take the bottle into your inventory (you
+  need room); the next is ready after five more meals and at least 5 minutes. A wild Grazer is tamed with carrots or
+  corn alike. Calves give none. Grazer Milk is a drink that heals 20 (stack 5). Every Grazer drops one or two Grazer
   Steaks when it dies (stack 5): raw meat that cannot be eaten, kept for cooking. The numbers are the Grazer's
   `tame.produce` and `drops` in `bots/grazer.json` ([bot-tutorial.md](bot-tutorial.md#taming)).
 - **Fertilizer:** a Rootwell pouch (Fabricator: 10 Ember and a full Water Bucket make 5 and give the bucket back; also
@@ -100,6 +101,12 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
   90, Pineapple 161: one planted Pineapple alone draws a level 5 raid). Their seeds are rare finds: Blueberry Seed in
   purple Bloom Pods and warehouse crates, Orange, Broccoli and Pineapple Seeds in gold Bloom Pods (Orange and Pineapple
   also in warehouse crates). The Fridge keeps all four, and Oranges go into the Grazer Shake.
+- **Corn** (crops batch K5) is not farmed: there is no seed. Wild corn (`wild_corn`) grows in clumps of tall stalks in
+  fields and meadows and along the edges of corn fields; two Sledgehammer blows (or a creation's saw, drill or gun, or a
+  blast) break a clump, which leaves 3 or 4 Corn on the ground and grows back half an hour of world time later. An ear
+  heals only 4 and weighs 6 kg (stack 10), but it is good feed: tame Grazers eat it from their Feeding Trough like
+  carrots, and the Fabricator makes 2 Poppers from 5 Corn and a Gasoline in 6 s, beside the tomato recipe. The Fridge
+  keeps it.
 - **Growbeds:** the Growbed (Fabricator: 2 Component Kits, 2 Circuit Boards and a Soil Bag) is soil you build into a
   Creation, so a farm can be a cart, a boat or a base. It takes carrot, potato, tomato, cotton, pigment flower, beetroot, banana, chili, blueberry, orange,
   broccoli and pineapple seeds, and a harvest always gives 5 crops. It holds 2160 s of water, so a bucket is enough for a

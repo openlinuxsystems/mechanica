@@ -1,7 +1,7 @@
 {
   "id": "feeding_trough",
   "name": "Feeding Trough",
-  "description": "Holds carrots for tame animals. Tame Grazers within 20 m make it their home, wander round it and eat its carrots; after 5 a Grazer has milk for you. The hay inside shows how full it is.",
+  "description": "Holds carrots and corn for tame animals. Tame Grazers within 20 m make it their home, wander round it and eat from it; after 5 meals a Grazer has milk for you. The hay inside shows how full it is.",
   "category": "container",
   "mass": 30,
   "durability": 6,
@@ -32,7 +32,8 @@
   "inventory": {
     "slots": 4,
     "accepts": [
-      "carrot"
+      "carrot",
+      "corn"
     ]
   },
   "display": {
@@ -47,7 +48,10 @@
     }
   },
   "properties": {
-    "food": "carrot",
+    "foods": [
+      "carrot",
+      "corn"
+    ],
     "ease": 0.3
   }
 }

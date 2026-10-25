@@ -27,6 +27,10 @@ namespace Mechanica.Game.Tests;
 /// in 1260 s on the host's clock, the soil dry; a second bucket ripens it, and it gives two broccoli and one to three seeds.
 /// Eating an orange heals 45. Blueberry, Orange, Broccoli and Pineapple each have their bitten models and a plant with its
 /// stake that grows, wilts and sways.
+/// Batch K5: the client is taken to the nearest wild corn and breaks it with two Sledgehammer blows; it is gone on both
+/// machines, leaves 3 or 4 Corn on the ground, which the client picks up, and stands again half an hour of world time
+/// later. Eating an ear heals 4. The client tames a wild Grazer with corn (fed through the host's validation, as carrots),
+/// and the tame Grazer then eats the corn in a Feeding Trough by it. Corn has its bitten models in hand.
 /// </summary>
 public partial class CropsTest : StagedTest
 {
@@ -40,12 +44,22 @@ public partial class CropsTest : StagedTest
     private const string Broccoli = "vanilla:broccoli";
     private const string BroccoliSeed = "vanilla:broccoli_seed";
     private const string Orange = "vanilla:orange";
+    private const string Corn = "vanilla:corn";
+    private const string Trough = "vanilla:feeding_trough";
+    private const string Grazer = "vanilla:grazer";
+
+    private static readonly ActionCaller Driver = new(Mechanica.Core.Creations.Creation.HostPeer, ActionSource.Bot);
 
     private readonly List<ActionResult> _results = [];
+    private bool _thrown; // a stage's one bucket throw is sent; its answer can take more than a frame
     private NetTestHarness _harness = null!;
     private Instance _host = null!;
     private Instance _client = null!;
     private WorldObjectPlacement _wild = null!;
+    private WorldObjectPlacement _corn = null!;
+    private Mechanica.Core.Items.Inventory _trough = null!;
+    private int _grazer;
+    private int _swings;
     private Vector3 _soilAt;
     private int _soil;
     private int _soilPart;
@@ -216,6 +230,7 @@ public partial class CropsTest : StagedTest
                 var pockets = _host.Main.Inventory.Items!.PlayerInventory(Peer);
                 pockets.Add(BananaSeed, 1);
                 pockets.Add(Bucket, 1);
+                _thrown = false;
                 return false;
             }
             if (frame == 20)
@@ -229,8 +244,9 @@ public partial class CropsTest : StagedTest
                 return Check(false, $"planting or watering failed ({_results[^1]})");
             if (_results.Count == 1)
             {
-                if (HostSoil.Seed != BananaSeed)
+                if (HostSoil.Seed != BananaSeed || _thrown)
                     return false;
+                _thrown = true;
                 var aim = (_soilAt - _client.Main.LocalPlayer!.Head.GlobalPosition).Normalized();
                 Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Bucket), new Vec3(aim.X, aim.Y, aim.Z)));
                 return false;
@@ -342,6 +358,7 @@ public partial class CropsTest : StagedTest
                 var pockets = _host.Main.Inventory.Items!.PlayerInventory(Peer);
                 pockets.Add(BroccoliSeed, 1);
                 pockets.Add(Bucket, 1);
+                _thrown = false;
                 return false;
             }
             if (frame == 20)
@@ -355,8 +372,9 @@ public partial class CropsTest : StagedTest
                 return Check(false, $"planting or watering failed ({_results[^1]})");
             if (_results.Count == 1)
             {
-                if (HostSoil.Seed != BroccoliSeed)
+                if (HostSoil.Seed != BroccoliSeed || _thrown)
                     return false;
+                _thrown = true;
                 Throw();
                 return false;
             }
@@ -461,7 +479,172 @@ public partial class CropsTest : StagedTest
             }
             return true;
         });
+        Add("the client is taken to the nearest wild corn", frame =>
+        {
+            if (_corn is null)
+            {
+                var gen = _host.Main.Streamer.Generator;
+                var home = _client.Main.LocalPlayer!.GlobalPosition.ToNumerics();
+                for (var r = 200f; r <= 3200f && _corn is null; r *= 2)
+                {
+                    _corn = gen.ObjectsIn(home.X - r, home.Z - r, home.X + r, home.Z + r)
+                        .Where(o => o.Definition.Id == "wild_corn" && gen.SlopeAt(o.Position.X, o.Position.Z) < 0.25f)
+                        .OrderBy(o => (o.Position - home).Length())
+                        .FirstOrDefault()!;
+                }
+                if (!Check(_corn is not null, "wild corn grows within 3 km"))
+                    return true;
+                GD.Print($"[crops] wild corn {_corn!.Id} at {_corn.Position} ({gen.BiomeAt(_corn.Position.X, _corn.Position.Z).Id})");
+                var at = _corn.Position.ToGodot() + new Vector3(1.4f, 0, 0);
+                _host.Main.PlayerSync.HostTeleport(Peer, at with { Y = gen.HeightAt(at.X, at.Z) + 1.2f });
+                return false;
+            }
+            return frame > 60 && _client.Main.LocalPlayer!.IsOnFloor() && _client.Main.LocalPlayer.GlobalPosition.DistanceTo(_corn.Position.ToGodot()) < 3f
+                && _client.Main.Streamer.ChunkHolding(_corn.Id) is { } chunk && chunk.LiveObjects.Any(o => o.Id == _corn.Id);
+        });
+        Add("two Sledgehammer blows break it on both machines and leave 3 or 4 Corn on the ground", frame =>
+        {
+            if (frame == 0)
+                _results.Clear();
+            // A swing every 50 frames (the sledge's swing takes 0.6 s); the first does not break it.
+            if (frame % 50 == 0 && _swings < 2)
+            {
+                if (_swings == 1)
+                    Check(!_host.Main.Streamer.State.IsDestroyed(_corn.Id), "one blow does not break it");
+                _swings++;
+                var at = new Vec3(_corn.Position.X, _corn.Position.Y + 1.0f, _corn.Position.Z);
+                Request(ToolActions.Sledge, new SledgeArgs(Object: _corn.Id.ToString(), At: at));
+            }
+            if (_results.Count < 2 || !_client.Main.Streamer.State.IsDestroyed(_corn.Id) || !CornPile(_client).Any())
+                return frame > 600 && Check(false, $"it never broke on both machines ({string.Join("; ", _results)})");
+            Check(_results.All(r => r.Ok), $"both blows land ({string.Join("; ", _results)})");
+            Check(_host.Main.Streamer.State.IsDestroyed(_corn.Id), "the host has it gone");
+            Check(_host.Main.Streamer.State.Regrowing.ContainsKey(_corn.Id), "the host will regrow it");
+            Check(!_client.Main.Streamer.ChunkHolding(_corn.Id)!.LiveObjects.Any(o => o.Id == _corn.Id), "the client no longer draws it");
+            var corn = CornPile(_host).SelectMany(d => d.Items).Where(i => i.Item == Corn).Sum(i => i.Count);
+            return Check(corn is >= 3 and <= 4, $"3 or 4 Corn lie where it stood ({corn})");
+        });
+        Add("the client picks the corn up", frame =>
+        {
+            if (frame == 0)
+            {
+                _results.Clear();
+                foreach (var drop in CornPile(_client).ToList())
+                    Request(SurvivalActions.PickUp, new PickUpArgs(drop.Id));
+            }
+            if (_results.Count == 0 || Count(Corn) == 0 || CornPile(_host).Any())
+                return false;
+            Check(_results.All(r => r.Ok), $"the pickup is allowed ({string.Join("; ", _results)})");
+            return Check(Count(Corn) is >= 3 and <= 4, $"the client has 3 or 4 Corn ({Count(Corn)})");
+        });
+        Add("half an hour of world time later the corn stands again on both machines", frame =>
+        {
+            if (frame == 0)
+                _host.Main.Scripts.Runtime.Time += 1801;
+            if (_host.Main.Streamer.State.IsDestroyed(_corn.Id) || _client.Main.Streamer.State.IsDestroyed(_corn.Id))
+                return false;
+            return Check(_client.Main.Streamer.ChunkHolding(_corn.Id)!.LiveObjects.Any(o => o.Id == _corn.Id), "the client draws it again");
+        });
+        Add("eating an ear of corn heals 4, on the host and on the client", frame =>
+        {
+            if (frame == 0)
+            {
+                _results.Clear();
+                _host.Main.Survival.Actions!.Heal(Peer, 100);
+                _host.Main.Survival.Actions!.Damage(Peer, 50, "test");
+                return false;
+            }
+            if (frame == 30)
+            {
+                _health = _client.Main.Survival.Own!.Health;
+                Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Corn)));
+            }
+            if (frame < 30 || _results.Count == 0)
+                return false;
+            if (!_results[0].Ok)
+                return Check(false, $"eating is refused ({_results[0]})");
+            if (_client.Main.Survival.Own!.Health == _health)
+                return false;
+            Check(_host.Main.Survival.Actions!.HealthOf(Peer) == 54f, $"the host heals 4 (50 -> {_host.Main.Survival.Actions!.HealthOf(Peer)})");
+            return Check(_client.Main.Survival.Own!.Health == _health + 4, $"the client sees it ({_health} -> {_client.Main.Survival.Own!.Health})");
+        });
+        Add("the client tames a wild Grazer with corn", frame =>
+        {
+            var bots = _host.Main.Bots.Bots!;
+            if (frame == 0)
+            {
+                _results.Clear();
+                _host.Main.Inventory.Items!.PlayerInventory(Peer).Add(Corn, 5);
+                // A Feeding Trough on clear ground beside the player, and a wild Grazer between them.
+                var gen = _host.Main.Streamer.Generator;
+                var feet = _client.Main.LocalPlayer!.GlobalPosition;
+                var spot = Enumerable.Range(0, 16).Select(k => feet + new Vector3(Mathf.Sin(k * Mathf.Tau / 16), 0, -Mathf.Cos(k * Mathf.Tau / 16)) * 3.5f)
+                    .First(at => !gen.ObjectsIn(at.X - 2f, at.Z - 2f, at.X + 2f, at.Z + 2f).Any() && gen.SlopeAt(at.X, at.Z) < 0.2f
+                        && _host.Main.Creations.All.All(c => (c.BodyPose(0).Position - at.ToNumerics()).Length() > 3f));
+                var top = new[] { (-0.8f, -0.4f), (0.8f, -0.4f), (-0.8f, 0.4f), (0.8f, 0.4f), (0f, 0f) }.Max(d => gen.HeightAt(spot.X + d.Item1, spot.Z + d.Item2));
+                var placed = _host.Main.Actions.Dispatcher.Dispatch(Driver, BuildActions.PlacePart,
+                    new PlacePartArgs(Trough, GridCell.Zero, Position: (spot with { Y = top + 0.27f }).ToNumerics().ToVec3()));
+                if (!Check(placed.Ok, $"the trough is placed ({placed})"))
+                    return true;
+                var made = placed.Value!.Value.Deserialize<PlacePartResult>(ActionJson.Options)!;
+                _trough = _host.Main.Inventory.Items!.Find(Mechanica.Core.Items.InventoryRef.OfPart(made.Creation, made.Part))!;
+                var mid = (feet + spot) / 2;
+                var spawned = _host.Main.Actions.Dispatcher.Dispatch(Driver, Mechanica.Core.Bots.BotActions.SpawnBot,
+                    new Mechanica.Core.Bots.SpawnBotArgs(Grazer, [mid.X, gen.HeightAt(mid.X, mid.Z) + 0.2f, mid.Z]));
+                if (!Check(spawned.Ok, $"a Grazer spawns ({spawned})"))
+                    return true;
+                _grazer = spawned.Value!.Value.Deserialize<Mechanica.Core.Bots.SpawnBotResult>(ActionJson.Options)!.Bot;
+                return false;
+            }
+            var grazer = bots.Find(_grazer);
+            if (grazer is null || !_client.Main.Bots.Bodies.ContainsKey(_grazer))
+                return false;
+            // One ear at a time, the client stood by it each time (a Grazer wanders off between meals).
+            if (frame % 40 == 20 && !grazer.Kept && _results.Count(r => r.Ok) == _results.Count)
+            {
+                var at = grazer.Position.ToGodot();
+                if (_client.Main.LocalPlayer!.GlobalPosition.DistanceTo(at) > 2.5f)
+                    _host.Main.PlayerSync.HostTeleport(Peer, at + new Vector3(1.6f, 0.3f, 0));
+                else
+                    Request(Mechanica.Core.Bots.BotActions.FeedBot, new Mechanica.Core.Bots.FeedBotArgs(_grazer, Corn));
+            }
+            if (_results.Any(r => !r.Ok))
+                return Check(false, $"feeding corn is refused ({string.Join("; ", _results)})");
+            if (!grazer.Kept || _client.Main.Bots.Bodies[_grazer].View is not { Kept: true })
+                return frame > 1200 && Check(false, $"it was never tamed ({grazer.Fed} fed)");
+            return Check(_results.Count == grazer.Type.Tame!.Feeds, $"tame after {grazer.Type.Tame!.Feeds} ears ({_results.Count})");
+        });
+        Add("the tame Grazer eats the corn in the Feeding Trough by it", frame =>
+        {
+            var bots = _host.Main.Bots.Bots!;
+            if (frame == 0)
+                Check(_trough.Add(Corn, 2) == 2, "the trough takes two ears");
+            // a meal every eat_every seconds: hurried along here
+            if (frame % 15 == 0)
+                bots.Hurry(_grazer);
+            var grazer = bots.Find(_grazer)!;
+            if (grazer.Meals < 2)
+                return frame > 1200 && Check(false, $"it never ate from the trough ({grazer.Meals} meals)");
+            // the client's view follows the host's bot sync a few frames later
+            if (_client.Main.Bots.Bodies[_grazer].View?.Meals < 2)
+                return frame > 1500 && Check(false, $"the client never sees its meals ({_client.Main.Bots.Bodies[_grazer].View?.Meals})");
+            Check(_trough.Count(Corn) == 0, $"the trough's corn is eaten ({_trough.Count(Corn)})");
+            return Check(true, $"the client sees its meals ({_client.Main.Bots.Bodies[_grazer].View?.Meals})");
+        });
+        Add("Corn has its bitten models in hand", _ =>
+        {
+            var survival = _client.Main.Survival;
+            var held = survival.Catalog.FindDefinition(Corn)?.Held?.Mesh is { } mesh ? survival.Assets!.InstantiateScene(mesh, "vanilla") : null;
+            Check(held is not null && Enumerable.Range(0, 3).All(k => held.FindChild($"eat_{k}", true, false) is Node3D),
+                "the corn in hand has its whole and two bitten versions");
+            held?.Free();
+            return true;
+        });
     }
+
+    // Item piles on the ground holding Corn, as an instance sees them.
+    private static IEnumerable<ItemDrop> CornPile(Instance instance) =>
+        instance.Main.Survival.Drops.Values.Where(d => d.Items.Any(i => i.Item == Corn));
 
     private void Throw()
     {

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Mechanica.Core.Building;
 using Mechanica.Core.Data;
 using Mechanica.Core.Items;
 using Mechanica.Core.World;
@@ -22,6 +23,9 @@ namespace Mechanica.Core.Tests.Data;
 /// Batch K4 adds Blueberry, Orange, Broccoli and Pineapple: fruit stats, heals 40, 45, 50 and 55; seeds that grow like the
 /// others (raid values 31, 61, 90 and 161), Broccoli and Pineapple thirsty (two buckets a crop); only in the rare loot tiers;
 /// and the Fabricator's Grazer Shake from 100 Ice Blocks, 3 Oranges and a Grazer Milk (order 3210).
+/// Batch K5 adds Corn: the wiki's stats (6 kg, stack 10), heals 4, no seed; wild corn in fields and meadows (and at the
+/// edges of corn fields) breaks under two sledge blows or a creation's saw for 3 to 4 Corn and regrows; tame Grazers eat
+/// it from their Feeding Trough like carrots; and the Fabricator makes 2 Poppers from 5 Corn and a Gasoline (order 2541).
 /// </summary>
 public class CropsTests
 {
@@ -354,5 +358,98 @@ public class CropsTests
         Assert.Single(book.All, r => r.Definition.Order == 3210);
         // Still a loot find too.
         Assert.Contains(World.Value.LootTables!["legendary"].Items!, i => i.Item == "grazer_shake");
+    }
+
+    [Fact]
+    public void CornIsALittleFoodWithTheWikisStatsAndNoSeed()
+    {
+        var corn = Part("corn");
+
+        Assert.Equal((6.0, 2, 0.4, 0.3, true, 10),
+            (Math.Round((double)corn.Mass!.Value, 3), (int)corn.Durability!.Value, Math.Round((double)corn.Friction!.Value, 3),
+                Math.Round((double)corn.Buoyancy!.Value, 3), corn.Flammable!.Value, corn.StackSize!.Value));
+        Assert.Equal(PartCategory.Consumable, corn.Category);
+        Assert.Equal("scripts/food.lua", corn.Script);
+        Assert.Equal((4, 1.4), (corn.Properties!["health"]!.GetValue<int>(), corn.Properties!["eat_seconds"]!.GetValue<double>()));
+        Assert.Equal("eat_crunch", corn.Sounds!["eat"]);
+        Assert.Equal("meshes/items/corn_held.glb", corn.Held?.Mesh);
+        foreach (var file in new[] { "meshes/items/corn.glb", "meshes/items/corn_held.glb", "meshes/world/props/wild_corn.glb", "textures/items/corn_icon.png" })
+            Assert.True(File.Exists(Path.Combine(TestMods.RepoRoot, "mods", "vanilla", file)), $"{file} is built");
+        // Not plantable (crops map): no seed, and nothing grows corn.
+        Assert.Null(Vanilla.Value.FindDefinition("corn_seed"));
+        Assert.DoesNotContain(Vanilla.Value.Parts.Values, p => p.Definition.Seed?.Crop == "corn");
+        Assert.Contains("corn", Part("fridge").Inventory!.Accepts!);
+    }
+
+    [Fact]
+    public void TheFabricatorMakesTwoPoppersFromFiveCornBesideTheTomatoRecipe()
+    {
+        var book = RecipeBook.Load(Vanilla.Value);
+        var recipe = book.Find("popper_corn")!;
+
+        Assert.Equal(["vanilla:fabricator"], recipe.Stations);
+        Assert.Equal(["vanilla:corn:5", "vanilla:gasoline:1"], recipe.Inputs.Select(i => $"{i.Item}:{i.Count}"));
+        Assert.Equal(("vanilla:popper", 2), (recipe.Outputs.Single().Item, recipe.Outputs.Single().Count));
+        Assert.Equal((6f, 2541), (recipe.Time, recipe.Definition.Order));
+        Assert.Single(book.All, r => r.Definition.Order == 2541);
+        // The tomato one stays, just before it in the weapons group.
+        var tomato = book.Find("popper")!;
+        Assert.Equal(["vanilla:tomato:2", "vanilla:gasoline:1"], tomato.Inputs.Select(i => $"{i.Item}:{i.Count}"));
+        Assert.Equal(2540, tomato.Definition.Order);
+    }
+
+    [Fact]
+    public void TheWildCornIsOneLightMesh()
+    {
+        // As the other wild plants: the world draws only the first mesh of a prop's file (TerrainChunk), many times over.
+        var bytes = File.ReadAllBytes(Path.Combine(TestMods.RepoRoot, "mods", "vanilla", "meshes", "world", "props", "wild_corn.glb"));
+        using var doc = JsonDocument.Parse(bytes.AsMemory(20, BitConverter.ToInt32(bytes, 12)));
+        var meshes = doc.RootElement.GetProperty("meshes");
+        var accessors = doc.RootElement.GetProperty("accessors");
+        var triangles = meshes.EnumerateArray().SelectMany(m => m.GetProperty("primitives").EnumerateArray())
+            .Sum(p => accessors[p.GetProperty("indices").GetInt32()].GetProperty("count").GetInt32() / 3);
+
+        Assert.Equal(1, meshes.GetArrayLength());
+        Assert.InRange(triangles, 1000, 12000);
+    }
+
+    [Fact]
+    public void WildCornBreaksUnderTheSledgeOrACreationForThreeToFourCornAndRegrows()
+    {
+        var corn = WorldObject("wild_corn");
+        var building = BuildSettings.FromJson(File.ReadAllText(Path.Combine(TestMods.RepoRoot, "game", "data", "building.json")));
+        var blow = corn.SledgeDamage ?? building.Sledge.ObjectDamage;
+
+        Assert.False(corn.Harvest, "broken, not picked");
+        Assert.Equal(2, (int)MathF.Ceiling(corn.Health!.Value / blow)); // two Sledgehammer blows
+        foreach (var kind in new[] { DamageKinds.Sledge, DamageKinds.Saw, DamageKinds.Drill, DamageKinds.Explosion, DamageKinds.Weapon })
+            Assert.True(corn.TakesDamageFrom(kind), $"{kind} breaks it");
+        Assert.True(corn.Solid, "it stands in the way, so a creation's saw finds it");
+        Assert.Equal([("corn", 3, (int?)4, (float?)null)], corn.Drops!.Select(d => (d.Item, d.Count, d.CountMax, d.Chance)));
+        Assert.Equal(WorldObject("wild_cotton").Regrow, corn.Regrow);
+        Assert.Equal("meshes/world/props/wild_corn.glb", corn.Mesh!.File);
+        // Scattered in fields (more) and meadows (fewer), and self-sown at the edges of corn fields.
+        var rules = World.Value.Biomes!.SelectMany(b => (b.Scatter ?? []).Where(r => r.Object == "wild_corn").Select(r => (b.Id, r.Spacing, r.Chance))).ToList();
+        Assert.Equal(["field", "meadow"], rules.Select(r => r.Id).Order());
+        var field = rules.Single(r => r.Id == "field");
+        var meadow = rules.Single(r => r.Id == "meadow");
+        Assert.True(field.Chance / (field.Spacing * field.Spacing) > meadow.Chance / (meadow.Spacing * meadow.Spacing), "thicker in fields than meadows");
+        var scene = WorldObject("scene_corn_field").Scene!;
+        Assert.All(scene.Layouts!.Where(l => l.Pieces!.Any(p => p.Object == "field_corn")),
+            l => Assert.Contains(l.Pieces!, p => p.Object == "wild_corn"));
+    }
+
+    [Fact]
+    public void GrazersEatCornFromTheirTroughAsWellAsCarrots()
+    {
+        var bots = Mechanica.Core.Bots.BotBook.Load(Vanilla.Value);
+        foreach (var id in new[] { "grazer", "grazer_calf" })
+            Assert.Equal(["vanilla:carrot", "vanilla:corn"], bots.FindBot(id)!.Tame!.Foods.Order());
+        var trough = Part("feeding_trough");
+        Assert.Equal(["carrot", "corn"], trough.Inventory!.Accepts!);
+        Assert.Equal(["carrot", "corn"], trough.Properties!["foods"]!.AsArray().Select(f => f!.GetValue<string>()));
+        Assert.Contains("corn", trough.Description);
+        // Grazer Milk follows: five meals of either.
+        Assert.Equal(5, bots.FindBot("grazer")!.Tame!.Produce!.Feeds);
     }
 }
